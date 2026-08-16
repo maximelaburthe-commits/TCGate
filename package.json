@@ -1,0 +1,12 @@
+{
+  "name": "tcg-webcam-ui-prototype",
+  "version": "0.5.2",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "smoke": "node smoke-test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
