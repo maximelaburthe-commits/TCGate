@@ -1,4 +1,4 @@
-# TCG Webcam — V0.6 Vision intégrée
+# TCG Webcam — V0.6.1 Vision robuste
 
 Première intégration contrôlée de la Vision alpha15 dans la plateforme réseau.
 
@@ -17,7 +17,7 @@ Ne pas oublier le nouveau fichier modèle :
 `/api/health`
 
 Doit retourner :
-- version 0.6.0
+- version 0.6.1
 - vision.integrated = true
 - vision.modelPresent = true
 
@@ -30,3 +30,14 @@ Les deux parents restent séparés :
 - alpha15 Vision gelée
 
 V0.6 est une branche d'intégration pré-alpha.
+
+
+## V0.6.1
+Correctif ciblé :
+- synchronisation automatique des dimensions du flux WebRTC ;
+- recalibration après changement de résolution ;
+- garde anti-reflet ;
+- rescue conservateur près des bords ;
+- diagnostic spatial 3×3.
+
+Lire `PLAN_TEST_V0.6.1.md`.

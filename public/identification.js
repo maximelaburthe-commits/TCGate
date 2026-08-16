@@ -74,7 +74,17 @@
       expired: 0,
       geometry: 0,
       appearance: 0
-    }
+    },
+    qualityGuard: {
+      moderate: 0,
+      high: 0,
+      rejected: 0,
+      tightened: 0,
+      last: null
+    },
+    pointerMissHeatmap: [0,0,0,0,0,0,0,0,0],
+    pointerHitHeatmap: [0,0,0,0,0,0,0,0,0],
+    lastPointerDiagnosticAt: 0
   };
 
   function imageUrl(card) {
@@ -1368,9 +1378,25 @@
     if (!result.accepted) {
       ui.result?.classList.add('hidden');
       ui.empty?.classList.remove('hidden');
-      ui.empty.textContent=`Identification incertaine · meilleur indice ${bestIndex}/100`;
+      const glare=result.rejectionReason?.startsWith('glare')
+        ? ' · reflet détecté'
+        : '';
+      ui.empty.textContent=`Identification incertaine${glare} · meilleur indice ${bestIndex}/100`;
       ui.candidates.innerHTML=ranked;
       ui.candidates.classList.remove('hidden');
+
+      window.dispatchEvent(new CustomEvent('tcg-identification-result',{
+        detail:{
+          accepted:false,
+          reason:result.rejectionReason || 'uncertain',
+          visualIndex:bestIndex,
+          margin:Number(result.margin || 0),
+          mode:result.mode || 'normal',
+          quality:result.quality || null,
+          trackUid:state.hoveredTrack?.uid ?? null,
+          at:performance.now()
+        }
+      }));
       return;
     }
 
@@ -1397,6 +1423,7 @@
         margin:Number(result.margin || 0),
         mode:result.mode || 'normal',
         matcherMs:Number(state.lastMatcherMs || 0),
+        quality:result.quality || null,
         trackUid:state.hoveredTrack?.uid ?? null,
         at:performance.now()
       }
@@ -1426,6 +1453,148 @@
     return Math.abs(x)<=track.w/2 && Math.abs(y)<=track.h/2;
   }
 
+
+function pointerCell(point) {
+  const w=Math.max(1,lab.els.video.videoWidth || lab.els.overlay.width || 1);
+  const h=Math.max(1,lab.els.video.videoHeight || lab.els.overlay.height || 1);
+  const nx=Math.max(0,Math.min(.999999,point.x/w));
+  const ny=Math.max(0,Math.min(.999999,point.y/h));
+  return Math.min(2,Math.floor(ny*3))*3+Math.min(2,Math.floor(nx*3));
+}
+
+function recordPointerDiagnostic(point,hit) {
+  const now=performance.now();
+  if(now-state.lastPointerDiagnosticAt<220) return;
+  state.lastPointerDiagnosticAt=now;
+  const i=pointerCell(point);
+  (hit?state.pointerHitHeatmap:state.pointerMissHeatmap)[i]+=1;
+}
+
+function analyzeCropQuality(canvas) {
+  const sample=document.createElement('canvas');
+  sample.width=72;
+  sample.height=104;
+  const ctx=sample.getContext('2d',{willReadFrequently:true,alpha:false});
+  ctx.drawImage(canvas,0,0,sample.width,sample.height);
+  const px=ctx.getImageData(0,0,sample.width,sample.height).data;
+
+  const x0=Math.floor(sample.width*.10), x1=Math.ceil(sample.width*.90);
+  const y0=Math.floor(sample.height*.08), y1=Math.ceil(sample.height*.92);
+
+  const blockCols=6,blockRows=8;
+  const clippedByBlock=new Array(blockCols*blockRows).fill(0);
+  const pixelsByBlock=new Array(blockCols*blockRows).fill(0);
+
+  let n=0,clipped=0,bright=0,detail=0,detailN=0;
+  const gray=new Float32Array(sample.width*sample.height);
+
+  for(let y=0;y<sample.height;y++){
+    for(let x=0;x<sample.width;x++){
+      const i=(y*sample.width+x)*4;
+      const r=px[i]/255,g=px[i+1]/255,b=px[i+2]/255;
+      gray[y*sample.width+x]=.299*r+.587*g+.114*b;
+    }
+  }
+
+  for(let y=y0;y<y1;y++){
+    for(let x=x0;x<x1;x++){
+      const i=(y*sample.width+x)*4;
+      const r=px[i]/255,g=px[i+1]/255,b=px[i+2]/255;
+      const max=Math.max(r,g,b),min=Math.min(r,g,b);
+      const lum=gray[y*sample.width+x];
+      const sat=max>1e-4?(max-min)/max:0;
+      const isClip=lum>.965 && sat<.14;
+      const isBright=lum>.91;
+
+      const bx=Math.min(blockCols-1,Math.floor((x-x0)/(x1-x0)*blockCols));
+      const by=Math.min(blockRows-1,Math.floor((y-y0)/(y1-y0)*blockRows));
+      const bi=by*blockCols+bx;
+      pixelsByBlock[bi]+=1;
+      if(isClip) clippedByBlock[bi]+=1;
+
+      clipped+=Number(isClip);
+      bright+=Number(isBright);
+      n+=1;
+
+      if(x>x0 && y>y0){
+        detail+=Math.abs(lum-gray[y*sample.width+x-1]);
+        detail+=Math.abs(lum-gray[(y-1)*sample.width+x]);
+        detailN+=2;
+      }
+    }
+  }
+
+  const clippedFraction=clipped/Math.max(1,n);
+  const brightFraction=bright/Math.max(1,n);
+  const meanDetail=detail/Math.max(1,detailN);
+  let maxBlockClip=0;
+  for(let i=0;i<clippedByBlock.length;i++){
+    if(pixelsByBlock[i]){
+      maxBlockClip=Math.max(maxBlockClip,clippedByBlock[i]/pixelsByBlock[i]);
+    }
+  }
+
+  let risk='normal';
+  if(
+    clippedFraction>=.16 ||
+    (clippedFraction>=.06 && maxBlockClip>=.72)
+  ){
+    risk='high';
+  }else if(
+    clippedFraction>=.08 ||
+    (clippedFraction>=.035 && maxBlockClip>=.56)
+  ){
+    risk='moderate';
+  }
+
+  return {
+    risk,
+    clippedFraction:Number(clippedFraction.toFixed(4)),
+    brightFraction:Number(brightFraction.toFixed(4)),
+    maxBlockClip:Number(maxBlockClip.toFixed(4)),
+    detail:Number(meanDetail.toFixed(4))
+  };
+}
+
+function applyQualityGuard(result,quality) {
+  if(!result || !quality) return result;
+  result.quality=quality;
+  state.qualityGuard.last={...quality};
+
+  if(quality.risk==='high') state.qualityGuard.high+=1;
+  if(quality.risk==='moderate') state.qualityGuard.moderate+=1;
+
+  if(!result.accepted) return result;
+
+  if(quality.risk==='high'){
+    result.accepted=false;
+    result.rejectionReason='glare-high';
+    result.mode=`${result.mode || 'normal'}-glare-rejected`;
+    state.qualityGuard.rejected+=1;
+    return result;
+  }
+
+  if(quality.risk==='moderate'){
+    // Prefer no result to a confident-looking wrong card under glare.
+    // Moderate glare needs stronger separation from the second candidate.
+    const strongEnough=
+      Number(result.best?.score || 0)>=.28 &&
+      Number(result.margin || 0)>=.16;
+
+    if(!strongEnough){
+      result.accepted=false;
+      result.rejectionReason='glare-moderate';
+      result.mode=`${result.mode || 'normal'}-glare-rejected`;
+      state.qualityGuard.rejected+=1;
+    }else{
+      result.mode=`${result.mode || 'normal'}-glare-guarded`;
+      state.qualityGuard.tightened+=1;
+    }
+  }
+
+  return result;
+}
+
   async function identifyTrack(track, generation) {
     if (!ui.toggle?.checked) return clearCurrentIdentification('Identification désactivée.');
     if (!state.ready) return clearCurrentIdentification('Bibliothèque encore en préparation…');
@@ -1435,6 +1604,7 @@
 
     const canvas=lab.captureCanonicalTrackCanvas(track,216,312);
     if (!canvas) return clearCurrentIdentification('Capture de carte impossible.');
+    const cropQuality=analyzeCropQuality(canvas);
 
     const overlap=overlapContext(track);
     const pointerCanonical=pointerInCanonical(track,state.pointer);
@@ -1486,6 +1656,8 @@
         result.timing.mainThreadBlockedMs=result.timing.roundTripMs;
       }
     }
+
+    result=applyQualityGuard(result,cropQuality);
 
     state.lastMatcherMs=Number(
       result?.timing?.roundTripMs ??
@@ -1550,11 +1722,14 @@
     const track=tracks.find(t=>contains(t,point));
 
     if (!track) {
+      recordPointerDiagnostic(point,false);
       state.hoveredTrack = null;
       state.hoverGeneration += 1;
       clearTimeout(state.hoverTimer);
       return clearCurrentIdentification();
     }
+
+    recordPointerDiagnostic(point,true);
 
     const previousUid = state.hoveredTrack?.uid ?? null;
     const isNewTrack = previousUid !== track.uid;
@@ -1750,6 +1925,18 @@
         },
         pointerInsideStage: state.pointerInsideStage,
         pointer: state.pointer ? { ...state.pointer } : null,
+        spatialPointer: {
+          grid: '3x3 row-major',
+          hits: [...state.pointerHitHeatmap],
+          misses: [...state.pointerMissHeatmap]
+        },
+        qualityGuard: {
+          moderate: state.qualityGuard.moderate,
+          high: state.qualityGuard.high,
+          rejected: state.qualityGuard.rejected,
+          tightened: state.qualityGuard.tightened,
+          last: state.qualityGuard.last ? { ...state.qualityGuard.last } : null
+        },
         hoveredTrack: state.hoveredTrack ? { ...state.hoveredTrack } : null,
         identification: (result?.best && state.hoveredTrack && state.lastTrackUid === state.hoveredTrack.uid) ? {
           accepted: Boolean(result.accepted),
@@ -1768,6 +1955,8 @@
           } : null,
           margin: Number(result.margin || 0),
           mode: result.mode || 'normal',
+          rejectionReason: result.rejectionReason || null,
+          quality: result.quality ? { ...result.quality } : null,
           overlap: Number(result.overlap || 0),
           mask: result.maskDiagnostics ? {
             visibleFraction: Number(result.maskDiagnostics.visibleFraction || 0),

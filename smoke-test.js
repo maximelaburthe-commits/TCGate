@@ -64,4 +64,14 @@ for(const token of [
 const modelSize=fs.statSync('models/card_detector_v53_512.onnx').size;
 if(modelSize<5_000_000) throw new Error(`Model too small ${modelSize}`);
 
-console.log('SMOKE_OK_V0.6');
+for(const [file,tokens] of Object.entries({
+  'public/vision-core.js':['tcg-vision-geometry','strictSoloWeakCandidate','spatialStats'],
+  'public/identification.js':['analyzeCropQuality','glare-high','pointerMissHeatmap'],
+  'public/vision-calibration.js':['consecutiveLightingOutliers','ignoredBlankMonitorFrames']
+})){
+  const text=fs.readFileSync(file,'utf8');
+  for(const token of tokens){
+    if(!text.includes(token)) throw new Error(`Missing ${token} in ${file}`);
+  }
+}
+console.log('SMOKE_OK_V0.6.1');

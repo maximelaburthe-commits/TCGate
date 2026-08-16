@@ -17,7 +17,9 @@
     runId:0,
     lastMonitorAt:null,
     automaticRecalibrations:0,
-    monitorTimer:null
+    monitorTimer:null,
+    consecutiveLightingOutliers:0,
+    ignoredBlankMonitorFrames:0
   };
 
   const canvas=document.createElement('canvas');
@@ -65,7 +67,9 @@
       meanDetail:Number.isFinite(state.meanDetail)?Number(state.meanDetail.toFixed(4)):null,
       reasons:[...state.reasons],
       automaticRecalibrations:state.automaticRecalibrations,
-      lastMonitorAt:state.lastMonitorAt
+      lastMonitorAt:state.lastMonitorAt,
+      consecutiveLightingOutliers:state.consecutiveLightingOutliers,
+      ignoredBlankMonitorFrames:state.ignoredBlankMonitorFrames
     };
   }
 
@@ -121,16 +125,37 @@
 
   function monitor(video){
     clearInterval(state.monitorTimer);
+    state.consecutiveLightingOutliers=0;
+
     state.monitorTimer=setInterval(()=>{
       if(!video?.videoWidth || state.status==='calibrating') return;
       const s=sample(video);
       if(!s) return;
       state.lastMonitorAt=new Date().toISOString();
 
+      // WebRTC resolution switches may briefly expose a black transition frame.
+      // Never recalibrate from one transient blank frame.
+      const transientBlank=s.brightness<.015 && s.detail<.002;
+      if(transientBlank){
+        state.ignoredBlankMonitorFrames+=1;
+        state.consecutiveLightingOutliers=0;
+        return;
+      }
+
       if(Number.isFinite(state.baselineBrightness) &&
          Math.abs(s.brightness-state.baselineBrightness)>.24){
+        state.consecutiveLightingOutliers+=1;
+      }else{
+        state.consecutiveLightingOutliers=0;
+      }
+
+      // Require a persistent change over several monitor samples.
+      if(state.consecutiveLightingOutliers>=3){
         const last=state.completedAt?Date.parse(state.completedAt):0;
-        if(Date.now()-last>30000) run(video,'lighting-change').catch(()=>{});
+        if(Date.now()-last>30000){
+          state.consecutiveLightingOutliers=0;
+          run(video,'lighting-change').catch(()=>{});
+        }
       }
     },5000);
   }

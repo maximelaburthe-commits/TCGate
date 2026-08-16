@@ -52,6 +52,7 @@ const state = {
   visionPreparing: false,
   visionAttachedStreamId: null,
   visionMetricsTimer: null,
+  calibrationResizeTimer: null,
   currentIdentifiedCard: null,
   lastIdentificationEventKey: null,
 
@@ -217,6 +218,8 @@ async function attachVisionToRemoteStream(stream) {
 function detachVision() {
   clearInterval(state.visionMetricsTimer);
   state.visionMetricsTimer=null;
+  clearTimeout(state.calibrationResizeTimer);
+  state.calibrationResizeTimer=null;
   state.visionAttachedStreamId=null;
   state.currentIdentifiedCard=null;
   state.lastIdentificationEventKey=null;
@@ -271,6 +274,16 @@ function hideFullscreenIdentifiedCard() {
 
 function syncIdentifiedCardUi(detail) {
   if(!detail?.accepted){
+    if(detail?.reason){
+      logEvent('identification-rejected',{
+        reason:detail.reason,
+        visualIndex:detail.visualIndex ?? null,
+        margin:detail.margin ?? null,
+        mode:detail.mode || null,
+        quality:detail.quality || null
+      });
+    }
+
     const snap=window.TCGIdentificationLab?.getSnapshot?.();
     if(snap?.pointerInsideStage){
       state.currentIdentifiedCard=null;
@@ -304,7 +317,8 @@ function syncIdentifiedCardUi(detail) {
       visualIndex:detail.visualIndex,
       margin:detail.margin,
       mode:detail.mode,
-      matcherMs:detail.matcherMs
+      matcherMs:detail.matcherMs,
+      quality:detail.quality || null
     });
   }
 }
@@ -1284,7 +1298,7 @@ async function buildCompleteReport() {
 
   return {
     format: 'tcg-webcam-complete-report',
-    version: '0.6.0',
+    version: '0.6.1',
     generatedAt: new Date().toISOString(),
     session: {
       startedAt: new Date(state.reportStartedAt).toISOString(),
@@ -1426,6 +1440,11 @@ function reportText(report) {
     `Bibliothèque: ${report.vision?.identification?.librarySize ?? '—'} cartes`,
     `Matcher: ${report.vision?.identification?.matcherMs ?? '—'} ms`,
     `Cache hover hits: ${report.vision?.identification?.hoverCache?.hits ?? '—'}`,
+    `Changements géométrie vidéo: ${report.vision?.detector?.geometry?.changes ?? '—'}`,
+    `Garde reflet - rejets: ${report.vision?.identification?.qualityGuard?.rejected ?? '—'}`,
+    `Garde reflet - modérés: ${report.vision?.identification?.qualityGuard?.moderate ?? '—'}`,
+    `Pointer misses 3x3: ${JSON.stringify(report.vision?.identification?.spatialPointer?.misses || [])}`,
+    `Détections filtrées 3x3: ${JSON.stringify(report.vision?.detector?.spatial?.filtered || [])}`,
     '',
     'ÉVÉNEMENTS',
     `Total: ${report.events.length}`,
@@ -1529,6 +1548,24 @@ La Vision/calibration ne sont pas encore intégrées dans cette branche.
   toast('Rapport complet généré.');
 }
 
+
+
+window.addEventListener('tcg-vision-geometry',(event)=>{
+  const d=event.detail || {};
+  logEvent('vision-geometry-change',d);
+
+  clearTimeout(state.calibrationResizeTimer);
+  state.calibrationResizeTimer=setTimeout(()=>{
+    if(!state.gameActive || !$('remoteVideo')?.videoWidth) return;
+    window.TCGVisionCalibration?.start?.($('remoteVideo'),'video-resize').catch(err=>{
+      logEvent('calibration-error',{
+        name:err?.name || null,
+        message:err?.message || String(err),
+        reason:'video-resize'
+      });
+    });
+  },900);
+});
 
 window.addEventListener('tcg-identification-result',(event)=>{
   syncIdentifiedCardUi(event.detail || {});

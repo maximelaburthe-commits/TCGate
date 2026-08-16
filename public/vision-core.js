@@ -56,7 +56,17 @@ const state = {
   externalAttached: false,
   debugOverlay: false,
   modelReadyAt: null,
-  startedAt: null
+  startedAt: null,
+  externalResizeHandler: null,
+  videoGeometry: { width: 0, height: 0, changes: 0, lastChangedAt: null },
+  spatialStats: {
+    analyses: 0,
+    raw: [0,0,0,0,0,0,0,0,0],
+    filtered: [0,0,0,0,0,0,0,0,0],
+    confirmed: [0,0,0,0,0,0,0,0,0],
+    rawConfidenceSum: [0,0,0,0,0,0,0,0,0],
+    filteredConfidenceSum: [0,0,0,0,0,0,0,0,0]
+  }
 };
 
 function setStatus(text, type = 'neutral') {
@@ -251,6 +261,7 @@ function ensureWorker() {
       state.provider = msg.provider || state.provider;
       state.analysisSeq += 1;
       updateTracks(state.rawDetections);
+      recordSpatialDetections(incoming,state.rawDetections);
       window.dispatchEvent(new CustomEvent('tcg-tracks-updated', {
         detail: { analysisSeq: state.analysisSeq }
       }));
@@ -507,8 +518,60 @@ function expectedCardAreaFraction(strongDetections) {
   return areas.length >= 2 ? median(areas) : null;
 }
 
+
+function normalizedCell(det) {
+  const w=Math.max(1,els.video.videoWidth || els.overlay.width || 1);
+  const h=Math.max(1,els.video.videoHeight || els.overlay.height || 1);
+  const nx=Math.max(0,Math.min(.999999,det.cx/w));
+  const ny=Math.max(0,Math.min(.999999,det.cy/h));
+  const col=Math.min(2,Math.floor(nx*3));
+  const row=Math.min(2,Math.floor(ny*3));
+  return row*3+col;
+}
+
+function recordSpatialDetections(raw,filtered) {
+  const s=state.spatialStats;
+  s.analyses+=1;
+
+  for(const det of raw || []){
+    const i=normalizedCell(det);
+    s.raw[i]+=1;
+    s.rawConfidenceSum[i]+=Number(det.conf || 0);
+  }
+
+  for(const det of filtered || []){
+    const i=normalizedCell(det);
+    s.filtered[i]+=1;
+    s.filteredConfidenceSum[i]+=Number(det.conf || 0);
+  }
+
+  for(const det of activeTracks()){
+    if((det.misses||0)>0) continue;
+    const i=normalizedCell(det);
+    s.confirmed[i]+=1;
+  }
+}
+
+function isNearFrameEdge(det,band=.14) {
+  const w=Math.max(1,els.video.videoWidth || els.overlay.width || 1);
+  const h=Math.max(1,els.video.videoHeight || els.overlay.height || 1);
+  const nx=det.cx/w;
+  const ny=det.cy/h;
+  return nx<band || nx>1-band || ny<band || ny>1-band;
+}
+
+function strictSoloWeakCandidate(det) {
+  const ratio=canonicalAspect(det);
+  const area=detectionAreaFraction(det);
+  return (
+    ratio>=1.28 && ratio<=1.72 &&
+    area>=0.0012 && area<=0.060 &&
+    isNearFrameEdge(det,.14)
+  );
+}
+
 function filterTableDetections(incoming) {
-  const stats = { shape: 0, scale: 0, duplicate: 0, weakRejected: 0, rescued: 0 };
+  const stats = { shape: 0, scale: 0, duplicate: 0, weakRejected: 0, rescued: 0, edgeRescued: 0 };
   const weakFloor = Math.max(0.35, state.confidence - 0.12);
 
   // Même si le filtre UI est désactivé, le curseur de confiance reste le seuil final.
@@ -578,7 +641,26 @@ function filterTableDetections(incoming) {
       }
     }
   } else {
-    stats.weakRejected += dedup.kept.filter((d) => d.conf < state.confidence).length;
+    // A single card near the frame edge can lose a few confidence points because
+    // part of its context is outside the image. V0.6.1 rescues only a narrow,
+    // geometrically strict edge case; it does NOT globally lower the threshold.
+    const edgeFloor=Math.max(0.42,state.confidence-0.06);
+
+    for(const det of dedup.kept){
+      if(det.conf>=state.confidence) continue;
+
+      if(det.conf>=edgeFloor && strictSoloWeakCandidate(det)){
+        accepted.push({
+          ...det,
+          rescuedLowConfidence:true,
+          edgeRescued:true
+        });
+        stats.rescued+=1;
+        stats.edgeRescued+=1;
+      }else{
+        stats.weakRejected+=1;
+      }
+    }
   }
 
   state.filterStats = stats;
@@ -791,7 +873,12 @@ function updateTracks(detections) {
         conf: det.conf,
         cls: det.cls,
         rescuedLowConfidence: Boolean(det.rescuedLowConfidence),
-        requiredConfirmations: det.rescuedLowConfidence ? state.confirmationsNeeded + 1 : state.confirmationsNeeded,
+        edgeRescued: Boolean(det.edgeRescued),
+        requiredConfirmations: det.edgeRescued
+          ? state.confirmationsNeeded + 2
+          : det.rescuedLowConfidence
+            ? state.confirmationsNeeded + 1
+            : state.confirmationsNeeded,
         misses: 0,
         lastSeenSeq: state.analysisSeq,
         hitSeqs: [...(track.hitSeqs || []), state.analysisSeq],
@@ -827,7 +914,12 @@ function updateTracks(detections) {
       appearanceAnchor: null,
       appearanceRecent: det.appearance || null,
       rescuedLowConfidence: Boolean(det.rescuedLowConfidence),
-      requiredConfirmations: det.rescuedLowConfidence ? state.confirmationsNeeded + 1 : state.confirmationsNeeded
+      edgeRescued: Boolean(det.edgeRescued),
+      requiredConfirmations: det.edgeRescued
+        ? state.confirmationsNeeded + 2
+        : det.rescuedLowConfidence
+          ? state.confirmationsNeeded + 1
+          : state.confirmationsNeeded
     });
     next.push(fresh);
   });
@@ -949,6 +1041,7 @@ function scheduleNextInference(delay = state.intervalMs) {
 }
 
 async function runInference() {
+  syncExternalVideoGeometry('inference');
   if (!state.detecting || !state.workerReady || !state.stream || state.inferenceBusy) {
     if (state.detecting) scheduleNextInference(100);
     return;
@@ -1308,11 +1401,51 @@ async function preloadExternalVision() {
   return { ready: state.workerReady, provider: state.provider };
 }
 
-function syncExternalVideoGeometry() {
-  const w=els.video.videoWidth || 1280;
-  const h=els.video.videoHeight || 720;
+function resetSpatialStats() {
+  state.spatialStats={
+    analyses:0,
+    raw:[0,0,0,0,0,0,0,0,0],
+    filtered:[0,0,0,0,0,0,0,0,0],
+    confirmed:[0,0,0,0,0,0,0,0,0],
+    rawConfidenceSum:[0,0,0,0,0,0,0,0,0],
+    filteredConfidenceSum:[0,0,0,0,0,0,0,0,0]
+  };
+}
+
+function syncExternalVideoGeometry(reason='manual') {
+  const w=els.video.videoWidth || 0;
+  const h=els.video.videoHeight || 0;
+  if(!w || !h) return false;
+
+  const previous={
+    width:state.videoGeometry.width,
+    height:state.videoGeometry.height
+  };
+  const changed=previous.width!==w || previous.height!==h;
+
+  if(!changed) return false;
+
   els.overlay.width=w;
   els.overlay.height=h;
+  state.videoGeometry.width=w;
+  state.videoGeometry.height=h;
+  state.videoGeometry.changes+=1;
+  state.videoGeometry.lastChangedAt=new Date().toISOString();
+
+  // Coordinates and physical-area filters depend on the source dimensions.
+  // Never carry old tracks across a WebRTC resolution switch.
+  resetTracking();
+
+  window.dispatchEvent(new CustomEvent('tcg-vision-geometry',{
+    detail:{
+      reason,
+      previous,
+      current:{width:w,height:h},
+      changes:state.videoGeometry.changes,
+      at:state.videoGeometry.lastChangedAt
+    }
+  }));
+  return true;
 }
 
 async function attachExternalStream(stream) {
@@ -1321,8 +1454,17 @@ async function attachExternalStream(stream) {
   state.stream=stream;
   state.externalAttached=true;
   state.startedAt=state.startedAt || performance.now();
+  resetSpatialStats();
 
   if (els.video.srcObject !== stream) els.video.srcObject=stream;
+
+  if(state.externalResizeHandler){
+    els.video.removeEventListener('resize',state.externalResizeHandler);
+  }
+  state.externalResizeHandler=()=>{
+    syncExternalVideoGeometry('video-resize');
+  };
+  els.video.addEventListener('resize',state.externalResizeHandler);
 
   if (!els.video.videoWidth) {
     await new Promise((resolve)=>{
@@ -1357,6 +1499,10 @@ async function attachExternalStream(stream) {
 }
 
 function detachExternalStream() {
+  if(state.externalResizeHandler){
+    els.video.removeEventListener('resize',state.externalResizeHandler);
+    state.externalResizeHandler=null;
+  }
   state.detecting=false;
   clearInferenceTimer();
   state.inferenceBusy=false;
@@ -1401,8 +1547,19 @@ function getProductSnapshot() {
         w:Number(t.w || 0),
         h:Number(t.h || 0),
         angle:Number(t.angle || 0),
-        misses:Number(t.misses || 0)
+        misses:Number(t.misses || 0),
+        edgeRescued:Boolean(t.edgeRescued)
       }))
+    },
+    geometry:{...state.videoGeometry},
+    spatial:{
+      grid:'3x3 row-major',
+      analyses:state.spatialStats.analyses,
+      raw:[...state.spatialStats.raw],
+      filtered:[...state.spatialStats.filtered],
+      confirmed:[...state.spatialStats.confirmed],
+      rawMeanConfidence:state.spatialStats.raw.map((n,i)=>n?state.spatialStats.rawConfidenceSum[i]/n:0),
+      filteredMeanConfidence:state.spatialStats.filtered.map((n,i)=>n?state.spatialStats.filteredConfidenceSum[i]/n:0)
     }
   };
 }
@@ -1421,7 +1578,7 @@ window.TCGDetectionLab={
 };
 
 window.TCGVisionEngine={
-  version:'0.6-product-bridge-alpha15',
+  version:'0.6.1-product-bridge-alpha15',
   preload:preloadExternalVision,
   attachRemoteStream:attachExternalStream,
   detachRemoteStream:detachExternalStream,
