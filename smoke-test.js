@@ -1,23 +1,67 @@
 
 'use strict';
-const fs = require('fs');
+const fs=require('fs');
 
-for (const f of ['public/index.html','public/styles.css','public/app.js','server.js']) {
-  if (!fs.existsSync(f)) throw new Error(`Missing ${f}`);
-}
-const html = fs.readFileSync('public/index.html','utf8');
-for (const id of [
-  'screenHome','screenSetup','screenLobby','screenGame',
-  'opponentFeed','remoteVideo','localVideo','cardPreview',
-  'fullscreenOpponent','fullscreenCardPreview','fullscreenExpandCard',
-  'enableMedia','cameraSelect','microSelect',
-  'generateReportLobby','generateReportGame','rtcStatus','networkStatus'
-]) {
-  if (!html.includes(`id="${id}"`)) throw new Error(`Missing ${id}`);
+for(const f of [
+  'public/index.html',
+  'public/styles.css',
+  'public/app.js',
+  'public/vision-core.js',
+  'public/vision-calibration.js',
+  'public/detection-worker.js',
+  'public/identification.js',
+  'public/identification-worker.js',
+  'public/cards-fallback.json',
+  'models/card_detector_v53_512.onnx',
+  'server.js',
+  'railway.json'
+]){
+  if(!fs.existsSync(f)) throw new Error(`Missing ${f}`);
 }
 
-const app = fs.readFileSync('public/app.js','utf8');
-for (const token of ['RTCPeerConnection','EventSource','generateCompleteReport','makeStoredZip','addTransceiver','snapshotRtcMetrics','gameEntering','bindAnswererTracks','offerInFlight','localCandidateType','verticalOverflowPx']) {
-  if (!app.includes(token)) throw new Error(`Missing app token ${token}`);
+const html=fs.readFileSync('public/index.html','utf8');
+for(const id of [
+  'remoteVideo','visionOverlay','opponentFeed',
+  'identificationToggle','identEmpty','identResult','identImage',
+  'fullscreenIdentImage','modalCardImage',
+  'visionStatus','calibrationStatus'
+]){
+  if(!html.includes(`id="${id}"`)) throw new Error(`Missing DOM ${id}`);
 }
-console.log('SMOKE_OK');
+
+const app=fs.readFileSync('public/app.js','utf8');
+for(const token of [
+  'attachVisionToRemoteStream',
+  'TCGVisionEngine',
+  'TCGVisionCalibration',
+  'tcg-identification-result',
+  "scope: 'opponent-stream-only'"
+]){
+  if(!app.includes(token)) throw new Error(`Missing product token ${token}`);
+}
+
+const core=fs.readFileSync('public/vision-core.js','utf8');
+for(const token of [
+  "videoStage: $('opponentFeed')",
+  "video: $('remoteVideo')",
+  "overlay: $('visionOverlay')",
+  'attachExternalStream',
+  'debugOverlay: false',
+  'modelInputSize:512'
+]){
+  if(!core.includes(token)) throw new Error(`Missing core token ${token}`);
+}
+
+const ident=fs.readFileSync('public/identification.js','utf8');
+for(const token of [
+  'startProductIdentification',
+  'object-fit: contain',
+  'tcg-identification-result'
+]){
+  if(!ident.includes(token)) throw new Error(`Missing identification token ${token}`);
+}
+
+const modelSize=fs.statSync('models/card_detector_v53_512.onnx').size;
+if(modelSize<5_000_000) throw new Error(`Model too small ${modelSize}`);
+
+console.log('SMOKE_OK_V0.6');

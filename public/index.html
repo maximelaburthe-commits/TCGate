@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TCG Webcam — UI Prototype V0.2.1</title>
+  <title>TCG Webcam — V0.6 Vision intégrée</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -22,7 +22,7 @@
 
         <div class="home-card">
           <div class="home-copy">
-            <span class="eyebrow">Prototype interface V0.1</span>
+            <span class="eyebrow">Pré-alpha V0.6</span>
             <h2>Une partie en quelques secondes.</h2>
             <p>Crée un salon, partage le lien et joue. Aucun compte requis pour ce prototype.</p>
           </div>
@@ -33,7 +33,7 @@
           </div>
         </div>
 
-        <p class="home-foot">Caméra, micro et détection ne sont pas encore connectés dans cette maquette.</p>
+        <p class="home-foot">Version de test : réseau réel + reconnaissance Cyberpunk sur le flux adverse.</p>
       </div>
     </section>
 
@@ -198,6 +198,7 @@
 
             <div id="opponentFeed" class="video-placeholder opponent-video">
               <video id="remoteVideo" autoplay playsinline></video>
+              <canvas id="visionOverlay" class="vision-overlay" aria-hidden="true"></canvas>
               <div id="remoteVideoPlaceholder" class="video-center">
                 <div class="camera-orb">CAM</div>
                 <strong>Flux vidéo adverse</strong>
@@ -213,30 +214,23 @@
                   <button id="fullscreenExpandCard" class="icon-button subtle" type="button" title="Agrandir la carte">⛶</button>
                 </div>
 
-                <article class="demo-card fullscreen-demo-card">
-                  <div class="demo-card-art">
-                    <span>09</span>
-                    <div class="demo-art-figure"></div>
-                  </div>
-                  <div class="demo-card-body">
-                    <small>UNIT</small>
-                    <h4>ADAM SMASHER</h4>
-                    <p>ENDER OF LEGENDS</p>
-                    <div class="fake-rules"></div>
-                    <div class="fake-rules short"></div>
-                  </div>
-                </article>
+                <div class="fullscreen-real-card">
+                  <img id="fullscreenIdentImage" alt="Carte identifiée" />
+                  <strong id="fullscreenIdentName">Carte identifiée</strong>
+                </div>
               </aside>
 
-              <button id="demoHoverCard" class="demo-hotspot">
+              <button id="demoHoverCard" class="demo-hotspot hidden" tabindex="-1" aria-hidden="true">
                 Simuler une carte survolée
               </button>
             </div>
           </div>
 
-          <div class="game-hint">
+          <div class="game-hint vision-alpha-hint">
             <span class="hint-dot"></span>
-            Réseau réel · La Vision sera réintégrée plus tard uniquement sur ce flux adverse.
+            <span id="visionStatus" class="vision-status-pill">Vision : préparation</span>
+            <span id="calibrationStatus" class="vision-status-pill">Calibration : attente</span>
+            <span class="vision-alpha-label">diagnostic pré-alpha</span>
           </div>
         </section>
 
@@ -251,25 +245,20 @@
             </div>
 
             <div id="cardPreview" class="card-preview empty">
-              <div class="card-placeholder">
-                <div class="card-placeholder-icon">▯</div>
-                <strong>Aucune carte ciblée</strong>
-                <span>La carte détectée s’affichera ici automatiquement.</span>
+              <div id="identEmpty" class="card-placeholder">Survole une carte du plateau adverse.</div>
+
+              <div id="identResult" class="ident-product-result hidden">
+                <img id="identImage" alt="" />
+                <div class="ident-product-copy">
+                  <strong id="identName">—</strong>
+                  <span id="identType">—</span>
+                  <small id="identScore">—</small>
+                  <small id="identMargin" class="hidden">—</small>
+                </div>
               </div>
 
-              <article id="demoCard" class="demo-card hidden">
-                <div class="demo-card-art">
-                  <span>09</span>
-                  <div class="demo-art-figure"></div>
-                </div>
-                <div class="demo-card-body">
-                  <small>UNIT</small>
-                  <h4>ADAM SMASHER</h4>
-                  <p>ENDER OF LEGENDS</p>
-                  <div class="fake-rules"></div>
-                  <div class="fake-rules short"></div>
-                </div>
-              </article>
+              <div id="identCandidates" class="hidden"></div>
+              <article id="demoCard" class="demo-card hidden" aria-hidden="true"></article>
             </div>
 
             <p class="card-inspector-help">Clique sur l’icône d’agrandissement pour une lecture confortable.</p>
@@ -300,26 +289,71 @@
   <!-- CARD MODAL -->
   <div id="cardModal" class="modal hidden" role="dialog" aria-modal="true">
     <button id="closeCardModal" class="modal-close" aria-label="Fermer">×</button>
-    <div class="modal-card-wrap">
-      <article class="demo-card modal-demo-card">
-        <div class="demo-card-art">
-          <span>09</span>
-          <div class="demo-art-figure"></div>
-        </div>
-        <div class="demo-card-body">
-          <small>UNIT</small>
-          <h4>ADAM SMASHER</h4>
-          <p>ENDER OF LEGENDS</p>
-          <div class="fake-rules"></div>
-          <div class="fake-rules"></div>
-          <div class="fake-rules short"></div>
-        </div>
-      </article>
+    <div class="modal-card-wrap real-modal-card-wrap">
+      <img id="modalCardImage" class="modal-card-image" alt="Carte agrandie" />
+      <strong id="modalCardName" class="modal-card-name"></strong>
     </div>
+  </div>
+
+
+  <div id="visionDevHidden" class="vision-dev-hidden" aria-hidden="true">
+    <span id="visionGlobalStatus"></span>
+    <select id="visionCameraSelect"><option value="">External</option></select>
+    <select id="visionResolutionSelect"><option value="1280x720" selected>1280x720</option></select>
+    <button id="visionCameraButton"></button>
+    <button id="visionDetectButton"></button>
+    <button id="visionQuickCaptureButton"></button>
+    <div id="visionEmptyState"></div>
+    <div id="visionModelProgress" class="hidden"></div>
+    <div id="visionProgressBar"></div>
+    <span id="visionProgressText"></span>
+    <div id="visionRuntimeWarning"></div>
+    <span id="visionMetricCards">0</span>
+    <span id="visionMetricVideoFps">0</span>
+    <span id="visionMetricDetectFps">0</span>
+    <span id="visionMetricInference"></span>
+    <span id="visionMetricPreprocess"></span>
+    <span id="visionMetricTotal"></span>
+    <span id="visionMetricProvider"></span>
+    <span id="visionMetricOutput"></span>
+    <span id="visionMetricShapeRejected">0</span>
+
+    <input id="visionConfidenceSlider" type="range" min="35" max="90" value="55" />
+    <span id="visionConfidenceValue">55 %</span>
+    <input id="visionIntervalSlider" type="range" min="0" max="1000" value="0" />
+    <span id="visionIntervalValue">0 ms</span>
+    <input id="visionTrackingToggle" type="checkbox" checked />
+    <input id="visionShapeFilterToggle" type="checkbox" checked />
+    <input id="visionConfirmationsSlider" type="range" min="1" max="5" value="2" />
+    <span id="visionConfirmationsValue">2</span>
+    <input id="visionMissesSlider" type="range" min="0" max="5" value="2" />
+    <span id="visionMissesValue">2</span>
+    <input id="visionIdMemorySlider" type="range" min="1" max="30" value="8" />
+    <span id="visionIdMemoryValue">8 s</span>
+    <input id="visionReidSlider" type="range" min="50" max="95" value="76" />
+    <span id="visionReidValue">76 %</span>
+    <input id="visionVisualLockToggle" type="checkbox" checked />
+    <button id="visionResetTrackingButton"></button>
+    <textarea id="visionCaseNote"></textarea>
+    <button id="visionCaptureButton"></button>
+    <span id="visionCaptureCount">0</span>
+    <button id="visionExportButton"></button>
+    <button id="visionClearButton"></button>
+    <button id="visionExportTopButton"></button>
+    <span id="visionTopCaptureCount">0</span>
+    <div id="visionSidebarRuntimeAlert"></div>
+
+    <input id="identificationToggle" type="checkbox" checked />
+    <span id="identLibraryStatus"></span>
+    <span id="identMatcherStatus"></span>
+    <button id="identRefreshButton"></button>
   </div>
 
   <div id="toast" class="toast hidden"></div>
 
+  <script src="/vision-core.js"></script>
+  <script src="/vision-calibration.js"></script>
+  <script src="/identification.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

@@ -48,6 +48,13 @@ const state = {
   lastRemoteAnswerSdp: null,
   remotePlayPending: false,
 
+  visionPrepared: false,
+  visionPreparing: false,
+  visionAttachedStreamId: null,
+  visionMetricsTimer: null,
+  currentIdentifiedCard: null,
+  lastIdentificationEventKey: null,
+
   demoCardVisible: false,
 
   reportStartedAt: Date.now(),
@@ -111,6 +118,195 @@ async function api(path, options = {}) {
   try { payload = await response.json(); } catch {}
   if (!response.ok) throw new Error(payload.error || `Erreur HTTP ${response.status}`);
   return payload;
+}
+
+
+function setVisionStatus(text,mode='') {
+  const el=$('visionStatus');
+  if (!el) return;
+  el.textContent=text;
+  el.className=`vision-status-pill ${mode}`.trim();
+}
+
+function setCalibrationStatus(s) {
+  const el=$('calibrationStatus');
+  if (!el) return;
+  const status=s?.status || 'idle';
+
+  if(status==='ok'){
+    el.textContent='Calibration : OK';
+    el.className='vision-status-pill good';
+  }else if(status==='partial'){
+    el.textContent=`Calibration : partielle${s?.reasons?.length?' · '+s.reasons[0]:''}`;
+    el.className='vision-status-pill warning';
+  }else if(status==='error'){
+    el.textContent='Calibration : échec';
+    el.className='vision-status-pill error';
+  }else if(status==='calibrating'){
+    el.textContent='Calibration : analyse…';
+    el.className='vision-status-pill warning';
+  }else{
+    el.textContent='Calibration : attente';
+    el.className='vision-status-pill';
+  }
+}
+
+async function prepareVision() {
+  if(state.game!=='cyberpunk' || state.visionPrepared || state.visionPreparing) return;
+  state.visionPreparing=true;
+  setVisionStatus('Vision : chargement…','warning');
+  logEvent('vision-prepare-start');
+
+  try{
+    const [detector,identifier]=await Promise.allSettled([
+      window.TCGVisionEngine?.preload?.(),
+      window.TCGIdentificationLab?.start?.()
+    ]);
+
+    const detOk=detector.status==='fulfilled' && detector.value?.ready;
+    const idOk=identifier.status==='fulfilled' && identifier.value?.ready;
+    state.visionPrepared=Boolean(detOk && idOk);
+
+    if(state.visionPrepared){
+      setVisionStatus(`Vision : prête · ${identifier.value?.cards || 0} cartes`,'good');
+    }else{
+      setVisionStatus('Vision : préparation partielle','warning');
+    }
+
+    logEvent('vision-prepare-end',{
+      detector:detector.status,
+      detectorReady:Boolean(detector.value?.ready),
+      provider:detector.value?.provider || null,
+      identification:identifier.status,
+      identificationReady:Boolean(identifier.value?.ready),
+      cards:identifier.value?.cards || 0
+    });
+  }catch(err){
+    setVisionStatus('Vision : erreur','error');
+    logEvent('vision-prepare-error',{name:err?.name||null,message:err?.message||String(err)});
+  }finally{
+    state.visionPreparing=false;
+  }
+}
+
+async function attachVisionToRemoteStream(stream) {
+  if(!stream || !stream.getVideoTracks().length) return;
+  const videoTrack=stream.getVideoTracks()[0];
+  const key=`${stream.id}:${videoTrack.id}`;
+  if(state.visionAttachedStreamId===key) return;
+
+  state.visionAttachedStreamId=key;
+
+  try{
+    await prepareVision();
+    await window.TCGVisionEngine?.attachRemoteStream?.(stream);
+    setVisionStatus('Vision : active','good');
+
+    window.TCGVisionCalibration?.start?.($('remoteVideo'),'initial').catch(err=>{
+      logEvent('calibration-error',{name:err?.name||null,message:err?.message||String(err)});
+    });
+
+    startVisionMetricsSampler();
+    logEvent('vision-attached',{streamId:stream.id,videoTrack:videoTrack.label||null});
+  }catch(err){
+    setVisionStatus('Vision : erreur','error');
+    logEvent('vision-attach-error',{name:err?.name||null,message:err?.message||String(err)});
+  }
+}
+
+function detachVision() {
+  clearInterval(state.visionMetricsTimer);
+  state.visionMetricsTimer=null;
+  state.visionAttachedStreamId=null;
+  state.currentIdentifiedCard=null;
+  state.lastIdentificationEventKey=null;
+
+  window.TCGVisionCalibration?.stop?.();
+  window.TCGVisionEngine?.detachRemoteStream?.();
+
+  setVisionStatus('Vision : attente');
+  setCalibrationStatus({status:'idle'});
+  hideFullscreenIdentifiedCard();
+}
+
+function startVisionMetricsSampler() {
+  clearInterval(state.visionMetricsTimer);
+  state.visionMetricsTimer=setInterval(()=>{
+    if(!state.gameActive) return;
+    const detection=window.TCGVisionEngine?.getSnapshot?.() || null;
+    const identification=window.TCGIdentificationLab?.getSnapshot?.() || null;
+    const calibration=window.TCGVisionCalibration?.getSnapshot?.() || null;
+
+    logEvent('vision-sample',{
+      detection:detection?{
+        active:detection.active,
+        provider:detection.provider,
+        activeCards:detection.activeCards,
+        inference:detection.inference,
+        filters:detection.filters
+      }:null,
+      identification:identification?{
+        libraryReady:identification.libraryReady,
+        librarySize:identification.librarySize,
+        matcherMs:identification.matcherMs,
+        hoverCache:identification.hoverCache
+      }:null,
+      calibration
+    });
+  },5000);
+}
+
+function showFullscreenIdentifiedCard(card) {
+  if(!card?.imageUrl) return;
+  $('fullscreenIdentImage').src=card.imageUrl;
+  $('fullscreenIdentImage').alt=card.name || 'Carte identifiée';
+  $('fullscreenIdentName').textContent=card.name || 'Carte identifiée';
+  $('fullscreenCardPreview').classList.remove('hidden');
+}
+
+function hideFullscreenIdentifiedCard() {
+  $('fullscreenCardPreview')?.classList.add('hidden');
+  $('fullscreenCardPreview')?.classList.remove('expanded');
+}
+
+function syncIdentifiedCardUi(detail) {
+  if(!detail?.accepted){
+    const snap=window.TCGIdentificationLab?.getSnapshot?.();
+    if(snap?.pointerInsideStage){
+      state.currentIdentifiedCard=null;
+      hideFullscreenIdentifiedCard();
+      $('cardPreview')?.classList.add('empty');
+    }
+    return;
+  }
+
+  state.currentIdentifiedCard={
+    name:detail.name,
+    type:detail.type,
+    image:detail.image,
+    imageUrl:detail.imageUrl,
+    visualIndex:detail.visualIndex,
+    mode:detail.mode,
+    matcherMs:detail.matcherMs
+  };
+  $('cardPreview')?.classList.remove('empty');
+
+  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')){
+    showFullscreenIdentifiedCard(state.currentIdentifiedCard);
+  }
+
+  const key=`${detail.trackUid}:${detail.image}:${detail.mode}`;
+  if(state.lastIdentificationEventKey!==key){
+    state.lastIdentificationEventKey=key;
+    logEvent('identification',{
+      name:detail.name,
+      image:detail.image,
+      visualIndex:detail.visualIndex,
+      margin:detail.margin,
+      mode:detail.mode,
+      matcherMs:detail.matcherMs
+    });
+  }
 }
 
 function configureSetup(mode) {
@@ -510,6 +706,10 @@ function applyRoomState(snapshot) {
       : 'Je suis prêt';
   }
 
+  if(opponent && state.game==='cyberpunk'){
+    prepareVision().catch(()=>{});
+  }
+
   if (
     state.ownReady &&
     state.opponentReady &&
@@ -545,6 +745,7 @@ async function enterNetworkGame() {
     showScreen('game');
     $('localVideo').srcObject = state.localStream;
     updateMediaUi();
+    prepareVision().catch(()=>{});
     setRtcStatus('Initialisation WebRTC…', 'warning');
 
     await ensurePeerConnection();
@@ -627,6 +828,10 @@ async function ensurePeerConnection() {
       kind: event.track.kind,
       streamTracks: state.remoteStream.getTracks().map(t => t.kind)
     });
+
+    if(hasRemoteVideo){
+      attachVisionToRemoteStream(state.remoteStream).catch(()=>{});
+    }
   };
 
   pc.onicecandidate = event => {
@@ -865,6 +1070,7 @@ function closePeerConnection(reason = 'manual') {
   state.remoteStream = null;
   state.remoteVideoStarted = false;
   state.remotePlayPending = false;
+  detachVision();
   state.offerInFlight = false;
   state.offerSent = false;
   state.lastRemoteOfferSdp = null;
@@ -950,9 +1156,14 @@ function toggleDemoCard(force) {
 }
 
 function openCardModal() {
-  if (!state.demoCardVisible) return toast('Aucune carte affichée.');
+  const card=state.currentIdentifiedCard;
+  if(!card?.imageUrl) return toast('Aucune carte identifiée.');
+
+  $('modalCardImage').src=card.imageUrl;
+  $('modalCardImage').alt=card.name || 'Carte identifiée';
+  $('modalCardName').textContent=card.name || '';
   $('cardModal').classList.remove('hidden');
-  logEvent('demo-card-modal-open');
+  logEvent('identified-card-modal-open',{name:card.name,image:card.image});
 }
 
 /* ---------- Complete alpha report ---------- */
@@ -1073,7 +1284,7 @@ async function buildCompleteReport() {
 
   return {
     format: 'tcg-webcam-complete-report',
-    version: '0.5.2',
+    version: '0.6.0',
     generatedAt: new Date().toISOString(),
     session: {
       startedAt: new Date(state.reportStartedAt).toISOString(),
@@ -1151,14 +1362,15 @@ async function buildCompleteReport() {
       },
       webrtc: rtc
     },
-    calibration: {
-      integrated: false,
-      status: 'pending-vision-integration'
+    calibration: window.TCGVisionCalibration?.getSnapshot?.() || {
+      version: '0.6-calibration-v1',
+      status: 'unavailable'
     },
     vision: {
-      integrated: false,
-      detector: 'VISION CANDIDATE alpha15 — not connected in V0.5.2',
-      note: 'Les données calibration/détection/identification seront ajoutées lors de la réintégration Vision.'
+      integrated: true,
+      scope: 'opponent-stream-only',
+      detector: window.TCGVisionEngine?.getSnapshot?.() || null,
+      identification: window.TCGIdentificationLab?.getSnapshot?.() || null
     },
     events: state.reportEvents
   };
@@ -1203,7 +1415,17 @@ function reportText(report) {
     `Contexte sécurisé: ${report.environment.secureContext}`,
     '',
     'VISION / CALIBRATION',
-    'Non intégrées dans cette V0.5.2 Railway.',
+    'Scope: flux adverse uniquement',
+    `Calibration: ${report.calibration?.status || '—'}`,
+    `Calibration raisons: ${report.calibration?.reasons?.join(', ') || 'aucune'}`,
+    `Détecteur actif: ${report.vision?.detector?.active ?? false}`,
+    `Provider: ${report.vision?.detector?.provider || '—'}`,
+    `YOLO inference: ${report.vision?.detector?.inference?.inferenceMs ?? '—'} ms`,
+    `YOLO cycle: ${report.vision?.detector?.inference?.totalMs ?? '—'} ms`,
+    `Cartes détectées: ${report.vision?.detector?.activeCards ?? '—'}`,
+    `Bibliothèque: ${report.vision?.identification?.librarySize ?? '—'} cartes`,
+    `Matcher: ${report.vision?.identification?.matcherMs ?? '—'} ms`,
+    `Cache hover hits: ${report.vision?.identification?.hoverCache?.hits ?? '—'}`,
     '',
     'ÉVÉNEMENTS',
     `Total: ${report.events.length}`,
@@ -1307,6 +1529,33 @@ La Vision/calibration ne sont pas encore intégrées dans cette branche.
   toast('Rapport complet généré.');
 }
 
+
+window.addEventListener('tcg-identification-result',(event)=>{
+  syncIdentifiedCardUi(event.detail || {});
+});
+
+window.addEventListener('tcg-calibration-updated',(event)=>{
+  const s=event.detail || {};
+  setCalibrationStatus(s);
+  logEvent('calibration-status',{
+    status:s.status,
+    reasons:s.reasons || [],
+    brightness:s.meanBrightness ?? null,
+    detail:s.meanDetail ?? null,
+    automaticRecalibrations:s.automaticRecalibrations ?? 0
+  });
+});
+
+window.addEventListener('tcg-vision-state',(event)=>{
+  const d=event.detail || {};
+  if(d.active) setVisionStatus(`Vision : active · ${d.provider || 'moteur'}`,'good');
+});
+
+window.addEventListener('tcg-identification-library',(event)=>{
+  const d=event.detail || {};
+  if(d.ready) setVisionStatus(`Vision : prête · ${d.cards || 0} cartes`,'good');
+});
+
 /* ---------- Bindings ---------- */
 
 $('goCreate').addEventListener('click', () => configureSetup('create'));
@@ -1376,11 +1625,14 @@ $('fullscreenOpponent').addEventListener('click', async () => {
 $('demoHoverCard').addEventListener('click', () => toggleDemoCard());
 $('expandCard').addEventListener('click', openCardModal);
 $('fullscreenExpandCard').addEventListener('click', () => {
-  if (!state.demoCardVisible) return toast('Aucune carte affichée.');
-  const opponentCard = document.querySelector('.opponent-feed-card');
-  if (document.fullscreenElement === opponentCard) {
-    $('fullscreenCardPreview').classList.toggle('expanded');
-  } else {
+  if(!state.currentIdentifiedCard?.imageUrl) return toast('Aucune carte identifiée.');
+
+  const opponentCard=document.querySelector('.opponent-feed-card');
+  const preview=$('fullscreenCardPreview');
+
+  if(document.fullscreenElement===opponentCard){
+    preview.classList.toggle('expanded');
+  }else{
     openCardModal();
   }
 });
@@ -1390,9 +1642,13 @@ $('cardModal').addEventListener('click', e => {
 });
 
 document.addEventListener('fullscreenchange', () => {
-  const opponentCard = document.querySelector('.opponent-feed-card');
-  if (document.fullscreenElement !== opponentCard) {
+  const opponentCard=document.querySelector('.opponent-feed-card');
+
+  if(document.fullscreenElement===opponentCard && state.currentIdentifiedCard?.imageUrl){
+    showFullscreenIdentifiedCard(state.currentIdentifiedCard);
+  }else if(document.fullscreenElement!==opponentCard){
     $('fullscreenCardPreview').classList.remove('expanded');
+    $('fullscreenCardPreview').classList.add('hidden');
   }
 });
 

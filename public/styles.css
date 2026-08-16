@@ -1068,3 +1068,146 @@ button.smallish {
     margin-bottom: 6px;
   }
 }
+
+
+/* V0.6 — integrated Vision, product UI */
+.vision-dev-hidden { display: none !important; }
+
+.vision-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.opponent-video > video { z-index: 1; }
+.opponent-video > .video-center { z-index: 4; }
+
+.ident-product-result {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 8px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 8px;
+  place-items: center;
+}
+
+.ident-product-result > img {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  min-height: 0;
+  object-fit: contain;
+  border-radius: 9px;
+  box-shadow: 0 15px 38px rgba(0,0,0,.35);
+}
+
+.ident-product-copy {
+  width: 100%;
+  display: grid;
+  gap: 2px;
+  text-align: center;
+}
+
+.ident-product-copy strong { font-size: 11px; }
+.ident-product-copy span,
+.ident-product-copy small { color: var(--muted); font-size: 9px; }
+
+.fullscreen-real-card {
+  min-height: 0;
+  display: grid;
+  gap: 7px;
+  justify-items: center;
+}
+
+.fullscreen-real-card > img {
+  display: block;
+  width: 100%;
+  max-height: min(66vh,620px);
+  object-fit: contain;
+  border-radius: 9px;
+  box-shadow: 0 18px 46px rgba(0,0,0,.45);
+}
+
+.fullscreen-real-card > strong {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+.opponent-feed-card:fullscreen .fullscreen-card-preview.expanded .fullscreen-real-card {
+  min-height: 0;
+  height: 100%;
+}
+
+.opponent-feed-card:fullscreen .fullscreen-card-preview.expanded .fullscreen-real-card > img {
+  height: min(82vh,820px);
+  width: auto;
+  max-width: min(82vw,620px);
+  max-height: 82vh;
+}
+
+.real-modal-card-wrap {
+  height: min(90vh,900px);
+  width: min(620px,88vw);
+  display: grid;
+  grid-template-rows: minmax(0,1fr) auto;
+  gap: 10px;
+  justify-items: center;
+}
+
+.modal-card-image {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  min-height: 0;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 22px 70px rgba(0,0,0,.5);
+}
+
+.modal-card-name { font-size: 13px; }
+
+.vision-alpha-hint { flex-wrap: wrap; }
+
+.vision-status-pill {
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #0c141b;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.vision-status-pill.good {
+  color: #9be6bc;
+  border-color: #2b6f4c;
+  background: #10251b;
+}
+
+.vision-status-pill.warning {
+  color: #ffd69b;
+  border-color: #6b5530;
+  background: #251d0e;
+}
+
+.vision-status-pill.error {
+  color: #ffb8bd;
+  border-color: #66313a;
+  background: #29151a;
+}
+
+.vision-alpha-label { color: #576b7b; font-size: 9px; }
+#opponentFeed.ident-hover { cursor: crosshair; }
+
+@media (max-width:760px) {
+  .vision-alpha-label { display:none; }
+}

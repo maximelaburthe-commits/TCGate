@@ -1,0 +1,354 @@
+[
+  {
+    "name": "Carnage at the Colosseum",
+    "type": "Program",
+    "image": "carnage-at-the-colosseum.webp",
+    "aliases": [
+      "carnage",
+      "colosseum",
+      "carnage at the colosseum"
+    ]
+  },
+  {
+    "name": "Chrome Reverie",
+    "type": "Program",
+    "image": "chrome-reverie.webp",
+    "aliases": [
+      "chrome",
+      "reverie",
+      "chrome reverie"
+    ]
+  },
+  {
+    "name": "Peace Offering",
+    "type": "Program",
+    "image": "peace-offering.webp",
+    "aliases": [
+      "peace",
+      "offering",
+      "peace offering"
+    ]
+  },
+  {
+    "name": "Cyberpsychosis",
+    "type": "Program",
+    "image": "cyberpsychosis.webp",
+    "aliases": [
+      "cyberpsycho",
+      "cyberpsychosis"
+    ]
+  },
+  {
+    "name": "Dum Dum — Maelstrom Triggerman",
+    "type": "Legend",
+    "image": "dum-dum-maelstrom-triggerman.webp",
+    "aliases": [
+      "dum dum",
+      "maelstrom triggerman",
+      "dum dum maelstrom"
+    ]
+  },
+  {
+    "name": "V — Streetkid",
+    "type": "Legend",
+    "image": "v-streetkid.webp",
+    "aliases": [
+      "v streetkid",
+      "streetkid"
+    ]
+  },
+  {
+    "name": "Adam Smasher — Metal Over Meat",
+    "type": "Unit",
+    "image": "adam-smasher-metal-over-meat.webp",
+    "aliases": [
+      "adam smasher",
+      "smasher",
+      "metal over meat"
+    ]
+  },
+  {
+    "name": "Gilded Matón",
+    "type": "Unit",
+    "image": "gilded-maton.webp",
+    "aliases": [
+      "gilded maton",
+      "gilded matón",
+      "maton",
+      "matón"
+    ]
+  },
+  {
+    "name": "Modded Kusanagi",
+    "type": "Unit",
+    "image": "modded-kusanagi.webp",
+    "aliases": [
+      "kusanagi",
+      "modded kusanagi"
+    ]
+  },
+  {
+    "name": "Riding Nomad",
+    "type": "Unit",
+    "image": "riding-nomad.webp",
+    "aliases": [
+      "riding nomad",
+      "nomad"
+    ]
+  },
+  {
+    "name": "Royce — Don't Call Me Simon",
+    "type": "Unit",
+    "image": "royce-dont-call-me-simon.webp",
+    "aliases": [
+      "royce dont call me simon",
+      "don't call me simon",
+      "dont call me simon"
+    ]
+  },
+  {
+    "name": "Wraith Marauders",
+    "type": "Unit",
+    "image": "wraith-marauders.webp",
+    "aliases": [
+      "wraith",
+      "marauders",
+      "wraith marauders"
+    ]
+  },
+  {
+    "name": "El Sombrerón — La Venganza Lenta",
+    "type": "Unit",
+    "image": "el-sombreron-la-venganza-lenta.webp",
+    "aliases": [
+      "el sombreron",
+      "el sombrerón",
+      "sombreron",
+      "sombrerón",
+      "la venganza lenta"
+    ]
+  },
+  {
+    "name": "Hanako Arasaka — In a Gilded Cage",
+    "type": "Unit",
+    "image": "hanako-arasaka-in-a-gilded-cage.webp",
+    "aliases": [
+      "hanako",
+      "hanako arasaka",
+      "in a gilded cage",
+      "gilded cage"
+    ]
+  },
+  {
+    "name": "Sandayu Oda — Hanako's Guardian",
+    "type": "Unit",
+    "image": "sandayu-oda-hanakos-guardian.webp",
+    "aliases": [
+      "sandayu oda",
+      "oda",
+      "hanakos guardian",
+      "hanako's guardian"
+    ]
+  },
+  {
+    "name": "Caliber — Totentanz's Top Dog",
+    "type": "Unit",
+    "image": "caliber-totentanzs-top-dog.webp",
+    "aliases": [
+      "caliber",
+      "totentanz",
+      "totentanz top dog",
+      "totentanz's top dog"
+    ]
+  },
+  {
+    "name": "Kerry Eurodyne — The Last Rockerboy",
+    "type": "Unit",
+    "image": "kerry-eurodyne-the-last-rockerboy.webp",
+    "aliases": [
+      "kerry",
+      "kerry eurodyne",
+      "the last rockerboy",
+      "rockerboy"
+    ]
+  },
+  {
+    "name": "Maman Brigitte — Spirit of Death",
+    "type": "Unit",
+    "image": "maman-brigitte-spirit-of-death.webp",
+    "aliases": [
+      "maman",
+      "brigitte",
+      "maman brigitte",
+      "spirit of death"
+    ]
+  },
+  {
+    "name": "Meredith Stout — Stone Cold Corpo",
+    "type": "Unit",
+    "image": "meredith-stout-stone-cold-corpo.webp",
+    "aliases": [
+      "meredith",
+      "stout",
+      "meredith stout",
+      "stone cold corpo"
+    ]
+  },
+  {
+    "name": "Placide — Voodoo Sentinel",
+    "type": "Unit",
+    "image": "placide-voodoo-sentinel.webp",
+    "aliases": [
+      "placide",
+      "voodoo sentinel",
+      "voodoo"
+    ]
+  },
+  {
+    "name": "Viktor Vektor — Sit Down and Relax",
+    "type": "Legend",
+    "image": "viktor-vektor-sit-down-and-relax.webp",
+    "aliases": [
+      "viktor",
+      "vektor",
+      "viktor vektor",
+      "sit down and relax"
+    ]
+  },
+  {
+    "name": "Royce — Psycho on the Edge",
+    "type": "Legend",
+    "image": "royce-psycho-on-the-edge.webp",
+    "aliases": [
+      "royce psycho",
+      "psycho on the edge"
+    ]
+  },
+  {
+    "name": "Goro Takemura — Vengeful Bodyguard",
+    "type": "Legend",
+    "image": "goro-takemura-vengeful-bodyguard.webp",
+    "aliases": [
+      "goro vengeful",
+      "goro bodyguard",
+      "goro takemura vengeful",
+      "vengeful bodyguard"
+    ]
+  },
+  {
+    "name": "River Ward — Detective on the Hunt",
+    "type": "Legend",
+    "image": "river-ward-detective-on-the-hunt.webp",
+    "aliases": [
+      "river",
+      "river ward",
+      "detective on the hunt"
+    ]
+  },
+  {
+    "name": "Alt Cunningham — Soulkiller Architect",
+    "type": "Legend",
+    "image": "alt-cunningham-soulkiller-architect.webp",
+    "aliases": [
+      "alt",
+      "cunningham",
+      "alt cunningham",
+      "soulkiller",
+      "soulkiller architect"
+    ]
+  },
+  {
+    "name": "Evelyn Parker — Beautiful Enigma",
+    "type": "Legend",
+    "image": "evelyn-parker-beautiful-enigma.webp",
+    "aliases": [
+      "evelyn",
+      "parker",
+      "evelyn parker",
+      "beautiful enigma"
+    ]
+  },
+  {
+    "name": "Panam Palmer — Nomad Cavalry",
+    "type": "Legend",
+    "image": "panam-palmer-nomad-cavalry.webp",
+    "aliases": [
+      "panam",
+      "palmer",
+      "panam palmer",
+      "nomad cavalry"
+    ]
+  },
+  {
+    "name": "Gorilla Arms",
+    "type": "Gear",
+    "image": "gorilla-arms.webp",
+    "aliases": [
+      "gorilla",
+      "gorilla arms",
+      "arms"
+    ]
+  },
+  {
+    "name": "Zetatech Faceplate",
+    "type": "Gear",
+    "image": "zetatech-faceplate.webp",
+    "aliases": [
+      "zetatech",
+      "faceplate",
+      "zetatech faceplate"
+    ]
+  },
+  {
+    "name": "Yorinobu Arasaka — Embracing Destruction",
+    "type": "Legend",
+    "image": "yorinobu-arasaka-embracing-destruction.webp",
+    "aliases": [
+      "yorinobu",
+      "yorinobu arasaka",
+      "embracing destruction"
+    ]
+  },
+  {
+    "name": "Saburo Arasaka — Stubborn Patriarch",
+    "type": "Legend",
+    "image": "saburo-arasaka-stubborn-patriarch.webp",
+    "aliases": [
+      "saburo",
+      "saburo arasaka",
+      "stubborn patriarch"
+    ]
+  },
+  {
+    "name": "Goro Takemura — Hands Unclean",
+    "type": "Legend",
+    "image": "goro-takemura-hands-unclean.webp",
+    "aliases": [
+      "goro hands",
+      "hands unclean",
+      "goro takemura hands"
+    ]
+  },
+  {
+    "name": "V — Corporate Exile",
+    "type": "Legend",
+    "image": "v-corporate-exile.webp",
+    "aliases": [
+      "v corporate",
+      "v corpo",
+      "corporate exile",
+      "corpo v"
+    ]
+  },
+  {
+    "name": "Jackie Welles — Pour One Out For Me",
+    "type": "Legend",
+    "image": "jackie-welles-pour-one-out-for-me.webp",
+    "aliases": [
+      "jackie",
+      "welles",
+      "jackie welles",
+      "pour one out for me"
+    ]
+  }
+]

@@ -10,13 +10,16 @@ const os = require('os');
 const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = path.join(__dirname, 'public');
+const MODEL_FILE = path.join(__dirname, 'models', 'card_detector_v53_512.onnx');
+const MODEL_ROUTE = '/api/model/card-detector-v53-512-alpha9p1.onnx';
 
 const mime = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
   '.svg': 'image/svg+xml',
-  '.json': 'application/json; charset=utf-8'
+  '.json': 'application/json; charset=utf-8',
+  '.onnx': 'application/octet-stream'
 };
 
 const rooms = new Map();
@@ -159,12 +162,34 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/health') {
       return sendJson(res, 200, {
         ok: true,
-        version: '0.5.2',
+        version: '0.6.0',
         rooms: rooms.size,
         uptimeSeconds: Math.round(process.uptime()),
-        railway: Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID)
+        railway: Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID),
+        vision: {
+          integrated: true,
+          modelPresent: fs.existsSync(MODEL_FILE),
+          modelBytes: fs.existsSync(MODEL_FILE) ? fs.statSync(MODEL_FILE).size : 0,
+          model: 'V5.3 overlap / 512'
+        }
       });
     }
+
+if (req.method === 'GET' && pathname === MODEL_ROUTE) {
+  fs.stat(MODEL_FILE,(err,stat)=>{
+    if(err || !stat.isFile()){
+      return sendJson(res,500,{ok:false,error:'Modèle Vision alpha15 absent.'});
+    }
+    res.writeHead(200,{
+      'Content-Type':'application/octet-stream',
+      'Content-Length':stat.size,
+      'Cache-Control':'no-store, max-age=0',
+      'X-Content-Type-Options':'nosniff'
+    });
+    fs.createReadStream(MODEL_FILE).pipe(res);
+  });
+  return;
+}
 
     if (req.method === 'POST' && pathname === '/api/rooms') {
       const body = await readJson(req);
@@ -343,7 +368,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 server.listen(PORT, HOST, () => {
-  console.log(`TCG Webcam V0.5.2 -> http://127.0.0.1:${PORT}`);
+  console.log(`TCG Webcam V0.6 -> http://127.0.0.1:${PORT}`);
   const nets = os.networkInterfaces();
   for (const entries of Object.values(nets)) {
     for (const net of entries || []) {
