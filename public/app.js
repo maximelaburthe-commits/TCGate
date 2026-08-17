@@ -252,7 +252,8 @@ function startVisionMetricsSampler() {
         libraryReady:identification.libraryReady,
         librarySize:identification.librarySize,
         matcherMs:identification.matcherMs,
-        hoverCache:identification.hoverCache
+        hoverCache:identification.hoverCache,
+        identityStability:identification.identityStability || null
       }:null,
       calibration
     });
@@ -1298,7 +1299,7 @@ async function buildCompleteReport() {
 
   return {
     format: 'tcg-webcam-complete-report',
-    version: '0.6.1',
+    version: '0.6.2',
     generatedAt: new Date().toISOString(),
     session: {
       startedAt: new Date(state.reportStartedAt).toISOString(),
@@ -1569,6 +1570,21 @@ window.addEventListener('tcg-vision-geometry',(event)=>{
 
 window.addEventListener('tcg-identification-result',(event)=>{
   syncIdentifiedCardUi(event.detail || {});
+});
+
+window.addEventListener('tcg-identification-stability',(event)=>{
+  const d=event.detail || {};
+  logEvent('identification-stability',{
+    type:d.type || null,
+    trackUid:d.trackUid ?? null,
+    stableName:d.stableName || null,
+    candidateName:d.candidateName || d.pendingName || null,
+    count:d.count ?? d.pendingCount ?? null,
+    required:d.required ?? null,
+    reason:d.reason || null,
+    holdAgeMs:d.holdAgeMs ?? null,
+    quality:d.quality || null
+  });
 });
 
 window.addEventListener('tcg-calibration-updated',(event)=>{

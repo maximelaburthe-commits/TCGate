@@ -56,7 +56,10 @@ const ident=fs.readFileSync('public/identification.js','utf8');
 for(const token of [
   'startProductIdentification',
   'object-fit: contain',
-  'tcg-identification-result'
+  'tcg-identification-result',
+  'temporalIdentityGuard',
+  'IDENTITY_SWITCH_CONFIRMATIONS',
+  'tcg-identification-stability'
 ]){
   if(!ident.includes(token)) throw new Error(`Missing identification token ${token}`);
 }
@@ -74,4 +77,4 @@ for(const [file,tokens] of Object.entries({
     if(!text.includes(token)) throw new Error(`Missing ${token} in ${file}`);
   }
 }
-console.log('SMOKE_OK_V0.6.1');
+console.log('SMOKE_OK_V0.6.2');

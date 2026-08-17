@@ -24,6 +24,15 @@
   const LOW_ACCEPT = 0.185;
   const LOW_MARGIN = 0.135;
 
+  // V0.6.2 — temporal identity stability.
+  // First acquisition stays immediate. Once an identity is stable, a different
+  // card must repeat before it is allowed to replace the current HD card.
+  const IDENTITY_SWITCH_CONFIRMATIONS = 2;
+  const IDENTITY_SWITCH_CONFIRMATIONS_GLARE = 3;
+  const IDENTITY_SWITCH_WINDOW_MS = 1250;
+  const IDENTITY_TRANSIENT_HOLD_MS = 1600;
+  const IDENTITY_RECHECK_MS = 260;
+
   const $ = (id) => document.getElementById(id);
   const ui = {
     toggle: $('identificationToggle'),
@@ -82,6 +91,17 @@
       tightened: 0,
       last: null
     },
+    identityStability: {
+      tracks: new Map(),
+      switchesSuppressed: 0,
+      switchesConfirmed: 0,
+      transientHolds: 0,
+      holdsExpired: 0,
+      rechecks: 0,
+      stableRefreshes: 0,
+      last: null
+    },
+    temporalRecheckTimer: null,
     pointerMissHeatmap: [0,0,0,0,0,0,0,0,0],
     pointerHitHeatmap: [0,0,0,0,0,0,0,0,0],
     lastPointerDiagnosticAt: 0
@@ -1595,6 +1615,221 @@ function applyQualityGuard(result,quality) {
   return result;
 }
 
+  function identityKey(result) {
+    if (!result?.accepted || !result.best?.ref) return null;
+    return result.best.ref.image || result.best.ref.name || null;
+  }
+
+  function emitIdentityStability(type, track, extra={}) {
+    const detail={
+      type,
+      trackUid:track?.uid ?? null,
+      displayId:track?.displayId ?? null,
+      at:performance.now(),
+      ...extra
+    };
+    state.identityStability.last={...detail};
+    window.dispatchEvent(new CustomEvent('tcg-identification-stability',{detail}));
+  }
+
+  function temporalEntry(track) {
+    let entry=state.identityStability.tracks.get(track.uid);
+    if(!entry){
+      entry={
+        stableKey:null,
+        stableName:null,
+        stableResult:null,
+        stableAt:0,
+        lastConfirmedAt:0,
+        pendingKey:null,
+        pendingName:null,
+        pendingCount:0,
+        pendingFirstAt:0,
+        pendingLastAt:0,
+        uncertainSince:0
+      };
+      state.identityStability.tracks.set(track.uid,entry);
+    }
+    return entry;
+  }
+
+  function clearPendingIdentity(entry) {
+    entry.pendingKey=null;
+    entry.pendingName=null;
+    entry.pendingCount=0;
+    entry.pendingFirstAt=0;
+    entry.pendingLastAt=0;
+  }
+
+  function purgeIdentityStability() {
+    const active=new Set(lab.activeTracks().map(t=>t.uid));
+    for(const uid of state.identityStability.tracks.keys()) {
+      if(!active.has(uid)) state.identityStability.tracks.delete(uid);
+    }
+  }
+
+  function scheduleTemporalRecheck(trackUid,generation,delay=IDENTITY_RECHECK_MS) {
+    clearTimeout(state.temporalRecheckTimer);
+    state.temporalRecheckTimer=setTimeout(()=>{
+      if(generation!==state.hoverGeneration) return;
+      if(state.hoveredTrack?.uid!==trackUid) return;
+      const liveTrack=lab.activeTracks().find(t=>t.uid===trackUid && (t.misses||0)===0);
+      if(!liveTrack) return;
+      state.identityStability.rechecks+=1;
+      identifyTrack(liveTrack,generation);
+    },delay);
+  }
+
+  function temporalIdentityGuard(track,result) {
+    if(!track) return {action:'render',result};
+
+    const now=performance.now();
+    const entry=temporalEntry(track);
+    const key=identityKey(result);
+
+    // Initial acquisition remains immediate. The temporal guard only protects a
+    // card that has already been established on this track.
+    if(!entry.stableKey) {
+      if(key) {
+        entry.stableKey=key;
+        entry.stableName=result.best.ref.name || key;
+        entry.stableResult=result;
+        entry.stableAt=now;
+        entry.lastConfirmedAt=now;
+        entry.uncertainSince=0;
+        clearPendingIdentity(entry);
+        emitIdentityStability('stable-established',track,{
+          stableKey:key,
+          stableName:entry.stableName
+        });
+      }
+      return {action:'render',result};
+    }
+
+    // A repeated observation of the current identity immediately cancels any
+    // suspicious switch that may have been caused by glare.
+    if(key && key===entry.stableKey) {
+      entry.stableResult=result;
+      entry.lastConfirmedAt=now;
+      entry.uncertainSince=0;
+      clearPendingIdentity(entry);
+      state.identityStability.stableRefreshes+=1;
+      return {action:'render',result};
+    }
+
+    if(!entry.uncertainSince) entry.uncertainSince=now;
+    const uncertainAge=now-entry.uncertainSince;
+
+    // No accepted identity (including glare-high / glare-moderate rejection):
+    // preserve the last stable card for a short grace period instead of making
+    // it flicker away on a single damaged frame.
+    if(!key) {
+      clearPendingIdentity(entry);
+      if(uncertainAge<IDENTITY_TRANSIENT_HOLD_MS) {
+        state.identityStability.transientHolds+=1;
+        emitIdentityStability('stable-held',track,{
+          stableKey:entry.stableKey,
+          stableName:entry.stableName,
+          reason:result?.rejectionReason || 'uncertain',
+          quality:result?.quality || null,
+          holdAgeMs:Math.round(uncertainAge)
+        });
+        return {action:'hold',result,recheck:true};
+      }
+
+      state.identityStability.holdsExpired+=1;
+      state.hoverCache.delete(track.uid);
+      emitIdentityStability('hold-expired',track,{
+        stableKey:entry.stableKey,
+        stableName:entry.stableName,
+        reason:result?.rejectionReason || 'uncertain',
+        holdAgeMs:Math.round(uncertainAge)
+      });
+      state.identityStability.tracks.delete(track.uid);
+      return {action:'render',result};
+    }
+
+    // Accepted but different identity: it is a candidate switch, not an
+    // immediate replacement. Consecutive confirmations are required.
+    const withinWindow=
+      entry.pendingKey===key &&
+      entry.pendingLastAt>0 &&
+      now-entry.pendingLastAt<=IDENTITY_SWITCH_WINDOW_MS;
+
+    if(withinWindow) {
+      entry.pendingCount+=1;
+    } else {
+      entry.pendingKey=key;
+      entry.pendingName=result.best.ref.name || key;
+      entry.pendingCount=1;
+      entry.pendingFirstAt=now;
+    }
+    entry.pendingLastAt=now;
+
+    const glareRisk=result?.quality?.risk || 'normal';
+    const guardedMode=String(result?.mode || '').includes('glare');
+    const required=(glareRisk==='moderate' || guardedMode)
+      ? IDENTITY_SWITCH_CONFIRMATIONS_GLARE
+      : IDENTITY_SWITCH_CONFIRMATIONS;
+
+    if(entry.pendingCount>=required) {
+      const previousKey=entry.stableKey;
+      const previousName=entry.stableName;
+      entry.stableKey=key;
+      entry.stableName=result.best.ref.name || key;
+      entry.stableResult=result;
+      entry.stableAt=now;
+      entry.lastConfirmedAt=now;
+      entry.uncertainSince=0;
+      clearPendingIdentity(entry);
+      state.identityStability.switchesConfirmed+=1;
+      emitIdentityStability('switch-confirmed',track,{
+        previousKey,
+        previousName,
+        stableKey:key,
+        stableName:entry.stableName,
+        required
+      });
+      return {action:'render',result};
+    }
+
+    if(uncertainAge>=IDENTITY_TRANSIENT_HOLD_MS) {
+      // If observations never converge, do not keep a stale identity forever.
+      // Drop the old card and let the next clean observation reacquire normally.
+      state.identityStability.holdsExpired+=1;
+      state.hoverCache.delete(track.uid);
+      const rejected={
+        ...result,
+        accepted:false,
+        rejectionReason:'temporal-unstable',
+        mode:`${result.mode || 'normal'}-temporal-unstable`
+      };
+      emitIdentityStability('switch-expired',track,{
+        stableKey:entry.stableKey,
+        stableName:entry.stableName,
+        pendingKey:key,
+        pendingName:result.best.ref.name || key,
+        pendingCount:entry.pendingCount,
+        required,
+        holdAgeMs:Math.round(uncertainAge)
+      });
+      state.identityStability.tracks.delete(track.uid);
+      return {action:'render',result:rejected};
+    }
+
+    state.identityStability.switchesSuppressed+=1;
+    emitIdentityStability('switch-pending',track,{
+      stableKey:entry.stableKey,
+      stableName:entry.stableName,
+      candidateKey:key,
+      candidateName:result.best.ref.name || key,
+      count:entry.pendingCount,
+      required,
+      quality:result?.quality || null
+    });
+    return {action:'hold',result,recheck:true,count:entry.pendingCount,required};
+  }
+
   async function identifyTrack(track, generation) {
     if (!ui.toggle?.checked) return clearCurrentIdentification('Identification désactivée.');
     if (!state.ready) return clearCurrentIdentification('Bibliothèque encore en préparation…');
@@ -1679,11 +1914,31 @@ function applyQualityGuard(result,quality) {
     if (generation !== state.hoverGeneration) return;
     if (!state.hoveredTrack || state.hoveredTrack.uid !== track.uid) return;
 
+    const temporal=temporalIdentityGuard(track,result);
+
+    if(temporal.action==='hold') {
+      // Keep the current accepted HD card untouched while the new observation is
+      // being validated. Do not dispatch a rejection to the product UI.
+      const entry=state.identityStability.tracks.get(track.uid);
+      if(ui.matcherStatus) {
+        const suffix=temporal.required
+          ? ` · changement ${temporal.count}/${temporal.required}`
+          : ' · reflet/transitoire';
+        ui.matcherStatus.textContent+=` · identité stable conservée${suffix}`;
+      }
+      if(temporal.recheck) scheduleTemporalRecheck(track.uid,generation);
+      purgeHoverCache();
+      purgeIdentityStability();
+      return;
+    }
+
+    result=temporal.result;
     renderResult(result);
     state.lastTrackUid=track.uid;
     state.lastIdentifiedAt=performance.now();
     putHoverCache(track,result,state.lastAnalyzedCropDataUrl);
     purgeHoverCache();
+    purgeIdentityStability();
   }
 
   function onPointerMove(event) {
@@ -1831,6 +2086,7 @@ function applyQualityGuard(result,quality) {
     state.hoveredTrack=null;
     state.hoverGeneration+=1;
     clearTimeout(state.hoverTimer);
+    clearTimeout(state.temporalRecheckTimer);
     // Keep the last accepted HD card visible so the player can move to the
     // inspector and enlarge it without losing the result.
   });
@@ -1838,6 +2094,7 @@ function applyQualityGuard(result,quality) {
   ui.toggle?.addEventListener('change',()=>{
     state.hoverGeneration += 1;
     clearTimeout(state.hoverTimer);
+    clearTimeout(state.temporalRecheckTimer);
     state.hoveredTrack = null;
     if (!ui.toggle.checked) clearCurrentIdentification('Identification désactivée.');
     else clearCurrentIdentification();
@@ -1846,6 +2103,8 @@ function applyQualityGuard(result,quality) {
   ui.refresh?.addEventListener('click',async()=>{
     try { localStorage.removeItem(CACHE_KEY); } catch {}
     state.hoverCache.clear();
+    state.identityStability.tracks.clear();
+    clearTimeout(state.temporalRecheckTimer);
     await buildLibrary(true);
     await initMatcherWorker();
   });
@@ -1895,7 +2154,7 @@ function applyQualityGuard(result,quality) {
   }
 
   window.TCGIdentificationLab = {
-    version: '0.2.0-alpha15-persistent-hover-cache',
+    version: '0.2.1-alpha16-temporal-identity-guard',
     start: startProductIdentification,
     getAnalyzedCropDataUrl() {
       if (!state.hoveredTrack || state.lastAnalyzedTrackUid !== state.hoveredTrack.uid) return null;
@@ -1936,6 +2195,21 @@ function applyQualityGuard(result,quality) {
           rejected: state.qualityGuard.rejected,
           tightened: state.qualityGuard.tightened,
           last: state.qualityGuard.last ? { ...state.qualityGuard.last } : null
+        },
+        identityStability: {
+          activeTracks: state.identityStability.tracks.size,
+          switchConfirmations: IDENTITY_SWITCH_CONFIRMATIONS,
+          glareSwitchConfirmations: IDENTITY_SWITCH_CONFIRMATIONS_GLARE,
+          switchWindowMs: IDENTITY_SWITCH_WINDOW_MS,
+          transientHoldMs: IDENTITY_TRANSIENT_HOLD_MS,
+          recheckMs: IDENTITY_RECHECK_MS,
+          switchesSuppressed: state.identityStability.switchesSuppressed,
+          switchesConfirmed: state.identityStability.switchesConfirmed,
+          transientHolds: state.identityStability.transientHolds,
+          holdsExpired: state.identityStability.holdsExpired,
+          rechecks: state.identityStability.rechecks,
+          stableRefreshes: state.identityStability.stableRefreshes,
+          last: state.identityStability.last ? { ...state.identityStability.last } : null
         },
         hoveredTrack: state.hoveredTrack ? { ...state.hoveredTrack } : null,
         identification: (result?.best && state.hoveredTrack && state.lastTrackUid === state.hoveredTrack.uid) ? {

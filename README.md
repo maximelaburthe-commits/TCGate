@@ -1,43 +1,38 @@
-# TCG Webcam — V0.6.1 Vision robuste
+# TCG Webcam — V0.6.2 Stabilité d’identité anti-reflet
 
-Première intégration contrôlée de la Vision alpha15 dans la plateforme réseau.
+Évolution ciblée de V0.6.1. Aucun changement du réseau, du seuil général YOLO, du modèle V5.3/512 ni de la logique de chevauchement.
 
 Chaîne :
-`flux adverse -> YOLO V5.3/512 -> tracking -> matcher alpha15 -> image HD`
+`flux adverse -> YOLO V5.3/512 -> tracking -> matcher alpha15/16 -> validation temporelle -> image HD`
 
 Le flux local n'est jamais analysé.
 
+## V0.6.2
+
+Objectif : empêcher une mauvaise identification très brève, notamment sous reflet, de remplacer immédiatement une carte déjà reconnue.
+
+Comportement :
+- première identification : immédiate comme en V0.6.1 ;
+- même identité retrouvée : validation immédiate ;
+- nouvelle identité sur une piste déjà stable : 2 confirmations consécutives ;
+- nouvelle identité sous risque de reflet modéré : 3 confirmations consécutives ;
+- frame incertaine/reflet fort : l'ancienne carte reste affichée pendant une courte fenêtre de grâce ;
+- si l'incertitude persiste au-delà de cette fenêtre, l'identification est retirée plutôt que de conserver une carte potentiellement fausse ;
+- les validations/suppressions sont ajoutées au rapport complet.
+
+## Ce qui reste gelé
+
+- réseau / WebRTC ;
+- modèle YOLO `card_detector_v53_512.onnx` ;
+- seuil général de détection ;
+- filtres Table-Aware ;
+- logique de chevauchement / masque ;
+- UI existante.
+
 ## Railway
-Même méthode que V0.5.2.
-Ne pas oublier le nouveau fichier modèle :
+Même méthode que V0.6.1.
 
-`models/card_detector_v53_512.onnx`
-
-## Healthcheck
-`/api/health`
-
-Doit retourner :
-- version 0.6.1
-- vision.integrated = true
-- vision.modelPresent = true
+Healthcheck : `/api/health` doit retourner `version: 0.6.2`.
 
 ## Test
-Lire `PLAN_TEST_V0.6.md`.
-
-## Sauvegardes
-Les deux parents restent séparés :
-- V0.5.2 réseau stable
-- alpha15 Vision gelée
-
-V0.6 est une branche d'intégration pré-alpha.
-
-
-## V0.6.1
-Correctif ciblé :
-- synchronisation automatique des dimensions du flux WebRTC ;
-- recalibration après changement de résolution ;
-- garde anti-reflet ;
-- rescue conservateur près des bords ;
-- diagnostic spatial 3×3.
-
-Lire `PLAN_TEST_V0.6.1.md`.
+Lire `PLAN_TEST_V0.6.2.md`.
