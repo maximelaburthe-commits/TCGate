@@ -1299,7 +1299,7 @@ async function buildCompleteReport() {
 
   return {
     format: 'tcg-webcam-complete-report',
-    version: '0.6.3.2',
+    version: '0.6.3.3',
     generatedAt: new Date().toISOString(),
     session: {
       startedAt: new Date(state.reportStartedAt).toISOString(),
@@ -1448,6 +1448,10 @@ function reportText(report) {
     `Garde reflet - rejets: ${report.vision?.identification?.qualityGuard?.rejected ?? '—'}`,
     `Garde reflet - modérés: ${report.vision?.identification?.qualityGuard?.moderate ?? '—'}`,
     `Pointer misses 3x3: ${JSON.stringify(report.vision?.identification?.spatialPointer?.misses || [])}`,
+    `Arbitrage pointeur - zones ambiguës: ${report.vision?.identification?.pointerArbitration?.ambiguousPrimaryHits ?? '—'}`,
+    `Arbitrage pointeur - maintien carte primaire: ${report.vision?.identification?.pointerArbitration?.stickyPrimaryKeeps ?? '—'}`,
+    `Arbitrage pointeur - probes exposées: ${report.vision?.identification?.pointerArbitration?.probeExposedHits ?? '—'}`,
+    `Arbitrage pointeur - probes bloquées en recouvrement: ${report.vision?.identification?.pointerArbitration?.probeBlocked ?? '—'}`,
     `Détections filtrées 3x3: ${JSON.stringify(report.vision?.detector?.spatial?.filtered || [])}`,
     '',
     'ÉVÉNEMENTS',

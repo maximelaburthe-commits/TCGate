@@ -73,7 +73,7 @@ if(modelSize<5_000_000) throw new Error(`Model too small ${modelSize}`);
 
 for(const [file,tokens] of Object.entries({
   'public/vision-core.js':['tcg-vision-geometry','strictSoloWeakCandidate','spatialStats'],
-  'public/identification.js':['analyzeCropQuality','glare-high','pointerMissHeatmap'],
+  'public/identification.js':['analyzeCropQuality','glare-high','pointerMissHeatmap','choosePrimaryTrack','pointInProbeExposedStrip','pointerArbitration'],
   'public/vision-calibration.js':['consecutiveLightingOutliers','ignoredBlankMonitorFrames']
 })){
   const text=fs.readFileSync(file,'utf8');
@@ -81,4 +81,4 @@ for(const [file,tokens] of Object.entries({
     if(!text.includes(token)) throw new Error(`Missing ${token} in ${file}`);
   }
 }
-console.log('SMOKE_OK_V0.6.3.2');
+console.log('SMOKE_OK_V0.6.3.3');

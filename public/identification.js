@@ -110,7 +110,14 @@
     temporalRecheckTimer: null,
     pointerMissHeatmap: [0,0,0,0,0,0,0,0,0],
     pointerHitHeatmap: [0,0,0,0,0,0,0,0,0],
-    lastPointerDiagnosticAt: 0
+    lastPointerDiagnosticAt: 0,
+    pointerArbitration: {
+      ambiguousPrimaryHits: 0,
+      stickyPrimaryKeeps: 0,
+      centerResolved: 0,
+      probeExposedHits: 0,
+      probeBlocked: 0
+    }
   };
 
   function imageUrl(card) {
@@ -1486,6 +1493,60 @@
     return Math.abs(x)<=track.w/2 && Math.abs(y)<=track.h/2;
   }
 
+  // V0.6.3.3 — hover ownership must never be decided by YOLO confidence alone.
+  // In an overlap zone, keep the card the pointer was already following. If the
+  // pointer enters an ambiguous zone directly, use the closest canonical centre.
+  function normalizedCenterDistance(track,p) {
+    const a=-(track.angle||0),c=Math.cos(a),s=Math.sin(a);
+    const dx=p.x-track.cx,dy=p.y-track.cy;
+    const x=dx*c-dy*s,y=dx*s+dy*c;
+    const nx=x/Math.max(1,track.w/2),ny=y/Math.max(1,track.h/2);
+    return Math.hypot(nx,ny);
+  }
+
+  function choosePrimaryTrack(primaryTracks,point) {
+    const candidates=primaryTracks.filter(t=>contains(t,point));
+    if(!candidates.length)return null;
+    if(candidates.length===1)return candidates[0];
+    state.pointerArbitration.ambiguousPrimaryHits++;
+
+    const currentUid=state.hoveredTrack?.isOverlapProbe?null:(state.hoveredTrack?.uid??null);
+    if(currentUid!=null){
+      const current=candidates.find(t=>t.uid===currentUid);
+      if(current){
+        state.pointerArbitration.stickyPrimaryKeeps++;
+        return current;
+      }
+    }
+
+    candidates.sort((a,b)=>{
+      const da=normalizedCenterDistance(a,point),db=normalizedCenterDistance(b,point);
+      if(Math.abs(da-db)>.035)return da-db;
+      return Number(b.conf||0)-Number(a.conf||0);
+    });
+    state.pointerArbitration.centerResolved++;
+    return candidates[0];
+  }
+
+  // A secondary overlap probe represents an estimated card hidden under a real
+  // primary track. It must only own the physically exposed strip, never the
+  // estimated rectangle that is actually covered by the upper card.
+  function pointInProbeExposedStrip(probe,point) {
+    if(!probe||!contains(probe,point))return false;
+    const direction=probe.probeDirection;
+    if(direction!=='top'&&direction!=='bottom')return false;
+
+    const a=-(probe.angle||0),c=Math.cos(a),s=Math.sin(a);
+    const dx=point.x-probe.cx,dy=point.y-probe.cy;
+    const x=dx*c-dy*s,y=dx*s+dy*c;
+    const longIsY=probe.w<=probe.h;
+    const along=longIsY?y:x;
+    const long=Math.max(1,longIsY?probe.h:probe.w);
+    const n=along/long; // -0.5 .. +0.5
+    const visible=Math.min(.42,Math.max(.08,Number(probe.probeShiftFraction||.18)+.045));
+    return direction==='bottom' ? n>=(.5-visible) : n<=(-.5+visible);
+  }
+
 
 function pointerCell(point) {
   const w=Math.max(1,lab.els.video.videoWidth || lab.els.overlay.width || 1);
@@ -1998,9 +2059,16 @@ function applyQualityGuard(result,quality) {
       return clearCurrentIdentification('Identification désactivée.');
     }
 
-    const primaryTracks=lab.activeTracks().filter(t=>(t.misses||0)===0).sort((a,b)=>(b.conf||0)-(a.conf||0));
-    const primary=primaryTracks.find(t=>contains(t,point));
-    const probe=primary?null:secondaryTracks().filter(t=>(t.misses||0)===0).sort((a,b)=>(b.probeScore||0)-(a.probeScore||0)).find(t=>contains(t,point));
+    const primaryTracks=lab.activeTracks().filter(t=>(t.misses||0)===0);
+    const primary=choosePrimaryTrack(primaryTracks,point);
+    let probe=null;
+    if(!primary){
+      const probes=secondaryTracks().filter(t=>(t.misses||0)===0).sort((a,b)=>(b.probeScore||0)-(a.probeScore||0));
+      const rawProbe=probes.find(t=>contains(t,point));
+      probe=probes.find(t=>pointInProbeExposedStrip(t,point))||null;
+      if(probe)state.pointerArbitration.probeExposedHits++;
+      else if(rawProbe)state.pointerArbitration.probeBlocked++;
+    }
     const track=primary||probe;
 
     if (!track) {
@@ -2217,6 +2285,7 @@ function applyQualityGuard(result,quality) {
           hits: [...state.pointerHitHeatmap],
           misses: [...state.pointerMissHeatmap]
         },
+        pointerArbitration: { ...state.pointerArbitration },
         qualityGuard: {
           moderate: state.qualityGuard.moderate,
           high: state.qualityGuard.high,
