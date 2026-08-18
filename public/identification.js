@@ -495,6 +495,20 @@
     return out;
   }
 
+  function textZoneMask(mask) {
+    const out=new Uint8Array(mask.length);
+    for (let y=0;y<REF_H;y++) {
+      const inTitle=y<=Math.floor(REF_H*.18);
+      const inRules=y>=Math.floor(REF_H*.62) && y<=Math.floor(REF_H*.96);
+      if (!inTitle && !inRules) continue;
+      for (let x=2;x<REF_W-2;x++) {
+        const i=y*REF_W+x;
+        if(mask[i]) out[i]=1;
+      }
+    }
+    return out;
+  }
+
   function maskedCorrelation(obs,ref,mask,dx=0,dy=0) {
     let n=0;
     let so=0,sr=0,soo=0,srr=0,sor=0;
@@ -558,6 +572,25 @@
           if (r.score>best.score) {
             best={...r,dx,dy,flipped};
           }
+        }
+      }
+    }
+    return best;
+  }
+
+  function bestTextZoneComparison(observations,ref,maskInfo) {
+    let best={score:0,gray:0,gradient:0,color:0,dx:0,dy:0,used:0,flipped:false};
+    const shiftsX=[-3,0,3];
+    const shiftsY=[-4,0,4];
+    for (let vi=0;vi<observations.length;vi++) {
+      const obs=observations[vi];
+      const flipped=(vi%2)===1;
+      const base=flipped ? flipMask180(maskInfo.mask) : maskInfo.mask;
+      const mask=textZoneMask(base);
+      for (const dx of shiftsX) {
+        for (const dy of shiftsY) {
+          const r=maskedCorrelation(obs,ref,mask,dx,dy);
+          if (r.score>best.score) best={...r,dx,dy,flipped};
         }
       }
     }
@@ -1278,7 +1311,7 @@
     // First shortlist cheaply with the visible cells, then run the
     // expensive shift search on a small union of candidates.
     // --------------------------------------------------------------
-    if (!accepted && context?.maskInfo?.maskedBy>0 && context.maskInfo.visibleFraction>=.20) {
+    if (!accepted && context?.maskInfo?.maskedBy>0 && context.maskInfo.visibleFraction>=.16) {
       const tMaskCoarse=performance.now();
       const maskCoarse=maskedCoarseRank(observations,state.refs,context.maskInfo);
       const maskPool=uniqueRefs(
@@ -1290,18 +1323,23 @@
       const tMaskDetail=performance.now();
       const maskRanked=maskPool.map(ref=>{
         const m=bestMaskedComparison(observations,ref.descriptor,context.maskInfo);
+        const t=bestTextZoneComparison(observations,ref.descriptor,context.maskInfo);
+        const textUsable=t.used>=120;
+        const combined=textUsable ? (.82*m.score+.18*t.score) : m.score;
         return {
           ref,
-          score:m.score,
+          score:combined,
           parts:{
             full:m.gray,
             art:0,
             gradient:m.gradient,
             patches:m.score,
             color:m.color,
-            masked:m.score
+            masked:m.score,
+            text:t.score
           },
-          masked:m
+          masked:m,
+          textZone:{score:t.score,used:t.used,usable:textUsable}
         };
       }).sort((a,b)=>b.score-a.score).slice(0,5);
       timing.maskDetailMs=performance.now()-tMaskDetail;
@@ -1317,16 +1355,21 @@
         bestScore:mb?.score||0,
         margin:mm,
         testedCandidates:maskPool.length,
+        textZoneBestScore:Number(maskRanked[0]?.textZone?.score||0),
+        textZonePixels:Number(maskRanked[0]?.textZone?.used||0),
         candidates:maskRanked
       };
 
-      if (mb && mb.score>=.655 && mm>=.038) {
+      const lowVisibility=context.maskInfo.visibleFraction<.20;
+      const maskedAccept=lowVisibility ? .69 : .655;
+      const maskedMargin=lowVisibility ? .050 : .038;
+      if (mb && mb.score>=maskedAccept && mm>=maskedMargin) {
         best=mb;
         second=ms;
         margin=mm;
         ranked=maskRanked;
         accepted=true;
-        mode='masked';
+        mode=lowVisibility?'masked-low-visible':'masked';
       } else if (mb && mm>margin+.035) {
         best=mb;
         second=ms;
@@ -1833,7 +1876,7 @@ function applyQualityGuard(result,quality) {
   async function identifyTrack(track, generation) {
     if (!ui.toggle?.checked) return clearCurrentIdentification('Identification désactivée.');
     if (!state.ready) return clearCurrentIdentification('Bibliothèque encore en préparation…');
-    if (!track || track.misses>0) return clearCurrentIdentification();
+    if (!track || (track.misses>0 && !track.occluded)) return clearCurrentIdentification();
 
     if (generation !== state.hoverGeneration) return;
 
@@ -1847,7 +1890,10 @@ function applyQualityGuard(result,quality) {
     const context={
       ...overlap,
       pointerCanonical,
-      maskInfo
+      maskInfo,
+      occludedMemory:Boolean(track.occluded),
+      bornOccluded:Boolean(track.bornOccluded),
+      visibleEstimate:Number(track.visibleEstimate ?? 1)
     };
 
     // Capture the exact source immediately for diagnostics. This is intentionally
@@ -1972,8 +2018,8 @@ function applyQualityGuard(result,quality) {
     }
 
     const tracks=lab.activeTracks()
-      .filter(t=>(t.misses||0)===0)
-      .sort((a,b)=>(b.conf||0)-(a.conf||0));
+      .filter(t=>(t.misses||0)===0 || t.occluded)
+      .sort((a,b)=>Number(a.occluded)-Number(b.occluded) || (b.conf||0)-(a.conf||0));
     const track=tracks.find(t=>contains(t,point));
 
     if (!track) {
@@ -1998,7 +2044,9 @@ function applyQualityGuard(result,quality) {
       w: track.w,
       h: track.h,
       angle: track.angle,
-      misses: track.misses || 0
+      misses: track.misses || 0,
+      occluded:Boolean(track.occluded),
+      visibleEstimate:Number(track.visibleEstimate ?? 1)
     };
 
     clearTimeout(state.hoverTimer);
@@ -2037,8 +2085,8 @@ function applyQualityGuard(result,quality) {
     if (!state.pointerInsideStage || !state.pointer) return null;
     const point={x:state.pointer.x,y:state.pointer.y};
     return lab.activeTracks()
-      .filter(t=>(t.misses||0)===0)
-      .sort((a,b)=>(b.conf||0)-(a.conf||0))
+      .filter(t=>(t.misses||0)===0 || t.occluded)
+      .sort((a,b)=>Number(a.occluded)-Number(b.occluded) || (b.conf||0)-(a.conf||0))
       .find(t=>contains(t,point)) || null;
   }
 
@@ -2063,7 +2111,9 @@ function applyQualityGuard(result,quality) {
           w:track.w,
           h:track.h,
           angle:track.angle,
-          misses:track.misses||0
+          misses:track.misses||0,
+          occluded:Boolean(track.occluded),
+          visibleEstimate:Number(track.visibleEstimate ?? 1)
         };
       }
       return;

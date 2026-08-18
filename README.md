@@ -1,38 +1,33 @@
-# TCG Webcam — V0.6.2 Stabilité d’identité anti-reflet
+# TCG Webcam — V0.6.3 Occlusion / Overlap Robustness
 
-Évolution ciblée de V0.6.1. Aucun changement du réseau, du seuil général YOLO, du modèle V5.3/512 ni de la logique de chevauchement.
+Cette version part directement de la V0.6.2 anti-reflet validée.
 
-Chaîne :
-`flux adverse -> YOLO V5.3/512 -> tracking -> matcher alpha15/16 -> validation temporelle -> image HD`
+## Objectif
 
-Le flux local n'est jamais analysé.
+Améliorer les cas de chevauchement sans modifier le modèle YOLO, le seuil général, le réseau ou l’UI.
 
-## V0.6.2
+## V0.6.3
 
-Objectif : empêcher une mauvaise identification très brève, notamment sous reflet, de remplacer immédiatement une carte déjà reconnue.
+- mémoire temporelle d’une carte confirmée lorsqu’une autre carte la recouvre ;
+- maintien de sa géométrie tant qu’un occluder cohérent reste présent ;
+- préservation de la géométrie connue lorsque YOLO ne renvoie plus qu’un crop partiel ;
+- conservation prudente des secondes détections quasi alignées lorsqu’une carte stable ancre déjà la zone ;
+- mémoire courte des nouvelles cartes détectées pendant leur insertion sous une carte connue (`partial-track birth`) ;
+- identification masquée étendue jusqu’à 16 % de surface visible avec seuils plus stricts sous 20 % ;
+- bonus visuel léger sur les zones de texte encore visibles (sans OCR externe) ;
+- diagnostics d’occlusion ajoutés au rapport complet.
 
-Comportement :
-- première identification : immédiate comme en V0.6.1 ;
-- même identité retrouvée : validation immédiate ;
-- nouvelle identité sur une piste déjà stable : 2 confirmations consécutives ;
-- nouvelle identité sous risque de reflet modéré : 3 confirmations consécutives ;
-- frame incertaine/reflet fort : l'ancienne carte reste affichée pendant une courte fenêtre de grâce ;
-- si l'incertitude persiste au-delà de cette fenêtre, l'identification est retirée plutôt que de conserver une carte potentiellement fausse ;
-- les validations/suppressions sont ajoutées au rapport complet.
+## Ce qui n’a pas changé
 
-## Ce qui reste gelé
-
-- réseau / WebRTC ;
-- modèle YOLO `card_detector_v53_512.onnx` ;
-- seuil général de détection ;
-- filtres Table-Aware ;
-- logique de chevauchement / masque ;
-- UI existante.
-
-## Railway
-Même méthode que V0.6.1.
-
-Healthcheck : `/api/health` doit retourner `version: 0.6.2`.
+- modèle `card_detector_v53_512.onnx` ;
+- `detection-worker.js` ;
+- seuil général YOLO ;
+- WebRTC / signalisation ;
+- UI ;
+- garde anti-reflet V0.6.2.
 
 ## Test
-Lire `PLAN_TEST_V0.6.2.md`.
+
+Lire `PLAN_TEST_V0.6.3.md`.
+
+Healthcheck : `/api/health` doit retourner `version: 0.6.3`.
