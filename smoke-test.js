@@ -81,4 +81,4 @@ for(const [file,tokens] of Object.entries({
     if(!text.includes(token)) throw new Error(`Missing ${token} in ${file}`);
   }
 }
-console.log('SMOKE_OK_V0.6.3.3');
+console.log('SMOKE_OK_V0.6.3.4');

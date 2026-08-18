@@ -11,6 +11,10 @@ let inputName = null;
 let outputShape = '—';
 let canvas = null;
 let ctx = null;
+const workerParams = new URL(self.location.href).searchParams;
+const FORCED_PROVIDER = String(workerParams.get('provider') || '').toLowerCase();
+const UA = String(self.navigator?.userAgent || '');
+const IS_CHROMIUM = /Chrome\/|Chromium\//.test(UA) && !/Edg\//.test(UA);
 
 function post(type, payload = {}) {
   self.postMessage({ type, ...payload });
@@ -23,7 +27,11 @@ async function ensureOrt() {
   ort.env.wasm.wasmPaths = ORT_CDN_BASE;
   ort.env.wasm.numThreads = 1;
   if (ort.env.webgpu) {
-    ort.env.webgpu.powerPreference = 'high-performance';
+    // Chrome/Chromium can share the same GPU process as the Windows desktop
+    // compositor. Do not force the high-performance adapter there: on some
+    // machines this can cause whole-desktop flashes while continuous WebGPU
+    // inference is active. Firefox/non-Chromium keeps the previous preference.
+    if (!IS_CHROMIUM) ort.env.webgpu.powerPreference = 'high-performance';
     ort.env.webgpu.forceFallbackAdapter = false;
   }
   ortReady = true;
@@ -64,27 +72,43 @@ async function fetchModelBuffer() {
 async function createSession(modelBytes) {
   await ensureOrt();
   const common = { graphOptimizationLevel: 'all' };
-  if (self.navigator?.gpu) {
-    // Graph capture peut nettement réduire l'overhead CPU sur un modèle à forme fixe.
-    // Si ce modèle / navigateur ne le supporte pas, on retente sans graph capture.
-    try {
-      post('status', { text: 'Initialisation WebGPU haute performance…', kind: 'warn' });
-      const s = await ort.InferenceSession.create(modelBytes, {
-        ...common,
-        enableGraphCapture: true,
-        executionProviders: ['webgpu']
-      });
-      return { session: s, provider: 'WebGPU · graph capture' };
-    } catch (graphErr) {
+  const forceWasm = FORCED_PROVIDER === 'wasm' || FORCED_PROVIDER === 'cpu';
+  if (!forceWasm && self.navigator?.gpu) {
+    // Chromium: standard WebGPU only. We deliberately skip graph capture and
+    // high-performance adapter forcing because the alpha report showed desktop
+    // flicker on the Chrome machine while the Vision worker was active.
+    if (IS_CHROMIUM) {
       try {
-        post('status', { text: 'Initialisation WebGPU…', kind: 'warn' });
+        post('status', { text: 'Initialisation WebGPU équilibrée…', kind: 'warn' });
         const s = await ort.InferenceSession.create(modelBytes, {
           ...common,
           executionProviders: ['webgpu']
         });
-        return { session: s, provider: 'WebGPU' };
+        return { session: s, provider: 'WebGPU · balanced' };
       } catch (gpuErr) {
-        post('warning', { text: 'WebGPU indisponible pour ce modèle. Passage en WASM/CPU.' });
+        post('warning', { text: 'WebGPU Chromium indisponible. Passage en WASM/CPU.' });
+      }
+    } else {
+      // Non-Chromium keeps the previous fast path.
+      try {
+        post('status', { text: 'Initialisation WebGPU haute performance…', kind: 'warn' });
+        const s = await ort.InferenceSession.create(modelBytes, {
+          ...common,
+          enableGraphCapture: true,
+          executionProviders: ['webgpu']
+        });
+        return { session: s, provider: 'WebGPU · graph capture' };
+      } catch (graphErr) {
+        try {
+          post('status', { text: 'Initialisation WebGPU…', kind: 'warn' });
+          const s = await ort.InferenceSession.create(modelBytes, {
+            ...common,
+            executionProviders: ['webgpu']
+          });
+          return { session: s, provider: 'WebGPU' };
+        } catch (gpuErr) {
+          post('warning', { text: 'WebGPU indisponible pour ce modèle. Passage en WASM/CPU.' });
+        }
       }
     }
   }

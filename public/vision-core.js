@@ -225,7 +225,9 @@ function startVideoFpsMeter() {
 
 function ensureWorker() {
   if (state.worker) return state.worker;
-  const worker = new Worker('/detection-worker.js');
+  const providerOverride=new URLSearchParams(location.search).get('visionProvider');
+  const workerUrl=providerOverride ? `/detection-worker.js?provider=${encodeURIComponent(providerOverride)}` : '/detection-worker.js';
+  const worker = new Worker(workerUrl);
   state.worker = worker;
 
   worker.onmessage = (event) => {
@@ -1587,7 +1589,7 @@ function detachExternalStream() {
 
 function getProductSnapshot() {
   return {
-    version:'0.6.3.2-overlap-probe',
+    version:'0.6.3.4-overlap-probe-hover-recovery',
     active:Boolean(state.detecting && state.externalAttached),
     modelReady:Boolean(state.workerReady),
     provider:state.provider || null,
@@ -1626,7 +1628,7 @@ function getProductSnapshot() {
 }
 
 window.TCGDetectionLab={
-  version:'0.6.3.2-overlap-probe',
+  version:'0.6.3.4-overlap-probe-hover-recovery',
   state,
   els,
   activeTracks,

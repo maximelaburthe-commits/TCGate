@@ -1,6 +1,6 @@
 {
   "name": "tcg-webcam-ui-prototype",
-  "version": "0.6.3-3",
+  "version": "0.6.3-4",
   "private": true,
   "scripts": {
     "start": "node server.js",

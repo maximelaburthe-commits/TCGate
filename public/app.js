@@ -1299,7 +1299,7 @@ async function buildCompleteReport() {
 
   return {
     format: 'tcg-webcam-complete-report',
-    version: '0.6.3.3',
+    version: '0.6.3.4',
     generatedAt: new Date().toISOString(),
     session: {
       startedAt: new Date(state.reportStartedAt).toISOString(),

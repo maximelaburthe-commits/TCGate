@@ -1493,9 +1493,10 @@
     return Math.abs(x)<=track.w/2 && Math.abs(y)<=track.h/2;
   }
 
-  // V0.6.3.3 — hover ownership must never be decided by YOLO confidence alone.
-  // In an overlap zone, keep the card the pointer was already following. If the
-  // pointer enters an ambiguous zone directly, use the closest canonical centre.
+  // V0.6.3.4 — no sticky ownership inside an overlap zone.
+  // The V0.6.3.3 sticky rule could keep the lower card selected after the
+  // pointer had clearly moved back onto the upper card. Resolve every pointer
+  // position from geometry so ownership can change immediately.
   function normalizedCenterDistance(track,p) {
     const a=-(track.angle||0),c=Math.cos(a),s=Math.sin(a);
     const dx=p.x-track.cx,dy=p.y-track.cy;
@@ -1504,27 +1505,21 @@
     return Math.hypot(nx,ny);
   }
 
-  function choosePrimaryTrack(primaryTracks,point) {
+  function choosePrimaryTrack(primaryTracks,point,{record=true}={}) {
     const candidates=primaryTracks.filter(t=>contains(t,point));
     if(!candidates.length)return null;
     if(candidates.length===1)return candidates[0];
-    state.pointerArbitration.ambiguousPrimaryHits++;
+    if(record)state.pointerArbitration.ambiguousPrimaryHits++;
 
-    const currentUid=state.hoveredTrack?.isOverlapProbe?null:(state.hoveredTrack?.uid??null);
-    if(currentUid!=null){
-      const current=candidates.find(t=>t.uid===currentUid);
-      if(current){
-        state.pointerArbitration.stickyPrimaryKeeps++;
-        return current;
-      }
-    }
-
+    // Voronoi-like ownership in each card's canonical space. This gives the
+    // pointer to the surface whose real centre it is closest to. Confidence is
+    // only a tie-breaker and can no longer pin the previous card.
     candidates.sort((a,b)=>{
       const da=normalizedCenterDistance(a,point),db=normalizedCenterDistance(b,point);
-      if(Math.abs(da-db)>.035)return da-db;
+      if(Math.abs(da-db)>.02)return da-db;
       return Number(b.conf||0)-Number(a.conf||0);
     });
-    state.pointerArbitration.centerResolved++;
+    if(record)state.pointerArbitration.centerResolved++;
     return candidates[0];
   }
 
@@ -2103,30 +2098,43 @@ function applyQualityGuard(result,quality) {
     clearTimeout(state.hoverTimer);
 
     let usedCache=false;
+    let usedStable=false;
     if (isNewTrack) {
-      // Never leave the previous card visible.
+      // Never leave the previous card visible. A track that already owns a
+      // confirmed identity can however be rendered immediately when the mouse
+      // comes back to it; verification still runs shortly afterwards.
       state.hoverGeneration += 1;
       state.lastResult = null;
       state.lastTrackUid = null;
 
-      const cached=getHoverCache(track);
-      if(cached?.result?.accepted) {
-        usedCache=renderHoverCache(track,cached);
+      const stableEntry=state.identityStability.tracks.get(track.uid);
+      if(stableEntry?.stableResult?.accepted){
+        renderResult(stableEntry.stableResult);
+        state.lastTrackUid=track.uid;
+        state.lastIdentifiedAt=performance.now();
+        usedStable=true;
       } else {
-        clearResult('Analyse de la carte survolée…');
+        const cached=getHoverCache(track);
+        if(cached?.result?.accepted) {
+          usedCache=renderHoverCache(track,cached);
+        } else {
+          clearResult('Analyse de la carte survolée…');
+        }
       }
     }
 
     const generation = state.hoverGeneration;
     const same = !isNewTrack && state.lastTrackUid===track.uid;
 
-    // Cache is on-demand only: no background work. If a valid cached result was
-    // displayed, verify it only if the user keeps hovering for a while.
-    const delay = usedCache
-      ? 1400
-      : same && performance.now()-state.lastIdentifiedAt<1100
-        ? 700
-        : 40;
+    // Returning to a known track should feel immediate. Re-validate sooner than
+    // the long hover cache delay so a physically replaced card is still caught.
+    const delay = usedStable
+      ? 320
+      : usedCache
+        ? 900
+        : same && performance.now()-state.lastIdentifiedAt<1100
+          ? 520
+          : 35;
 
     state.hoverTimer=setTimeout(()=>identifyTrack(track,generation),delay);
   }
@@ -2135,7 +2143,9 @@ function applyQualityGuard(result,quality) {
   function currentTrackUnderStoredPointer() {
     if (!state.pointerInsideStage || !state.pointer) return null;
     const point={x:state.pointer.x,y:state.pointer.y};
-    const primary=lab.activeTracks().filter(t=>(t.misses||0)===0).sort((a,b)=>(b.conf||0)-(a.conf||0)).find(t=>contains(t,point))||null;if(primary)return primary;return secondaryTracks().filter(t=>(t.misses||0)===0).sort((a,b)=>(b.probeScore||0)-(a.probeScore||0)).find(t=>contains(t,point))||null;
+    const primary=choosePrimaryTrack(lab.activeTracks().filter(t=>(t.misses||0)===0),point,{record:false});
+    if(primary)return primary;
+    return secondaryTracks().filter(t=>(t.misses||0)===0).sort((a,b)=>(b.probeScore||0)-(a.probeScore||0)).find(t=>pointInProbeExposedStrip(t,point))||null;
   }
 
   function refreshStationaryPointerHover() {
