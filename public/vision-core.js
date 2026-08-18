@@ -3,14 +3,6 @@
 
 const MAX_CAPTURES = 40;
 
-// V0.6.3 — conservative overlap/occlusion memory.
-// No YOLO threshold/model changes: this layer only interprets temporal geometry.
-const OCCLUSION_MIN_OVERLAP = 0.14;
-const OCCLUSION_GRACE_MS = 1800;
-const PARTIAL_BIRTH_MEMORY_MS = 1800;
-const PARTIAL_BIRTH_MIN_OVERLAP = 0.10;
-const CROPPED_GEOMETRY_RATIO = 0.76;
-
 const $ = (id) => document.getElementById(id);
 const els = {
   globalStatus: $('visionGlobalStatus'), cameraSelect: $('visionCameraSelect'), resolutionSelect: $('visionResolutionSelect'),
@@ -74,16 +66,6 @@ const state = {
     confirmed: [0,0,0,0,0,0,0,0,0],
     rawConfidenceSum: [0,0,0,0,0,0,0,0,0],
     filteredConfidenceSum: [0,0,0,0,0,0,0,0,0]
-  },
-  occlusionStats: {
-    holdsStarted: 0,
-    holdFrames: 0,
-    recovered: 0,
-    expired: 0,
-    partialBirths: 0,
-    partialBirthConfirmed: 0,
-    croppedGeometryPreserved: 0,
-    alignedPairsKept: 0
   }
 };
 
@@ -99,23 +81,6 @@ function showWarning(text = '') {
     els.sidebarRuntimeAlert.textContent = text;
     els.sidebarRuntimeAlert.classList.toggle('hidden', !text);
   }
-}
-
-function emitOcclusionEvent(type,track,extra={}) {
-  try {
-    window.dispatchEvent(new CustomEvent('tcg-vision-occlusion',{
-      detail:{
-        type,
-        uid:track?.uid ?? null,
-        displayId:track?.displayId ?? null,
-        occluded:Boolean(track?.occluded),
-        overlap:Number(track?.occlusionOverlap || 0),
-        visibleEstimate:Number(track?.visibleEstimate ?? 1),
-        bornOccluded:Boolean(track?.bornOccluded),
-        ...extra
-      }
-    }));
-  } catch {}
 }
 
 function formatBytes(n) {
@@ -516,79 +481,6 @@ function normalizedAngleDistance(a, b) {
   return Math.abs(d);
 }
 
-function trackGeometry(det) {
-  return {
-    cx:Number(det?.cx || 0), cy:Number(det?.cy || 0),
-    w:Number(det?.w || 0), h:Number(det?.h || 0),
-    angle:Number(det?.angle || 0)
-  };
-}
-
-function geometryArea(det) {
-  return Math.max(1, Number(det?.w || 0) * Number(det?.h || 0));
-}
-
-function aabbOf(det) {
-  const pts=corners(det);
-  const xs=pts.map(p=>p[0]);
-  const ys=pts.map(p=>p[1]);
-  return {x0:Math.min(...xs),y0:Math.min(...ys),x1:Math.max(...xs),y1:Math.max(...ys)};
-}
-
-function boxOverlapFraction(a,b) {
-  if(!a || !b) return 0;
-  const A=aabbOf(a),B=aabbOf(b);
-  const iw=Math.max(0,Math.min(A.x1,B.x1)-Math.max(A.x0,B.x0));
-  const ih=Math.max(0,Math.min(A.y1,B.y1)-Math.max(A.y0,B.y0));
-  const inter=iw*ih;
-  const aa=Math.max(1,(A.x1-A.x0)*(A.y1-A.y0));
-  const ba=Math.max(1,(B.x1-B.x0)*(B.y1-B.y0));
-  return inter/Math.min(aa,ba);
-}
-
-function bestOverlapWith(det, others, skipIndex=-1) {
-  let best={overlap:0,index:-1,item:null};
-  (others || []).forEach((other,index)=>{
-    if(index===skipIndex || other===det) return;
-    const overlap=boxOverlapFraction(det,other);
-    if(overlap>best.overlap) best={overlap,index,item:other};
-  });
-  return best;
-}
-
-function occlusionAlive(track, now=performance.now()) {
-  return Boolean(
-    track?.confirmed && track?.occluded &&
-    Number.isFinite(track.lastOcclusionEvidenceMs) &&
-    now-track.lastOcclusionEvidenceMs<=OCCLUSION_GRACE_MS
-  );
-}
-
-function partialBirthAlive(track, now=performance.now()) {
-  return Boolean(
-    !track?.confirmed && track?.partialBirth &&
-    Number.isFinite(track.partialBirthSinceMs) &&
-    now-track.partialBirthSinceMs<=PARTIAL_BIRTH_MEMORY_MS
-  );
-}
-
-function duplicatePairCanRepresentOverlap(a,b) {
-  const sa=Math.max(1,Math.min(a.w,a.h));
-  const sb=Math.max(1,Math.min(b.w,b.h));
-  const center=Math.hypot(a.cx-b.cx,a.cy-b.cy)/Math.max(1,(sa+sb)/2);
-  const areaRatio=Math.max(geometryArea(a),geometryArea(b))/Math.max(1,Math.min(geometryArea(a),geometryArea(b)));
-  const angle=normalizedAngleDistance(a.angle,b.angle);
-  // Only relax duplicate suppression when a previously confirmed card anchors the area.
-  // Perfectly identical boxes are still treated as duplicates; a small physical offset/
-  // scale/angle difference is required before preserving the second candidate.
-  const anchored=activeTracks().some(track=>{
-    const ref=Math.max(1,Math.min(track.w,track.h));
-    return Math.hypot(track.cx-a.cx,track.cy-a.cy)/ref<.28 ||
-      Math.hypot(track.cx-b.cx,track.cy-b.cy)/ref<.28;
-  });
-  return anchored && (center>.035 || areaRatio>1.06 || angle>.04);
-}
-
 function isNearDuplicate(a, b) {
   const sa = Math.max(1, Math.min(a.w, a.h));
   const sb = Math.max(1, Math.min(b.w, b.h));
@@ -602,12 +494,10 @@ function suppressDuplicateDetections(detections) {
   const kept = [];
   let rejected = 0;
   for (const det of [...detections].sort((a, b) => b.conf - a.conf)) {
-    const duplicate=kept.find((other) => isNearDuplicate(det, other));
-    if (duplicate && !duplicatePairCanRepresentOverlap(det,duplicate)) {
+    if (kept.some((other) => isNearDuplicate(det, other))) {
       rejected += 1;
       continue;
     }
-    if(duplicate) state.occlusionStats.alignedPairsKept+=1;
     kept.push(det);
   }
   return { kept, rejected };
@@ -828,7 +718,6 @@ function confirmationWindow() {
 
 function maybeConfirm(track) {
   if (track.confirmed) return track;
-  const wasPartialBirth=Boolean(track.partialBirth);
   const minSeq = state.analysisSeq - confirmationWindow() + 1;
   track.hitSeqs = (track.hitSeqs || []).filter((seq) => seq >= minSeq);
   const required = Math.max(
@@ -838,12 +727,6 @@ function maybeConfirm(track) {
   if (track.hitSeqs.length >= required) {
     track.confirmed = true;
     track.confirmedAtSeq = state.analysisSeq;
-    if(wasPartialBirth) {
-      track.bornOccluded=true;
-      track.partialBirth=false;
-      state.occlusionStats.partialBirthConfirmed+=1;
-      emitOcclusionEvent('partial-birth-confirmed',track);
-    }
     if (!track.appearanceAnchor && track.appearanceRecent) {
       track.appearanceAnchor = track.appearanceRecent;
     }
@@ -949,9 +832,7 @@ function updateTracks(detections) {
     return;
   }
 
-  const tracks = state.tracks.filter((t) =>
-    t.misses <= state.maxMisses || occlusionAlive(t,now) || partialBirthAlive(t,now)
-  );
+  const tracks = state.tracks.filter((t) => t.misses <= state.maxMisses);
   const pairs = [];
   detections.forEach((det, di) => {
     tracks.forEach((track, ti) => {
@@ -982,27 +863,13 @@ function updateTracks(detections) {
       // Petit jitter : lissage. Déplacement réel : recadrage immédiat sur la nouvelle
       // détection au lieu de laisser le cadre poursuivre la carte pendant plusieurs cycles.
       const alpha = movedClearly ? 1 : (track.confirmed ? 0.72 : 0.88);
-      const overlapNow=bestOverlapWith(det,detections,assignment.get(ti));
-      const anchor=track.geometryAnchor || trackGeometry(track);
-      const anchorArea=Math.max(1,geometryArea(anchor));
-      const observedArea=geometryArea(det);
-      const croppedByOverlap=Boolean(
-        track.confirmed && overlapNow.overlap>=OCCLUSION_MIN_OVERLAP &&
-        observedArea/anchorArea<CROPPED_GEOMETRY_RATIO
-      );
-      const wasOccluded=Boolean(track.occluded);
-      if(croppedByOverlap) state.occlusionStats.croppedGeometryPreserved+=1;
-      if(wasOccluded && !croppedByOverlap && observedArea/anchorArea>=.84) {
-        state.occlusionStats.recovered+=1;
-        emitOcclusionEvent('recovered',track,{observedAreaRatio:observedArea/anchorArea});
-      }
       const updated = {
         ...track,
-        cx: croppedByOverlap ? track.cx : track.cx * (1 - alpha) + det.cx * alpha,
-        cy: croppedByOverlap ? track.cy : track.cy * (1 - alpha) + det.cy * alpha,
-        w: croppedByOverlap ? anchor.w : track.w * (1 - alpha) + det.w * alpha,
-        h: croppedByOverlap ? anchor.h : track.h * (1 - alpha) + det.h * alpha,
-        angle: croppedByOverlap ? anchor.angle : det.angle,
+        cx: track.cx * (1 - alpha) + det.cx * alpha,
+        cy: track.cy * (1 - alpha) + det.cy * alpha,
+        w: track.w * (1 - alpha) + det.w * alpha,
+        h: track.h * (1 - alpha) + det.h * alpha,
+        angle: det.angle,
         conf: det.conf,
         cls: det.cls,
         rescuedLowConfidence: Boolean(det.rescuedLowConfidence),
@@ -1016,53 +883,14 @@ function updateTracks(detections) {
         lastSeenSeq: state.analysisSeq,
         hitSeqs: [...(track.hitSeqs || []), state.analysisSeq],
         appearanceAnchor: track.appearanceAnchor || track.appearanceRecent || det.appearance || null,
-        appearanceRecent: croppedByOverlap ? (track.appearanceRecent || det.appearance || null) : (det.appearance || track.appearanceRecent || null),
-        geometryAnchor: (!track.geometryAnchor || observedArea>anchorArea*.92)
-          ? trackGeometry(det)
-          : track.geometryAnchor,
-        bestObservedArea: Math.max(Number(track.bestObservedArea||0),observedArea),
-        occluded: croppedByOverlap,
-        occlusionOverlap: croppedByOverlap ? overlapNow.overlap : 0,
-        visibleEstimate: croppedByOverlap ? Math.max(.05,Math.min(1,observedArea/anchorArea)) : 1,
-        occludedSinceMs: croppedByOverlap ? (track.occludedSinceMs || now) : null,
-        lastOcclusionEvidenceMs: croppedByOverlap ? now : null,
-        partialBirth: Boolean(track.partialBirth),
-        partialBirthSinceMs: track.partialBirthSinceMs || null,
-        partialBirthOverlap: Math.max(Number(track.partialBirthOverlap||0),overlapNow.overlap||0)
+        appearanceRecent: det.appearance || track.appearanceRecent || null
       };
       next.push(maybeConfirm(updated));
     } else {
       const missed = { ...track, misses: (track.misses || 0) + 1 };
-      const occluder=bestOverlapWith(track,detections);
-      const hasOcclusionEvidence=track.confirmed && occluder.overlap>=OCCLUSION_MIN_OVERLAP;
-
-      if(hasOcclusionEvidence) {
-        if(!track.occluded) {
-          state.occlusionStats.holdsStarted+=1;
-          emitOcclusionEvent('hold-started',track,{overlap:occluder.overlap});
-        }
-        state.occlusionStats.holdFrames+=1;
-        next.push({
-          ...missed,
-          occluded:true,
-          occlusionOverlap:occluder.overlap,
-          visibleEstimate:Math.max(0,1-occluder.overlap),
-          occludedSinceMs:track.occludedSinceMs || now,
-          lastOcclusionEvidenceMs:now,
-          geometryAnchor:track.geometryAnchor || trackGeometry(track)
-        });
-      } else if(occlusionAlive(track,now)) {
-        state.occlusionStats.holdFrames+=1;
-        next.push({...missed});
-      } else if(partialBirthAlive(track,now)) {
-        next.push({...missed});
-      } else if (missed.misses <= state.maxMisses) {
+      if (missed.misses <= state.maxMisses) {
         next.push(missed);
       } else {
-        if(track.occluded) {
-          state.occlusionStats.expired+=1;
-          emitOcclusionEvent('hold-expired',track);
-        }
         rememberLostTrack(missed, now);
       }
     }
@@ -1074,9 +902,6 @@ function updateTracks(detections) {
 
   detections.forEach((det, di) => {
     if (matchedDet.has(di)) return;
-    const nearbyConfirmed=bestOverlapWith(det,next.filter(t=>t.confirmed && (t.misses||0)===0));
-    const partialBirth=nearbyConfirmed.overlap>=PARTIAL_BIRTH_MIN_OVERLAP;
-    if(partialBirth) state.occlusionStats.partialBirths+=1;
     const fresh = maybeConfirm({
       ...det,
       uid: state.nextUid++,
@@ -1088,12 +913,6 @@ function updateTracks(detections) {
       hitSeqs: [state.analysisSeq],
       appearanceAnchor: null,
       appearanceRecent: det.appearance || null,
-      geometryAnchor: trackGeometry(det),
-      bestObservedArea: geometryArea(det),
-      occluded:false,
-      partialBirth,
-      partialBirthSinceMs:partialBirth ? now : null,
-      partialBirthOverlap:partialBirth ? nearbyConfirmed.overlap : 0,
       rescuedLowConfidence: Boolean(det.rescuedLowConfidence),
       edgeRescued: Boolean(det.edgeRescued),
       requiredConfirmations: det.edgeRescued
@@ -1102,7 +921,6 @@ function updateTracks(detections) {
           ? state.confirmationsNeeded + 1
           : state.confirmationsNeeded
     });
-    if(partialBirth) emitOcclusionEvent('partial-birth-seen',fresh,{overlap:nearbyConfirmed.overlap});
     next.push(fresh);
   });
 
@@ -1193,10 +1011,7 @@ function drawProvisional(ctx, det) {
 }
 
 function activeTracks() {
-  const now=performance.now();
-  return state.tracks.filter((t) =>
-    t.confirmed && (t.misses <= state.maxMisses || occlusionAlive(t,now))
-  );
+  return state.tracks.filter((t) => t.confirmed && t.misses <= state.maxMisses);
 }
 
 function drawOverlay() {
@@ -1466,7 +1281,7 @@ async function exportZip() {
     captures: state.captures.length,
     provider: state.provider,
     model: 'TCG Card Detector v5.3 overlap (YOLO26n OBB 512 performance)',
-    architecture: 'v53-overlap-512 + temporal-occlusion-memory + partial-track-birth + masked-identification + recorder'
+    architecture: 'v53-overlap-512 + worker-fast-matcher + sliding-appearance-guarded-hover-cache + stationary-pointer-track-sync + recorder'
   }, null, 2));
   state.captures.forEach((item) => {
     const name = String(item.id).padStart(3, '0');
@@ -1733,29 +1548,7 @@ function getProductSnapshot() {
         h:Number(t.h || 0),
         angle:Number(t.angle || 0),
         misses:Number(t.misses || 0),
-        edgeRescued:Boolean(t.edgeRescued),
-        occluded:Boolean(t.occluded),
-        occlusionOverlap:Number(t.occlusionOverlap || 0),
-        visibleEstimate:Number(t.visibleEstimate ?? 1),
-        bornOccluded:Boolean(t.bornOccluded),
-        partialBirth:Boolean(t.partialBirth)
-      }))
-    },
-    occlusion:{
-      config:{
-        minOverlap:OCCLUSION_MIN_OVERLAP,
-        graceMs:OCCLUSION_GRACE_MS,
-        partialBirthMemoryMs:PARTIAL_BIRTH_MEMORY_MS,
-        croppedGeometryRatio:CROPPED_GEOMETRY_RATIO
-      },
-      stats:{...state.occlusionStats},
-      active:activeTracks().filter(t=>t.occluded).map(t=>({
-        uid:t.uid,
-        displayId:t.displayId,
-        overlap:Number(t.occlusionOverlap || 0),
-        visibleEstimate:Number(t.visibleEstimate ?? 0),
-        misses:Number(t.misses || 0),
-        bornOccluded:Boolean(t.bornOccluded)
+        edgeRescued:Boolean(t.edgeRescued)
       }))
     },
     geometry:{...state.videoGeometry},
@@ -1778,7 +1571,6 @@ window.TCGDetectionLab={
   activeTracks,
   corners,
   captureCanonicalTrackCanvas,
-  boxOverlapFraction,
   captureCase,
   setStatus,
   showWarning,
@@ -1786,7 +1578,7 @@ window.TCGDetectionLab={
 };
 
 window.TCGVisionEngine={
-  version:'0.6.3-occlusion-overlap-memory',
+  version:'0.6.1-product-bridge-alpha15',
   preload:preloadExternalVision,
   attachRemoteStream:attachExternalStream,
   detachRemoteStream:detachExternalStream,

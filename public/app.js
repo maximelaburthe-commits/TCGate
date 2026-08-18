@@ -1299,7 +1299,7 @@ async function buildCompleteReport() {
 
   return {
     format: 'tcg-webcam-complete-report',
-    version: '0.6.3',
+    version: '0.6.2',
     generatedAt: new Date().toISOString(),
     session: {
       startedAt: new Date(state.reportStartedAt).toISOString(),
@@ -1444,14 +1444,6 @@ function reportText(report) {
     `Changements géométrie vidéo: ${report.vision?.detector?.geometry?.changes ?? '—'}`,
     `Garde reflet - rejets: ${report.vision?.identification?.qualityGuard?.rejected ?? '—'}`,
     `Garde reflet - modérés: ${report.vision?.identification?.qualityGuard?.moderate ?? '—'}`,
-    `Occlusion - holds démarrés: ${report.vision?.detector?.occlusion?.stats?.holdsStarted ?? '—'}`,
-    `Occlusion - frames maintenues: ${report.vision?.detector?.occlusion?.stats?.holdFrames ?? '—'}`,
-    `Occlusion - récupérations: ${report.vision?.detector?.occlusion?.stats?.recovered ?? '—'}`,
-    `Occlusion - expirations: ${report.vision?.detector?.occlusion?.stats?.expired ?? '—'}`,
-    `Chevauchement - naissances partielles: ${report.vision?.detector?.occlusion?.stats?.partialBirths ?? '—'}`,
-    `Chevauchement - naissances confirmées: ${report.vision?.detector?.occlusion?.stats?.partialBirthConfirmed ?? '—'}`,
-    `Chevauchement - géométries préservées: ${report.vision?.detector?.occlusion?.stats?.croppedGeometryPreserved ?? '—'}`,
-    `Chevauchement - paires alignées conservées: ${report.vision?.detector?.occlusion?.stats?.alignedPairsKept ?? '—'}`,
     `Pointer misses 3x3: ${JSON.stringify(report.vision?.identification?.spatialPointer?.misses || [])}`,
     `Détections filtrées 3x3: ${JSON.stringify(report.vision?.detector?.spatial?.filtered || [])}`,
     '',
@@ -1536,11 +1528,11 @@ async function generateCompleteReport() {
     { name: 'report.json', data: json },
     { name: 'rapport.txt', data: txt },
     { name: 'README.txt', data:
-`TCG Webcam V0.6.3 — Rapport complet pré-alpha
+`TCG Webcam V0.4 — Rapport complet alpha
 
 Ce ZIP ne contient ni vidéo, ni audio, ni capture d’écran.
-Il contient les données de session, média, réseau WebRTC, calibration, Vision, identification et événements.
-Les métriques d’occlusion/chevauchement V0.6.3 sont incluses dans report.json et rapport.txt.
+Il contient les données de session, média, réseau WebRTC et événements.
+La Vision/calibration ne sont pas encore intégrées dans cette branche.
 `
     }
   ]);
@@ -1578,19 +1570,6 @@ window.addEventListener('tcg-vision-geometry',(event)=>{
 
 window.addEventListener('tcg-identification-result',(event)=>{
   syncIdentifiedCardUi(event.detail || {});
-});
-
-window.addEventListener('tcg-vision-occlusion',(event)=>{
-  const d=event.detail || {};
-  logEvent('vision-occlusion',{
-    type:d.type || null,
-    uid:d.uid ?? null,
-    displayId:d.displayId ?? null,
-    overlap:d.overlap ?? null,
-    visibleEstimate:d.visibleEstimate ?? null,
-    bornOccluded:Boolean(d.bornOccluded),
-    observedAreaRatio:d.observedAreaRatio ?? null
-  });
 });
 
 window.addEventListener('tcg-identification-stability',(event)=>{

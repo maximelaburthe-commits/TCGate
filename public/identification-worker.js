@@ -250,20 +250,6 @@ function flipMask180(mask){
   for(let i=0;i<n;i++) out[n-1-i]=mask[i];
   return out;
 }
-
-function textZoneMask(mask){
-  const out=new Uint8Array(mask.length);
-  for(let y=0;y<REF_H;y++){
-    const inTitle=y<=Math.floor(REF_H*.18);
-    const inRules=y>=Math.floor(REF_H*.62) && y<=Math.floor(REF_H*.96);
-    if(!inTitle && !inRules) continue;
-    for(let x=2;x<REF_W-2;x++){
-      const i=y*REF_W+x;
-      if(mask[i]) out[i]=1;
-    }
-  }
-  return out;
-}
 function maskCellVisible(mask,row,col){
   const cx=Math.min(REF_W-1,Math.floor((col+.5)*REF_W/COARSE_COLS));
   const cy=Math.min(REF_H-1,Math.floor((row+.5)*REF_H/COARSE_ROWS));
@@ -368,25 +354,6 @@ function bestMaskedComparison(observations,ref,maskInfo){
   return best;
 }
 
-function bestTextZoneComparison(observations,ref,maskInfo){
-  let best={score:0,gray:0,gradient:0,color:0,dx:0,dy:0,used:0,flipped:false};
-  const shiftsX=[-3,0,3];
-  const shiftsY=[-4,0,4];
-  for(let vi=0;vi<observations.length;vi++){
-    const obs=observations[vi];
-    const flipped=(vi%2)===1;
-    const base=flipped?flipMask180(maskInfo.mask):maskInfo.mask;
-    const mask=textZoneMask(base);
-    for(const dx of shiftsX){
-      for(const dy of shiftsY){
-        const r=maskedCorrelation(obs,ref,mask,dx,dy);
-        if(r.score>best.score) best={...r,dx,dy,flipped};
-      }
-    }
-  }
-  return best;
-}
-
 function metaRef(ref){
   return {name:ref.name,type:ref.type||'',image:ref.image};
 }
@@ -471,7 +438,7 @@ function identify(bitmap,context){
   let mode='normal';
   let maskDiagnostics=null;
 
-  if(!accepted&&context?.maskInfo?.maskedBy>0&&context.maskInfo.visibleFraction>=.16){
+  if(!accepted&&context?.maskInfo?.maskedBy>0&&context.maskInfo.visibleFraction>=.20){
     const tMaskCoarse=performance.now();
     const maskCoarse=maskedCoarseRank(observations,refs,context.maskInfo);
     const maskPool=uniqueRefs(
@@ -483,20 +450,14 @@ function identify(bitmap,context){
     const tMaskDetail=performance.now();
     const maskRanked=maskPool.map(ref=>{
       const m=bestMaskedComparison(observations,ref.descriptor,context.maskInfo);
-      const t=bestTextZoneComparison(observations,ref.descriptor,context.maskInfo);
-      const textUsable=t.used>=120;
-      // No OCR dependency in V0.6.3: visible title/rules typography is used only
-      // as a weak visual signature when enough text-zone pixels remain visible.
-      const combined=textUsable ? (.82*m.score+.18*t.score) : m.score;
       return {
         ref,
-        score:combined,
+        score:m.score,
         parts:{
           full:m.gray,art:0,gradient:m.gradient,
-          patches:m.score,color:m.color,masked:m.score,text:t.score
+          patches:m.score,color:m.color,masked:m.score
         },
-        masked:m,
-        textZone:{score:t.score,used:t.used,usable:textUsable}
+        masked:m
       };
     }).sort((a,b)=>b.score-a.score).slice(0,5);
     timing.maskDetailMs=performance.now()-tMaskDetail;
@@ -512,17 +473,12 @@ function identify(bitmap,context){
       bestScore:mb?.score||0,
       margin:mm,
       testedCandidates:maskPool.length,
-      textZoneBestScore:Number(maskRanked[0]?.textZone?.score||0),
-      textZonePixels:Number(maskRanked[0]?.textZone?.used||0),
       candidates:maskRanked.map(packItem)
     };
 
-    const lowVisibility=context.maskInfo.visibleFraction<.20;
-    const maskedAccept=lowVisibility ? .69 : .655;
-    const maskedMargin=lowVisibility ? .050 : .038;
-    if(mb&&mb.score>=maskedAccept&&mm>=maskedMargin){
+    if(mb&&mb.score>=.655&&mm>=.038){
       best=mb;second=ms;margin=mm;ranked=maskRanked;
-      accepted=true;mode=lowVisibility?'masked-low-visible':'masked';
+      accepted=true;mode='masked';
     }else if(mb&&mm>margin+.035){
       best=mb;second=ms;margin=mm;ranked=maskRanked;
       mode='masked-uncertain';
