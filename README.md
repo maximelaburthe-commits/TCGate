@@ -1,36 +1,22 @@
-# TCG Webcam — V0.6.3.4 Hover + Chromium GPU Recovery
+# TCG Webcam — V0.6.4.0 Clean Baseline
 
-Version expérimentale construite sur la Recovery V0.6.3.1.
+Cette version repart directement de la V0.6.2 validée comme référence comportementale.
 
-Le chemin principal de détection reste celui de la V0.6.2 / Recovery : le modèle YOLO et `detection-worker.js` ne sont pas modifiés.
+## Modifications autorisées
+- correction ciblée : un résultat visuel très décisif peut être accepté malgré `glare-high` si la marge sur le candidat n°2 est forte ;
+- page de préparation/lobby compacte selon la hauteur du viewport afin d'éviter le scroll sur Chrome desktop ;
+- numéros de version / rapports mis à jour.
 
-Chaîne principale :
-`flux adverse -> YOLO V5.3/512 -> tracking principal -> identification -> validation temporelle -> image HD`
+## Strictement inchangé depuis V0.6.2
+- `public/vision-core.js` ;
+- `public/detection-worker.js` ;
+- modèle `card_detector_v53_512.onnx` ;
+- logique de tracking ;
+- logique de hover ;
+- temporalité d'identification hors exception reflet ci-dessus ;
+- réseau / WebRTC.
 
-Couche secondaire :
-`carte principale stable -> Overlap Probe -> hypothèse de carte alignée sous la carte -> identification masquée au survol`
-
-## Règle de sécurité
-
-L'Overlap Probe est strictement non destructif : une hypothèse secondaire ne peut ni supprimer, ni fusionner, ni déplacer une piste issue du détecteur principal.
-
-## Identification
-
-- carte isolée : acquisition rapide comme en V0.6.2 ;
-- crop marqué comme chevauché / sonde secondaire : 2 confirmations avant validation ;
-- plusieurs variantes du même personnage (ex. plusieurs Panam Palmer) : 3 confirmations en situation de crop risqué ;
-- reflet + crop risqué : au moins 3 confirmations ;
-- garde reflet Recovery conservée pour les résultats très décisifs ;
-- si la carte du dessus devient difficile à identifier à cause d'un bord contaminé, un crop de secours tronque uniquement le bord orienté vers la carte suspectée.
-
-## Chrome
-
-La page de préparation a une mise en page responsive en hauteur (`100dvh` + mode compact sur petits viewports desktop) afin de limiter le scroll vertical sous Chrome.
-
-## Rapport complet
-
-Le rapport est maintenant correctement marqué `0.6.3.2` et inclut les statistiques `overlapProbe`.
+Il n'y a aucun `Overlap Probe`, aucun arbitrage de pointeur V0.6.3.x et aucun changement du backend WebGPU/WASM.
 
 ## Test
-
-Lire `PLAN_TEST_V0.6.3.4.md`.
+Voir `PLAN_TEST_V0.6.4.0.md`.

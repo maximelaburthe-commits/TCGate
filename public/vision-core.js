@@ -3,13 +3,6 @@
 
 const MAX_CAPTURES = 40;
 
-// V0.6.3.2 — non-destructive overlap probe.
-// Secondary hypotheses never enter the primary tracker.
-const OVERLAP_PROBE_ENABLED = true;
-const OVERLAP_PROBE_MIN_SCORE = 0.205;
-const OVERLAP_PROBE_CONFIRMATIONS = 2;
-const OVERLAP_PROBE_MAX_AGE_MS = 850;
-
 const $ = (id) => document.getElementById(id);
 const els = {
   globalStatus: $('visionGlobalStatus'), cameraSelect: $('visionCameraSelect'), resolutionSelect: $('visionResolutionSelect'),
@@ -73,10 +66,7 @@ const state = {
     confirmed: [0,0,0,0,0,0,0,0,0],
     rawConfidenceSum: [0,0,0,0,0,0,0,0,0],
     filteredConfidenceSum: [0,0,0,0,0,0,0,0,0]
-  },
-  overlapProbes: [],
-  overlapProbeHistory: new Map(),
-  overlapProbeStats: {analyses:0,candidates:0,confirmed:0,expired:0,bottom:0,top:0,last:null}
+  }
 };
 
 function setStatus(text, type = 'neutral') {
@@ -124,8 +114,6 @@ function resetTracking(message = '') {
   state.lostTracks = [];
   state.rawDetections = [];
   state.analysisFrames.clear();
-  state.overlapProbes = [];
-  state.overlapProbeHistory.clear();
   state.nextUid = 1;
   state.nextDisplayId = 1;
   state.analysisSeq = 0;
@@ -225,9 +213,7 @@ function startVideoFpsMeter() {
 
 function ensureWorker() {
   if (state.worker) return state.worker;
-  const providerOverride=new URLSearchParams(location.search).get('visionProvider');
-  const workerUrl=providerOverride ? `/detection-worker.js?provider=${encodeURIComponent(providerOverride)}` : '/detection-worker.js';
-  const worker = new Worker(workerUrl);
+  const worker = new Worker('/detection-worker.js');
   state.worker = worker;
 
   worker.onmessage = (event) => {
@@ -275,7 +261,6 @@ function ensureWorker() {
       state.provider = msg.provider || state.provider;
       state.analysisSeq += 1;
       updateTracks(state.rawDetections);
-      updateOverlapProbes(appearanceFrame);
       recordSpatialDetections(incoming,state.rawDetections);
       window.dispatchEvent(new CustomEvent('tcg-tracks-updated', {
         detail: { analysisSeq: state.analysisSeq }
@@ -466,56 +451,6 @@ function attachAppearance(detections, frame) {
   }));
 }
 
-
-function overlapProbeCanonicalCanvas(track, frame) {
-  if (!track || !frame?.canvas) return null;
-  const CARD_W=40,CARD_H=58,EXTRA_X=12,EXTRA_Y=30;
-  const OUT_W=CARD_W+EXTRA_X*2,OUT_H=CARD_H+EXTRA_Y*2;
-  const c=document.createElement('canvas'); c.width=OUT_W; c.height=OUT_H;
-  const ctx=c.getContext('2d',{willReadFrequently:true,alpha:false});
-  ctx.fillStyle='#777'; ctx.fillRect(0,0,OUT_W,OUT_H);
-  const scale=frame.canvas.width/Math.max(1,frame.sourceW);
-  const cx=track.cx*scale,cy=track.cy*scale,w=Math.max(2,track.w*scale),h=Math.max(2,track.h*scale);
-  const shortSide=Math.max(2,Math.min(w,h)),longSide=Math.max(2,Math.max(w,h));
-  let theta=track.angle||0; if(w>h) theta+=Math.PI/2;
-  ctx.translate(OUT_W/2,OUT_H/2); ctx.scale(CARD_W/shortSide,CARD_H/longSide);
-  ctx.rotate(-theta); ctx.translate(-cx,-cy); ctx.drawImage(frame.canvas,0,0); ctx.setTransform(1,0,0,1,0,0);
-  return {canvas:c,cardW:CARD_W,cardH:CARD_H,extraX:EXTRA_X,extraY:EXTRA_Y};
-}
-function overlapProbeGray(probe){
-  const c=probe?.canvas;if(!c)return null;const px=c.getContext('2d',{willReadFrequently:true}).getImageData(0,0,c.width,c.height).data;
-  const g=new Float32Array(c.width*c.height);for(let i=0,p=0;p<g.length;p++,i+=4)g[p]=(px[i]*.299+px[i+1]*.587+px[i+2]*.114)/255;return g;
-}
-function probeMean(g,w,x0,x1,y0,y1){let s=0,n=0;for(let y=Math.max(0,y0);y<y1;y++)for(let x=Math.max(0,x0);x<x1;x++){const v=g[y*w+x];if(Number.isFinite(v)){s+=v;n++;}}return n?s/n:0;}
-function probeStd(g,w,x0,x1,y0,y1){const m=probeMean(g,w,x0,x1,y0,y1);let s=0,n=0;for(let y=Math.max(0,y0);y<y1;y++)for(let x=Math.max(0,x0);x<x1;x++){const v=g[y*w+x];if(Number.isFinite(v)){const d=v-m;s+=d*d;n++;}}return n?Math.sqrt(s/n):0;}
-function probeHorizontalEdge(g,w,y,x0,x1){if(y<2||y>=Math.floor(g.length/w)-2)return 0;let s=0,n=0;for(let x=x0;x<x1;x++){s+=Math.abs(g[(y-1)*w+x]-g[(y+1)*w+x]);n++;}return n?s/n:0;}
-function probeVerticalEdge(g,w,x,y0,y1){if(x<2||x>=w-2||y1<=y0)return 0;let s=0,n=0;for(let y=y0;y<y1;y++){s+=Math.abs(g[y*w+x-1]-g[y*w+x+1]);n++;}return n?s/n:0;}
-function scoreAlignedOverlapSide(track,frame,direction){
-  const probe=overlapProbeCanonicalCanvas(track,frame),g=overlapProbeGray(probe);if(!probe||!g)return null;
-  const W=probe.canvas.width,x0=probe.extraX,x1=x0+probe.cardW,top=probe.extraY,bottom=top+probe.cardH;
-  const minPx=Math.max(7,Math.round(probe.cardH*.13)),maxPx=Math.min(probe.extraY-2,Math.round(probe.cardH*.50));let best=null;
-  for(let shiftPx=minPx;shiftPx<=maxPx;shiftPx++){
-    const edgeY=direction==='bottom'?bottom+shiftPx:top-shiftPx;
-    const y0=direction==='bottom'?bottom+2:edgeY+2,y1=direction==='bottom'?edgeY-1:top-2;if(y1-y0<4)continue;
-    const endEdge=probeHorizontalEdge(g,W,edgeY,x0+4,x1-4),le=probeVerticalEdge(g,W,x0,y0,y1),re=probeVerticalEdge(g,W,x1-1,y0,y1);
-    const sideEdge=Math.min(le,re)*.72+((le+re)/2)*.28;
-    const inner=probeMean(g,W,x0+5,x1-5,y0,y1),ol=probeMean(g,W,2,Math.max(4,x0-3),y0,y1),or=probeMean(g,W,Math.min(W-4,x1+3),W-2,y0,y1);
-    const contrast=Math.abs(inner-(ol+or)/2),texture=Math.min(.28,probeStd(g,W,x0+4,x1-4,y0,y1));
-    const score=endEdge*.44+sideEdge*.38+contrast*.12+texture*.06;
-    if(!best||score>best.score)best={score,shiftFraction:shiftPx/probe.cardH,endEdge,sideEdge,contrast,texture,direction};
-  }return best;
-}
-function longAxisVector(track){const a=track.angle||0;return track.w<=track.h?{x:-Math.sin(a),y:Math.cos(a)}:{x:Math.cos(a),y:Math.sin(a)};}
-function probeMatchesPrimary(c,parentUid){const short=Math.max(1,Math.min(c.w,c.h));return activeTracks().some(t=>{if(t.uid===parentUid||(t.misses||0)>0)return false;const d=Math.hypot(t.cx-c.cx,t.cy-c.cy)/short;const ar=Math.max(t.w*t.h,c.w*c.h)/Math.max(1,Math.min(t.w*t.h,c.w*c.h));return d<.42&&ar<1.65&&normalizedAngleDistance(t.angle,c.angle)<.28;});}
-function candidateFromProbe(parent,r){const long=Math.max(parent.w,parent.h),axis=longAxisVector(parent),sign=r.direction==='bottom'?1:-1,shift=long*r.shiftFraction*sign;return {uid:`probe-${parent.uid}-${r.direction}`,displayId:null,conf:clamp(.45+r.score*1.7,.45,.94),cx:parent.cx+axis.x*shift,cy:parent.cy+axis.y*shift,w:parent.w,h:parent.h,angle:parent.angle,misses:0,confirmed:false,isOverlapProbe:true,parentUid:parent.uid,probeDirection:r.direction,probeShiftFraction:r.shiftFraction,probeScore:r.score,probeDiagnostics:{endEdge:r.endEdge,sideEdge:r.sideEdge,contrast:r.contrast,texture:r.texture}};}
-function updateOverlapProbes(frame){
-  if(!OVERLAP_PROBE_ENABLED||!frame?.canvas){state.overlapProbes=[];return;}state.overlapProbeStats.analyses++;const now=performance.now();const parents=activeTracks().filter(t=>(t.misses||0)===0&&Number(t.conf||0)>=.50);
-  for(const parent of parents)for(const direction of ['top','bottom']){const r=scoreAlignedOverlapSide(parent,frame,direction);if(!r||r.score<OVERLAP_PROBE_MIN_SCORE)continue;const c=candidateFromProbe(parent,r);if(probeMatchesPrimary(c,parent.uid))continue;const key=c.uid;state.overlapProbeStats.candidates++;let h=state.overlapProbeHistory.get(key);const consistent=h&&now-h.lastSeenAt<=OVERLAP_PROBE_MAX_AGE_MS&&Math.abs((h.shiftFraction||0)-r.shiftFraction)<=.12;if(!h||!consistent)h={hits:0,firstSeenAt:now,confirmed:false};h.hits++;h.lastSeenAt=now;h.shiftFraction=r.shiftFraction;h.score=r.score;h.candidate=c;if(!h.confirmed&&h.hits>=OVERLAP_PROBE_CONFIRMATIONS){h.confirmed=true;state.overlapProbeStats.confirmed++;state.overlapProbeStats[direction]++;}state.overlapProbeHistory.set(key,h);state.overlapProbeStats.last={parentUid:parent.uid,direction,score:Number(r.score.toFixed(4)),shiftFraction:Number(r.shiftFraction.toFixed(4)),hits:h.hits,confirmed:h.confirmed,at:now};}
-  for(const [key,h] of [...state.overlapProbeHistory.entries()]){const alive=parents.some(p=>key.startsWith(`probe-${p.uid}-`));if(!alive||now-(h.lastSeenAt||0)>OVERLAP_PROBE_MAX_AGE_MS){if(h.confirmed)state.overlapProbeStats.expired++;state.overlapProbeHistory.delete(key);}}
-  state.overlapProbes=[...state.overlapProbeHistory.values()].filter(h=>h.confirmed&&now-(h.lastSeenAt||0)<=OVERLAP_PROBE_MAX_AGE_MS).map(h=>({...h.candidate,confirmed:true,probeHits:h.hits}));
-}
-function secondaryOverlapTracks(){return state.overlapProbes.filter(p=>p.confirmed&&(p.misses||0)===0);}
-
 function stripAppearance(obj) {
   if (!obj) return obj;
   const { appearance, appearanceAnchor, appearanceRecent, ...rest } = obj;
@@ -532,8 +467,6 @@ function detectionAreaFraction(det) {
   const frameArea = Math.max(1, els.overlay.width * els.overlay.height);
   return (Math.max(1, det.w) * Math.max(1, det.h)) / frameArea;
 }
-
-function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
 function median(values) {
   const xs = values.filter(Number.isFinite).sort((a, b) => a - b);
@@ -1077,10 +1010,6 @@ function drawProvisional(ctx, det) {
   ctx.restore();
 }
 
-function drawOverlapProbe(ctx, det) {
-  const pts=corners(det);ctx.save();ctx.globalAlpha=.78;ctx.lineWidth=Math.max(2,els.overlay.width/900);ctx.strokeStyle='#ffb454';ctx.setLineDash([7,7]);ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);pts.slice(1).forEach(p=>ctx.lineTo(p[0],p[1]));ctx.closePath();ctx.stroke();ctx.setLineDash([]);const label=`CHEVAUCHEMENT ? · ${Math.round((det.probeScore||0)*100)} %`;const fs=Math.max(11,els.overlay.width/100);ctx.font=`700 ${fs}px system-ui`;const m=ctx.measureText(label);const x=Math.max(4,Math.min(pts[2][0],els.overlay.width-m.width-18)),y=Math.max(fs+8,Math.min(els.overlay.height-6,pts[2][1]));ctx.fillStyle='rgba(12,9,5,.64)';ctx.fillRect(x-5,y-fs-5,m.width+10,fs+10);ctx.fillStyle='#ffb454';ctx.fillText(label,x,y);ctx.restore();
-}
-
 function activeTracks() {
   return state.tracks.filter((t) => t.confirmed && t.misses <= state.maxMisses);
 }
@@ -1094,7 +1023,6 @@ function drawOverlay() {
   if (state.debugOverlay) {
     provisionalTracks().forEach((t) => drawProvisional(ctx, t));
     active.forEach((t) => drawTrack(ctx, t));
-    secondaryOverlapTracks().forEach((t) => drawOverlapProbe(ctx, t));
   }
 
   els.metricCards.textContent = String(active.length);
@@ -1127,7 +1055,7 @@ async function runInference() {
     const requestId = ++state.requestSeq;
     // Copie légère de la frame exacte analysée : l'empreinte visuelle est calculée
     // sur le même instant que les coordonnées YOLO, pas ~500 ms plus tard.
-    if (els.visualLockToggle?.checked || OVERLAP_PROBE_ENABLED) {
+    if (els.visualLockToggle?.checked) {
       state.analysisFrames.set(requestId, captureAppearanceFrame());
       // Une seule inférence est active, mais garde-fou si une ancienne réponse est perdue.
       for (const key of [...state.analysisFrames.keys()]) {
@@ -1589,7 +1517,7 @@ function detachExternalStream() {
 
 function getProductSnapshot() {
   return {
-    version:'0.6.3.4-overlap-probe-hover-recovery',
+    version:'0.2.0-alpha15-v53-512-persistent-hover-cache',
     active:Boolean(state.detecting && state.externalAttached),
     modelReady:Boolean(state.workerReady),
     provider:state.provider || null,
@@ -1611,8 +1539,17 @@ function getProductSnapshot() {
       stats:{...state.filterStats}
     },
     tracking:{
-      activeTracks:activeTracks().map(t=>({uid:t.uid,conf:Number(t.conf||0),cx:Number(t.cx||0),cy:Number(t.cy||0),w:Number(t.w||0),h:Number(t.h||0),angle:Number(t.angle||0),misses:Number(t.misses||0),edgeRescued:Boolean(t.edgeRescued)})),
-      overlapProbe:{enabled:OVERLAP_PROBE_ENABLED,active:secondaryOverlapTracks().map(t=>({uid:t.uid,parentUid:t.parentUid,direction:t.probeDirection,score:Number(t.probeScore||0),shiftFraction:Number(t.probeShiftFraction||0),cx:Number(t.cx||0),cy:Number(t.cy||0),w:Number(t.w||0),h:Number(t.h||0),angle:Number(t.angle||0)})),stats:{...state.overlapProbeStats}}
+      activeTracks:activeTracks().map(t=>({
+        uid:t.uid,
+        conf:Number(t.conf || 0),
+        cx:Number(t.cx || 0),
+        cy:Number(t.cy || 0),
+        w:Number(t.w || 0),
+        h:Number(t.h || 0),
+        angle:Number(t.angle || 0),
+        misses:Number(t.misses || 0),
+        edgeRescued:Boolean(t.edgeRescued)
+      }))
     },
     geometry:{...state.videoGeometry},
     spatial:{
@@ -1628,11 +1565,10 @@ function getProductSnapshot() {
 }
 
 window.TCGDetectionLab={
-  version:'0.6.3.4-overlap-probe-hover-recovery',
+  version:'0.2.0-alpha15-v53-512-persistent-hover-cache',
   state,
   els,
   activeTracks,
-  secondaryOverlapTracks,
   corners,
   captureCanonicalTrackCanvas,
   captureCase,
@@ -1642,7 +1578,7 @@ window.TCGDetectionLab={
 };
 
 window.TCGVisionEngine={
-  version:'0.6.3.2-product-bridge',
+  version:'0.6.1-product-bridge-alpha15',
   preload:preloadExternalVision,
   attachRemoteStream:attachExternalStream,
   detachRemoteStream:detachExternalStream,

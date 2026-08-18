@@ -1212,8 +1212,7 @@ button.smallish {
   .vision-alpha-label { display:none; }
 }
 
-
-/* V0.6.3.2 — Chrome desktop lobby fit */
+/* V0.6.4.0 — desktop preparation/lobby fits viewport height without page scroll */
 #screenSetup,#screenLobby{min-height:100dvh}
 #screenSetup .panel-shell,#screenLobby .panel-shell{min-height:100dvh}
 #screenLobby .panel-shell{padding-top:clamp(14px,2.6vh,30px);padding-bottom:clamp(14px,2.6vh,30px)}

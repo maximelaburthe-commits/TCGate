@@ -1299,7 +1299,7 @@ async function buildCompleteReport() {
 
   return {
     format: 'tcg-webcam-complete-report',
-    version: '0.6.3.4',
+    version: '0.6.4.0',
     generatedAt: new Date().toISOString(),
     session: {
       startedAt: new Date(state.reportStartedAt).toISOString(),
@@ -1438,9 +1438,6 @@ function reportText(report) {
     `YOLO inference: ${report.vision?.detector?.inference?.inferenceMs ?? '—'} ms`,
     `YOLO cycle: ${report.vision?.detector?.inference?.totalMs ?? '—'} ms`,
     `Cartes détectées: ${report.vision?.detector?.activeCards ?? '—'}`,
-    `Overlap Probe actifs: ${report.vision?.detector?.tracking?.overlapProbe?.active?.length ?? '—'}`,
-    `Overlap Probe confirmés: ${report.vision?.detector?.tracking?.overlapProbe?.stats?.confirmed ?? '—'}`,
-    `Overlap Probe candidats: ${report.vision?.detector?.tracking?.overlapProbe?.stats?.candidates ?? '—'}`,
     `Bibliothèque: ${report.vision?.identification?.librarySize ?? '—'} cartes`,
     `Matcher: ${report.vision?.identification?.matcherMs ?? '—'} ms`,
     `Cache hover hits: ${report.vision?.identification?.hoverCache?.hits ?? '—'}`,
@@ -1448,10 +1445,6 @@ function reportText(report) {
     `Garde reflet - rejets: ${report.vision?.identification?.qualityGuard?.rejected ?? '—'}`,
     `Garde reflet - modérés: ${report.vision?.identification?.qualityGuard?.moderate ?? '—'}`,
     `Pointer misses 3x3: ${JSON.stringify(report.vision?.identification?.spatialPointer?.misses || [])}`,
-    `Arbitrage pointeur - zones ambiguës: ${report.vision?.identification?.pointerArbitration?.ambiguousPrimaryHits ?? '—'}`,
-    `Arbitrage pointeur - maintien carte primaire: ${report.vision?.identification?.pointerArbitration?.stickyPrimaryKeeps ?? '—'}`,
-    `Arbitrage pointeur - probes exposées: ${report.vision?.identification?.pointerArbitration?.probeExposedHits ?? '—'}`,
-    `Arbitrage pointeur - probes bloquées en recouvrement: ${report.vision?.identification?.pointerArbitration?.probeBlocked ?? '—'}`,
     `Détections filtrées 3x3: ${JSON.stringify(report.vision?.detector?.spatial?.filtered || [])}`,
     '',
     'ÉVÉNEMENTS',
@@ -1590,11 +1583,7 @@ window.addEventListener('tcg-identification-stability',(event)=>{
     required:d.required ?? null,
     reason:d.reason || null,
     holdAgeMs:d.holdAgeMs ?? null,
-    quality:d.quality || null,
-    probeRisk:d.probeRisk ?? null,
-    maskedRisk:d.maskedRisk ?? null,
-    overlapRisk:d.overlapRisk ?? null,
-    variantRisk:d.variantRisk ?? null
+    quality:d.quality || null
   });
 });
 

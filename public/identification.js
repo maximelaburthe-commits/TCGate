@@ -32,8 +32,6 @@
   const IDENTITY_SWITCH_WINDOW_MS = 1250;
   const IDENTITY_TRANSIENT_HOLD_MS = 1600;
   const IDENTITY_RECHECK_MS = 260;
-  const RISKY_ACQUISITION_CONFIRMATIONS = 2;
-  const RISKY_ACQUISITION_VARIANT_CONFIRMATIONS = 3;
 
   const $ = (id) => document.getElementById(id);
   const ui = {
@@ -102,22 +100,12 @@
       holdsExpired: 0,
       rechecks: 0,
       stableRefreshes: 0,
-      acquisitionsPending: 0,
-      acquisitionsConfirmed: 0,
-      variantGuards: 0,
       last: null
     },
     temporalRecheckTimer: null,
     pointerMissHeatmap: [0,0,0,0,0,0,0,0,0],
     pointerHitHeatmap: [0,0,0,0,0,0,0,0,0],
-    lastPointerDiagnosticAt: 0,
-    pointerArbitration: {
-      ambiguousPrimaryHits: 0,
-      stickyPrimaryKeeps: 0,
-      centerResolved: 0,
-      probeExposedHits: 0,
-      probeBlocked: 0
-    }
+    lastPointerDiagnosticAt: 0
   };
 
   function imageUrl(card) {
@@ -410,13 +398,6 @@
     const ba=Math.max(1,(B.x1-B.x0)*(B.y1-B.y0));
     return inter/Math.min(aa,ba);
   }
-
-
-  function secondaryTracks(){try{return lab.secondaryOverlapTracks?.()||[];}catch{return [];}}
-  function overlapProbeContext(track){if(!track)return{active:false,probe:null};if(track.isOverlapProbe)return{active:true,probe:track,direction:track.probeDirection||null,score:Number(track.probeScore||0),parentUid:track.parentUid??null};const probe=secondaryTracks().filter(p=>p.parentUid===track.uid).sort((a,b)=>Number(b.probeScore||0)-Number(a.probeScore||0))[0]||null;return probe?{active:true,probe,direction:probe.probeDirection||null,score:Number(probe.probeScore||0),parentUid:track.uid}:{active:false,probe:null};}
-  function identityFamily(name=''){return String(name).split(/\s+[—–-]\s+/)[0].trim().toLocaleLowerCase('fr');}
-  function hasIdentityVariants(result){const family=identityFamily(result?.best?.ref?.name||'');if(!family)return false;let count=0;for(const ref of state.refs){if(identityFamily(ref?.name||'')===family)count++;if(count>=2)return true;}return false;}
-  function cleanTrackAwayFromProbe(track,pc){const direction=pc?.direction;if(!track||!direction)return null;const clone={...track},long=Math.max(track.w,track.h),a=track.angle||0,axis=track.w<=track.h?{x:-Math.sin(a),y:Math.cos(a)}:{x:Math.cos(a),y:Math.sin(a)},toward=direction==='bottom'?1:-1,trim=.10,shift=long*trim*.5*toward;clone.cx-=axis.x*shift;clone.cy-=axis.y*shift;if(track.w<=track.h)clone.h=Math.max(8,track.h*(1-trim));else clone.w=Math.max(8,track.w*(1-trim));clone.identificationCleanCrop=true;return clone;}
 
   function overlapContext(track) {
     const others=lab.activeTracks().filter(t=>t.uid!==track.uid && (t.misses||0)===0);
@@ -1008,7 +989,7 @@
   }
 
   function purgeHoverCache() {
-    const active=new Set([...lab.activeTracks(),...secondaryTracks()].map(t=>t.uid));
+    const active=new Set(lab.activeTracks().map(t=>t.uid));
     const now=performance.now();
     for(const [uid,item] of state.hoverCache) {
       if(!active.has(uid)||now-item.at>HOVER_CACHE_TTL_MS) state.hoverCache.delete(uid);
@@ -1493,55 +1474,6 @@
     return Math.abs(x)<=track.w/2 && Math.abs(y)<=track.h/2;
   }
 
-  // V0.6.3.4 — no sticky ownership inside an overlap zone.
-  // The V0.6.3.3 sticky rule could keep the lower card selected after the
-  // pointer had clearly moved back onto the upper card. Resolve every pointer
-  // position from geometry so ownership can change immediately.
-  function normalizedCenterDistance(track,p) {
-    const a=-(track.angle||0),c=Math.cos(a),s=Math.sin(a);
-    const dx=p.x-track.cx,dy=p.y-track.cy;
-    const x=dx*c-dy*s,y=dx*s+dy*c;
-    const nx=x/Math.max(1,track.w/2),ny=y/Math.max(1,track.h/2);
-    return Math.hypot(nx,ny);
-  }
-
-  function choosePrimaryTrack(primaryTracks,point,{record=true}={}) {
-    const candidates=primaryTracks.filter(t=>contains(t,point));
-    if(!candidates.length)return null;
-    if(candidates.length===1)return candidates[0];
-    if(record)state.pointerArbitration.ambiguousPrimaryHits++;
-
-    // Voronoi-like ownership in each card's canonical space. This gives the
-    // pointer to the surface whose real centre it is closest to. Confidence is
-    // only a tie-breaker and can no longer pin the previous card.
-    candidates.sort((a,b)=>{
-      const da=normalizedCenterDistance(a,point),db=normalizedCenterDistance(b,point);
-      if(Math.abs(da-db)>.02)return da-db;
-      return Number(b.conf||0)-Number(a.conf||0);
-    });
-    if(record)state.pointerArbitration.centerResolved++;
-    return candidates[0];
-  }
-
-  // A secondary overlap probe represents an estimated card hidden under a real
-  // primary track. It must only own the physically exposed strip, never the
-  // estimated rectangle that is actually covered by the upper card.
-  function pointInProbeExposedStrip(probe,point) {
-    if(!probe||!contains(probe,point))return false;
-    const direction=probe.probeDirection;
-    if(direction!=='top'&&direction!=='bottom')return false;
-
-    const a=-(probe.angle||0),c=Math.cos(a),s=Math.sin(a);
-    const dx=point.x-probe.cx,dy=point.y-probe.cy;
-    const x=dx*c-dy*s,y=dx*s+dy*c;
-    const longIsY=probe.w<=probe.h;
-    const along=longIsY?y:x;
-    const long=Math.max(1,longIsY?probe.h:probe.w);
-    const n=along/long; // -0.5 .. +0.5
-    const visible=Math.min(.42,Math.max(.08,Number(probe.probeShiftFraction||.18)+.045));
-    return direction==='bottom' ? n>=(.5-visible) : n<=(-.5+visible);
-  }
-
 
 function pointerCell(point) {
   const w=Math.max(1,lab.els.video.videoWidth || lab.els.overlay.width || 1);
@@ -1656,11 +1588,9 @@ function applyQualityGuard(result,quality) {
   if(!result.accepted) return result;
 
   if(quality.risk==='high'){
-    // V0.6.3.1 recovery: a strong glare classification must not veto an otherwise
-    // decisive identification. The V0.6.3 field report contained repeated correct
-    // 100/100 matches with margins around 0.38-0.40 that were rejected only because
-    // a bright sleeve region was clipped. Keep the glare guard for ambiguous cases,
-    // but allow a saturated visual index only when the second candidate is far away.
+    // Clean-baseline rule: glare alone must not veto an otherwise decisive
+    // visual match. A large margin is required so ambiguous 100/100 cases
+    // remain protected by the quality guard.
     const decisiveHighGlare=
       Number(result.best?.score || 0)>=.55 &&
       Number(result.margin || 0)>=.24;
@@ -1757,28 +1687,37 @@ function applyQualityGuard(result,quality) {
     state.temporalRecheckTimer=setTimeout(()=>{
       if(generation!==state.hoverGeneration) return;
       if(state.hoveredTrack?.uid!==trackUid) return;
-      const liveTrack=[...lab.activeTracks(),...secondaryTracks()].find(t=>t.uid===trackUid && (t.misses||0)===0);
+      const liveTrack=lab.activeTracks().find(t=>t.uid===trackUid && (t.misses||0)===0);
       if(!liveTrack) return;
       state.identityStability.rechecks+=1;
       identifyTrack(liveTrack,generation);
     },delay);
   }
 
-  function temporalIdentityGuard(track,result,context=null) {
+  function temporalIdentityGuard(track,result) {
     if(!track) return {action:'render',result};
 
     const now=performance.now();
     const entry=temporalEntry(track);
     const key=identityKey(result);
 
-    // Isolated cards keep the fast V0.6.2 acquisition. Risky/cropped overlap
-    // observations are provisional so one contaminated 100/100 cannot lock a
-    // wrong variant (e.g. two different Panam Palmer cards).
+    // Initial acquisition remains immediate. The temporal guard only protects a
+    // card that has already been established on this track.
     if(!entry.stableKey) {
-      if(!key) return {action:'render',result};
-      const maskedRisk=Boolean(context?.maskInfo?.maskedBy>0),probeRisk=Boolean(track.isOverlapProbe||context?.probeRisk?.active),overlapRisk=Boolean(context?.overlapping&&Number(context?.maxOverlap||0)>=.22),risky=maskedRisk||probeRisk||overlapRisk;
-      if(risky){const within=entry.pendingKey===key&&entry.pendingLastAt>0&&now-entry.pendingLastAt<=IDENTITY_SWITCH_WINDOW_MS;if(within)entry.pendingCount++;else{entry.pendingKey=key;entry.pendingName=result.best.ref.name||key;entry.pendingCount=1;entry.pendingFirstAt=now;}entry.pendingLastAt=now;const variantRisk=hasIdentityVariants(result),glareRisk=result?.quality?.risk||'normal';let required=variantRisk?RISKY_ACQUISITION_VARIANT_CONFIRMATIONS:RISKY_ACQUISITION_CONFIRMATIONS;if(glareRisk!=='normal'||String(result?.mode||'').includes('glare'))required=Math.max(required,3);if(variantRisk)state.identityStability.variantGuards++;if(entry.pendingCount<required){state.identityStability.acquisitionsPending++;emitIdentityStability('acquisition-pending',track,{candidateKey:key,candidateName:result.best.ref.name||key,count:entry.pendingCount,required,probeRisk,maskedRisk,overlapRisk,variantRisk});return{action:'provisional',result,recheck:true,count:entry.pendingCount,required};}state.identityStability.acquisitionsConfirmed++;}
-      entry.stableKey=key;entry.stableName=result.best.ref.name||key;entry.stableResult=result;entry.stableAt=now;entry.lastConfirmedAt=now;entry.uncertainSince=0;clearPendingIdentity(entry);emitIdentityStability('stable-established',track,{stableKey:key,stableName:entry.stableName,riskyAcquisition:risky});return {action:'render',result};
+      if(key) {
+        entry.stableKey=key;
+        entry.stableName=result.best.ref.name || key;
+        entry.stableResult=result;
+        entry.stableAt=now;
+        entry.lastConfirmedAt=now;
+        entry.uncertainSince=0;
+        clearPendingIdentity(entry);
+        emitIdentityStability('stable-established',track,{
+          stableKey:key,
+          stableName:entry.stableName
+        });
+      }
+      return {action:'render',result};
     }
 
     // A repeated observation of the current identity immediately cancels any
@@ -1914,13 +1853,16 @@ function applyQualityGuard(result,quality) {
 
     const canvas=lab.captureCanonicalTrackCanvas(track,216,312);
     if (!canvas) return clearCurrentIdentification('Capture de carte impossible.');
-    let cropQuality=analyzeCropQuality(canvas);
+    const cropQuality=analyzeCropQuality(canvas);
 
     const overlap=overlapContext(track);
     const pointerCanonical=pointerInCanonical(track,state.pointer);
     const maskInfo=buildOcclusionMask(track,state.pointer);
-    const probeRisk=overlapProbeContext(track);
-    const context={...overlap,pointerCanonical,maskInfo,probeRisk};
+    const context={
+      ...overlap,
+      pointerCanonical,
+      maskInfo
+    };
 
     // Capture the exact source immediately for diagnostics. This is intentionally
     // done before transferring the bitmap to the worker.
@@ -1964,13 +1906,6 @@ function applyQualityGuard(result,quality) {
       }
     }
 
-    // If a secondary probe suspects a card exactly under one edge, retry the
-    // top card once with that contaminated edge trimmed. Primary geometry is unchanged.
-    if(!result?.accepted && !track.isOverlapProbe && context.probeRisk?.active){
-      const cleanTrack=cleanTrackAwayFromProbe(track,context.probeRisk),cleanCanvas=cleanTrack?lab.captureCanonicalTrackCanvas(cleanTrack,216,312):null;
-      if(cleanCanvas){let cleanResult=null;const cleanContext={...context,probeClean:true};try{if(state.matcherWorkerReady){const bm=await createImageBitmap(cleanCanvas);cleanResult=await queueWorkerTask(bm,cleanContext,generation,track.uid);if(cleanResult?.cancelled)return;}}catch{}if(!cleanResult)cleanResult=identifyCanvas(cleanCanvas,cleanContext);if(cleanResult){const better=Boolean(cleanResult.accepted||Number(cleanResult.margin||0)>Number(result?.margin||0)+.045||Number(cleanResult.best?.score||0)>Number(result?.best?.score||0)+.065);if(better){result=cleanResult;result.mode=`${result.mode||'normal'}-probe-clean`;cropQuality=analyzeCropQuality(cleanCanvas);try{state.lastAnalyzedCropDataUrl=cleanCanvas.toDataURL('image/jpeg',.94);}catch{}}}}
-    }
-
     result=applyQualityGuard(result,cropQuality);
 
     state.lastMatcherMs=Number(
@@ -1993,11 +1928,7 @@ function applyQualityGuard(result,quality) {
     if (generation !== state.hoverGeneration) return;
     if (!state.hoveredTrack || state.hoveredTrack.uid !== track.uid) return;
 
-    const temporal=temporalIdentityGuard(track,result,context);
-
-    if(temporal.action==='provisional') {
-      ui.result?.classList.add('hidden');ui.candidates?.classList.add('hidden');if(ui.empty){ui.empty.classList.remove('hidden');ui.empty.textContent=`Identification en confirmation · ${temporal.count}/${temporal.required}`;}if(ui.matcherStatus)ui.matcherStatus.textContent+=` · confirmation ${temporal.count}/${temporal.required}`;if(temporal.recheck)scheduleTemporalRecheck(track.uid,generation);purgeHoverCache();purgeIdentityStability();return;
-    }
+    const temporal=temporalIdentityGuard(track,result);
 
     if(temporal.action==='hold') {
       // Keep the current accepted HD card untouched while the new observation is
@@ -2054,17 +1985,10 @@ function applyQualityGuard(result,quality) {
       return clearCurrentIdentification('Identification désactivée.');
     }
 
-    const primaryTracks=lab.activeTracks().filter(t=>(t.misses||0)===0);
-    const primary=choosePrimaryTrack(primaryTracks,point);
-    let probe=null;
-    if(!primary){
-      const probes=secondaryTracks().filter(t=>(t.misses||0)===0).sort((a,b)=>(b.probeScore||0)-(a.probeScore||0));
-      const rawProbe=probes.find(t=>contains(t,point));
-      probe=probes.find(t=>pointInProbeExposedStrip(t,point))||null;
-      if(probe)state.pointerArbitration.probeExposedHits++;
-      else if(rawProbe)state.pointerArbitration.probeBlocked++;
-    }
-    const track=primary||probe;
+    const tracks=lab.activeTracks()
+      .filter(t=>(t.misses||0)===0)
+      .sort((a,b)=>(b.conf||0)-(a.conf||0));
+    const track=tracks.find(t=>contains(t,point));
 
     if (!track) {
       recordPointerDiagnostic(point,false);
@@ -2088,53 +2012,36 @@ function applyQualityGuard(result,quality) {
       w: track.w,
       h: track.h,
       angle: track.angle,
-      misses: track.misses || 0,
-      isOverlapProbe:Boolean(track.isOverlapProbe),
-      parentUid:track.parentUid ?? null,
-      probeDirection:track.probeDirection || null,
-      probeScore:Number(track.probeScore || 0)
+      misses: track.misses || 0
     };
 
     clearTimeout(state.hoverTimer);
 
     let usedCache=false;
-    let usedStable=false;
     if (isNewTrack) {
-      // Never leave the previous card visible. A track that already owns a
-      // confirmed identity can however be rendered immediately when the mouse
-      // comes back to it; verification still runs shortly afterwards.
+      // Never leave the previous card visible.
       state.hoverGeneration += 1;
       state.lastResult = null;
       state.lastTrackUid = null;
 
-      const stableEntry=state.identityStability.tracks.get(track.uid);
-      if(stableEntry?.stableResult?.accepted){
-        renderResult(stableEntry.stableResult);
-        state.lastTrackUid=track.uid;
-        state.lastIdentifiedAt=performance.now();
-        usedStable=true;
+      const cached=getHoverCache(track);
+      if(cached?.result?.accepted) {
+        usedCache=renderHoverCache(track,cached);
       } else {
-        const cached=getHoverCache(track);
-        if(cached?.result?.accepted) {
-          usedCache=renderHoverCache(track,cached);
-        } else {
-          clearResult('Analyse de la carte survolée…');
-        }
+        clearResult('Analyse de la carte survolée…');
       }
     }
 
     const generation = state.hoverGeneration;
     const same = !isNewTrack && state.lastTrackUid===track.uid;
 
-    // Returning to a known track should feel immediate. Re-validate sooner than
-    // the long hover cache delay so a physically replaced card is still caught.
-    const delay = usedStable
-      ? 320
-      : usedCache
-        ? 900
-        : same && performance.now()-state.lastIdentifiedAt<1100
-          ? 520
-          : 35;
+    // Cache is on-demand only: no background work. If a valid cached result was
+    // displayed, verify it only if the user keeps hovering for a while.
+    const delay = usedCache
+      ? 1400
+      : same && performance.now()-state.lastIdentifiedAt<1100
+        ? 700
+        : 40;
 
     state.hoverTimer=setTimeout(()=>identifyTrack(track,generation),delay);
   }
@@ -2143,9 +2050,10 @@ function applyQualityGuard(result,quality) {
   function currentTrackUnderStoredPointer() {
     if (!state.pointerInsideStage || !state.pointer) return null;
     const point={x:state.pointer.x,y:state.pointer.y};
-    const primary=choosePrimaryTrack(lab.activeTracks().filter(t=>(t.misses||0)===0),point,{record:false});
-    if(primary)return primary;
-    return secondaryTracks().filter(t=>(t.misses||0)===0).sort((a,b)=>(b.probeScore||0)-(a.probeScore||0)).find(t=>pointInProbeExposedStrip(t,point))||null;
+    return lab.activeTracks()
+      .filter(t=>(t.misses||0)===0)
+      .sort((a,b)=>(b.conf||0)-(a.conf||0))
+      .find(t=>contains(t,point)) || null;
   }
 
   function refreshStationaryPointerHover() {
@@ -2295,7 +2203,6 @@ function applyQualityGuard(result,quality) {
           hits: [...state.pointerHitHeatmap],
           misses: [...state.pointerMissHeatmap]
         },
-        pointerArbitration: { ...state.pointerArbitration },
         qualityGuard: {
           moderate: state.qualityGuard.moderate,
           high: state.qualityGuard.high,
@@ -2317,9 +2224,6 @@ function applyQualityGuard(result,quality) {
           holdsExpired: state.identityStability.holdsExpired,
           rechecks: state.identityStability.rechecks,
           stableRefreshes: state.identityStability.stableRefreshes,
-          acquisitionsPending: state.identityStability.acquisitionsPending,
-          acquisitionsConfirmed: state.identityStability.acquisitionsConfirmed,
-          variantGuards: state.identityStability.variantGuards,
           last: state.identityStability.last ? { ...state.identityStability.last } : null
         },
         hoveredTrack: state.hoveredTrack ? { ...state.hoveredTrack } : null,
