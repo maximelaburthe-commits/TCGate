@@ -1299,7 +1299,7 @@ async function buildCompleteReport() {
 
   return {
     format: 'tcg-webcam-complete-report',
-    version: '0.6.2',
+    version: '0.6.3.2',
     generatedAt: new Date().toISOString(),
     session: {
       startedAt: new Date(state.reportStartedAt).toISOString(),
@@ -1438,6 +1438,9 @@ function reportText(report) {
     `YOLO inference: ${report.vision?.detector?.inference?.inferenceMs ?? '—'} ms`,
     `YOLO cycle: ${report.vision?.detector?.inference?.totalMs ?? '—'} ms`,
     `Cartes détectées: ${report.vision?.detector?.activeCards ?? '—'}`,
+    `Overlap Probe actifs: ${report.vision?.detector?.tracking?.overlapProbe?.active?.length ?? '—'}`,
+    `Overlap Probe confirmés: ${report.vision?.detector?.tracking?.overlapProbe?.stats?.confirmed ?? '—'}`,
+    `Overlap Probe candidats: ${report.vision?.detector?.tracking?.overlapProbe?.stats?.candidates ?? '—'}`,
     `Bibliothèque: ${report.vision?.identification?.librarySize ?? '—'} cartes`,
     `Matcher: ${report.vision?.identification?.matcherMs ?? '—'} ms`,
     `Cache hover hits: ${report.vision?.identification?.hoverCache?.hits ?? '—'}`,
@@ -1583,7 +1586,11 @@ window.addEventListener('tcg-identification-stability',(event)=>{
     required:d.required ?? null,
     reason:d.reason || null,
     holdAgeMs:d.holdAgeMs ?? null,
-    quality:d.quality || null
+    quality:d.quality || null,
+    probeRisk:d.probeRisk ?? null,
+    maskedRisk:d.maskedRisk ?? null,
+    overlapRisk:d.overlapRisk ?? null,
+    variantRisk:d.variantRisk ?? null
   });
 });
 

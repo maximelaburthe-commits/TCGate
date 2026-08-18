@@ -47,7 +47,9 @@ for(const token of [
   "overlay: $('visionOverlay')",
   'attachExternalStream',
   'debugOverlay: false',
-  'modelInputSize:512'
+  'modelInputSize:512',
+  'secondaryOverlapTracks',
+  'OVERLAP_PROBE_ENABLED'
 ]){
   if(!core.includes(token)) throw new Error(`Missing core token ${token}`);
 }
@@ -58,6 +60,8 @@ for(const token of [
   'object-fit: contain',
   'tcg-identification-result',
   'temporalIdentityGuard',
+  'overlapProbeContext',
+  'RISKY_ACQUISITION_CONFIRMATIONS',
   'IDENTITY_SWITCH_CONFIRMATIONS',
   'tcg-identification-stability'
 ]){
@@ -77,4 +81,4 @@ for(const [file,tokens] of Object.entries({
     if(!text.includes(token)) throw new Error(`Missing ${token} in ${file}`);
   }
 }
-console.log('SMOKE_OK_V0.6.3.1');
+console.log('SMOKE_OK_V0.6.3.2');

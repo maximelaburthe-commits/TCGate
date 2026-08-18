@@ -1,38 +1,36 @@
-# TCG Webcam — V0.6.2 Stabilité d’identité anti-reflet
+# TCG Webcam — V0.6.3.2 Non-Destructive Overlap Probe
 
-Évolution ciblée de V0.6.1. Aucun changement du réseau, du seuil général YOLO, du modèle V5.3/512 ni de la logique de chevauchement.
+Version expérimentale construite sur la Recovery V0.6.3.1.
 
-Chaîne :
-`flux adverse -> YOLO V5.3/512 -> tracking -> matcher alpha15/16 -> validation temporelle -> image HD`
+Le chemin principal de détection reste celui de la V0.6.2 / Recovery : le modèle YOLO et `detection-worker.js` ne sont pas modifiés.
 
-Le flux local n'est jamais analysé.
+Chaîne principale :
+`flux adverse -> YOLO V5.3/512 -> tracking principal -> identification -> validation temporelle -> image HD`
 
-## V0.6.2
+Couche secondaire :
+`carte principale stable -> Overlap Probe -> hypothèse de carte alignée sous la carte -> identification masquée au survol`
 
-Objectif : empêcher une mauvaise identification très brève, notamment sous reflet, de remplacer immédiatement une carte déjà reconnue.
+## Règle de sécurité
 
-Comportement :
-- première identification : immédiate comme en V0.6.1 ;
-- même identité retrouvée : validation immédiate ;
-- nouvelle identité sur une piste déjà stable : 2 confirmations consécutives ;
-- nouvelle identité sous risque de reflet modéré : 3 confirmations consécutives ;
-- frame incertaine/reflet fort : l'ancienne carte reste affichée pendant une courte fenêtre de grâce ;
-- si l'incertitude persiste au-delà de cette fenêtre, l'identification est retirée plutôt que de conserver une carte potentiellement fausse ;
-- les validations/suppressions sont ajoutées au rapport complet.
+L'Overlap Probe est strictement non destructif : une hypothèse secondaire ne peut ni supprimer, ni fusionner, ni déplacer une piste issue du détecteur principal.
 
-## Ce qui reste gelé
+## Identification
 
-- réseau / WebRTC ;
-- modèle YOLO `card_detector_v53_512.onnx` ;
-- seuil général de détection ;
-- filtres Table-Aware ;
-- logique de chevauchement / masque ;
-- UI existante.
+- carte isolée : acquisition rapide comme en V0.6.2 ;
+- crop marqué comme chevauché / sonde secondaire : 2 confirmations avant validation ;
+- plusieurs variantes du même personnage (ex. plusieurs Panam Palmer) : 3 confirmations en situation de crop risqué ;
+- reflet + crop risqué : au moins 3 confirmations ;
+- garde reflet Recovery conservée pour les résultats très décisifs ;
+- si la carte du dessus devient difficile à identifier à cause d'un bord contaminé, un crop de secours tronque uniquement le bord orienté vers la carte suspectée.
 
-## Railway
-Même méthode que V0.6.1.
+## Chrome
 
-Healthcheck : `/api/health` doit retourner `version: 0.6.2`.
+La page de préparation a une mise en page responsive en hauteur (`100dvh` + mode compact sur petits viewports desktop) afin de limiter le scroll vertical sous Chrome.
+
+## Rapport complet
+
+Le rapport est maintenant correctement marqué `0.6.3.2` et inclut les statistiques `overlapProbe`.
 
 ## Test
-Lire `PLAN_TEST_V0.6.2.md`.
+
+Lire `PLAN_TEST_V0.6.3.2.md`.

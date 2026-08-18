@@ -1211,3 +1211,22 @@ button.smallish {
 @media (max-width:760px) {
   .vision-alpha-label { display:none; }
 }
+
+
+/* V0.6.3.2 — Chrome desktop lobby fit */
+#screenSetup,#screenLobby{min-height:100dvh}
+#screenSetup .panel-shell,#screenLobby .panel-shell{min-height:100dvh}
+#screenLobby .panel-shell{padding-top:clamp(14px,2.6vh,30px);padding-bottom:clamp(14px,2.6vh,30px)}
+@media (min-width:821px) and (max-height:820px){
+ #screenLobby .lobby-head{margin-bottom:14px} #screenLobby .lobby-head h2{margin:5px 0 4px;font-size:28px}
+ #screenLobby .invite-card,#screenLobby .players-card{padding:15px 17px} #screenLobby .room-code-row{margin:8px 0} #screenLobby .room-code-row strong{font-size:25px}
+ #screenLobby .player-row{min-height:57px} #screenLobby .avatar{width:34px;height:34px}
+ #screenLobby .equipment-card{margin-top:11px;padding:13px 16px;gap:16px} #screenLobby .equipment-copy h3{margin:4px 0} #screenLobby .equipment-copy p{line-height:1.4}
+ #screenLobby .device-actions{margin-top:10px} #screenLobby .device-selectors{margin-top:9px} #screenLobby .lobby-preview-wrap{width:min(300px,34vw);gap:6px} #screenLobby .lobby-bottom{margin-top:11px}
+}
+@media (min-width:821px) and (max-height:690px){
+ #screenLobby .panel-shell{padding-top:9px;padding-bottom:9px} #screenLobby .lobby-head{margin-bottom:8px}
+ #screenLobby .lobby-head .eyebrow,#screenLobby .invite-card p,#screenLobby .equipment-copy p{display:none}
+ #screenLobby .invite-card,#screenLobby .players-card{padding:11px 14px} #screenLobby .player-row{min-height:49px}
+ #screenLobby .equipment-card{margin-top:8px;padding:10px 13px} #screenLobby .lobby-preview-wrap{width:min(250px,30vw)} #screenLobby .device-selectors select{height:34px} #screenLobby .lobby-bottom{margin-top:8px}
+}
