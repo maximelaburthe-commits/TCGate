@@ -10,6 +10,9 @@ const screens = {
   game: $('screenGame')
 };
 
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 1';
+const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
+
 const state = {
   mode: 'create',
   playerName: 'Joueur',
@@ -55,6 +58,8 @@ const state = {
   calibrationResizeTimer: null,
   currentIdentifiedCard: null,
   lastIdentificationEventKey: null,
+  visionStateReady: false,
+  visionFeedback: [],
 
   demoCardVisible: false,
 
@@ -152,6 +157,30 @@ function setCalibrationStatus(s) {
   }
 }
 
+function setVisionStateStatus(snapshot=null) {
+  const el=$('visionStateStatus');
+  if (!el) return;
+  if(!snapshot){
+    el.textContent='Mémoire : attente';
+    el.className='vision-status-pill';
+    return;
+  }
+  if(snapshot.workerError){
+    el.textContent='Mémoire : erreur';
+    el.className='vision-status-pill error';
+    return;
+  }
+  if(snapshot.workerReady){
+    const known=Number(snapshot.knownCards||0);
+    const active=Number(snapshot.activeTableCards||0);
+    el.textContent=`Mémoire : active · ${known}/${active}`;
+    el.className='vision-status-pill good';
+    return;
+  }
+  el.textContent='Mémoire : initialisation…';
+  el.className='vision-status-pill warning';
+}
+
 async function prepareVision() {
   if(state.game!=='cyberpunk' || state.visionPrepared || state.visionPreparing) return;
   state.visionPreparing=true;
@@ -166,6 +195,20 @@ async function prepareVision() {
 
     const detOk=detector.status==='fulfilled' && detector.value?.ready;
     const idOk=identifier.status==='fulfilled' && identifier.value?.ready;
+
+    let tableState=null;
+    if(detOk && idOk && window.TCGTableStateEngine){
+      try {
+        tableState=await window.TCGTableStateEngine.start?.();
+        state.visionStateReady=Boolean(tableState?.workerReady);
+        setVisionStateStatus(tableState);
+      } catch(err) {
+        state.visionStateReady=false;
+        setVisionStateStatus({workerError:err?.message||String(err)});
+        logEvent('vision-state-start-error',{name:err?.name||null,message:err?.message||String(err)});
+      }
+    }
+
     state.visionPrepared=Boolean(detOk && idOk);
 
     if(state.visionPrepared){
@@ -180,7 +223,9 @@ async function prepareVision() {
       provider:detector.value?.provider || null,
       identification:identifier.status,
       identificationReady:Boolean(identifier.value?.ready),
-      cards:identifier.value?.cards || 0
+      cards:identifier.value?.cards || 0,
+      tableStateReady:Boolean(tableState?.workerReady),
+      tableStateVersion:tableState?.version || null
     });
   }catch(err){
     setVisionStatus('Vision : erreur','error');
@@ -201,6 +246,17 @@ async function attachVisionToRemoteStream(stream) {
   try{
     await prepareVision();
     await window.TCGVisionEngine?.attachRemoteStream?.(stream);
+    if(window.TCGTableStateEngine){
+      try {
+        const before=window.TCGTableStateEngine.getSnapshot?.();
+        if(before?.started) window.TCGTableStateEngine.reset?.('restart');
+        const table=await window.TCGTableStateEngine.start?.();
+        state.visionStateReady=Boolean(table?.workerReady);
+        setVisionStateStatus(table);
+      } catch(err) {
+        logEvent('vision-state-attach-error',{name:err?.name||null,message:err?.message||String(err)});
+      }
+    }
     setVisionStatus('Vision : active','good');
 
     window.TCGVisionCalibration?.start?.($('remoteVideo'),'initial').catch(err=>{
@@ -226,9 +282,12 @@ function detachVision() {
 
   window.TCGVisionCalibration?.stop?.();
   window.TCGVisionEngine?.detachRemoteStream?.();
+  window.TCGTableStateEngine?.reset?.('restart');
+  state.visionStateReady=false;
 
   setVisionStatus('Vision : attente');
   setCalibrationStatus({status:'idle'});
+  setVisionStateStatus(null);
   hideFullscreenIdentifiedCard();
 }
 
@@ -239,6 +298,8 @@ function startVisionMetricsSampler() {
     const detection=window.TCGVisionEngine?.getSnapshot?.() || null;
     const identification=window.TCGIdentificationLab?.getSnapshot?.() || null;
     const calibration=window.TCGVisionCalibration?.getSnapshot?.() || null;
+    const tableState=window.TCGTableStateEngine?.getSnapshot?.() || null;
+    setVisionStateStatus(tableState);
 
     logEvent('vision-sample',{
       detection:detection?{
@@ -254,6 +315,13 @@ function startVisionMetricsSampler() {
         matcherMs:identification.matcherMs,
         hoverCache:identification.hoverCache,
         identityStability:identification.identityStability || null
+      }:null,
+      tableState:tableState?{
+        version:tableState.version,
+        activeTableCards:tableState.activeTableCards,
+        knownCards:tableState.knownCards,
+        suspendedKnownCards:tableState.suspendedKnownCards,
+        stats:tableState.stats
       }:null,
       calibration
     });
@@ -322,6 +390,53 @@ function syncIdentifiedCardUi(detail) {
       quality:detail.quality || null
     });
   }
+}
+
+function syncMemoryVisibleCard() {
+  const snap=window.TCGIdentificationLab?.getSnapshot?.();
+  const visible=snap?.visibleIdentity || null;
+  if(!visible?.accepted || !visible?.imageUrl) return;
+  state.currentIdentifiedCard={
+    name:visible.name,
+    type:visible.type,
+    image:visible.image,
+    imageUrl:visible.imageUrl,
+    visualIndex:null,
+    mode:visible.mode || 'memory-hover',
+    matcherMs:0
+  };
+  $('cardPreview')?.classList.remove('empty');
+  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')){
+    showFullscreenIdentifiedCard(state.currentIdentifiedCard);
+  }
+}
+
+function clearCurrentVisibleCard(reason='handoff') {
+  state.currentIdentifiedCard=null;
+  hideFullscreenIdentifiedCard();
+  $('cardPreview')?.classList.add('empty');
+  logEvent('visible-card-cleared',{reason});
+}
+
+function captureTesterVisionFeedback(kind) {
+  const detector=window.TCGVisionEngine?.getSnapshot?.() || null;
+  const identification=window.TCGIdentificationLab?.getSnapshot?.() || null;
+  const tableState=window.TCGTableStateEngine?.getSnapshot?.() || null;
+  const feedback={
+    id:`vf-${String(state.visionFeedback.length+1).padStart(3,'0')}`,
+    at:new Date().toISOString(),
+    kind,
+    visibleIdentity:identification?.visibleIdentity || null,
+    hoveredTrack:identification?.hoveredTrack || null,
+    activeCards:detector?.activeCards ?? null,
+    tableLastHover:tableState?.lastHover || null
+  };
+  state.visionFeedback.push(feedback);
+  logEvent('vision-tester-feedback',feedback);
+  try {
+    if(kind==='missed-card') window.TCGDetectionLab?.captureCase?.('Alpha · carte non détectée');
+  } catch {}
+  toast(kind==='missed-card' ? 'Incident « carte non détectée » ajouté au rapport.' : 'Incident « mauvaise carte » ajouté au rapport.');
 }
 
 function configureSetup(mode) {
@@ -1298,8 +1413,8 @@ async function buildCompleteReport() {
   const nav = performance.getEntriesByType('navigation')[0];
 
   return {
-    format: 'tcg-webcam-complete-report',
-    version: '0.6.4.0',
+    format: 'tcgate-alpha-complete-report',
+    version: PRODUCT_VERSION,
     generatedAt: new Date().toISOString(),
     session: {
       startedAt: new Date(state.reportStartedAt).toISOString(),
@@ -1383,9 +1498,13 @@ async function buildCompleteReport() {
     },
     vision: {
       integrated: true,
+      profile: VISION_PROFILE,
       scope: 'opponent-stream-only',
       detector: window.TCGVisionEngine?.getSnapshot?.() || null,
-      identification: window.TCGIdentificationLab?.getSnapshot?.() || null
+      identification: window.TCGIdentificationLab?.getSnapshot?.() || null,
+      tableState: window.TCGTableStateEngine?.getSnapshot?.() || null,
+      tableStateEvents: window.TCGTableStateEngine?.getEvents?.() || [],
+      testerFeedback: [...state.visionFeedback]
     },
     events: state.reportEvents
   };
@@ -1395,7 +1514,7 @@ function reportText(report) {
   const inbound = report.network.webrtc.inbound || [];
   const outbound = report.network.webrtc.outbound || [];
   const lines = [
-    'TCG WEBCAM — RAPPORT COMPLET ALPHA',
+    'TCGATE — RAPPORT COMPLET ALPHA FERMÉE',
     `Version: ${report.version}`,
     `Généré: ${report.generatedAt}`,
     `Durée session: ${(report.session.durationMs / 1000).toFixed(1)} s`,
@@ -1444,6 +1563,12 @@ function reportText(report) {
     `Changements géométrie vidéo: ${report.vision?.detector?.geometry?.changes ?? '—'}`,
     `Garde reflet - rejets: ${report.vision?.identification?.qualityGuard?.rejected ?? '—'}`,
     `Garde reflet - modérés: ${report.vision?.identification?.qualityGuard?.moderate ?? '—'}`,
+    `Vision State: ${report.vision?.tableState?.version || '—'}`,
+    `Mémoire connue: ${report.vision?.tableState?.knownCards ?? '—'} / ${report.vision?.tableState?.activeTableCards ?? '—'}`,
+    `Hover mémoire hits/misses: ${report.vision?.tableState?.sessionStats?.hoverMemoryHits ?? '—'} / ${report.vision?.tableState?.sessionStats?.hoverMemoryMisses ?? '—'}`,
+    `Handoffs visuels nettoyés: ${report.vision?.tableState?.sessionStats?.visibleHandoffClears ?? '—'}`,
+    `Rendus mémoire: ${report.vision?.tableState?.sessionStats?.visibleMemoryRenders ?? '—'}`,
+    `Retours testeur Vision: ${report.vision?.testerFeedback?.length ?? 0}`,
     `Pointer misses 3x3: ${JSON.stringify(report.vision?.identification?.spatialPointer?.misses || [])}`,
     `Détections filtrées 3x3: ${JSON.stringify(report.vision?.detector?.spatial?.filtered || [])}`,
     '',
@@ -1528,11 +1653,11 @@ async function generateCompleteReport() {
     { name: 'report.json', data: json },
     { name: 'rapport.txt', data: txt },
     { name: 'README.txt', data:
-`TCG Webcam V0.4 — Rapport complet alpha
+`TCGate Alpha 0.1 — Rapport complet
 
-Ce ZIP ne contient ni vidéo, ni audio, ni capture d’écran.
-Il contient les données de session, média, réseau WebRTC et événements.
-La Vision/calibration ne sont pas encore intégrées dans cette branche.
+Ce ZIP ne contient ni vidéo, ni audio, ni capture d’écran automatique.
+Il contient les données de session, média, réseau WebRTC, Vision, calibration, Vision State et événements alpha.
+Les boutons de retour testeur peuvent ajouter un incident technique au rapport.
 `
     }
   ]);
@@ -1541,7 +1666,7 @@ La Vision/calibration ne sont pas encore intégrées dans cette branche.
   const url = URL.createObjectURL(zip);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `tcg-webcam-rapport-complet-${stamp}.zip`;
+  a.download = `tcgate-alpha-rapport-complet-${stamp}.zip`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -1609,6 +1734,30 @@ window.addEventListener('tcg-identification-library',(event)=>{
   if(d.ready) setVisionStatus(`Vision : prête · ${d.cards || 0} cartes`,'good');
 });
 
+window.addEventListener('tcg-table-state-updated',(event)=>{
+  const snapshot=event.detail?.snapshot || window.TCGTableStateEngine?.getSnapshot?.() || null;
+  setVisionStateStatus(snapshot);
+});
+
+window.addEventListener('tcg-table-hover-hit',()=>{
+  queueMicrotask(syncMemoryVisibleCard);
+});
+
+window.addEventListener('tcg-identification-visible',(event)=>{
+  const visible=event.detail || null;
+  if(!visible?.accepted || !visible?.imageUrl) return;
+  state.currentIdentifiedCard={
+    name:visible.name, type:visible.type, image:visible.image, imageUrl:visible.imageUrl,
+    visualIndex:null, mode:visible.mode||'memory-hover', matcherMs:0
+  };
+  $('cardPreview')?.classList.remove('empty');
+  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')) showFullscreenIdentifiedCard(state.currentIdentifiedCard);
+});
+
+window.addEventListener('tcg-identification-visible-cleared',(event)=>{
+  clearCurrentVisibleCard(event.detail?.reason || 'atomic-handoff');
+});
+
 /* ---------- Bindings ---------- */
 
 $('goCreate').addEventListener('click', () => configureSetup('create'));
@@ -1664,6 +1813,8 @@ $('leaveGame').addEventListener('click', async () => {
 
 $('generateReportLobby').addEventListener('click', generateCompleteReport);
 $('generateReportGame').addEventListener('click', generateCompleteReport);
+$('feedbackMissedCard')?.addEventListener('click',()=>captureTesterVisionFeedback('missed-card'));
+$('feedbackWrongCard')?.addEventListener('click',()=>captureTesterVisionFeedback('wrong-card'));
 
 $('fullscreenOpponent').addEventListener('click', async () => {
   const target = document.querySelector('.opponent-feed-card');

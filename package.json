@@ -1,6 +1,6 @@
 {
-  "name": "tcg-webcam-ui-prototype",
-  "version": "0.6.4",
+  "name": "tcgate-alpha",
+  "version": "0.1.0-candidate.1",
   "private": true,
   "scripts": {
     "start": "node server.js",

@@ -1,0 +1,228 @@
+/* TCGate Alpha 0.1 — universal identity layer
+   One visual system for every TCG. Functional layout stays inherited from the
+   validated network prototype; this file only applies the TCGate product skin. */
+:root {
+  --bg: #070b13;
+  --panel: #0d1420;
+  --panel-2: #111a29;
+  --line: #27324a;
+  --line-soft: #1b2436;
+  --text: #f4f6fb;
+  --muted: #8f9bb0;
+  --accent: #7c5cff;
+  --accent-2: #9b86ff;
+  --good: #67d9a2;
+  --danger: #f06a75;
+  --shadow: 0 24px 80px rgba(0,0,0,.38);
+}
+
+html, body { background:#070b13; }
+body {
+  background:
+    radial-gradient(circle at 78% 8%, rgba(124,92,255,.075), transparent 31%),
+    radial-gradient(circle at 12% 88%, rgba(89,75,155,.055), transparent 30%),
+    #070b13;
+}
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  pointer-events:none;
+  background:
+    linear-gradient(rgba(255,255,255,.007) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.007) 1px, transparent 1px);
+  background-size:72px 72px;
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,.52),transparent 88%);
+}
+
+.eyebrow { color:#a894ff; }
+
+/* Brand */
+.tcgate-brand {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  min-height:62px;
+}
+.tcgate-wordmark {
+  display:block;
+  width:220px;
+  max-height:68px;
+  object-fit:contain;
+  object-position:left center;
+  filter:saturate(.72) contrast(1.03) drop-shadow(0 10px 30px rgba(124,92,255,.10));
+}
+.tcgate-wordmark.compact { width:154px; max-height:48px; }
+.tcgate-wordmark.game { width:132px; max-height:40px; flex:0 0 auto; }
+.alpha-chip {
+  padding:7px 11px;
+  border:1px solid rgba(155,134,255,.25);
+  border-radius:999px;
+  background:rgba(124,92,255,.055);
+  color:#b9adff;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+}
+.home-shell::before {
+  content:'';
+  position:fixed;
+  width:min(390px,38vw);
+  aspect-ratio:1;
+  right:-120px;
+  top:11vh;
+  border-radius:50%;
+  border:1px solid rgba(124,92,255,.05);
+  box-shadow:0 0 0 48px rgba(124,92,255,.012),0 0 0 104px rgba(124,92,255,.007);
+  pointer-events:none;
+}
+.home-card {
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(98,111,147,.38);
+  background:
+    radial-gradient(circle at 78% 42%,rgba(124,92,255,.14),transparent 23%),
+    linear-gradient(140deg,rgba(14,21,34,.99),rgba(7,11,19,.99));
+  box-shadow:0 34px 105px rgba(0,0,0,.39);
+}
+.home-card::before {
+  content:'';
+  position:absolute;
+  right:clamp(36px,8vw,112px);
+  top:50%;
+  width:min(270px,25vw);
+  aspect-ratio:1;
+  transform:translateY(-50%);
+  background:url('/assets/tcgate-mark.svg') center/contain no-repeat;
+  opacity:.145;
+  filter:drop-shadow(0 20px 40px rgba(124,92,255,.12));
+  pointer-events:none;
+}
+.home-copy,.home-actions { position:relative; z-index:1; }
+.home-copy h2 { color:#f7f8fc; }
+.home-copy h2 span { color:#b9adff; text-shadow:0 0 30px rgba(124,92,255,.14); }
+.home-signature {
+  margin-top:24px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:#737f96;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.10em;
+  text-transform:uppercase;
+}
+.home-signature img { width:23px; height:23px; opacity:.78; }
+.home-foot { color:#68748a; }
+
+/* Surfaces */
+.form-card,.invite-card,.players-card,.equipment-card,.feed-card,.card-inspector,.local-feed-section {
+  border-color:rgba(113,126,158,.28);
+  background:
+    linear-gradient(135deg,rgba(124,92,255,.024),transparent 28%),
+    linear-gradient(180deg,#0f1724,#0b111b);
+  box-shadow:0 14px 42px rgba(0,0,0,.16);
+}
+input,select {
+  color:#f4f6fb;
+  border-color:rgba(110,124,156,.32);
+  background:#090f19;
+}
+input:focus,select:focus {
+  border-color:#7762db;
+  box-shadow:0 0 0 3px rgba(124,92,255,.11);
+}
+button { border-color:rgba(111,125,158,.30); background:#101827; }
+button:hover { border-color:rgba(155,134,255,.48); }
+button.primary {
+  color:#fff;
+  border-color:rgba(155,134,255,.72);
+  background:linear-gradient(180deg,#8d72ff,#6f52df);
+  box-shadow:0 10px 32px rgba(124,92,255,.15);
+}
+button.primary:hover { border-color:#aa9aff; box-shadow:0 12px 38px rgba(124,92,255,.21); }
+button.secondary,button.icon-button { background:#101827; }
+button.icon-button.active { color:#b7aaff; border-color:rgba(141,120,255,.45); }
+button.danger-button { color:#ffb9c0; border-color:rgba(240,106,117,.34); background:rgba(91,29,38,.28); }
+.back-button { color:#a99bfa; }
+.status-dot { background:#67d9a2; }
+.toggle-chip.active { color:#aeeccc; border-color:#2d7651; background:#10271c; }
+.avatar { background:#19172c; color:#c1b8ff; }
+.lobby-title-wrap { display:flex; align-items:center; gap:18px; }
+.lobby-title-wrap > div { padding-left:17px; border-left:1px solid rgba(124,92,255,.18); }
+
+/* Game */
+.game-screen { background:#070b13; }
+.game-topbar {
+  height:70px;
+  border-bottom-color:rgba(124,92,255,.14);
+  background:linear-gradient(90deg,rgba(124,92,255,.035),transparent 22%),rgba(7,11,18,.97);
+}
+.tcgate-game-room { gap:12px; }
+.tcgate-game-room .live-dot { margin-left:5px; }
+.live-dot,.hint-dot { background:#8d78ff; box-shadow:0 0 0 4px rgba(124,92,255,.07); }
+.rtc-status { color:#a9b4c7; }
+.game-layout { min-height:calc(100vh - 70px); }
+.video-placeholder {
+  background:
+    radial-gradient(circle at 50% 48%,rgba(124,92,255,.055),transparent 34%),
+    linear-gradient(160deg,#0b111b,#070c13);
+}
+.camera-orb { border-color:rgba(124,92,255,.30); background:rgba(43,33,88,.30); color:#b6a9ff; }
+.feed-head { border-bottom-color:rgba(124,92,255,.10); }
+.card-preview { border-color:rgba(113,126,158,.18); background:#080e17; }
+.connection-pill,.vision-status-pill {
+  border-color:rgba(124,92,255,.20)!important;
+  background:rgba(43,33,88,.24)!important;
+  color:#b8adf5!important;
+}
+.vision-status-pill.good { color:#aeeccc!important; border-color:rgba(76,168,116,.30)!important; background:rgba(24,79,48,.20)!important; }
+.vision-status-pill.warning { color:#e7dca4!important; border-color:rgba(198,170,83,.30)!important; background:rgba(95,74,25,.18)!important; }
+.vision-status-pill.error { color:#ffb9c0!important; border-color:rgba(240,106,117,.30)!important; background:rgba(91,29,38,.20)!important; }
+.vision-alpha-label { color:#59667a; letter-spacing:.08em; text-transform:uppercase; }
+.vision-overlay { filter:saturate(.72); }
+
+/* Identification / HD consultation */
+.ident-product-result img,
+.fullscreen-real-card img,
+.modal-card-image {
+  box-shadow:0 24px 75px rgba(0,0,0,.46),0 0 0 1px rgba(255,255,255,.035);
+}
+.fullscreen-card-preview {
+  border-color:rgba(155,134,255,.35)!important;
+  background:rgba(7,11,19,.90)!important;
+  box-shadow:0 30px 95px rgba(0,0,0,.55),0 0 40px rgba(124,92,255,.07)!important;
+}
+.vision-feedback {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:6px;
+  padding-top:8px;
+  border-top:1px solid rgba(113,126,158,.12);
+  color:#647187;
+  font-size:9px;
+}
+.tiny-feedback { padding:6px 8px; border-radius:8px; font-size:9px; font-weight:700; }
+.tiny-feedback:hover { color:#d8d2ff; }
+
+/* Modal */
+.modal { background:rgba(3,6,12,.87); backdrop-filter:blur(10px); }
+.modal-card-wrap { filter:drop-shadow(0 30px 80px rgba(0,0,0,.55)); }
+
+/* Closed-alpha diagnostics stay intentionally discreet. */
+.report-button { color:#9ca8bb; }
+.report-button:hover { color:#d7d1ff; }
+
+@media (max-width: 900px) {
+  .tcgate-wordmark { width:180px; }
+  .home-card::before { opacity:.075; right:-30px; width:230px; }
+  .lobby-title-wrap { align-items:flex-start; }
+  .tcgate-wordmark.compact { width:120px; }
+  .tcgate-wordmark.game { width:105px; }
+  .alpha-chip { display:none; }
+}

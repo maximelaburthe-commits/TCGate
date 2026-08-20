@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TCG Webcam — V0.6.4.0 Clean Baseline</title>
+  <title>TCGate — Alpha fermée 0.1</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/tcgate-alpha.css">
 </head>
 <body>
   <div id="app">
@@ -12,19 +13,17 @@
     <!-- HOME -->
     <section id="screenHome" class="screen active">
       <div class="home-shell">
-        <header class="brand">
-          <div class="brand-mark">TCG</div>
-          <div>
-            <h1>TCG Webcam</h1>
-            <p>Jouer face à face, à distance.</p>
-          </div>
+        <header class="brand tcgate-brand">
+          <img class="tcgate-wordmark" src="/assets/tcgate-logo-final.png" alt="TCGate">
+          <div class="alpha-chip">Alpha fermée · 0.1</div>
         </header>
 
         <div class="home-card">
           <div class="home-copy">
-            <span class="eyebrow">Pré-alpha V0.6.4.0</span>
-            <h2>Une partie en quelques secondes.</h2>
-            <p>Crée un salon, partage le lien et joue. Aucun compte requis pour ce prototype.</p>
+            <span class="eyebrow">TCGate · première porte</span>
+            <h2>Your table,<br><span>one gate away.</span></h2>
+            <p>Deux joueurs, deux tables, une partie. Crée ou rejoins un salon, active ta webcam et joue avec tes vraies cartes. Vision s’occupe silencieusement de la détection, de l’identification et de la lecture HD.</p>
+            <div class="home-signature"><img src="/assets/tcgate-mark.svg" alt=""><span>Webcam · Vision · Lecture HD instantanée</span></div>
           </div>
 
           <div class="home-actions">
@@ -33,7 +32,7 @@
           </div>
         </div>
 
-        <p class="home-foot">Version de test : réseau réel + reconnaissance Cyberpunk sur le flux adverse.</p>
+        <p class="home-foot">TCGate Alpha fermée · réseau réel · Vision analyse uniquement le flux adverse · aucun enregistrement vidéo automatique.</p>
       </div>
     </section>
 
@@ -42,7 +41,7 @@
       <div class="panel-shell compact-shell">
         <button id="setupBack" class="back-button" aria-label="Retour">←</button>
         <div class="step-header">
-          <span id="setupEyebrow" class="eyebrow">Créer une partie</span>
+          <span id="setupEyebrow" class="eyebrow">TCGate · Créer une partie</span>
           <h2 id="setupTitle">Prépare ton salon</h2>
           <p id="setupSubtitle">Quelques informations suffisent.</p>
         </div>
@@ -75,9 +74,12 @@
     <section id="screenLobby" class="screen">
       <div class="panel-shell">
         <header class="lobby-head">
-          <div>
+          <div class="lobby-title-wrap">
+            <img class="tcgate-wordmark compact" src="/assets/tcgate-logo-final.png" alt="TCGate">
+            <div>
             <span class="eyebrow">Salon privé</span>
             <h2>Partie prête à être lancée</h2>
+            </div>
           </div>
           <div class="header-actions">
             <button id="generateReportLobby" class="ghost report-button">Générer un rapport complet</button>
@@ -168,11 +170,12 @@
     <!-- GAME -->
     <section id="screenGame" class="screen game-screen">
       <header class="game-topbar">
-        <div class="game-room">
+        <div class="game-room tcgate-game-room">
+          <img class="tcgate-wordmark game" src="/assets/tcgate-logo-final.png" alt="TCGate">
           <span class="live-dot"></span>
           <div>
             <strong id="gameTitle">Cyberpunk TCG</strong>
-            <small>Salon <span id="gameCode">R9K2MX</span></small>
+            <small>Salon <span id="gameCode">R9K2MX</span> · Alpha fermée</small>
           </div>
         </div>
 
@@ -230,7 +233,8 @@
             <span class="hint-dot"></span>
             <span id="visionStatus" class="vision-status-pill">Vision : préparation</span>
             <span id="calibrationStatus" class="vision-status-pill">Calibration : attente</span>
-            <span class="vision-alpha-label">diagnostic pré-alpha</span>
+            <span id="visionStateStatus" class="vision-status-pill">Mémoire : attente</span>
+            <span class="vision-alpha-label">diagnostic alpha</span>
           </div>
         </section>
 
@@ -262,6 +266,11 @@
             </div>
 
             <p class="card-inspector-help">Clique sur l’icône d’agrandissement pour une lecture confortable.</p>
+            <div class="vision-feedback" aria-label="Retour testeur Vision">
+              <span>Un problème ?</span>
+              <button id="feedbackMissedCard" class="ghost tiny-feedback" type="button">Carte non détectée</button>
+              <button id="feedbackWrongCard" class="ghost tiny-feedback" type="button">Mauvaise carte affichée</button>
+            </div>
           </section>
 
           <section class="local-feed-section">
@@ -353,7 +362,9 @@
 
   <script src="/vision-core.js"></script>
   <script src="/vision-calibration.js"></script>
+  <script src="/table-state-bridge.js"></script>
   <script src="/identification.js"></script>
+  <script src="/table-state-engine.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

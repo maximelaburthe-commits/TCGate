@@ -81,6 +81,7 @@
     hoverCacheRejects: {
       absent: 0,
       expired: 0,
+      staleAge: 0,
       geometry: 0,
       appearance: 0
     },
@@ -89,7 +90,7 @@
       high: 0,
       rejected: 0,
       tightened: 0,
-      decisiveHighOverrides: 0,
+      strictRescued: 0,
       last: null
     },
     identityStability: {
@@ -105,11 +106,81 @@
     temporalRecheckTimer: null,
     pointerMissHeatmap: [0,0,0,0,0,0,0,0,0],
     pointerHitHeatmap: [0,0,0,0,0,0,0,0,0],
-    lastPointerDiagnosticAt: 0
+    lastPointerDiagnosticAt: 0,
+    visibleIdentity: null,
+    imageSwapSeq: 0,
+    preloadedHdImages: new Map()
   };
 
   function imageUrl(card) {
     return REMOTE_IMAGE_BASE + encodeURIComponent(card.image).replace(/%2F/g, '/');
+  }
+
+  function hdUrlFromImage(image) {
+    return REMOTE_IMAGE_BASE + encodeURIComponent(image || '').replace(/%2F/g, '/');
+  }
+
+  function preloadHdUrl(url) {
+    if (!url) return Promise.resolve(false);
+    const cached=state.preloadedHdImages.get(url);
+    if (cached) return cached;
+    const promise=new Promise(resolve=>{
+      const probe=new Image();
+      probe.decoding='async';
+      probe.onload=()=>resolve(true);
+      probe.onerror=()=>resolve(false);
+      probe.src=url;
+      if (probe.decode) probe.decode().then(()=>resolve(true)).catch(()=>{});
+    });
+    state.preloadedHdImages.set(url,promise);
+    return promise;
+  }
+
+  function hideHdImageForHandoff() {
+    state.imageSwapSeq += 1;
+    if (!ui.image) return;
+    ui.image.style.visibility='hidden';
+    ui.image.dataset.swapPending='1';
+  }
+
+  function setHdImageAtomic(url,alt='Carte identifiée') {
+    if (!ui.image || !url) return;
+    const seq=++state.imageSwapSeq;
+    const current=ui.image.dataset.cardUrl||'';
+    if (current===url && ui.image.complete && ui.image.naturalWidth>0) {
+      ui.image.alt=alt;
+      ui.image.style.visibility='visible';
+      ui.image.dataset.swapPending='0';
+      return;
+    }
+    ui.image.style.visibility='hidden';
+    ui.image.dataset.swapPending='1';
+    preloadHdUrl(url).then(()=>{
+      if (seq!==state.imageSwapSeq) return;
+      ui.image.src=url;
+      ui.image.dataset.cardUrl=url;
+      ui.image.alt=alt;
+      requestAnimationFrame(()=>{
+        if (seq!==state.imageSwapSeq) return;
+        ui.image.style.visibility='visible';
+        ui.image.dataset.swapPending='0';
+      });
+    });
+  }
+
+  function clearVisibleUiOnly(message='Survole une carte détectée.') {
+    const previous=state.visibleIdentity ? { ...state.visibleIdentity } : null;
+    state.visibleIdentity=null;
+    hideHdImageForHandoff();
+    ui.result?.classList.add('hidden');
+    ui.candidates?.classList.add('hidden');
+    if (ui.empty) {
+      ui.empty.classList.remove('hidden');
+      ui.empty.textContent=message;
+    }
+    window.dispatchEvent(new CustomEvent('tcg-identification-visible-cleared',{
+      detail:{ reason:'atomic-handoff', message, previous }
+    }));
   }
 
   function setLibraryStatus(text) {
@@ -879,6 +950,13 @@
 
 
   const HOVER_CACHE_TTL_MS = 60000;
+  // V0.2.0 FaceWebcam experimental guard: a cache entry may live for convenience,
+  // but instant rendering is allowed only while it is still visually and temporally fresh.
+  // This targets the real FaceWebcam case where a physical card is replaced while the
+  // detector keeps the same UID. Precision is preferred over an instant stale identity.
+  const HOVER_CACHE_MAX_INSTANT_AGE_MS = 8000;
+  const HOVER_CACHE_INSTANT_APPEARANCE_MIN = 0.90;
+  const HOVER_CACHE_VERIFY_DELAY_MS = 260;
 
   function cacheGeometry(track) {
     return {
@@ -944,6 +1022,17 @@
       return null;
     }
 
+    // Absolute freshness cap: even if geometry/UID are unchanged, do not instantly
+    // reuse an identity that has not been freshly matched for several seconds.
+    // A fresh matcher pass will immediately repopulate the cache if it is truly the
+    // same card. This prevents long-lived UID reuse from becoming a wrong hover.
+    if(Number.isFinite(item.createdAt) && now-item.createdAt>HOVER_CACHE_MAX_INSTANT_AGE_MS) {
+      state.hoverCache.delete(track.uid);
+      state.hoverCacheMisses++;
+      state.hoverCacheRejects.staleAge++;
+      return null;
+    }
+
     if(cacheGeometryDistance(item.geometry,cacheGeometry(track))>.15) {
       state.hoverCache.delete(track.uid);
       state.hoverCacheMisses++;
@@ -954,7 +1043,7 @@
     const currentAppearance=cloneAppearance(track);
     if(item.appearance && currentAppearance) {
       const sim=appearanceSimilarity(item.appearance,currentAppearance);
-      if(!Number.isFinite(sim) || sim<.82) {
+      if(!Number.isFinite(sim) || sim<HOVER_CACHE_INSTANT_APPEARANCE_MIN) {
         state.hoverCache.delete(track.uid);
         state.hoverCacheMisses++;
         state.hoverCacheRejects.appearance++;
@@ -1360,12 +1449,7 @@
   }
 
   function clearResult(message='Survole une carte détectée.') {
-    ui.result?.classList.add('hidden');
-    ui.candidates?.classList.add('hidden');
-    if (ui.empty) {
-      ui.empty.classList.remove('hidden');
-      ui.empty.textContent=message;
-    }
+    clearVisibleUiOnly(message);
     window.dispatchEvent(new CustomEvent('tcg-identification-result',{
       detail:{accepted:false,message,at:performance.now()}
     }));
@@ -1397,6 +1481,8 @@
     }).join('<br>');
 
     if (!result.accepted) {
+      state.visibleIdentity=null;
+      hideHdImageForHandoff();
       ui.result?.classList.add('hidden');
       ui.empty?.classList.remove('hidden');
       const glare=result.rejectionReason?.startsWith('glare')
@@ -1430,8 +1516,18 @@
     ui.score.textContent=`Indice visuel : ${bestIndex}/100${modeLabel}`;
     ui.margin.textContent=`Écart brut avec le 2e candidat : ${marginIndex} points · mode ${result.mode||'normal'} · ce score n'est pas une probabilité`;
     const hdUrl=imageUrl(result.best.ref);
-    ui.image.src=hdUrl;
-    ui.image.alt=result.best.ref.name;
+    setHdImageAtomic(hdUrl,result.best.ref.name);
+    state.visibleIdentity={
+      accepted:true,
+      name:result.best.ref.name,
+      type:result.best.ref.type||'Carte',
+      image:result.best.ref.image,
+      imageUrl:hdUrl,
+      source:String(result.mode||'').startsWith('cached-')?'hover-cache':'foreground',
+      mode:result.mode||'normal',
+      trackUid:state.hoveredTrack?.uid ?? null,
+      at:performance.now()
+    };
 
     window.dispatchEvent(new CustomEvent('tcg-identification-result',{
       detail:{
@@ -1577,6 +1673,33 @@ function analyzeCropQuality(canvas) {
   };
 }
 
+// V0.2.1 FaceWebcam — conservative active rescue for extremely strong matches
+// under localized glare. This is deliberately much stricter than the passive
+// shadow rule used by the Lab. Precision remains the priority.
+const HIGH_GLARE_STRICT_RESCUE = Object.freeze({
+  minMatcherScore: .75,
+  minMargin: .30,
+  minVisualIndex: 100,
+  maxClippedFraction: .13,
+  maxBrightFraction: .22,
+  minDetail: .05
+});
+
+function strictHighGlareRescueEligible(result,quality) {
+  const score=Number(result?.best?.score || 0);
+  const margin=Number(result?.margin || 0);
+  const index=visualIndex(score);
+  return Boolean(
+    result?.best?.ref &&
+    score>=HIGH_GLARE_STRICT_RESCUE.minMatcherScore &&
+    margin>=HIGH_GLARE_STRICT_RESCUE.minMargin &&
+    index>=HIGH_GLARE_STRICT_RESCUE.minVisualIndex &&
+    Number(quality?.clippedFraction ?? 1)<=HIGH_GLARE_STRICT_RESCUE.maxClippedFraction &&
+    Number(quality?.brightFraction ?? 1)<=HIGH_GLARE_STRICT_RESCUE.maxBrightFraction &&
+    Number(quality?.detail ?? 0)>=HIGH_GLARE_STRICT_RESCUE.minDetail
+  );
+}
+
 function applyQualityGuard(result,quality) {
   if(!result || !quality) return result;
   result.quality=quality;
@@ -1588,19 +1711,20 @@ function applyQualityGuard(result,quality) {
   if(!result.accepted) return result;
 
   if(quality.risk==='high'){
-    // Clean-baseline rule: glare alone must not veto an otherwise decisive
-    // visual match. A large margin is required so ambiguous 100/100 cases
-    // remain protected by the quality guard.
-    const decisiveHighGlare=
-      Number(result.best?.score || 0)>=.55 &&
-      Number(result.margin || 0)>=.24;
-
-    if(decisiveHighGlare){
-      result.mode=`${result.mode || 'normal'}-glare-decisive`;
-      state.qualityGuard.decisiveHighOverrides+=1;
+    if(strictHighGlareRescueEligible(result,quality)){
+      result.accepted=true;
+      result.rejectionReason=null;
+      result.mode=`${result.mode || 'normal'}-glare-rescued-strict`;
+      result.glareRescue={
+        policy:'strict-v0.2.1',
+        matcherScore:Number(result.best?.score || 0),
+        visualIndex:visualIndex(Number(result.best?.score || 0)),
+        margin:Number(result.margin || 0),
+        thresholds:{...HIGH_GLARE_STRICT_RESCUE}
+      };
+      state.qualityGuard.strictRescued+=1;
       return result;
     }
-
     result.accepted=false;
     result.rejectionReason='glare-high';
     result.mode=`${result.mode || 'normal'}-glare-rejected`;
@@ -2038,7 +2162,7 @@ function applyQualityGuard(result,quality) {
     // Cache is on-demand only: no background work. If a valid cached result was
     // displayed, verify it only if the user keeps hovering for a while.
     const delay = usedCache
-      ? 1400
+      ? HOVER_CACHE_VERIFY_DELAY_MS
       : same && performance.now()-state.lastIdentifiedAt<1100
         ? 700
         : 40;
@@ -2168,8 +2292,33 @@ function applyQualityGuard(result,quality) {
   }
 
   window.TCGIdentificationLab = {
-    version: '0.2.1-alpha16-temporal-identity-guard',
+    version: '0.2.4-alpha19-atomic-handoff-memory-api',
     start: startProductIdentification,
+    preloadImage(image) {
+      return preloadHdUrl(hdUrlFromImage(image));
+    },
+    clearVisibleForHandoff(message='Analyse de la carte survolée…') {
+      clearVisibleUiOnly(message);
+    },
+    showMemoryIdentity(payload={}) {
+      const name=payload.name||null, image=payload.image||null;
+      if (!name || !image) return false;
+      const liveUid=state.hoveredTrack?.uid ?? null;
+      const targetUid=payload.trackUid ?? null;
+      if (liveUid!=null && targetUid!=null && String(liveUid)!==String(targetUid)) return false;
+      ui.empty?.classList.add('hidden');
+      ui.candidates?.classList.add('hidden');
+      ui.result?.classList.remove('hidden');
+      ui.name.textContent=name;
+      ui.type.textContent=payload.type||'Carte';
+      if (ui.score) ui.score.textContent=`Mémoire Vision · ${payload.tableId||'table'} · ${Number(payload.observations||0)} observation${Number(payload.observations||0)>1?'s':''}`;
+      if (ui.margin) ui.margin.textContent='Pré-identifiée en arrière-plan · survol mémoire';
+      const url=hdUrlFromImage(image);
+      setHdImageAtomic(url,name);
+      state.visibleIdentity={accepted:true,name,type:payload.type||'Carte',image,imageUrl:url,source:'vision-state-memory',mode:'memory-hover',trackUid:targetUid,tableId:payload.tableId||null,at:performance.now()};
+      window.dispatchEvent(new CustomEvent('tcg-identification-visible',{detail:{...state.visibleIdentity}}));
+      return true;
+    },
     getAnalyzedCropDataUrl() {
       if (!state.hoveredTrack || state.lastAnalyzedTrackUid !== state.hoveredTrack.uid) return null;
       return state.lastAnalyzedCropDataUrl;
@@ -2194,6 +2343,9 @@ function applyQualityGuard(result,quality) {
           hits: state.hoverCacheHits,
           misses: state.hoverCacheMisses,
           ttlMs: HOVER_CACHE_TTL_MS,
+          maxInstantAgeMs: HOVER_CACHE_MAX_INSTANT_AGE_MS,
+          instantAppearanceMin: HOVER_CACHE_INSTANT_APPEARANCE_MIN,
+          verifyDelayMs: HOVER_CACHE_VERIFY_DELAY_MS,
           rejects: { ...state.hoverCacheRejects }
         },
         pointerInsideStage: state.pointerInsideStage,
@@ -2208,7 +2360,8 @@ function applyQualityGuard(result,quality) {
           high: state.qualityGuard.high,
           rejected: state.qualityGuard.rejected,
           tightened: state.qualityGuard.tightened,
-          decisiveHighOverrides: state.qualityGuard.decisiveHighOverrides,
+          strictRescued: state.qualityGuard.strictRescued,
+          strictRescuePolicy: { ...HIGH_GLARE_STRICT_RESCUE },
           last: state.qualityGuard.last ? { ...state.qualityGuard.last } : null
         },
         identityStability: {
@@ -2226,6 +2379,8 @@ function applyQualityGuard(result,quality) {
           stableRefreshes: state.identityStability.stableRefreshes,
           last: state.identityStability.last ? { ...state.identityStability.last } : null
         },
+        visibleIdentity: state.visibleIdentity ? { ...state.visibleIdentity } : null,
+        imageHandoff: { swapSeq: state.imageSwapSeq, pending: ui.image?.dataset?.swapPending==='1', cardUrl: ui.image?.dataset?.cardUrl||null },
         hoveredTrack: state.hoveredTrack ? { ...state.hoveredTrack } : null,
         identification: (result?.best && state.hoveredTrack && state.lastTrackUid === state.hoveredTrack.uid) ? {
           accepted: Boolean(result.accepted),
@@ -2246,6 +2401,7 @@ function applyQualityGuard(result,quality) {
           mode: result.mode || 'normal',
           rejectionReason: result.rejectionReason || null,
           quality: result.quality ? { ...result.quality } : null,
+          glareRescue: result.glareRescue ? { ...result.glareRescue } : null,
           overlap: Number(result.overlap || 0),
           mask: result.maskDiagnostics ? {
             visibleFraction: Number(result.maskDiagnostics.visibleFraction || 0),

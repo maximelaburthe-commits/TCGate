@@ -18,6 +18,8 @@ const mime = {
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
   '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
   '.json': 'application/json; charset=utf-8',
   '.onnx': 'application/octet-stream'
 };
@@ -162,7 +164,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/health') {
       return sendJson(res, 200, {
         ok: true,
-        version: '0.6.4.0',
+        version: 'tcgate-alpha-0.1-candidate-1',
         rooms: rooms.size,
         uptimeSeconds: Math.round(process.uptime()),
         railway: Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID),
@@ -170,7 +172,9 @@ const server = http.createServer(async (req, res) => {
           integrated: true,
           modelPresent: fs.existsSync(MODEL_FILE),
           modelBytes: fs.existsSync(MODEL_FILE) ? fs.statSync(MODEL_FILE).size : 0,
-          model: 'V5.3 overlap / 512'
+          model: 'Vision V5.3 / 512',
+          stateEngine: '0.1.6-facewebcam-memory-hover',
+          identification: '0.2.4-alpha19-atomic-handoff-memory-api'
         }
       });
     }
@@ -368,7 +372,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 server.listen(PORT, HOST, () => {
-  console.log(`TCG Webcam V0.6.4.0 Clean Baseline -> http://127.0.0.1:${PORT}`);
+  console.log(`TCG Webcam V0.6.2 -> http://127.0.0.1:${PORT}`);
   const nets = os.networkInterfaces();
   for (const entries of Object.values(nets)) {
     for (const net of entries || []) {
