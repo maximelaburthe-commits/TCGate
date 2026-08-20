@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 3';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 4';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -56,6 +56,10 @@ const state = {
     currentVisionThrottleMs: 0,
     senderPolicyApplied: false,
     senderPolicyError: null,
+    senderScaleResolutionDownBy: 1,
+    senderAdaptiveMode: 'native',
+    senderAdaptationPending: false,
+    senderAdaptations: [],
     lastReason: null
   },
   gameEntering: false,
@@ -937,17 +941,52 @@ async function enterNetworkGame() {
   }
 }
 
-async function configureVideoSenderPolicy(sender, source='unknown') {
+async function applyVideoSenderEncoding(sender, {
+  scaleResolutionDownBy = 1,
+  degradationPreference = 'maintain-resolution',
+  source = 'unknown',
+  mode = 'native'
+} = {}) {
   if (!sender?.getParameters || !sender?.setParameters) return false;
   try {
     const params = sender.getParameters() || {};
-    params.degradationPreference = 'maintain-resolution';
+    params.degradationPreference = degradationPreference;
+    if (!Array.isArray(params.encodings) || !params.encodings.length) params.encodings = [{}];
+
+    const encoding = params.encodings[0];
+    encoding.maxFramerate = 30;
+    encoding.scaleResolutionDownBy = Math.max(1, Number(scaleResolutionDownBy) || 1);
+
     await sender.setParameters(params);
-    state.rtcQualityControl.senderPolicyApplied = true;
-    state.rtcQualityControl.senderPolicyError = null;
+
+    const q = state.rtcQualityControl;
+    const previousScale = q.senderScaleResolutionDownBy;
+    const previousMode = q.senderAdaptiveMode;
+    q.senderPolicyApplied = true;
+    q.senderPolicyError = null;
+    q.senderScaleResolutionDownBy = encoding.scaleResolutionDownBy;
+    q.senderAdaptiveMode = mode;
+
+    if (previousScale !== encoding.scaleResolutionDownBy || previousMode !== mode) {
+      const adaptation = {
+        at: new Date().toISOString(),
+        source,
+        fromScale: previousScale,
+        toScale: encoding.scaleResolutionDownBy,
+        fromMode: previousMode,
+        toMode: mode,
+        degradationPreference
+      };
+      q.senderAdaptations.push(adaptation);
+      logEvent('rtc-video-sender-adaptation', adaptation);
+    }
+
     logEvent('rtc-video-sender-policy', {
       source,
-      degradationPreference: 'maintain-resolution'
+      degradationPreference,
+      scaleResolutionDownBy: encoding.scaleResolutionDownBy,
+      maxFramerate: encoding.maxFramerate,
+      mode
     });
     return true;
   } catch (err) {
@@ -961,6 +1000,56 @@ async function configureVideoSenderPolicy(sender, source='unknown') {
       message: err?.message || String(err)
     });
     return false;
+  }
+}
+
+async function configureVideoSenderPolicy(sender, source='unknown') {
+  // Candidate 4 starts at native resolution, but unlike Candidate 3 it can
+  // explicitly step the sender down to a 720p-class stream under sustained
+  // encoder pressure. This avoids preserving 1080p at 12-13 fps.
+  const q = state.rtcQualityControl;
+  const localWidth = Number(currentVideoTrack()?.getSettings?.().width || 0);
+  const scale = q.senderAdaptiveMode === 'cpu-720p' && localWidth
+    ? Math.max(1, localWidth / 1280)
+    : 1;
+  return applyVideoSenderEncoding(sender, {
+    scaleResolutionDownBy: scale,
+    degradationPreference: 'maintain-resolution',
+    source,
+    mode: q.senderAdaptiveMode || 'native'
+  });
+}
+
+async function adaptVideoSenderForCpu(video, durationMs) {
+  const q = state.rtcQualityControl;
+  if (q.senderAdaptiveMode === 'cpu-720p' || q.senderAdaptationPending) return false;
+  if (durationMs < 6000) return false;
+
+  const localWidth = Number(currentVideoTrack()?.getSettings?.().width || video?.frameWidth || 0);
+  if (!localWidth || localWidth <= 1280) return false;
+
+  q.senderAdaptationPending = true;
+  try {
+    const scale = Math.max(1, localWidth / 1280);
+    const ok = await applyVideoSenderEncoding(state.videoTransceiver?.sender, {
+      scaleResolutionDownBy: scale,
+      degradationPreference: 'maintain-resolution',
+      source: 'rtc-cpu-sustained',
+      mode: 'cpu-720p'
+    });
+
+    if (ok) {
+      logEvent('rtc-cpu-protect-video', {
+        durationMs,
+        sourceWidth: localWidth,
+        targetWidth: 1280,
+        scaleResolutionDownBy: scale,
+        outboundFps: video?.framesPerSecond ?? null
+      });
+    }
+    return ok;
+  } finally {
+    q.senderAdaptationPending = false;
   }
 }
 
@@ -1004,35 +1093,48 @@ function updateRtcCpuQualityControl(rtcData) {
         startedAt: new Date(now).toISOString(),
         startedAtMs: now,
         startFrameWidth: video?.frameWidth ?? null,
-        startFrameHeight: video?.frameHeight ?? null
+        startFrameHeight: video?.frameHeight ?? null,
+        startFramesPerSecond: video?.framesPerSecond ?? null,
+        startSenderMode: q.senderAdaptiveMode
       };
       logEvent('rtc-quality-cpu-start', {
         frameWidth: video?.frameWidth ?? null,
-        frameHeight: video?.frameHeight ?? null
+        frameHeight: video?.frameHeight ?? null,
+        framesPerSecond: video?.framesPerSecond ?? null,
+        senderMode: q.senderAdaptiveMode
       });
     }
 
     const durationMs = now - q.cpuEpisode.startedAtMs;
-    // Candidate 3: Candidate 2 proved that 250 ms is insufficient on a sustained
-    // 1080p CPU-limited sender. Escalate progressively while keeping the stream
-    // resolution intact. Static tabletop cards tolerate a slower detector much
-    // better than a blurry remote video.
+
+    // Candidate 4: C3 showed that Vision throttling alone cannot keep a
+    // CPU-limited 1080p sender fluid. Reduce Vision pressure first, then
+    // explicitly step the sender down to a 720p-class encode after 6 s.
+    // Never go below 720p automatically.
     const targetThrottle =
-      durationMs >= 30000 ? 1000 :
-      durationMs >= 20000 ? 750 :
-      durationMs >= 12000 ? 500 :
-      durationMs >= 8000  ? 250 :
-      durationMs >= 4000  ? 160 : 90;
+      durationMs >= 12000 ? 1000 :
+      durationMs >= 6000  ? 750 :
+      durationMs >= 3000  ? 500 : 160;
     setVisionCpuThrottle(targetThrottle, 'rtc-cpu');
+
+    if (durationMs >= 6000) {
+      adaptVideoSenderForCpu(video, durationMs).catch(err => {
+        logEvent('rtc-video-sender-adaptation-error', {
+          name: err?.name || null,
+          message: err?.message || String(err)
+        });
+      });
+    }
     return;
   }
 
   if (q.cpuEpisode) {
     q.recoverySamples += 1;
-    // Three consecutive non-CPU samples (~6 s) avoid oscillating on short spikes.
     if (q.recoverySamples >= 3) {
       closeCpuEpisode(now, reason || 'none');
       setVisionCpuThrottle(0, 'rtc-recovered');
+      // Keep the 720p-class profile until the next session to avoid
+      // resolution/fps oscillation once a machine has proven CPU-limited.
     }
   } else if (q.currentVisionThrottleMs && reason !== 'cpu') {
     q.recoverySamples += 1;
@@ -1062,6 +1164,10 @@ function rtcQualitySummary() {
     senderPolicyApplied: q.senderPolicyApplied,
     senderPolicyError: q.senderPolicyError,
     degradationPreference: q.senderPolicyApplied ? 'maintain-resolution' : null,
+    senderAdaptiveMode: q.senderAdaptiveMode,
+    senderScaleResolutionDownBy: q.senderScaleResolutionDownBy,
+    senderAdaptationPending: q.senderAdaptationPending,
+    senderAdaptations: [...q.senderAdaptations],
     currentVisionThrottleMs: q.currentVisionThrottleMs,
     lastQualityLimitationReason: q.lastReason,
     cpuEpisodes: episodes,
@@ -1556,7 +1662,14 @@ async function snapshotRtcMetrics() {
           framesDropped: stat.framesDropped ?? null,
           framesPerSecond: stat.framesPerSecond ?? null,
           frameWidth: stat.frameWidth ?? null,
-          frameHeight: stat.frameHeight ?? null
+          frameHeight: stat.frameHeight ?? null,
+          jitterBufferDelay: stat.jitterBufferDelay ?? null,
+          jitterBufferTargetDelay: stat.jitterBufferTargetDelay ?? null,
+          jitterBufferMinimumDelay: stat.jitterBufferMinimumDelay ?? null,
+          jitterBufferEmittedCount: stat.jitterBufferEmittedCount ?? null,
+          totalDecodeTime: stat.totalDecodeTime ?? null,
+          totalProcessingDelay: stat.totalProcessingDelay ?? null,
+          estimatedPlayoutTimestamp: stat.estimatedPlayoutTimestamp ?? null
         });
       }
 
@@ -1775,6 +1888,9 @@ function reportText(report) {
     `Flux entrants: ${inbound.length}`,
     `Flux sortants: ${outbound.length}`,
     `Préférence vidéo: ${report.network.qualityControl?.degradationPreference || '—'}`,
+    `Mode sender adaptatif: ${report.network.qualityControl?.senderAdaptiveMode || '—'}`,
+    `Échelle sender: ${report.network.qualityControl?.senderScaleResolutionDownBy ?? 1}x`,
+    `Adaptations sender: ${report.network.qualityControl?.senderAdaptations?.length ?? 0}`,
     `Limitation CPU cumulée: ${report.network.qualityControl?.totalCpuLimitedMs ?? 0} ms`,
     `Throttle Vision actuel: ${report.network.qualityControl?.currentVisionThrottleMs ?? 0} ms`,
     '',

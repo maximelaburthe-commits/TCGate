@@ -9,7 +9,7 @@ const required=[
   'public/table-state-bridge.js','public/table-state-engine.js',
   'public/identification.js','public/identification-worker.js','public/cards-fallback.json',
   'models/card_detector_v53_512.onnx','server.js','railway.json',
-  'PLAN_TEST_ALPHA_0.1_CANDIDATE_3.md','CHANGELOG_TCGATE_ALPHA_0.1_CANDIDATE_3.md'
+  'PLAN_TEST_ALPHA_0.1_CANDIDATE_4.md','CHANGELOG_TCGATE_ALPHA_0.1_CANDIDATE_4.md'
 ];
 for(const f of required){ if(!fs.existsSync(f)) throw new Error(`Missing ${f}`); }
 
@@ -29,14 +29,14 @@ const app=fs.readFileSync('public/app.js','utf8');
 for(const token of [
   'attachVisionToRemoteStream','TCGVisionEngine','TCGVisionCalibration','TCGTableStateEngine',
   'tcg-identification-visible','tcg-identification-visible-cleared','tcg-table-hover-hit',
-  "scope: 'opponent-stream-only'",'TCGate Alpha 0.1 Candidate 3','captureTesterVisionFeedback',
+  "scope: 'opponent-stream-only'",'TCGate Alpha 0.1 Candidate 4','captureTesterVisionFeedback',
   "degradationPreference = 'maintain-resolution'",'updateRtcCpuQualityControl',
   'setVisionCpuThrottle','qualityLimitationDurations','audio-only-recovery',
   'recovered-audio-video-','qualityControl: rtcQualitySummary()',
   'sendCurrentMediaState','applyRemoteMediaState',"signal.type === 'media-state'",'remoteMediaState',
-  'durationMs >= 30000 ? 1000','durationMs >= 20000 ? 750','durationMs >= 12000 ? 500'
+  'adaptVideoSenderForCpu','scaleResolutionDownBy','senderAdaptiveMode','rtc-cpu-protect-video'
 ]){
-  if(!app.includes(token)) throw new Error(`Missing Candidate 3 app token ${token}`);
+  if(!app.includes(token)) throw new Error(`Missing Candidate 4 app token ${token}`);
 }
 if(app.includes("const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 1'")) throw new Error('Candidate 1 product version still active');
 
@@ -70,9 +70,9 @@ for(const token of [
 
 const server=fs.readFileSync('server.js','utf8');
 for(const token of [
-  "version: 'tcgate-alpha-0.1-candidate-3'",
+  "version: 'tcgate-alpha-0.1-candidate-4'",
   "identification: '0.2.4-alpha21-full-handoff-dedup-memory-api'",
-  'TCGate Alpha 0.1 Candidate 3'
+  'TCGate Alpha 0.1 Candidate 4'
 ]){
   if(!server.includes(token)) throw new Error(`Missing server token ${token}`);
 }
@@ -88,7 +88,7 @@ if(hash('models/card_detector_v53_512.onnx')!==expectedModel) throw new Error('D
 if(hash('public/detection-worker.js')!==expectedWorker) throw new Error('Detection worker changed');
 if(hash('public/table-state-engine.js')!==expectedTable) throw new Error('Vision State engine changed');
 
-console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_3');
+console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_4');
 console.log('MODEL_SHA256='+hash('models/card_detector_v53_512.onnx'));
 console.log('DETECTION_WORKER_SHA256='+hash('public/detection-worker.js'));
 console.log('TABLE_STATE_SHA256='+hash('public/table-state-engine.js'));

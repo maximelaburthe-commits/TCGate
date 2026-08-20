@@ -1,37 +1,27 @@
-# TCGate — Alpha fermée 0.1 · Candidate 3
+# TCGate — Alpha fermée 0.1 · Candidate 4
 
-Candidate 3 est la version active de test après analyse comparative des rapports Candidate 1 et Candidate 2 du 20/08/2026.
+Candidate 4 repart strictement de Candidate 3 après analyse des deux rapports du 20/08/2026 (salon RP6VSP).
 
-## Base préservée
+## Motif du correctif
 
-- Vision FaceWebcam 0.3.1
-- Table State 0.1.6 `facewebcam-memory-hover`
-- modèle Vision V5.3 / 512
-- identification anti-reflet et mémoire de survol de la Candidate 2
+Le PC qui rejoint recevait le flux adverse en 1920×1080 mais seulement à ~12 fps.
+Le poste host encodait son 1080p à ~13 fps avec `qualityLimitationReason: cpu`
+pendant plus de 4 minutes cumulées, alors que le RTT était de 5–6 ms et les pertes
+réseau quasi nulles. La latence perçue est donc liée à la saturation de l'encodeur,
+pas au réseau.
 
-## Changements C3
+## Candidate 4
 
-- signal d'état caméra/micro entre les pairs ;
-- pause automatique des inférences Vision quand la caméra adverse est coupée ;
-- reprise automatique sans effacer la mémoire Table State ;
-- throttle CPU étendu jusqu'à 1000 ms ;
-- résolution WebRTC toujours prioritaire via `maintain-resolution` ;
-- déduplication des handoffs HD vers une image déjà visible.
+- conserve le 1080p natif tant que l'encodeur tient la charge ;
+- après 6 s de limitation CPU persistante, réduit explicitement le sender vers une
+  classe 1280×720 plutôt que de conserver un 1080p lent ;
+- ne descend jamais automatiquement sous 720p ;
+- conserve le throttle Vision comme protection secondaire ;
+- garde le profil 720p pour le reste de la session après une adaptation afin
+  d'éviter les oscillations ;
+- ajoute au rapport les statistiques de jitter buffer / délai de traitement
+  lorsque le navigateur les expose ;
+- ne modifie pas le détecteur, le matcher, Table State ni les seuils Vision.
 
-Voir `CHANGELOG_TCGATE_ALPHA_0.1_CANDIDATE_3.md` et `PLAN_TEST_ALPHA_0.1_CANDIDATE_3.md`.
-
-## Lancement local
-
-Sous Windows : `START_WINDOWS_LOCAL.bat` ou `START_WINDOWS.bat`.
-
-Avec Node.js :
-
-```bash
-npm start
-```
-
-Smoke test :
-
-```bash
-npm run smoke
-```
+Le principe produit reste : la vidéo fluide et lisible est prioritaire sur la cadence
+de détection.
