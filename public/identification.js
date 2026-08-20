@@ -112,6 +112,7 @@
     handoffTelemetry: {
       handoffRequested: 0,
       handoffCommitted: 0,
+      handoffDeduplicated: 0,
       clearRequested: 0,
       clearCommitted: 0,
       clearDeduplicated: 0,
@@ -157,6 +158,17 @@
     state.handoffTelemetry.handoffRequested += 1;
     const seq=++state.imageSwapSeq;
     const current=ui.image.dataset.cardUrl||'';
+    const alreadyVisible =
+      current===url &&
+      ui.image.complete &&
+      ui.image.naturalWidth>0 &&
+      ui.image.style.visibility!=='hidden' &&
+      ui.image.dataset.swapPending!=='1';
+    if (alreadyVisible) {
+      ui.image.alt=alt;
+      state.handoffTelemetry.handoffDeduplicated += 1;
+      return;
+    }
     if (current===url && ui.image.complete && ui.image.naturalWidth>0) {
       ui.image.alt=alt;
       ui.image.style.visibility='visible';
@@ -2324,7 +2336,7 @@ function applyQualityGuard(result,quality) {
   }
 
   window.TCGIdentificationLab = {
-    version: '0.2.4-alpha20-atomic-handoff-dedup-memory-api',
+    version: '0.2.4-alpha21-full-handoff-dedup-memory-api',
     start: startProductIdentification,
     preloadImage(image) {
       return preloadHdUrl(hdUrlFromImage(image));

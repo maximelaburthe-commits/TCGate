@@ -31,6 +31,9 @@ const state = {
   productThrottleMs: 0,
   performancePressureReason: null,
   performanceThrottleChanges: 0,
+  inputPaused: false,
+  inputPauseReason: null,
+  inputPauseChanges: 0,
   confirmationsNeeded: 2,
   maxMisses: 2,
   identityMemoryMs: 8000,
@@ -1043,12 +1046,13 @@ function effectiveInferenceDelay(delay = state.intervalMs) {
 
 function scheduleNextInference(delay = state.intervalMs) {
   clearInferenceTimer();
-  if (!state.detecting) return;
+  if (!state.detecting || state.inputPaused) return;
   inferenceTimer = setTimeout(runInference, effectiveInferenceDelay(delay));
 }
 
 async function runInference() {
   syncExternalVideoGeometry('inference');
+  if (state.inputPaused) return;
   if (!state.detecting || !state.workerReady || !state.stream || state.inferenceBusy) {
     if (state.detecting) scheduleNextInference(100);
     return;
@@ -1546,7 +1550,10 @@ function getProductSnapshot() {
       productThrottleMs:Number(state.productThrottleMs || 0),
       effectiveIntervalMs:effectiveInferenceDelay(),
       reason:state.performancePressureReason || null,
-      changes:Number(state.performanceThrottleChanges || 0)
+      changes:Number(state.performanceThrottleChanges || 0),
+      inputPaused:Boolean(state.inputPaused),
+      inputPauseReason:state.inputPauseReason || null,
+      inputPauseChanges:Number(state.inputPauseChanges || 0)
     },
     filters:{
       shapeRejected:Number(state.shapeRejected || 0),
@@ -1592,20 +1599,43 @@ window.TCGDetectionLab={
 };
 
 window.TCGVisionEngine={
-  version:'0.6.1-product-bridge-alpha20-cpu-budget',
+  version:'0.6.1-product-bridge-alpha21-media-aware-cpu-budget',
   preload:preloadExternalVision,
   attachRemoteStream:attachExternalStream,
   detachRemoteStream:detachExternalStream,
   getSnapshot:getProductSnapshot,
   setPerformanceThrottle(intervalMs=0, reason='integration') {
-    const next=Math.max(0,Math.min(500,Number(intervalMs)||0));
+    const next=Math.max(0,Math.min(1000,Number(intervalMs)||0));
     if(next===state.productThrottleMs && reason===state.performancePressureReason) return next;
     state.productThrottleMs=next;
     state.performancePressureReason=next>0 ? reason : null;
     state.performanceThrottleChanges+=1;
-    if(state.detecting && !state.inferenceBusy) scheduleNextInference();
+    if(state.detecting && !state.inferenceBusy && !state.inputPaused) scheduleNextInference();
     window.dispatchEvent(new CustomEvent('tcg-vision-performance-budget',{
-      detail:{intervalMs:next,effectiveIntervalMs:effectiveInferenceDelay(),reason:state.performancePressureReason}
+      detail:{
+        intervalMs:next,
+        effectiveIntervalMs:effectiveInferenceDelay(),
+        reason:state.performancePressureReason,
+        inputPaused:Boolean(state.inputPaused),
+        inputPauseReason:state.inputPauseReason || null
+      }
+    }));
+    return next;
+  },
+  setInputPaused(paused=false, reason='integration') {
+    const next=Boolean(paused);
+    if(next===state.inputPaused && (!next || reason===state.inputPauseReason)) return next;
+    state.inputPaused=next;
+    state.inputPauseReason=next ? reason : null;
+    state.inputPauseChanges+=1;
+    clearInferenceTimer();
+    if(!next){
+      // Detector coordinates from the pre-pause frame must not survive a camera restart.
+      resetTracking();
+      if(state.detecting && state.stream && !state.inferenceBusy) scheduleNextInference(50);
+    }
+    window.dispatchEvent(new CustomEvent('tcg-vision-input-state',{
+      detail:{paused:next,reason:state.inputPauseReason,changes:state.inputPauseChanges}
     }));
     return next;
   },

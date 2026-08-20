@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 2';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 3';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -30,6 +30,11 @@ const state = {
   eventSource: null,
   localStream: null,
   remoteStream: null,
+  remoteMediaState: {
+    cameraEnabled: null,
+    microphoneEnabled: null,
+    receivedAt: null
+  },
   cameraEnabled: false,
   micEnabled: false,
   selectedCameraId: null,
@@ -256,6 +261,10 @@ async function attachVisionToRemoteStream(stream) {
   try{
     await prepareVision();
     await window.TCGVisionEngine?.attachRemoteStream?.(stream);
+    if (state.remoteMediaState.cameraEnabled === false) {
+      window.TCGVisionEngine?.setInputPaused?.(true, 'remote-camera-off');
+      setVisionStatus('Vision : pause · caméra adverse coupée', 'warning');
+    }
     if(window.TCGTableStateEngine){
       try {
         const before=window.TCGTableStateEngine.getSnapshot?.();
@@ -956,7 +965,7 @@ async function configureVideoSenderPolicy(sender, source='unknown') {
 }
 
 function setVisionCpuThrottle(ms, reason='rtc-cpu') {
-  const next = Math.max(0, Math.min(500, Number(ms) || 0));
+  const next = Math.max(0, Math.min(1000, Number(ms) || 0));
   if (state.rtcQualityControl.currentVisionThrottleMs === next) return;
   state.rtcQualityControl.currentVisionThrottleMs = next;
   window.TCGVisionEngine?.setPerformanceThrottle?.(next, reason);
@@ -1004,7 +1013,16 @@ function updateRtcCpuQualityControl(rtcData) {
     }
 
     const durationMs = now - q.cpuEpisode.startedAtMs;
-    const targetThrottle = durationMs >= 8000 ? 250 : durationMs >= 4000 ? 160 : 90;
+    // Candidate 3: Candidate 2 proved that 250 ms is insufficient on a sustained
+    // 1080p CPU-limited sender. Escalate progressively while keeping the stream
+    // resolution intact. Static tabletop cards tolerate a slower detector much
+    // better than a blurry remote video.
+    const targetThrottle =
+      durationMs >= 30000 ? 1000 :
+      durationMs >= 20000 ? 750 :
+      durationMs >= 12000 ? 500 :
+      durationMs >= 8000  ? 250 :
+      durationMs >= 4000  ? 160 : 90;
     setVisionCpuThrottle(targetThrottle, 'rtc-cpu');
     return;
   }
@@ -1049,6 +1067,48 @@ function rtcQualitySummary() {
     cpuEpisodes: episodes,
     totalCpuLimitedMs: episodes.reduce((sum, e) => sum + Number(e.durationMs || 0), 0)
   };
+}
+
+
+function localMediaStatePayload() {
+  const videoTrack = currentVideoTrack();
+  const audioTrack = currentAudioTrack();
+  return {
+    cameraEnabled: Boolean(videoTrack && videoTrack.enabled),
+    microphoneEnabled: Boolean(audioTrack && audioTrack.enabled)
+  };
+}
+
+async function sendCurrentMediaState(source='local-change') {
+  if (!state.roomCode || !state.peerId || !state.opponentId) return null;
+  const payload = localMediaStatePayload();
+  const result = await sendSignal('media-state', payload);
+  logEvent('media-state-sent', { source, ...payload, delivered: result?.delivered ?? null });
+  return result;
+}
+
+function applyRemoteMediaState(payload = {}) {
+  const previous = { ...state.remoteMediaState };
+  const next = {
+    cameraEnabled: typeof payload.cameraEnabled === 'boolean' ? payload.cameraEnabled : previous.cameraEnabled,
+    microphoneEnabled: typeof payload.microphoneEnabled === 'boolean' ? payload.microphoneEnabled : previous.microphoneEnabled,
+    receivedAt: new Date().toISOString()
+  };
+  state.remoteMediaState = next;
+
+  const cameraChanged = previous.cameraEnabled !== next.cameraEnabled;
+  if (cameraChanged && typeof next.cameraEnabled === 'boolean') {
+    const paused = !next.cameraEnabled;
+    window.TCGVisionEngine?.setInputPaused?.(paused, paused ? 'remote-camera-off' : 'remote-camera-on');
+    if (paused) setVisionStatus('Vision : pause · caméra adverse coupée', 'warning');
+    else if (state.visionAttachedStreamId) setVisionStatus('Vision : active', 'good');
+  }
+
+  logEvent('remote-media-state', {
+    cameraEnabled: next.cameraEnabled,
+    microphoneEnabled: next.microphoneEnabled,
+    cameraChanged
+  });
 }
 
 async function ensurePeerConnection() {
@@ -1131,6 +1191,7 @@ async function ensurePeerConnection() {
     if (cs === 'connected') {
       setRtcStatus('WebRTC connecté', 'connected');
       configureVideoSenderPolicy(state.videoTransceiver?.sender, 'connected').catch(()=>{});
+      sendCurrentMediaState('rtc-connected').catch(()=>{});
     } else if (cs === 'connecting' || cs === 'new') setRtcStatus('Connexion WebRTC…', 'warning');
     else if (cs === 'disconnected') setRtcStatus('Connexion interrompue', 'warning');
     else if (cs === 'failed') setRtcStatus('Échec WebRTC', 'error');
@@ -1246,6 +1307,12 @@ async function createAndSendOffer() {
 
 async function handleSignal(signal) {
   logEvent('signal-received', { type: signal.type });
+
+  if (signal.type === 'media-state') {
+    applyRemoteMediaState(signal.payload || {});
+    return;
+  }
+
   const pc = await ensurePeerConnection();
 
   try {
@@ -1407,6 +1474,7 @@ async function setCameraEnabled(enabled) {
   track.enabled = enabled;
   updateMediaUi();
   logEvent('camera-toggle', { enabled });
+  sendCurrentMediaState('camera-toggle').catch(()=>{});
 
   if (!enabled && state.ownReady && screens.lobby.classList.contains('active')) {
     await setReady(false).catch(() => {});
@@ -1421,6 +1489,7 @@ function setMicEnabled(enabled) {
   track.enabled = enabled;
   updateMediaUi();
   logEvent('microphone-toggle', { enabled });
+  sendCurrentMediaState('microphone-toggle').catch(()=>{});
   toast(enabled ? 'Micro activé' : 'Micro coupé');
 }
 
@@ -1637,7 +1706,8 @@ async function buildCompleteReport() {
       microphoneEnabled: state.micEnabled,
       localVideo: safeTrackSettings(currentVideoTrack()),
       localAudio: safeTrackSettings(currentAudioTrack()),
-      remoteTracks: state.remoteStream?.getTracks?.().map(safeTrackSettings) || []
+      remoteTracks: state.remoteStream?.getTracks?.().map(safeTrackSettings) || [],
+      remoteMediaState: { ...state.remoteMediaState }
     },
     network: {
       signaling: {
