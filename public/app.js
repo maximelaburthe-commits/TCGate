@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 1';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 2';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -43,6 +43,16 @@ const state = {
   remoteVideoStarted: false,
   rtcStatsTimer: null,
   lastRtcMetrics: null,
+  rtcQualityControl: {
+    cpuEpisode: null,
+    cpuEpisodes: [],
+    cpuSamples: 0,
+    recoverySamples: 0,
+    currentVisionThrottleMs: 0,
+    senderPolicyApplied: false,
+    senderPolicyError: null,
+    lastReason: null
+  },
   gameEntering: false,
   gameActive: false,
   offerInFlight: false,
@@ -546,8 +556,8 @@ async function startLocalMedia({ cameraId = null, microphoneId = null } = {}) {
     : { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } };
 
   const relaxedVideoConstraint = cameraId
-    ? { deviceId: { exact: cameraId }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }
-    : { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } };
+    ? { deviceId: { exact: cameraId }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } }
+    : { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30, max: 30 } };
 
   const audioConstraint = microphoneId
     ? { deviceId: { exact: microphoneId }, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
@@ -565,6 +575,7 @@ async function startLocalMedia({ cameraId = null, microphoneId = null } = {}) {
   let stream = null;
   let mode = 'audio-video';
   let videoFailure = null;
+  let audioFailure = null;
   let fullFailure = null;
 
   try {
@@ -576,50 +587,67 @@ async function startLocalMedia({ cameraId = null, microphoneId = null } = {}) {
     fullFailure = describeMediaError(err);
     logEvent('media-attempt-error', { stage: 'audio-video', error: fullFailure });
 
+    // Candidate 2: recover video and audio independently. A camera allocation
+    // failure must not silently discard a microphone that is otherwise usable.
+    let recoveredVideo = null;
+    let recoveredAudio = null;
+    let videoMode = null;
+
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
+      recoveredVideo = await navigator.mediaDevices.getUserMedia({
         video: videoConstraint,
         audio: false
       });
-      mode = 'video-only';
+      videoMode = '1080';
     } catch (errVideo) {
       videoFailure = describeMediaError(errVideo);
       logEvent('media-attempt-error', { stage: 'video-only-1080', error: videoFailure });
 
-      // Chrome/Firefox/device drivers sometimes behave differently with a
-      // lighter request. This retry is harmless because width/height remain ideal.
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
+        recoveredVideo = await navigator.mediaDevices.getUserMedia({
           video: relaxedVideoConstraint,
           audio: false
         });
-        mode = 'video-only-relaxed';
+        videoMode = '720';
         videoFailure = null;
       } catch (errVideoRelaxed) {
         videoFailure = describeMediaError(errVideoRelaxed);
         logEvent('media-attempt-error', { stage: 'video-only-720', error: videoFailure });
-
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: false,
-            audio: audioConstraint
-          });
-          mode = 'audio-only';
-        } catch (errAudio) {
-          const audioFailure = describeMediaError(errAudio);
-          $('mediaStatus').textContent = 'Autorisation refusée ou périphérique indisponible';
-          $('mediaStatus').className = 'media-status error';
-          logEvent('media-error', {
-            stage: 'all-failed',
-            fullFailure,
-            videoFailure,
-            audioFailure
-          });
-          toast('Impossible d’activer la caméra ou le micro.');
-          return false;
-        }
       }
     }
+
+    try {
+      recoveredAudio = await navigator.mediaDevices.getUserMedia({
+        video: false,
+        audio: audioConstraint
+      });
+    } catch (errAudio) {
+      audioFailure = describeMediaError(errAudio);
+      logEvent('media-attempt-error', { stage: 'audio-only-recovery', error: audioFailure });
+    }
+
+    const recoveredTracks = [
+      ...(recoveredVideo?.getVideoTracks?.() || []),
+      ...(recoveredAudio?.getAudioTracks?.() || [])
+    ];
+
+    if (!recoveredTracks.length) {
+      $('mediaStatus').textContent = 'Autorisation refusée ou périphérique indisponible';
+      $('mediaStatus').className = 'media-status error';
+      logEvent('media-error', {
+        stage: 'all-failed',
+        fullFailure,
+        videoFailure,
+        audioFailure
+      });
+      toast('Impossible d’activer la caméra ou le micro.');
+      return false;
+    }
+
+    stream = new MediaStream(recoveredTracks);
+    if (recoveredVideo && recoveredAudio) mode = `recovered-audio-video-${videoMode || 'default'}`;
+    else if (recoveredVideo) mode = `video-only-${videoMode || 'default'}`;
+    else mode = 'audio-only';
   }
 
   const oldStream = state.localStream;
@@ -638,12 +666,10 @@ async function startLocalMedia({ cameraId = null, microphoneId = null } = {}) {
     $('localVideo').play()
   ]);
 
-  // In V0.4.1 the WebRTC m-lines exist even if no media track was available
-  // when the peer connection was created. New tracks therefore replace the
-  // transceiver sender track instead of changing the negotiated media layout.
   if (state.pc) {
     if (state.videoTransceiver) {
       await state.videoTransceiver.sender.replaceTrack(v);
+      await configureVideoSenderPolicy(state.videoTransceiver.sender, 'media-restart');
     }
     if (state.audioTransceiver) {
       await state.audioTransceiver.sender.replaceTrack(a);
@@ -660,6 +686,9 @@ async function startLocalMedia({ cameraId = null, microphoneId = null } = {}) {
   if (!v && videoFailure) {
     $('mediaStatus').textContent = `Micro actif · caméra indisponible (${videoFailure.name})`;
     $('mediaStatus').className = 'media-status warning';
+  } else if (v && !a && audioFailure) {
+    $('mediaStatus').textContent = `Caméra active · micro indisponible (${audioFailure.name})`;
+    $('mediaStatus').className = 'media-status warning';
   }
 
   logEvent('media-started', {
@@ -667,6 +696,7 @@ async function startLocalMedia({ cameraId = null, microphoneId = null } = {}) {
     video: safeTrackSettings(v),
     audio: safeTrackSettings(a),
     videoFailure,
+    audioFailure,
     fullFailure
   });
 
@@ -898,6 +928,129 @@ async function enterNetworkGame() {
   }
 }
 
+async function configureVideoSenderPolicy(sender, source='unknown') {
+  if (!sender?.getParameters || !sender?.setParameters) return false;
+  try {
+    const params = sender.getParameters() || {};
+    params.degradationPreference = 'maintain-resolution';
+    await sender.setParameters(params);
+    state.rtcQualityControl.senderPolicyApplied = true;
+    state.rtcQualityControl.senderPolicyError = null;
+    logEvent('rtc-video-sender-policy', {
+      source,
+      degradationPreference: 'maintain-resolution'
+    });
+    return true;
+  } catch (err) {
+    state.rtcQualityControl.senderPolicyError = {
+      name: err?.name || null,
+      message: err?.message || String(err)
+    };
+    logEvent('rtc-video-sender-policy-error', {
+      source,
+      name: err?.name || null,
+      message: err?.message || String(err)
+    });
+    return false;
+  }
+}
+
+function setVisionCpuThrottle(ms, reason='rtc-cpu') {
+  const next = Math.max(0, Math.min(500, Number(ms) || 0));
+  if (state.rtcQualityControl.currentVisionThrottleMs === next) return;
+  state.rtcQualityControl.currentVisionThrottleMs = next;
+  window.TCGVisionEngine?.setPerformanceThrottle?.(next, reason);
+  logEvent('vision-performance-throttle', { intervalMs: next, reason });
+}
+
+function closeCpuEpisode(now=Date.now(), reason='recovered') {
+  const q = state.rtcQualityControl;
+  if (!q.cpuEpisode) return;
+  const episode = {
+    ...q.cpuEpisode,
+    endedAt: new Date(now).toISOString(),
+    durationMs: Math.max(0, now - q.cpuEpisode.startedAtMs),
+    endReason: reason
+  };
+  delete episode.startedAtMs;
+  q.cpuEpisodes.push(episode);
+  q.cpuEpisode = null;
+  q.cpuSamples = 0;
+  q.recoverySamples = 0;
+  logEvent('rtc-quality-cpu-end', episode);
+}
+
+function updateRtcCpuQualityControl(rtcData) {
+  const video = rtcData?.outbound?.find?.(x => x.kind === 'video') || null;
+  const reason = video?.qualityLimitationReason || null;
+  const q = state.rtcQualityControl;
+  const now = Date.now();
+  q.lastReason = reason;
+
+  if (reason === 'cpu') {
+    q.recoverySamples = 0;
+    q.cpuSamples += 1;
+    if (!q.cpuEpisode) {
+      q.cpuEpisode = {
+        startedAt: new Date(now).toISOString(),
+        startedAtMs: now,
+        startFrameWidth: video?.frameWidth ?? null,
+        startFrameHeight: video?.frameHeight ?? null
+      };
+      logEvent('rtc-quality-cpu-start', {
+        frameWidth: video?.frameWidth ?? null,
+        frameHeight: video?.frameHeight ?? null
+      });
+    }
+
+    const durationMs = now - q.cpuEpisode.startedAtMs;
+    const targetThrottle = durationMs >= 8000 ? 250 : durationMs >= 4000 ? 160 : 90;
+    setVisionCpuThrottle(targetThrottle, 'rtc-cpu');
+    return;
+  }
+
+  if (q.cpuEpisode) {
+    q.recoverySamples += 1;
+    // Three consecutive non-CPU samples (~6 s) avoid oscillating on short spikes.
+    if (q.recoverySamples >= 3) {
+      closeCpuEpisode(now, reason || 'none');
+      setVisionCpuThrottle(0, 'rtc-recovered');
+    }
+  } else if (q.currentVisionThrottleMs && reason !== 'cpu') {
+    q.recoverySamples += 1;
+    if (q.recoverySamples >= 3) {
+      q.recoverySamples = 0;
+      setVisionCpuThrottle(0, 'rtc-recovered');
+    }
+  }
+}
+
+function rtcQualitySummary() {
+  const q = state.rtcQualityControl;
+  const now = Date.now();
+  const episodes = [...q.cpuEpisodes];
+  if (q.cpuEpisode) {
+    const active = {
+      ...q.cpuEpisode,
+      endedAt: null,
+      durationMs: Math.max(0, now - q.cpuEpisode.startedAtMs),
+      endReason: null,
+      active: true
+    };
+    delete active.startedAtMs;
+    episodes.push(active);
+  }
+  return {
+    senderPolicyApplied: q.senderPolicyApplied,
+    senderPolicyError: q.senderPolicyError,
+    degradationPreference: q.senderPolicyApplied ? 'maintain-resolution' : null,
+    currentVisionThrottleMs: q.currentVisionThrottleMs,
+    lastQualityLimitationReason: q.lastReason,
+    cpuEpisodes: episodes,
+    totalCpuLimitedMs: episodes.reduce((sum, e) => sum + Number(e.durationMs || 0), 0)
+  };
+}
+
 async function ensurePeerConnection() {
   if (state.pc) return state.pc;
 
@@ -914,6 +1067,7 @@ async function ensurePeerConnection() {
     state.audioTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' });
 
     await state.videoTransceiver.sender.replaceTrack(currentVideoTrack());
+    await configureVideoSenderPolicy(state.videoTransceiver.sender, 'host-create');
     await state.audioTransceiver.sender.replaceTrack(currentAudioTrack());
   }
 
@@ -974,8 +1128,10 @@ async function ensurePeerConnection() {
 
   pc.onconnectionstatechange = () => {
     const cs = pc.connectionState;
-    if (cs === 'connected') setRtcStatus('WebRTC connecté', 'connected');
-    else if (cs === 'connecting' || cs === 'new') setRtcStatus('Connexion WebRTC…', 'warning');
+    if (cs === 'connected') {
+      setRtcStatus('WebRTC connecté', 'connected');
+      configureVideoSenderPolicy(state.videoTransceiver?.sender, 'connected').catch(()=>{});
+    } else if (cs === 'connecting' || cs === 'new') setRtcStatus('Connexion WebRTC…', 'warning');
     else if (cs === 'disconnected') setRtcStatus('Connexion interrompue', 'warning');
     else if (cs === 'failed') setRtcStatus('Échec WebRTC', 'error');
     else if (cs === 'closed') setRtcStatus('WebRTC fermé');
@@ -1017,6 +1173,7 @@ async function bindAnswererTracks(pc) {
   if (state.videoTransceiver) {
     state.videoTransceiver.direction = 'sendrecv';
     await state.videoTransceiver.sender.replaceTrack(currentVideoTrack());
+    await configureVideoSenderPolicy(state.videoTransceiver.sender, 'guest-bind');
   }
 
   if (state.audioTransceiver) {
@@ -1343,7 +1500,11 @@ async function snapshotRtcMetrics() {
           framesPerSecond: stat.framesPerSecond ?? null,
           frameWidth: stat.frameWidth ?? null,
           frameHeight: stat.frameHeight ?? null,
-          qualityLimitationReason: stat.qualityLimitationReason ?? null
+          qualityLimitationReason: stat.qualityLimitationReason ?? null,
+          qualityLimitationDurations: stat.qualityLimitationDurations ? { ...stat.qualityLimitationDurations } : null,
+          qualityLimitationResolutionChanges: stat.qualityLimitationResolutionChanges ?? null,
+          totalEncodeTime: stat.totalEncodeTime ?? null,
+          framesSent: stat.framesSent ?? null
         });
       }
 
@@ -1373,6 +1534,7 @@ async function snapshotRtcMetrics() {
       }
     });
 
+    updateRtcCpuQualityControl(data);
     state.lastRtcMetrics = data;
     return data;
   } catch (err) {
@@ -1490,7 +1652,8 @@ async function buildCompleteReport() {
         hasRemoteOffer: Boolean(state.lastRemoteOfferSdp),
         hasRemoteAnswer: Boolean(state.lastRemoteAnswerSdp)
       },
-      webrtc: rtc
+      webrtc: rtc,
+      qualityControl: rtcQualitySummary()
     },
     calibration: window.TCGVisionCalibration?.getSnapshot?.() || {
       version: '0.6-calibration-v1',
@@ -1541,6 +1704,9 @@ function reportText(report) {
     `TURN/relay utilisé: ${report.network.webrtc.route?.usingRelay ?? '—'}`,
     `Flux entrants: ${inbound.length}`,
     `Flux sortants: ${outbound.length}`,
+    `Préférence vidéo: ${report.network.qualityControl?.degradationPreference || '—'}`,
+    `Limitation CPU cumulée: ${report.network.qualityControl?.totalCpuLimitedMs ?? 0} ms`,
+    `Throttle Vision actuel: ${report.network.qualityControl?.currentVisionThrottleMs ?? 0} ms`,
     '',
     'INTERFACE',
     `Viewport: ${report.environment.viewport?.innerWidth || '—'} x ${report.environment.viewport?.innerHeight || '—'}`,
@@ -1567,6 +1733,8 @@ function reportText(report) {
     `Mémoire connue: ${report.vision?.tableState?.knownCards ?? '—'} / ${report.vision?.tableState?.activeTableCards ?? '—'}`,
     `Hover mémoire hits/misses: ${report.vision?.tableState?.sessionStats?.hoverMemoryHits ?? '—'} / ${report.vision?.tableState?.sessionStats?.hoverMemoryMisses ?? '—'}`,
     `Handoffs visuels nettoyés: ${report.vision?.tableState?.sessionStats?.visibleHandoffClears ?? '—'}`,
+    `Handoff HD demandés/validés: ${report.vision?.identification?.imageHandoff?.telemetry?.handoffRequested ?? '—'} / ${report.vision?.identification?.imageHandoff?.telemetry?.handoffCommitted ?? '—'}`,
+    `Clear HD demandés/validés/dédupliqués: ${report.vision?.identification?.imageHandoff?.telemetry?.clearRequested ?? '—'} / ${report.vision?.identification?.imageHandoff?.telemetry?.clearCommitted ?? '—'} / ${report.vision?.identification?.imageHandoff?.telemetry?.clearDeduplicated ?? '—'}`,
     `Rendus mémoire: ${report.vision?.tableState?.sessionStats?.visibleMemoryRenders ?? '—'}`,
     `Retours testeur Vision: ${report.vision?.testerFeedback?.length ?? 0}`,
     `Pointer misses 3x3: ${JSON.stringify(report.vision?.identification?.spatialPointer?.misses || [])}`,

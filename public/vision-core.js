@@ -28,6 +28,9 @@ const state = {
   inferenceBusy: false,
   confidence: 0.55,
   intervalMs: 0,
+  productThrottleMs: 0,
+  performancePressureReason: null,
+  performanceThrottleChanges: 0,
   confirmationsNeeded: 2,
   maxMisses: 2,
   identityMemoryMs: 8000,
@@ -1034,10 +1037,14 @@ function clearInferenceTimer() {
   inferenceTimer = null;
 }
 
+function effectiveInferenceDelay(delay = state.intervalMs) {
+  return Math.max(20, Number(delay) || 0, Number(state.productThrottleMs) || 0);
+}
+
 function scheduleNextInference(delay = state.intervalMs) {
   clearInferenceTimer();
   if (!state.detecting) return;
-  inferenceTimer = setTimeout(runInference, Math.max(20, delay));
+  inferenceTimer = setTimeout(runInference, effectiveInferenceDelay(delay));
 }
 
 async function runInference() {
@@ -1534,6 +1541,13 @@ function getProductSnapshot() {
       videoFps:Number(state.videoFps || 0),
       outputShape:state.outputShape
     },
+    performanceBudget:{
+      uiIntervalMs:Number(state.intervalMs || 0),
+      productThrottleMs:Number(state.productThrottleMs || 0),
+      effectiveIntervalMs:effectiveInferenceDelay(),
+      reason:state.performancePressureReason || null,
+      changes:Number(state.performanceThrottleChanges || 0)
+    },
     filters:{
       shapeRejected:Number(state.shapeRejected || 0),
       stats:{...state.filterStats}
@@ -1578,11 +1592,23 @@ window.TCGDetectionLab={
 };
 
 window.TCGVisionEngine={
-  version:'0.6.1-product-bridge-alpha15',
+  version:'0.6.1-product-bridge-alpha20-cpu-budget',
   preload:preloadExternalVision,
   attachRemoteStream:attachExternalStream,
   detachRemoteStream:detachExternalStream,
   getSnapshot:getProductSnapshot,
+  setPerformanceThrottle(intervalMs=0, reason='integration') {
+    const next=Math.max(0,Math.min(500,Number(intervalMs)||0));
+    if(next===state.productThrottleMs && reason===state.performancePressureReason) return next;
+    state.productThrottleMs=next;
+    state.performancePressureReason=next>0 ? reason : null;
+    state.performanceThrottleChanges+=1;
+    if(state.detecting && !state.inferenceBusy) scheduleNextInference();
+    window.dispatchEvent(new CustomEvent('tcg-vision-performance-budget',{
+      detail:{intervalMs:next,effectiveIntervalMs:effectiveInferenceDelay(),reason:state.performancePressureReason}
+    }));
+    return next;
+  },
   setDebugOverlay(enabled){
     state.debugOverlay=Boolean(enabled);
     drawOverlay();

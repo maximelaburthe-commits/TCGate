@@ -164,7 +164,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/health') {
       return sendJson(res, 200, {
         ok: true,
-        version: 'tcgate-alpha-0.1-candidate-1',
+        version: 'tcgate-alpha-0.1-candidate-2',
         rooms: rooms.size,
         uptimeSeconds: Math.round(process.uptime()),
         railway: Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID),
@@ -174,7 +174,7 @@ const server = http.createServer(async (req, res) => {
           modelBytes: fs.existsSync(MODEL_FILE) ? fs.statSync(MODEL_FILE).size : 0,
           model: 'Vision V5.3 / 512',
           stateEngine: '0.1.6-facewebcam-memory-hover',
-          identification: '0.2.4-alpha19-atomic-handoff-memory-api'
+          identification: '0.2.4-alpha20-atomic-handoff-dedup-memory-api'
         }
       });
     }
@@ -372,7 +372,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 server.listen(PORT, HOST, () => {
-  console.log(`TCG Webcam V0.6.2 -> http://127.0.0.1:${PORT}`);
+  console.log(`TCGate Alpha 0.1 Candidate 2 -> http://127.0.0.1:${PORT}`);
   const nets = os.networkInterfaces();
   for (const entries of Object.values(nets)) {
     for (const net of entries || []) {

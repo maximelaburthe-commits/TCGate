@@ -109,6 +109,15 @@
     lastPointerDiagnosticAt: 0,
     visibleIdentity: null,
     imageSwapSeq: 0,
+    handoffTelemetry: {
+      handoffRequested: 0,
+      handoffCommitted: 0,
+      clearRequested: 0,
+      clearCommitted: 0,
+      clearDeduplicated: 0,
+      lastClearMessage: null,
+      lastCommitAt: null
+    },
     preloadedHdImages: new Map()
   };
 
@@ -145,12 +154,15 @@
 
   function setHdImageAtomic(url,alt='Carte identifiée') {
     if (!ui.image || !url) return;
+    state.handoffTelemetry.handoffRequested += 1;
     const seq=++state.imageSwapSeq;
     const current=ui.image.dataset.cardUrl||'';
     if (current===url && ui.image.complete && ui.image.naturalWidth>0) {
       ui.image.alt=alt;
       ui.image.style.visibility='visible';
       ui.image.dataset.swapPending='0';
+      state.handoffTelemetry.handoffCommitted += 1;
+      state.handoffTelemetry.lastCommitAt = new Date().toISOString();
       return;
     }
     ui.image.style.visibility='hidden';
@@ -164,12 +176,28 @@
         if (seq!==state.imageSwapSeq) return;
         ui.image.style.visibility='visible';
         ui.image.dataset.swapPending='0';
+        state.handoffTelemetry.handoffCommitted += 1;
+        state.handoffTelemetry.lastCommitAt = new Date().toISOString();
       });
     });
   }
 
   function clearVisibleUiOnly(message='Survole une carte détectée.') {
+    state.handoffTelemetry.clearRequested += 1;
     const previous=state.visibleIdentity ? { ...state.visibleIdentity } : null;
+    const alreadyClear = !previous && Boolean(ui.result?.classList.contains('hidden')) && ui.image?.style.visibility === 'hidden';
+
+    if (alreadyClear) {
+      state.handoffTelemetry.clearDeduplicated += 1;
+      state.handoffTelemetry.lastClearMessage = message;
+      if (ui.empty) {
+        ui.empty.classList.remove('hidden');
+        if (ui.empty.textContent !== message) ui.empty.textContent=message;
+      }
+      ui.candidates?.classList.add('hidden');
+      return false;
+    }
+
     state.visibleIdentity=null;
     hideHdImageForHandoff();
     ui.result?.classList.add('hidden');
@@ -178,9 +206,13 @@
       ui.empty.classList.remove('hidden');
       ui.empty.textContent=message;
     }
+    state.handoffTelemetry.clearCommitted += 1;
+    state.handoffTelemetry.lastClearMessage = message;
+    state.handoffTelemetry.lastCommitAt = new Date().toISOString();
     window.dispatchEvent(new CustomEvent('tcg-identification-visible-cleared',{
       detail:{ reason:'atomic-handoff', message, previous }
     }));
+    return true;
   }
 
   function setLibraryStatus(text) {
@@ -2292,7 +2324,7 @@ function applyQualityGuard(result,quality) {
   }
 
   window.TCGIdentificationLab = {
-    version: '0.2.4-alpha19-atomic-handoff-memory-api',
+    version: '0.2.4-alpha20-atomic-handoff-dedup-memory-api',
     start: startProductIdentification,
     preloadImage(image) {
       return preloadHdUrl(hdUrlFromImage(image));
@@ -2380,7 +2412,12 @@ function applyQualityGuard(result,quality) {
           last: state.identityStability.last ? { ...state.identityStability.last } : null
         },
         visibleIdentity: state.visibleIdentity ? { ...state.visibleIdentity } : null,
-        imageHandoff: { swapSeq: state.imageSwapSeq, pending: ui.image?.dataset?.swapPending==='1', cardUrl: ui.image?.dataset?.cardUrl||null },
+        imageHandoff: {
+          swapSeq: state.imageSwapSeq,
+          pending: ui.image?.dataset?.swapPending==='1',
+          cardUrl: ui.image?.dataset?.cardUrl||null,
+          telemetry: { ...state.handoffTelemetry }
+        },
         hoveredTrack: state.hoveredTrack ? { ...state.hoveredTrack } : null,
         identification: (result?.best && state.hoveredTrack && state.lastTrackUid === state.hoveredTrack.uid) ? {
           accepted: Boolean(result.accepted),

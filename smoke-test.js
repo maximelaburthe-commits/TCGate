@@ -9,7 +9,7 @@ const required=[
   'public/table-state-bridge.js','public/table-state-engine.js',
   'public/identification.js','public/identification-worker.js','public/cards-fallback.json',
   'models/card_detector_v53_512.onnx','server.js','railway.json',
-  'PLAN_TEST_ALPHA_0.1_CANDIDATE_1.md','CHANGELOG_TCGATE_ALPHA_0.1_CANDIDATE_1.md'
+  'PLAN_TEST_ALPHA_0.1_CANDIDATE_2.md','CHANGELOG_TCGATE_ALPHA_0.1_CANDIDATE_2.md'
 ];
 for(const f of required){ if(!fs.existsSync(f)) throw new Error(`Missing ${f}`); }
 
@@ -29,15 +29,21 @@ const app=fs.readFileSync('public/app.js','utf8');
 for(const token of [
   'attachVisionToRemoteStream','TCGVisionEngine','TCGVisionCalibration','TCGTableStateEngine',
   'tcg-identification-visible','tcg-identification-visible-cleared','tcg-table-hover-hit',
-  "scope: 'opponent-stream-only'",'TCGate Alpha 0.1 Candidate 1','captureTesterVisionFeedback'
+  "scope: 'opponent-stream-only'",'TCGate Alpha 0.1 Candidate 2','captureTesterVisionFeedback',
+  "degradationPreference = 'maintain-resolution'",'updateRtcCpuQualityControl',
+  'setVisionCpuThrottle','qualityLimitationDurations','audio-only-recovery',
+  'recovered-audio-video-','qualityControl: rtcQualitySummary()'
 ]){
-  if(!app.includes(token)) throw new Error(`Missing app token ${token}`);
+  if(!app.includes(token)) throw new Error(`Missing Candidate 2 app token ${token}`);
 }
+if(app.includes("const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 1'")) throw new Error('Candidate 1 product version still active');
 
 const core=fs.readFileSync('public/vision-core.js','utf8');
 for(const token of [
   "videoStage: $('opponentFeed')","video: $('remoteVideo')","overlay: $('visionOverlay')",
-  'attachExternalStream','debugOverlay: false','modelInputSize:512'
+  'attachExternalStream','debugOverlay: false','modelInputSize:512',
+  'productThrottleMs','effectiveInferenceDelay','setPerformanceThrottle',
+  "version:'0.6.1-product-bridge-alpha20-cpu-budget'"
 ]){
   if(!core.includes(token)) throw new Error(`Missing core token ${token}`);
 }
@@ -46,7 +52,8 @@ const ident=fs.readFileSync('public/identification.js','utf8');
 for(const token of [
   'HOVER_CACHE_MAX_INSTANT_AGE_MS','HOVER_CACHE_INSTANT_APPEARANCE_MIN','HOVER_CACHE_VERIFY_DELAY_MS',
   '-glare-rescued-strict','showMemoryIdentity','clearVisibleForHandoff','setHdImageAtomic',
-  'tcg-identification-visible-cleared'
+  'tcg-identification-visible-cleared','clearDeduplicated','clearCommitted','handoffCommitted',
+  "version: '0.2.4-alpha20-atomic-handoff-dedup-memory-api'"
 ]){
   if(!ident.includes(token)) throw new Error(`Missing identification token ${token}`);
 }
@@ -59,11 +66,29 @@ for(const token of [
   if(!table.includes(token)) throw new Error(`Missing table-state token ${token}`);
 }
 
+const server=fs.readFileSync('server.js','utf8');
+for(const token of [
+  "version: 'tcgate-alpha-0.1-candidate-2'",
+  "identification: '0.2.4-alpha20-atomic-handoff-dedup-memory-api'",
+  'TCGate Alpha 0.1 Candidate 2'
+]){
+  if(!server.includes(token)) throw new Error(`Missing server token ${token}`);
+}
+
 const modelSize=fs.statSync('models/card_detector_v53_512.onnx').size;
 if(modelSize<5_000_000) throw new Error(`Model too small ${modelSize}`);
 
 const hash=f=>crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
-console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_1');
+const expectedModel='2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319';
+const expectedWorker='e749551f11065a03bd2cfc75577f23c4ece893a2c7d08bc82a341b2a35619b7a';
+const expectedTable='7ad3e427e2ba2181d5ab74e4ad8d68b855144e5d6901c6fdf58cdc36263cdd04';
+if(hash('models/card_detector_v53_512.onnx')!==expectedModel) throw new Error('Detector model changed');
+if(hash('public/detection-worker.js')!==expectedWorker) throw new Error('Detection worker changed');
+if(hash('public/table-state-engine.js')!==expectedTable) throw new Error('Vision State engine changed');
+
+console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_2');
 console.log('MODEL_SHA256='+hash('models/card_detector_v53_512.onnx'));
-console.log('VISION_CORE_SHA256='+hash('public/vision-core.js'));
 console.log('DETECTION_WORKER_SHA256='+hash('public/detection-worker.js'));
+console.log('TABLE_STATE_SHA256='+hash('public/table-state-engine.js'));
+console.log('VISION_CORE_SHA256='+hash('public/vision-core.js'));
+console.log('IDENTIFICATION_SHA256='+hash('public/identification.js'));
