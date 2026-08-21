@@ -1,27 +1,25 @@
-# TCGate — Alpha fermée 0.1 · Candidate 4
+# TCGate — Alpha fermée 0.1 · Candidate 5
 
-Candidate 4 repart strictement de Candidate 3 après analyse des deux rapports du 20/08/2026 (salon RP6VSP).
+Candidate 5 repart strictement de Candidate 4 après l'isolement de la cause de la latence sur le flux EMEET 1080p.
 
-## Motif du correctif
+## Diagnostic
 
-Le PC qui rejoint recevait le flux adverse en 1920×1080 mais seulement à ~12 fps.
-Le poste host encodait son 1080p à ~13 fps avec `qualityLimitationReason: cpu`
-pendant plus de 4 minutes cumulées, alors que le RTT était de 5–6 ms et les pertes
-réseau quasi nulles. La latence perçue est donc liée à la saturation de l'encodeur,
-pas au réseau.
+L'inversion host/guest ne changeait pas le problème. En revanche, sur le même PC A et le même navigateur Chrome, remplacer l'EMEET 1080p par la webcam intégrée 720p rendait immédiatement le flux adverse fluide.
 
-## Candidate 4
+Candidate 4 réduisait la **sortie WebRTC** en 720p mais continuait à capturer la webcam en 1080p. Candidate 5 déplace donc l'adaptation au bon niveau : **la capture caméra elle-même**.
 
-- conserve le 1080p natif tant que l'encodeur tient la charge ;
-- après 6 s de limitation CPU persistante, réduit explicitement le sender vers une
-  classe 1280×720 plutôt que de conserver un 1080p lent ;
+## Candidate 5
+
+- démarre en 1080p lorsque possible ;
+- en cas de limitation CPU persistante, demande directement 1280×720 @ 30 fps à la caméra ;
+- garde le sender WebRTC en 1:1 après la bascule ;
+- tente un remplacement atomique du seul track vidéo si le pilote refuse `applyConstraints()` ;
+- ne touche pas au micro pendant ce fallback ;
 - ne descend jamais automatiquement sous 720p ;
+- ne remonte pas automatiquement en 1080p pendant la même session ;
 - conserve le throttle Vision comme protection secondaire ;
-- garde le profil 720p pour le reste de la session après une adaptation afin
-  d'éviter les oscillations ;
-- ajoute au rapport les statistiques de jitter buffer / délai de traitement
-  lorsque le navigateur les expose ;
-- ne modifie pas le détecteur, le matcher, Table State ni les seuils Vision.
+- ajoute au rapport les réglages de capture avant/après et la méthode d'adaptation utilisée.
 
-Le principe produit reste : la vidéo fluide et lisible est prioritaire sur la cadence
-de détection.
+Le principe produit est inchangé : **une vidéo 720p fluide et temps réel vaut mieux qu'une vidéo 1080p nette mais retardée**.
+
+Le coeur Vision, ses modèles et ses seuils ne sont pas modifiés.

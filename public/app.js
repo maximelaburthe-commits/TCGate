@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 4';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 5';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -60,6 +60,12 @@ const state = {
     senderAdaptiveMode: 'native',
     senderAdaptationPending: false,
     senderAdaptations: [],
+    captureAdaptiveMode: 'native',
+    captureAdaptationPending: false,
+    captureAdaptationError: null,
+    captureAdaptations: [],
+    captureAdaptationAttempts: 0,
+    captureLastAttemptAtMs: 0,
     lastReason: null
   },
   gameEntering: false,
@@ -672,6 +678,24 @@ async function startLocalMedia({ cameraId = null, microphoneId = null } = {}) {
   state.selectedCameraId = v?.getSettings?.().deviceId || cameraId || null;
   state.selectedMicrophoneId = a?.getSettings?.().deviceId || microphoneId || null;
 
+  // A deliberate media start/device change begins a fresh native-quality session.
+  // Candidate 5 never auto-upgrades an adapted track, but a manual camera restart
+  // is an explicit user action and may legitimately try 1080p again.
+  const qualityControl = state.rtcQualityControl;
+  const previousAdaptiveProfile = {
+    capture: qualityControl.captureAdaptiveMode,
+    sender: qualityControl.senderAdaptiveMode
+  };
+  qualityControl.captureAdaptiveMode = 'native';
+  qualityControl.captureAdaptationPending = false;
+  qualityControl.captureAdaptationError = null;
+  qualityControl.captureLastAttemptAtMs = 0;
+  qualityControl.senderAdaptiveMode = 'native';
+  qualityControl.senderScaleResolutionDownBy = 1;
+  if (previousAdaptiveProfile.capture !== 'native' || previousAdaptiveProfile.sender !== 'native') {
+    logEvent('rtc-adaptive-profile-reset', { source: 'manual-media-start', previousAdaptiveProfile });
+  }
+
   $('lobbyPreview').srcObject = stream;
   $('localVideo').srcObject = stream;
   await Promise.allSettled([
@@ -1004,52 +1028,175 @@ async function applyVideoSenderEncoding(sender, {
 }
 
 async function configureVideoSenderPolicy(sender, source='unknown') {
-  // Candidate 4 starts at native resolution, but unlike Candidate 3 it can
-  // explicitly step the sender down to a 720p-class stream under sustained
-  // encoder pressure. This avoids preserving 1080p at 12-13 fps.
+  // Candidate 5 keeps the sender at 1:1. Under sustained CPU pressure we now
+  // lower the *camera capture itself* to 1280x720 instead of asking WebRTC to
+  // scale a still-expensive 1920x1080 source after capture.
   const q = state.rtcQualityControl;
-  const localWidth = Number(currentVideoTrack()?.getSettings?.().width || 0);
-  const scale = q.senderAdaptiveMode === 'cpu-720p' && localWidth
-    ? Math.max(1, localWidth / 1280)
-    : 1;
   return applyVideoSenderEncoding(sender, {
-    scaleResolutionDownBy: scale,
+    scaleResolutionDownBy: 1,
     degradationPreference: 'maintain-resolution',
     source,
     mode: q.senderAdaptiveMode || 'native'
   });
 }
 
-async function adaptVideoSenderForCpu(video, durationMs) {
-  const q = state.rtcQualityControl;
-  if (q.senderAdaptiveMode === 'cpu-720p' || q.senderAdaptationPending) return false;
-  if (durationMs < 6000) return false;
+function capture720Constraints(deviceId = null) {
+  return {
+    ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+    width: { exact: 1280 },
+    height: { exact: 720 },
+    frameRate: { ideal: 30, max: 30 }
+  };
+}
 
-  const localWidth = Number(currentVideoTrack()?.getSettings?.().width || video?.frameWidth || 0);
-  if (!localWidth || localWidth <= 1280) return false;
+async function acquireReplacement720Track(track) {
+  if (!navigator.mediaDevices?.getUserMedia) return null;
+  const settings = track?.getSettings?.() || {};
+  const deviceId = settings.deviceId || state.selectedCameraId || null;
+  const replacementStream = await navigator.mediaDevices.getUserMedia({
+    video: capture720Constraints(deviceId),
+    audio: false
+  });
+  const replacement = replacementStream.getVideoTracks()[0] || null;
+  if (!replacement) {
+    replacementStream.getTracks().forEach(t => t.stop());
+    return null;
+  }
+  replacement.enabled = track?.enabled !== false;
+  return replacement;
+}
 
-  q.senderAdaptationPending = true;
+async function replaceLocalVideoTrack(oldTrack, newTrack) {
+  if (!newTrack || newTrack === oldTrack) return false;
+  const sender = state.videoTransceiver?.sender || null;
+
   try {
-    const scale = Math.max(1, localWidth / 1280);
-    const ok = await applyVideoSenderEncoding(state.videoTransceiver?.sender, {
-      scaleResolutionDownBy: scale,
+    if (sender) await sender.replaceTrack(newTrack);
+
+    if (!state.localStream) state.localStream = new MediaStream();
+    if (oldTrack && state.localStream.getTracks().includes(oldTrack)) {
+      state.localStream.removeTrack(oldTrack);
+    }
+    if (!state.localStream.getTracks().includes(newTrack)) {
+      state.localStream.addTrack(newTrack);
+    }
+
+    $('lobbyPreview').srcObject = state.localStream;
+    $('localVideo').srcObject = state.localStream;
+    await Promise.allSettled([
+      $('lobbyPreview').play(),
+      $('localVideo').play()
+    ]);
+
+    state.selectedCameraId = newTrack.getSettings?.().deviceId || state.selectedCameraId;
+    oldTrack?.stop?.();
+    updateMediaUi();
+    return true;
+  } catch (err) {
+    try { newTrack.stop(); } catch {}
+    throw err;
+  }
+}
+
+async function adaptLocalCaptureForCpu(video, durationMs) {
+  const q = state.rtcQualityControl;
+  if (q.captureAdaptiveMode === 'cpu-capture-720p' || q.captureAdaptationPending) return false;
+  if (durationMs < 6000) return false;
+  const now = Date.now();
+  if (q.captureLastAttemptAtMs && now - q.captureLastAttemptAtMs < 15000) return false;
+
+  let track = currentVideoTrack();
+  if (!track) return false;
+
+  const before = safeTrackSettings(track);
+  const sourceWidth = Number(before?.width || video?.frameWidth || 0);
+  const sourceHeight = Number(before?.height || video?.frameHeight || 0);
+  if (!sourceWidth || sourceWidth <= 1280) return false;
+
+  q.captureAdaptationPending = true;
+  q.captureAdaptationError = null;
+  q.captureLastAttemptAtMs = now;
+  q.captureAdaptationAttempts += 1;
+  let method = 'applyConstraints';
+  let firstError = null;
+
+  try {
+    try {
+      if (typeof track.applyConstraints !== 'function') throw new Error('applyConstraints unavailable');
+      await track.applyConstraints(capture720Constraints());
+    } catch (err) {
+      firstError = {
+        name: err?.name || null,
+        message: err?.message || String(err),
+        constraint: err?.constraint || null
+      };
+      logEvent('rtc-local-capture-constraints-error', { durationMs, before, error: firstError });
+
+      // Some Windows/UVC drivers do not allow a live format change. In that
+      // case, acquire the same camera directly in 720p and atomically swap only
+      // the video track. Audio is deliberately left untouched.
+      method = 'replaceTrack';
+      const replacement = await acquireReplacement720Track(track);
+      if (!replacement) throw err;
+      await replaceLocalVideoTrack(track, replacement);
+      track = replacement;
+    }
+
+    // Allow camera settings to settle before reading them back.
+    await new Promise(resolve => setTimeout(resolve, 200));
+    const after = safeTrackSettings(track);
+    const afterWidth = Number(after?.width || 0);
+    const afterHeight = Number(after?.height || 0);
+
+    if (!afterWidth || afterWidth > 1280 || (afterHeight && afterHeight > 720)) {
+      throw new Error(`Capture 720p non confirmée (${afterWidth || '?'}x${afterHeight || '?'})`);
+    }
+
+    q.captureAdaptiveMode = 'cpu-capture-720p';
+    q.senderAdaptiveMode = 'cpu-capture-720p';
+
+    await applyVideoSenderEncoding(state.videoTransceiver?.sender, {
+      scaleResolutionDownBy: 1,
       degradationPreference: 'maintain-resolution',
-      source: 'rtc-cpu-sustained',
-      mode: 'cpu-720p'
+      source: 'rtc-cpu-capture-720p',
+      mode: 'cpu-capture-720p'
     });
 
-    if (ok) {
-      logEvent('rtc-cpu-protect-video', {
-        durationMs,
-        sourceWidth: localWidth,
-        targetWidth: 1280,
-        scaleResolutionDownBy: scale,
-        outboundFps: video?.framesPerSecond ?? null
-      });
-    }
-    return ok;
+    const adaptation = {
+      at: new Date().toISOString(),
+      reason: 'rtc-cpu-sustained',
+      durationMs,
+      method,
+      before,
+      after,
+      firstError
+    };
+    q.captureAdaptations.push(adaptation);
+    logEvent('rtc-local-capture-adaptation', adaptation);
+    logEvent('rtc-cpu-protect-video', {
+      durationMs,
+      strategy: 'camera-capture-720p',
+      method,
+      sourceWidth,
+      sourceHeight,
+      targetWidth: 1280,
+      targetHeight: 720,
+      captureAfter: after,
+      outboundFps: video?.framesPerSecond ?? null
+    });
+    return true;
+  } catch (err) {
+    q.captureAdaptationError = {
+      name: err?.name || null,
+      message: err?.message || String(err),
+      constraint: err?.constraint || null,
+      before,
+      firstError
+    };
+    logEvent('rtc-local-capture-adaptation-error', q.captureAdaptationError);
+    return false;
   } finally {
-    q.senderAdaptationPending = false;
+    q.captureAdaptationPending = false;
   }
 }
 
@@ -1107,10 +1254,10 @@ function updateRtcCpuQualityControl(rtcData) {
 
     const durationMs = now - q.cpuEpisode.startedAtMs;
 
-    // Candidate 4: C3 showed that Vision throttling alone cannot keep a
-    // CPU-limited 1080p sender fluid. Reduce Vision pressure first, then
-    // explicitly step the sender down to a 720p-class encode after 6 s.
-    // Never go below 720p automatically.
+    // Candidate 5: the EMEET/PC-A isolation test proved that scaling only the
+    // WebRTC sender is not enough. Reduce Vision pressure first, then after
+    // 6 s lower the camera capture itself to 1280x720 @ 30 fps. The adaptive
+    // path never requests a capture below 720p.
     const targetThrottle =
       durationMs >= 12000 ? 1000 :
       durationMs >= 6000  ? 750 :
@@ -1118,8 +1265,8 @@ function updateRtcCpuQualityControl(rtcData) {
     setVisionCpuThrottle(targetThrottle, 'rtc-cpu');
 
     if (durationMs >= 6000) {
-      adaptVideoSenderForCpu(video, durationMs).catch(err => {
-        logEvent('rtc-video-sender-adaptation-error', {
+      adaptLocalCaptureForCpu(video, durationMs).catch(err => {
+        logEvent('rtc-local-capture-adaptation-dispatch-error', {
           name: err?.name || null,
           message: err?.message || String(err)
         });
@@ -1133,8 +1280,8 @@ function updateRtcCpuQualityControl(rtcData) {
     if (q.recoverySamples >= 3) {
       closeCpuEpisode(now, reason || 'none');
       setVisionCpuThrottle(0, 'rtc-recovered');
-      // Keep the 720p-class profile until the next session to avoid
-      // resolution/fps oscillation once a machine has proven CPU-limited.
+      // Keep the real 720p capture profile until the next manual camera restart
+      // to avoid 1080p/720p oscillation once a machine has proven CPU-limited.
     }
   } else if (q.currentVisionThrottleMs && reason !== 'cpu') {
     q.recoverySamples += 1;
@@ -1168,6 +1315,11 @@ function rtcQualitySummary() {
     senderScaleResolutionDownBy: q.senderScaleResolutionDownBy,
     senderAdaptationPending: q.senderAdaptationPending,
     senderAdaptations: [...q.senderAdaptations],
+    captureAdaptiveMode: q.captureAdaptiveMode,
+    captureAdaptationPending: q.captureAdaptationPending,
+    captureAdaptationError: q.captureAdaptationError,
+    captureAdaptations: [...q.captureAdaptations],
+    captureAdaptationAttempts: q.captureAdaptationAttempts,
     currentVisionThrottleMs: q.currentVisionThrottleMs,
     lastQualityLimitationReason: q.lastReason,
     cpuEpisodes: episodes,
@@ -1891,6 +2043,10 @@ function reportText(report) {
     `Mode sender adaptatif: ${report.network.qualityControl?.senderAdaptiveMode || '—'}`,
     `Échelle sender: ${report.network.qualityControl?.senderScaleResolutionDownBy ?? 1}x`,
     `Adaptations sender: ${report.network.qualityControl?.senderAdaptations?.length ?? 0}`,
+    `Mode capture adaptatif: ${report.network.qualityControl?.captureAdaptiveMode || '—'}`,
+    `Adaptations capture: ${report.network.qualityControl?.captureAdaptations?.length ?? 0}`,
+    `Tentatives adaptation capture: ${report.network.qualityControl?.captureAdaptationAttempts ?? 0}`,
+    `Erreur adaptation capture: ${report.network.qualityControl?.captureAdaptationError?.name || 'aucune'}`,
     `Limitation CPU cumulée: ${report.network.qualityControl?.totalCpuLimitedMs ?? 0} ms`,
     `Throttle Vision actuel: ${report.network.qualityControl?.currentVisionThrottleMs ?? 0} ms`,
     '',

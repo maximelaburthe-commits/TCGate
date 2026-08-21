@@ -1,102 +1,60 @@
-# DÉPLOIEMENT RAILWAY — TCG Webcam V0.5.1
+# Déploiement Railway — TCGate Alpha 0.1 Candidate 5
 
-Cette version remplace la V0.5 Quick Tunnel.
+## 1. Dépôt GitHub
 
-## 1. GitHub
-
-Créer un dépôt, par exemple `tcg-webcam-test`, puis déposer **tout le contenu de ce dossier à la racine** :
+Déposer tout le contenu de l'archive Candidate 5 à la racine du dépôt Railway :
 
 - `server.js`
 - `package.json`
 - `railway.json`
 - `public/`
-- les autres fichiers du projet
+- `models/`
+- les fichiers de documentation/tests
 
-Éviter de placer tout le projet dans un sous-dossier, sauf si un Root Directory est ensuite configuré dans Railway.
+Ne pas imbriquer le projet dans un sous-dossier sauf si le **Root Directory** Railway est configuré en conséquence.
 
 ## 2. Railway
 
-Dans Railway :
+1. Ouvrir le service TCGate existant.
+2. Déployer le commit contenant Candidate 5.
+3. Attendre la fin du build puis du healthcheck `/api/health`.
+4. Ne lancer les tests qu'une fois le nouveau déploiement marqué actif/successful.
 
-1. **New Project**
-2. **Deploy from GitHub repo**
-3. sélectionner le dépôt
-4. attendre le build et le déploiement
+Railway fournit automatiquement `PORT` ; aucune variable spécifique n'est requise par cette Candidate pour le fonctionnement de base.
 
-Aucune variable d'environnement n'est nécessaire pour V0.5.1. Railway fournit automatiquement `PORT`.
-
-Le fichier `railway.json` configure :
-
-- start : `npm start`
-- healthcheck : `/api/health`
-- redémarrage : `ON_FAILURE`
-
-## 3. Générer le domaine HTTPS
-
-Dans le service Railway :
-
-**Settings → Networking → Public Networking → Generate Domain**
-
-Railway fournit une adresse HTTPS du type :
-
-`https://nom-production-xxxx.up.railway.app`
-
-Les deux joueurs doivent utiliser **exactement ce même domaine**.
-
-## 4. Vérification rapide
+## 3. Vérification du healthcheck
 
 Ouvrir :
 
-`https://VOTRE-DOMAINE.up.railway.app/api/health`
+`https://VOTRE-DOMAINE/api/health`
 
-Résultat attendu notamment :
+Le JSON doit notamment contenir :
 
 ```json
 {
   "ok": true,
-  "version": "0.5.1"
+  "version": "tcgate-alpha-0.1-candidate-5"
 }
 ```
 
-## 5. Test A — deux PC sur la même box
+Le bloc `vision` doit également signaler que le modèle est présent.
 
-PC A :
-- ouvrir le domaine Railway ;
-- créer la partie ;
-- activer caméra + micro.
+## 4. Test distant
 
-PC B :
-- ouvrir le même domaine ;
-- rejoindre avec le code ;
-- activer caméra + micro.
+Les deux joueurs utilisent exactement le même domaine HTTPS Railway.
 
-Puis :
-- prêt des deux côtés ;
-- vidéo + audio bidirectionnels ;
-- caméra/micro ON/OFF ;
-- plein écran adverse ;
-- carte HD simulée ;
-- absence de scroll desktop ;
-- 5 à 10 minutes de fonctionnement ;
-- générer un rapport complet sur chaque PC.
+- créer puis rejoindre une salle ;
+- activer caméra et micro ;
+- vérifier vidéo/audio dans les deux sens ;
+- effectuer le test EMEET décrit dans `PLAN_TEST_ALPHA_0.1_CANDIDATE_5.md` ;
+- générer un rapport complet sur les deux PC en fin de test.
 
-## 6. Test B — simulation de deux domiciles
+## 5. En cas de déploiement bloqué
 
-Après validation du Test A :
+Si Railway reste longtemps sur le healthcheck :
 
-- PC A reste sur la box/Wi-Fi ;
-- PC B passe sur un partage 4G/5G ;
-- refaire une nouvelle partie 5 à 10 minutes ;
-- générer les deux rapports complets.
-
-C'est le test principal pour ICE/NAT et le futur besoin de TURN.
-
-## Important
-
-Toujours non intégrés :
-- Vision alpha15 ;
-- calibration ;
-- identification réelle ;
-- TURN de production.
-
-La V0.4.2 reste la baseline réseau locale stable.
+- consulter **View logs** ;
+- vérifier que le serveur affiche `TCGate Alpha 0.1 Candidate 5` ;
+- vérifier l'absence de boucle de redémarrage ;
+- tester `/api/health` lorsque le domaine est accessible ;
+- ne pas interpréter un incident Railway comme un résultat du test WebRTC/Vision.
