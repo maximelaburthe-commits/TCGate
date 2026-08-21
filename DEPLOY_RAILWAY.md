@@ -1,8 +1,8 @@
-# Déploiement Railway — TCGate Alpha 0.1 Candidate 5
+# Déploiement Railway — TCGate Alpha 0.1 Candidate 6
 
 ## 1. Dépôt GitHub
 
-Déposer tout le contenu de l'archive Candidate 5 à la racine du dépôt Railway :
+Déposer tout le contenu de l'archive Candidate 6 à la racine du dépôt Railway :
 
 - `server.js`
 - `package.json`
@@ -16,7 +16,7 @@ Ne pas imbriquer le projet dans un sous-dossier sauf si le **Root Directory** Ra
 ## 2. Railway
 
 1. Ouvrir le service TCGate existant.
-2. Déployer le commit contenant Candidate 5.
+2. Déployer le commit contenant Candidate 6.
 3. Attendre la fin du build puis du healthcheck `/api/health`.
 4. Ne lancer les tests qu'une fois le nouveau déploiement marqué actif/successful.
 
@@ -33,7 +33,7 @@ Le JSON doit notamment contenir :
 ```json
 {
   "ok": true,
-  "version": "tcgate-alpha-0.1-candidate-5"
+  "version": "tcgate-alpha-0.1-candidate-6"
 }
 ```
 
@@ -54,7 +54,7 @@ Les deux joueurs utilisent exactement le même domaine HTTPS Railway.
 Si Railway reste longtemps sur le healthcheck :
 
 - consulter **View logs** ;
-- vérifier que le serveur affiche `TCGate Alpha 0.1 Candidate 5` ;
+- vérifier que le serveur affiche `TCGate Alpha 0.1 Candidate 6` ;
 - vérifier l'absence de boucle de redémarrage ;
 - tester `/api/health` lorsque le domaine est accessible ;
 - ne pas interpréter un incident Railway comme un résultat du test WebRTC/Vision.

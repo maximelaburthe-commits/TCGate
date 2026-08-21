@@ -9,7 +9,7 @@ const required=[
   'public/table-state-bridge.js','public/table-state-engine.js',
   'public/identification.js','public/identification-worker.js','public/cards-fallback.json',
   'models/card_detector_v53_512.onnx','server.js','railway.json',
-  'PLAN_TEST_ALPHA_0.1_CANDIDATE_5.md','CHANGELOG_TCGATE_ALPHA_0.1_CANDIDATE_5.md'
+  'PLAN_TEST_ALPHA_0.1_CANDIDATE_6.md','CHANGELOG_TCGATE_ALPHA_0.1_CANDIDATE_6.md'
 ];
 for(const f of required){ if(!fs.existsSync(f)) throw new Error(`Missing ${f}`); }
 
@@ -29,14 +29,15 @@ const app=fs.readFileSync('public/app.js','utf8');
 for(const token of [
   'attachVisionToRemoteStream','TCGVisionEngine','TCGVisionCalibration','TCGTableStateEngine',
   'tcg-identification-visible','tcg-identification-visible-cleared','tcg-table-hover-hit',
-  "scope: 'opponent-stream-only'",'TCGate Alpha 0.1 Candidate 5','captureTesterVisionFeedback',
+  "scope: 'opponent-stream-only'",'TCGate Alpha 0.1 Candidate 6','captureTesterVisionFeedback',
   "degradationPreference = 'maintain-resolution'",'updateRtcCpuQualityControl',
   'setVisionCpuThrottle','qualityLimitationDurations','audio-only-recovery',
   'recovered-audio-video-','qualityControl: rtcQualitySummary()',
   'sendCurrentMediaState','applyRemoteMediaState',"signal.type === 'media-state'",'remoteMediaState',
-  'adaptLocalCaptureForCpu','capture720Constraints','applyConstraints','acquireReplacement720Track','replaceLocalVideoTrack','captureAdaptiveMode','captureAdaptationAttempts','rtc-local-capture-adaptation','rtc-cpu-protect-video'
+  'adaptLocalCaptureForCpu','capture720Constraints','applyConstraints','acquireReplacement720Track','replaceLocalVideoTrack','captureAdaptiveMode','captureAdaptationAttempts','rtc-local-capture-adaptation','rtc-cpu-protect-video',
+  'prewarmRtcInLobby','readyRequestPending','readyRequestedValue','ready-click','ready-ack','rtc-prewarm-start','rtc-prewarm-end','Attente de l’adversaire…'
 ]){
-  if(!app.includes(token)) throw new Error(`Missing Candidate 5 app token ${token}`);
+  if(!app.includes(token)) throw new Error(`Missing Candidate 6 app token ${token}`);
 }
 if(app.includes("const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 1'")) throw new Error('Candidate 1 product version still active');
 
@@ -70,9 +71,9 @@ for(const token of [
 
 const server=fs.readFileSync('server.js','utf8');
 for(const token of [
-  "version: 'tcgate-alpha-0.1-candidate-5'",
+  "version: 'tcgate-alpha-0.1-candidate-6'",
   "identification: '0.2.4-alpha21-full-handoff-dedup-memory-api'",
-  'TCGate Alpha 0.1 Candidate 5'
+  'TCGate Alpha 0.1 Candidate 6'
 ]){
   if(!server.includes(token)) throw new Error(`Missing server token ${token}`);
 }
@@ -92,7 +93,7 @@ if(hash('public/table-state-engine.js')!==expectedTable) throw new Error('Vision
 if(hash('public/vision-core.js')!==expectedCore) throw new Error('Vision core changed');
 if(hash('public/identification.js')!==expectedIdentification) throw new Error('Identification changed');
 
-console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_5');
+console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_6');
 console.log('MODEL_SHA256='+hash('models/card_detector_v53_512.onnx'));
 console.log('DETECTION_WORKER_SHA256='+hash('public/detection-worker.js'));
 console.log('TABLE_STATE_SHA256='+hash('public/table-state-engine.js'));

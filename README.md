@@ -1,25 +1,20 @@
-# TCGate — Alpha fermée 0.1 · Candidate 5
+# TCGate — Alpha fermée 0.1 · Candidate 6
 
-Candidate 5 repart strictement de Candidate 4 après l'isolement de la cause de la latence sur le flux EMEET 1080p.
+Candidate 6 repart strictement de Candidate 5. Le cœur Vision et la stratégie vidéo de C5 sont gelés.
 
-## Diagnostic
+## Objectif
 
-L'inversion host/guest ne changeait pas le problème. En revanche, sur le même PC A et le même navigateur Chrome, remplacer l'EMEET 1080p par la webcam intégrée 720p rendait immédiatement le flux adverse fluide.
+Supprimer la sensation d'attente dans le salon lorsque les joueurs se déclarent prêts, sans mélanger ce correctif avec de nouveaux changements Vision.
 
-Candidate 4 réduisait la **sortie WebRTC** en 720p mais continuait à capturer la webcam en 1080p. Candidate 5 déplace donc l'adaptation au bon niveau : **la capture caméra elle-même**.
+## Candidate 6
 
-## Candidate 5
+- le clic sur **Je suis prêt** bascule immédiatement le bouton en **Attente de l’adversaire…** ;
+- le bouton est verrouillé après validation pour éviter les doubles clics ;
+- l’état prêt est optimiste côté interface puis confirmé par le serveur ;
+- un ancien événement SSE ne peut plus remettre brièvement le bouton dans son état précédent pendant la requête ;
+- la réponse de `/api/ready` est utilisée immédiatement comme état autoritaire du salon ;
+- la connexion WebRTC est préchauffée discrètement dans le lobby dès que l’adversaire et la caméra sont présents ;
+- aucune offre WebRTC n’est envoyée avant que les deux joueurs soient prêts ;
+- les rapports mesurent désormais `ready-click`, `ready-ack` et `rtc-prewarm-*`.
 
-- démarre en 1080p lorsque possible ;
-- en cas de limitation CPU persistante, demande directement 1280×720 @ 30 fps à la caméra ;
-- garde le sender WebRTC en 1:1 après la bascule ;
-- tente un remplacement atomique du seul track vidéo si le pilote refuse `applyConstraints()` ;
-- ne touche pas au micro pendant ce fallback ;
-- ne descend jamais automatiquement sous 720p ;
-- ne remonte pas automatiquement en 1080p pendant la même session ;
-- conserve le throttle Vision comme protection secondaire ;
-- ajoute au rapport les réglages de capture avant/après et la méthode d'adaptation utilisée.
-
-Le principe produit est inchangé : **une vidéo 720p fluide et temps réel vaut mieux qu'une vidéo 1080p nette mais retardée**.
-
-Le coeur Vision, ses modèles et ses seuils ne sont pas modifiés.
+Le modèle, Vision State, Vision Core et l’identification sont inchangés par rapport à Candidate 5.

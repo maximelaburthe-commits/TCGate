@@ -1,6 +1,6 @@
 {
   "name": "tcgate-alpha",
-  "version": "0.1.0-candidate.5",
+  "version": "0.1.0-candidate.6",
   "private": true,
   "scripts": {
     "start": "node server.js",

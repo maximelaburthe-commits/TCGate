@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 5';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 6';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -26,6 +26,11 @@ const state = {
   opponentPresent: false,
   ownReady: false,
   opponentReady: false,
+  readyRequestPending: false,
+  readyRequestedValue: null,
+  rtcPrewarmPending: false,
+  rtcPrewarmReady: false,
+  rtcPrewarmError: null,
 
   eventSource: null,
   localStream: null,
@@ -869,7 +874,10 @@ function applyRoomState(snapshot) {
   const me = snapshot.peers.find(p => p.id === state.peerId);
   const opponent = snapshot.peers.find(p => p.id !== state.peerId);
 
-  state.ownReady = Boolean(me?.ready);
+  const serverOwnReady = Boolean(me?.ready);
+  state.ownReady = state.readyRequestPending && state.readyRequestedValue != null
+    ? Boolean(state.readyRequestedValue)
+    : serverOwnReady;
   state.opponentPresent = Boolean(opponent);
   state.opponentId = opponent?.id || null;
   state.opponentName = opponent?.name || 'Adversaire';
@@ -893,14 +901,18 @@ function applyRoomState(snapshot) {
   }
 
   const cameraReady = Boolean(currentVideoTrack() && state.cameraEnabled);
-  $('startGame').disabled = !opponent || !cameraReady;
+  $('startGame').disabled = !opponent || !cameraReady || state.ownReady || state.readyRequestPending;
 
   if (!cameraReady) {
     $('startGame').textContent = 'Caméra requise';
+  } else if (state.ownReady || state.readyRequestPending) {
+    $('startGame').textContent = state.opponentReady ? 'Connexion à la partie…' : 'Attente de l’adversaire…';
   } else {
-    $('startGame').textContent = state.ownReady
-      ? (state.opponentReady ? 'Connexion à la partie…' : 'Prêt · attente adversaire')
-      : 'Je suis prêt';
+    $('startGame').textContent = 'Je suis prêt';
+  }
+
+  if(opponent && cameraReady && !state.gameActive && !state.gameEntering){
+    prewarmRtcInLobby().catch(()=>{});
   }
 
   if(opponent && state.game==='cyberpunk'){
@@ -917,16 +929,78 @@ function applyRoomState(snapshot) {
   }
 }
 
-async function setReady(ready) {
-  if (!state.roomCode || !state.peerId) return;
+async function prewarmRtcInLobby() {
+  if (state.pc || state.rtcPrewarmPending || state.gameActive || state.gameEntering) return state.pc;
+  if (!state.opponentPresent || !currentVideoTrack() || !state.cameraEnabled) return null;
+
+  state.rtcPrewarmPending = true;
+  state.rtcPrewarmError = null;
+  const startedAt = performance.now();
+  logEvent('rtc-prewarm-start', { role: state.role });
+
   try {
-    await api('/api/ready', {
+    const pc = await ensurePeerConnection();
+    state.rtcPrewarmReady = Boolean(pc);
+    logEvent('rtc-prewarm-end', {
+      role: state.role,
+      durationMs: Math.round(performance.now() - startedAt),
+      ready: state.rtcPrewarmReady
+    });
+    return pc;
+  } catch (err) {
+    state.rtcPrewarmReady = false;
+    state.rtcPrewarmError = { name: err?.name || null, message: err?.message || String(err) };
+    logEvent('rtc-prewarm-error', state.rtcPrewarmError);
+    return null;
+  } finally {
+    state.rtcPrewarmPending = false;
+  }
+}
+
+async function setReady(ready) {
+  if (!state.roomCode || !state.peerId || state.readyRequestPending) return;
+
+  const previousReady = state.ownReady;
+  const startedAt = performance.now();
+  state.readyRequestPending = true;
+  state.readyRequestedValue = Boolean(ready);
+  state.ownReady = Boolean(ready);
+  logEvent('ready-click', { ready: Boolean(ready) });
+
+  // Optimistic UX: the button changes immediately instead of waiting for the
+  // HTTP response/SSE round-trip. A stale room-state received while the request
+  // is pending cannot roll the button back.
+  if (state.roomSnapshot) applyRoomState(state.roomSnapshot);
+
+  try {
+    const result = await api('/api/ready', {
       method: 'POST',
       body: { room: state.roomCode, peerId: state.peerId, ready }
     });
-    state.ownReady = ready;
-    logEvent('ready', { ready });
+    state.readyRequestPending = false;
+    state.readyRequestedValue = null;
+    logEvent('ready-ack', {
+      ready: Boolean(ready),
+      durationMs: Math.round(performance.now() - startedAt)
+    });
+
+    // The API already returns the authoritative room snapshot. Apply it
+    // immediately instead of waiting for the next SSE room-state event.
+    if (result?.room) applyRoomState(result.room);
+    else {
+      state.ownReady = Boolean(ready);
+      if (state.roomSnapshot) applyRoomState(state.roomSnapshot);
+    }
   } catch (err) {
+    state.readyRequestPending = false;
+    state.readyRequestedValue = null;
+    state.ownReady = previousReady;
+    if (state.roomSnapshot) applyRoomState(state.roomSnapshot);
+    logEvent('ready-error', {
+      ready: Boolean(ready),
+      durationMs: Math.round(performance.now() - startedAt),
+      message: err?.message || String(err)
+    });
     toast(err.message);
   }
 }
@@ -1677,6 +1751,9 @@ function closePeerConnection(reason = 'manual') {
   state.pc = null;
   state.videoTransceiver = null;
   state.audioTransceiver = null;
+  state.rtcPrewarmPending = false;
+  state.rtcPrewarmReady = false;
+  state.rtcPrewarmError = null;
   state.pendingIce = [];
   state.rtcStarted = false;
   state.remoteStream = null;
@@ -1982,6 +2059,10 @@ async function buildCompleteReport() {
         role: state.role,
         gameEntering: state.gameEntering,
         gameActive: state.gameActive,
+        readyRequestPending: state.readyRequestPending,
+        rtcPrewarmPending: state.rtcPrewarmPending,
+        rtcPrewarmReady: state.rtcPrewarmReady,
+        rtcPrewarmError: state.rtcPrewarmError,
         offerInFlight: state.offerInFlight,
         offerSent: state.offerSent,
         hasRemoteOffer: Boolean(state.lastRemoteOfferSdp),

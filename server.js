@@ -164,7 +164,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/health') {
       return sendJson(res, 200, {
         ok: true,
-        version: 'tcgate-alpha-0.1-candidate-5',
+        version: 'tcgate-alpha-0.1-candidate-6',
         rooms: rooms.size,
         uptimeSeconds: Math.round(process.uptime()),
         railway: Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID),
@@ -372,7 +372,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 server.listen(PORT, HOST, () => {
-  console.log(`TCGate Alpha 0.1 Candidate 5 -> http://127.0.0.1:${PORT}`);
+  console.log(`TCGate Alpha 0.1 Candidate 6 -> http://127.0.0.1:${PORT}`);
   const nets = os.networkInterfaces();
   for (const entries of Object.values(nets)) {
     for (const net of entries || []) {
