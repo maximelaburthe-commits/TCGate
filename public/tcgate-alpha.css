@@ -226,3 +226,36 @@ button.danger-button { color:#ffb9c0; border-color:rgba(240,106,117,.34); backgr
   .tcgate-wordmark.game { width:105px; }
   .alpha-chip { display:none; }
 }
+
+
+/* =========================================================
+   TCGate Alpha 0.1 Candidate 7 — no-game + ready UX
+   ========================================================= */
+.field-help { color:#68748a; font-size:10px; line-height:1.45; }
+.lobby-game-label {
+  display:inline-flex;
+  width:max-content;
+  margin-top:8px;
+  padding:5px 8px;
+  border:1px solid rgba(111,125,158,.24);
+  border-radius:999px;
+  color:#9ca8bb;
+  background:rgba(9,15,25,.72);
+  font-size:9px;
+  font-weight:750;
+}
+button.primary.waiting-state,
+button.primary.waiting-state:hover,
+button.primary.waiting-state:active {
+  color:#aeb6c3;
+  border-color:rgba(116,126,145,.30);
+  background:#303744;
+  box-shadow:none;
+  filter:none;
+  opacity:.78;
+  transform:none;
+  cursor:default;
+}
+.game-screen.no-vision-mode .vision-only { display:none !important; }
+.game-screen.no-vision-mode .game-side { grid-template-rows:auto !important; align-self:start; }
+.game-screen.no-vision-mode .local-feed-section { align-self:start; }

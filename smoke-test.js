@@ -9,7 +9,7 @@ const required=[
   'public/table-state-bridge.js','public/table-state-engine.js',
   'public/identification.js','public/identification-worker.js','public/cards-fallback.json',
   'models/card_detector_v53_512.onnx','server.js','railway.json',
-  'PLAN_TEST_ALPHA_0.1_CANDIDATE_6.md','CHANGELOG_TCGATE_ALPHA_0.1_CANDIDATE_6.md'
+  'PLAN_TEST_ALPHA_0.1_CANDIDATE_7.md','CHANGELOG_TCGATE_ALPHA_0.1_CANDIDATE_7.md'
 ];
 for(const f of required){ if(!fs.existsSync(f)) throw new Error(`Missing ${f}`); }
 
@@ -21,7 +21,7 @@ for(const id of [
 ]){
   if(!html.includes(`id="${id}"`)) throw new Error(`Missing DOM ${id}`);
 }
-for(const token of ['TCGate','tcgate-logo-final.png','table-state-bridge.js','table-state-engine.js','tcgate-alpha.css']){
+for(const token of ['TCGate','tcgate-logo-final.png','Sans jeu · webcam uniquement','tcgate-alpha.css']){
   if(!html.includes(token)) throw new Error(`Missing HTML token ${token}`);
 }
 
@@ -29,17 +29,24 @@ const app=fs.readFileSync('public/app.js','utf8');
 for(const token of [
   'attachVisionToRemoteStream','TCGVisionEngine','TCGVisionCalibration','TCGTableStateEngine',
   'tcg-identification-visible','tcg-identification-visible-cleared','tcg-table-hover-hit',
-  "scope: 'opponent-stream-only'",'TCGate Alpha 0.1 Candidate 6','captureTesterVisionFeedback',
+  "scope: 'opponent-stream-only'",'TCGate Alpha 0.1 Candidate 7','captureTesterVisionFeedback',
   "degradationPreference = 'maintain-resolution'",'updateRtcCpuQualityControl',
   'setVisionCpuThrottle','qualityLimitationDurations','audio-only-recovery',
   'recovered-audio-video-','qualityControl: rtcQualitySummary()',
   'sendCurrentMediaState','applyRemoteMediaState',"signal.type === 'media-state'",'remoteMediaState',
   'adaptLocalCaptureForCpu','capture720Constraints','applyConstraints','acquireReplacement720Track','replaceLocalVideoTrack','captureAdaptiveMode','captureAdaptationAttempts','rtc-local-capture-adaptation','rtc-cpu-protect-video',
-  'prewarmRtcInLobby','readyRequestPending','readyRequestedValue','ready-click','ready-ack','rtc-prewarm-start','rtc-prewarm-end','Attente de l’adversaire…'
+  'prewarmRtcInLobby','readyRequestPending','readyRequestedValue','ready-click','ready-ack','rtc-prewarm-start','rtc-prewarm-end','Attente de l’adversaire…',
+  'ready-state-poll-start','pollRoomStateOnce','/state?peer=','waiting-state','visionEnabledForCurrentGame','ensureVisionAssets','VISION_ASSETS','no-game','assetsLoaded','disabledReason'
 ]){
   if(!app.includes(token)) throw new Error(`Missing Candidate 6 app token ${token}`);
 }
 if(app.includes("const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 1'")) throw new Error('Candidate 1 product version still active');
+
+
+for(const src of ['/vision-core.js','/vision-calibration.js','/table-state-bridge.js','/identification.js','/table-state-engine.js']){
+  if(html.includes(`<script src="${src}"></script>`)) throw new Error(`Vision script must not be statically loaded: ${src}`);
+}
+if(!app.includes("'/vision-core.js'") || !app.includes("'/identification.js'")) throw new Error('Dynamic Vision asset list missing');
 
 const core=fs.readFileSync('public/vision-core.js','utf8');
 for(const token of [
@@ -71,9 +78,12 @@ for(const token of [
 
 const server=fs.readFileSync('server.js','utf8');
 for(const token of [
-  "version: 'tcgate-alpha-0.1-candidate-6'",
+  "version: 'tcgate-alpha-0.1-candidate-7'",
   "identification: '0.2.4-alpha21-full-handoff-dedup-memory-api'",
-  'TCGate Alpha 0.1 Candidate 6'
+  'TCGate Alpha 0.1 Candidate 7',
+  "ALLOWED_GAMES = new Set(['cyberpunk', 'no-game'])",
+  '/state$',
+  'roomSnapshot(room)'
 ]){
   if(!server.includes(token)) throw new Error(`Missing server token ${token}`);
 }
@@ -93,7 +103,7 @@ if(hash('public/table-state-engine.js')!==expectedTable) throw new Error('Vision
 if(hash('public/vision-core.js')!==expectedCore) throw new Error('Vision core changed');
 if(hash('public/identification.js')!==expectedIdentification) throw new Error('Identification changed');
 
-console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_6');
+console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_7');
 console.log('MODEL_SHA256='+hash('models/card_detector_v53_512.onnx'));
 console.log('DETECTION_WORKER_SHA256='+hash('public/detection-worker.js'));
 console.log('TABLE_STATE_SHA256='+hash('public/table-state-engine.js'));

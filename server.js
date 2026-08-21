@@ -27,6 +27,7 @@ const mime = {
 const rooms = new Map();
 const ROOM_TTL_MS = 4 * 60 * 60 * 1000;
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const ALLOWED_GAMES = new Set(['cyberpunk', 'no-game']);
 
 function makeCode() {
   for (let tries = 0; tries < 100; tries++) {
@@ -164,7 +165,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/health') {
       return sendJson(res, 200, {
         ok: true,
-        version: 'tcgate-alpha-0.1-candidate-6',
+        version: 'tcgate-alpha-0.1-candidate-7',
         rooms: rooms.size,
         uptimeSeconds: Math.round(process.uptime()),
         railway: Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID),
@@ -201,7 +202,7 @@ if (req.method === 'GET' && pathname === MODEL_ROUTE) {
       const id = peerId();
       const room = {
         code,
-        game: body.game || 'cyberpunk',
+        game: ALLOWED_GAMES.has(String(body.game || '')) ? String(body.game) : 'cyberpunk',
         createdAt: Date.now(),
         peers: new Map()
       };
@@ -283,6 +284,15 @@ if (req.method === 'GET' && pathname === MODEL_ROUTE) {
         }
       });
       return;
+    }
+
+    const stateMatch = pathname.match(/^\/api\/rooms\/([A-Z0-9]+)\/state$/i);
+    if (req.method === 'GET' && stateMatch) {
+      const room = getRoom(stateMatch[1]);
+      const peer = getPeer(room, url.searchParams.get('peer'));
+      if (!room || !peer) return sendJson(res, 404, { ok: false, error: 'Session inconnue' });
+      peer.lastSeen = Date.now();
+      return sendJson(res, 200, { ok: true, room: roomSnapshot(room) });
     }
 
     if (req.method === 'POST' && pathname === '/api/ready') {
@@ -372,7 +382,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 server.listen(PORT, HOST, () => {
-  console.log(`TCGate Alpha 0.1 Candidate 6 -> http://127.0.0.1:${PORT}`);
+  console.log(`TCGate Alpha 0.1 Candidate 7 -> http://127.0.0.1:${PORT}`);
   const nets = os.networkInterfaces();
   for (const entries of Object.values(nets)) {
     for (const net of entries || []) {

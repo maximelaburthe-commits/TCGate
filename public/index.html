@@ -57,12 +57,14 @@
             <input id="roomCodeInput" maxlength="12" placeholder="Ex. R9K2MX">
           </label>
 
-          <label>
+          <label id="gameField">
             <span>Jeu</span>
             <select id="gameSelect">
-              <option value="cyberpunk">Cyberpunk Trading Card Game</option>
+              <option value="cyberpunk">Cyberpunk Trading Card Game · Vision</option>
+              <option value="no-game">Sans jeu · webcam uniquement</option>
               <option value="other" disabled>Autres TCG — bientôt</option>
             </select>
+            <small id="gameModeHelp" class="field-help">Vision est activé uniquement pour les jeux pris en charge.</small>
           </label>
 
           <button id="setupContinue" class="primary full">Continuer</button>
@@ -90,6 +92,7 @@
         <div class="lobby-grid">
           <div class="invite-card">
             <span class="label">Code de la partie</span>
+            <span id="lobbyGameLabel" class="lobby-game-label">Cyberpunk Trading Card Game · Vision</span>
             <div class="room-code-row">
               <strong id="lobbyCode">R9K2MX</strong>
               <button id="copyCode" class="secondary small">Copier</button>
@@ -103,7 +106,7 @@
               <div class="avatar">J1</div>
               <div>
                 <strong id="lobbyPlayerName">Joueur</strong>
-                <span>Prêt</span>
+                <span id="lobbyOwnStatus">Préparation</span>
               </div>
               <span class="status-dot"></span>
             </div>
@@ -201,14 +204,14 @@
 
             <div id="opponentFeed" class="video-placeholder opponent-video">
               <video id="remoteVideo" autoplay playsinline></video>
-              <canvas id="visionOverlay" class="vision-overlay" aria-hidden="true"></canvas>
+              <canvas id="visionOverlay" class="vision-overlay vision-only" aria-hidden="true"></canvas>
               <div id="remoteVideoPlaceholder" class="video-center">
                 <div class="camera-orb">CAM</div>
                 <strong>Flux vidéo adverse</strong>
                 <span id="remoteVideoStatus">En attente de la connexion WebRTC…</span>
               </div>
 
-              <aside id="fullscreenCardPreview" class="fullscreen-card-preview hidden" aria-live="polite">
+              <aside id="fullscreenCardPreview" class="fullscreen-card-preview vision-only hidden" aria-live="polite">
                 <div class="fullscreen-card-head">
                   <div>
                     <span>Carte survolée</span>
@@ -229,7 +232,7 @@
             </div>
           </div>
 
-          <div class="game-hint vision-alpha-hint">
+          <div class="game-hint vision-alpha-hint vision-only">
             <span class="hint-dot"></span>
             <span id="visionStatus" class="vision-status-pill">Vision : préparation</span>
             <span id="calibrationStatus" class="vision-status-pill">Calibration : attente</span>
@@ -239,7 +242,7 @@
         </section>
 
         <aside class="game-side">
-          <section class="card-inspector">
+          <section class="card-inspector vision-only">
             <div class="side-title">
               <div>
                 <span class="eyebrow">Carte survolée</span>
@@ -360,11 +363,7 @@
 
   <div id="toast" class="toast hidden"></div>
 
-  <script src="/vision-core.js"></script>
-  <script src="/vision-calibration.js"></script>
-  <script src="/table-state-bridge.js"></script>
-  <script src="/identification.js"></script>
-  <script src="/table-state-engine.js"></script>
+  <!-- Vision assets are loaded on demand by app.js only for a supported game. -->
   <script src="/app.js"></script>
 </body>
 </html>

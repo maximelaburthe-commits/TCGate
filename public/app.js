@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 6';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 7';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -28,6 +28,9 @@ const state = {
   opponentReady: false,
   readyRequestPending: false,
   readyRequestedValue: null,
+  readyStatePollTimer: null,
+  readyStatePollInFlight: false,
+  readyStatePollCount: 0,
   rtcPrewarmPending: false,
   rtcPrewarmReady: false,
   rtcPrewarmError: null,
@@ -81,6 +84,9 @@ const state = {
   lastRemoteAnswerSdp: null,
   remotePlayPending: false,
 
+  visionAssetsLoaded: false,
+  visionAssetsLoading: false,
+  visionAssetsError: null,
   visionPrepared: false,
   visionPreparing: false,
   visionAttachedStreamId: null,
@@ -211,13 +217,92 @@ function setVisionStateStatus(snapshot=null) {
   el.className='vision-status-pill warning';
 }
 
+const VISION_ASSETS = [
+  '/vision-core.js',
+  '/vision-calibration.js',
+  '/table-state-bridge.js',
+  '/identification.js',
+  '/table-state-engine.js'
+];
+
+function gameLabel(game = state.game) {
+  if (game === 'cyberpunk') return 'Cyberpunk Trading Card Game · Vision';
+  if (game === 'no-game') return 'Sans jeu · webcam uniquement';
+  return 'TCG';
+}
+
+function visionEnabledForCurrentGame() {
+  return state.game === 'cyberpunk';
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-tcgate-dynamic="${src}"]`);
+    if (existing?.dataset.loaded === '1') return resolve();
+    if (existing) {
+      existing.addEventListener('load', resolve, { once: true });
+      existing.addEventListener('error', () => reject(new Error(`Chargement impossible : ${src}`)), { once: true });
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = false;
+    script.dataset.tcgateDynamic = src;
+    script.addEventListener('load', () => { script.dataset.loaded = '1'; resolve(); }, { once: true });
+    script.addEventListener('error', () => reject(new Error(`Chargement impossible : ${src}`)), { once: true });
+    document.body.appendChild(script);
+  });
+}
+
+async function ensureVisionAssets() {
+  if (!visionEnabledForCurrentGame()) return false;
+  if (state.visionAssetsLoaded) return true;
+  if (state.visionAssetsLoading) {
+    while (state.visionAssetsLoading) await new Promise(resolve => setTimeout(resolve, 25));
+    if (state.visionAssetsError) throw new Error(state.visionAssetsError.message || 'Vision assets indisponibles');
+    return state.visionAssetsLoaded;
+  }
+
+  state.visionAssetsLoading = true;
+  state.visionAssetsError = null;
+  const startedAt = performance.now();
+  logEvent('vision-assets-load-start', { game: state.game });
+  try {
+    for (const src of VISION_ASSETS) await loadScript(src);
+    state.visionAssetsLoaded = true;
+    logEvent('vision-assets-load-end', { durationMs: Math.round(performance.now() - startedAt), count: VISION_ASSETS.length });
+    return true;
+  } catch (err) {
+    state.visionAssetsError = { name: err?.name || null, message: err?.message || String(err) };
+    logEvent('vision-assets-load-error', state.visionAssetsError);
+    throw err;
+  } finally {
+    state.visionAssetsLoading = false;
+  }
+}
+
+function applyGameModeUi() {
+  const visionEnabled = visionEnabledForCurrentGame();
+  screens.game?.classList.toggle('no-vision-mode', !visionEnabled);
+  $('lobbyGameLabel').textContent = gameLabel();
+  $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
+
+  if (!visionEnabled) {
+    setVisionStatus('Vision : désactivée');
+    setCalibrationStatus({ status: 'idle' });
+    setVisionStateStatus(null);
+    if (state.visionAssetsLoaded) detachVision();
+  }
+}
+
 async function prepareVision() {
-  if(state.game!=='cyberpunk' || state.visionPrepared || state.visionPreparing) return;
+  if(!visionEnabledForCurrentGame() || state.visionPrepared || state.visionPreparing) return;
   state.visionPreparing=true;
   setVisionStatus('Vision : chargement…','warning');
   logEvent('vision-prepare-start');
 
   try{
+    await ensureVisionAssets();
     const [detector,identifier]=await Promise.allSettled([
       window.TCGVisionEngine?.preload?.(),
       window.TCGIdentificationLab?.start?.()
@@ -266,6 +351,7 @@ async function prepareVision() {
 }
 
 async function attachVisionToRemoteStream(stream) {
+  if(!visionEnabledForCurrentGame()) return;
   if(!stream || !stream.getVideoTracks().length) return;
   const videoTrack=stream.getVideoTracks()[0];
   const key=`${stream.id}:${videoTrack.id}`;
@@ -453,6 +539,7 @@ function clearCurrentVisibleCard(reason='handoff') {
 }
 
 function captureTesterVisionFeedback(kind) {
+  if (!visionEnabledForCurrentGame()) return;
   const detector=window.TCGVisionEngine?.getSnapshot?.() || null;
   const identification=window.TCGIdentificationLab?.getSnapshot?.() || null;
   const tableState=window.TCGTableStateEngine?.getSnapshot?.() || null;
@@ -480,8 +567,9 @@ function configureSetup(mode) {
   $('setupTitle').textContent = create ? 'Prépare ton salon' : 'Rejoins ton adversaire';
   $('setupSubtitle').textContent = create
     ? 'Choisis ton pseudo et le jeu.'
-    : 'Entre le code reçu et choisis ton pseudo.';
+    : 'Entre le code reçu et choisis ton pseudo. Le jeu est défini par le salon.';
   $('roomCodeField').classList.toggle('hidden', create);
+  $('gameField').classList.toggle('hidden', !create);
   $('setupContinue').textContent = create ? 'Créer le salon' : 'Rejoindre le salon';
   showScreen('setup');
   setTimeout(() => $('playerName').focus(), 0);
@@ -778,7 +866,7 @@ function stopLocalStream() {
 async function enterLobby() {
   const name = $('playerName').value.trim() || 'Joueur';
   state.playerName = name;
-  state.game = $('gameSelect').value;
+  if (state.mode === 'create') state.game = $('gameSelect').value;
   $('setupContinue').disabled = true;
 
   try {
@@ -805,12 +893,14 @@ async function enterLobby() {
     state.peerId = result.peerId;
     state.role = result.role;
     state.roomSnapshot = result.room;
+    state.game = result.room?.game || state.game || 'cyberpunk';
+    applyGameModeUi();
 
     $('lobbyCode').textContent = state.roomCode;
     $('lobbyPlayerName').textContent = state.playerName;
     $('localPlayerLabel').textContent = state.playerName;
     $('gameCode').textContent = state.roomCode;
-    $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'TCG';
+    $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
 
     history.replaceState({}, '', `${location.pathname}?room=${state.roomCode}`);
     logEvent('room-entered', { code: state.roomCode, role: state.role, game: state.game });
@@ -867,9 +957,45 @@ function connectEventStream() {
   });
 }
 
+function stopReadyStatePolling(reason = 'stop') {
+  const wasActive = Boolean(state.readyStatePollTimer || state.readyStatePollInFlight);
+  if (state.readyStatePollTimer) clearInterval(state.readyStatePollTimer);
+  state.readyStatePollTimer = null;
+  state.readyStatePollInFlight = false;
+  if (wasActive) logEvent('ready-state-poll-stop', { reason, polls: state.readyStatePollCount });
+}
+
+async function pollRoomStateOnce() {
+  if (!state.roomCode || !state.peerId || state.readyStatePollInFlight || state.gameActive || state.gameEntering) return;
+  state.readyStatePollInFlight = true;
+  const startedAt = performance.now();
+  try {
+    const result = await api(`/api/rooms/${encodeURIComponent(state.roomCode)}/state?peer=${encodeURIComponent(state.peerId)}`);
+    state.readyStatePollCount += 1;
+    logEvent('ready-state-poll', { durationMs: Math.round(performance.now() - startedAt), count: state.readyStatePollCount });
+    if (result?.room) applyRoomState(result.room);
+  } catch (err) {
+    logEvent('ready-state-poll-error', { message: err?.message || String(err) });
+  } finally {
+    state.readyStatePollInFlight = false;
+  }
+}
+
+function startReadyStatePolling() {
+  if (state.readyStatePollTimer || state.gameActive || state.gameEntering) return;
+  state.readyStatePollCount = 0;
+  logEvent('ready-state-poll-start');
+  pollRoomStateOnce().catch(() => {});
+  state.readyStatePollTimer = setInterval(() => pollRoomStateOnce().catch(() => {}), 500);
+}
+
 function applyRoomState(snapshot) {
   if (!snapshot) return;
   state.roomSnapshot = snapshot;
+  if (snapshot.game && snapshot.game !== state.game) {
+    state.game = snapshot.game;
+    applyGameModeUi();
+  }
 
   const me = snapshot.peers.find(p => p.id === state.peerId);
   const opponent = snapshot.peers.find(p => p.id !== state.peerId);
@@ -901,14 +1027,23 @@ function applyRoomState(snapshot) {
   }
 
   const cameraReady = Boolean(currentVideoTrack() && state.cameraEnabled);
-  $('startGame').disabled = !opponent || !cameraReady || state.ownReady || state.readyRequestPending;
+  const waitingForOpponent = Boolean(state.ownReady || state.readyRequestPending);
+  $('startGame').disabled = !opponent || !cameraReady || waitingForOpponent;
+  $('startGame').classList.toggle('waiting-state', waitingForOpponent);
+  $('lobbyOwnStatus').textContent = state.ownReady ? 'Prêt' : 'Préparation';
 
   if (!cameraReady) {
     $('startGame').textContent = 'Caméra requise';
-  } else if (state.ownReady || state.readyRequestPending) {
+  } else if (waitingForOpponent) {
     $('startGame').textContent = state.opponentReady ? 'Connexion à la partie…' : 'Attente de l’adversaire…';
   } else {
     $('startGame').textContent = 'Je suis prêt';
+  }
+
+  if (state.ownReady && !state.opponentReady && opponent && !state.gameEntering && !state.gameActive) {
+    startReadyStatePolling();
+  } else if (state.opponentReady || !state.ownReady || !opponent || state.gameEntering || state.gameActive) {
+    stopReadyStatePolling(state.opponentReady ? 'opponent-ready' : 'state-change');
   }
 
   if(opponent && cameraReady && !state.gameActive && !state.gameEntering){
@@ -922,6 +1057,7 @@ function applyRoomState(snapshot) {
   if (
     state.ownReady &&
     state.opponentReady &&
+    !state.readyRequestPending &&
     !state.gameEntering &&
     !state.gameActive
   ) {
@@ -1010,13 +1146,14 @@ async function enterNetworkGame() {
 
   // Lock immediately: updateMediaUi() may itself refresh room state.
   state.gameEntering = true;
+  stopReadyStatePolling('game-enter');
   logEvent('game-enter-start', { role: state.role });
 
   try {
     showScreen('game');
     $('localVideo').srcObject = state.localStream;
     updateMediaUi();
-    prepareVision().catch(()=>{});
+    if (visionEnabledForCurrentGame()) prepareVision().catch(()=>{});
     setRtcStatus('Initialisation WebRTC…', 'warning');
 
     await ensurePeerConnection();
@@ -1771,6 +1908,7 @@ function closePeerConnection(reason = 'manual') {
 }
 
 async function leaveRoom() {
+  stopReadyStatePolling('leave-room');
   const room = state.roomCode;
   const peerId = state.peerId;
 
@@ -2060,6 +2198,8 @@ async function buildCompleteReport() {
         gameEntering: state.gameEntering,
         gameActive: state.gameActive,
         readyRequestPending: state.readyRequestPending,
+        readyStatePolling: Boolean(state.readyStatePollTimer),
+        readyStatePollCount: state.readyStatePollCount,
         rtcPrewarmPending: state.rtcPrewarmPending,
         rtcPrewarmReady: state.rtcPrewarmReady,
         rtcPrewarmError: state.rtcPrewarmError,
@@ -2071,18 +2211,22 @@ async function buildCompleteReport() {
       webrtc: rtc,
       qualityControl: rtcQualitySummary()
     },
-    calibration: window.TCGVisionCalibration?.getSnapshot?.() || {
-      version: '0.6-calibration-v1',
-      status: 'unavailable'
-    },
+    calibration: visionEnabledForCurrentGame()
+      ? (window.TCGVisionCalibration?.getSnapshot?.() || { version: '0.6-calibration-v1', status: 'unavailable' })
+      : { version: 'disabled-no-game', status: 'disabled' },
     vision: {
       integrated: true,
-      profile: VISION_PROFILE,
+      enabledForGame: visionEnabledForCurrentGame(),
+      assetsLoaded: state.visionAssetsLoaded,
+      assetsLoading: state.visionAssetsLoading,
+      assetsError: state.visionAssetsError,
+      disabledReason: visionEnabledForCurrentGame() ? null : 'no-game',
+      profile: visionEnabledForCurrentGame() ? VISION_PROFILE : null,
       scope: 'opponent-stream-only',
-      detector: window.TCGVisionEngine?.getSnapshot?.() || null,
-      identification: window.TCGIdentificationLab?.getSnapshot?.() || null,
-      tableState: window.TCGTableStateEngine?.getSnapshot?.() || null,
-      tableStateEvents: window.TCGTableStateEngine?.getEvents?.() || [],
+      detector: visionEnabledForCurrentGame() ? (window.TCGVisionEngine?.getSnapshot?.() || null) : null,
+      identification: visionEnabledForCurrentGame() ? (window.TCGIdentificationLab?.getSnapshot?.() || null) : null,
+      tableState: visionEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getSnapshot?.() || null) : null,
+      tableStateEvents: visionEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getEvents?.() || []) : [],
       testerFeedback: [...state.visionFeedback]
     },
     events: state.reportEvents
@@ -2098,6 +2242,9 @@ function reportText(report) {
     `Généré: ${report.generatedAt}`,
     `Durée session: ${(report.session.durationMs / 1000).toFixed(1)} s`,
     `Salon: ${report.session.roomCode || '—'} · rôle ${report.session.role || '—'}`,
+    `Mode de jeu: ${report.session.game || '—'}`,
+    `Vision active pour ce salon: ${report.vision?.enabledForGame ?? false}`,
+    `Assets Vision chargés: ${report.vision?.assetsLoaded ?? false}`,
     '',
     'CONFIDENTIALITÉ',
     '- aucune vidéo enregistrée',
@@ -2351,6 +2498,14 @@ window.addEventListener('tcg-identification-visible-cleared',(event)=>{
 
 /* ---------- Bindings ---------- */
 
+
+$('gameSelect').addEventListener('change', () => {
+  const noGame = $('gameSelect').value === 'no-game';
+  $('gameModeHelp').textContent = noGame
+    ? 'Mode webcam pur : aucun modèle, aucune base de cartes et aucun traitement Vision ne seront chargés.'
+    : 'Vision analyse uniquement le flux adverse pour ce jeu pris en charge.';
+});
+
 $('goCreate').addEventListener('click', () => configureSetup('create'));
 $('goJoin').addEventListener('click', () => configureSetup('join'));
 $('setupBack').addEventListener('click', () => showScreen('home'));
@@ -2469,7 +2624,8 @@ logEvent('page-loaded', {
     width: window.innerWidth,
     height: window.innerHeight
   },
-  userAgent: navigator.userAgent
+  userAgent: navigator.userAgent,
+  visionAssetsLoadedAtPageLoad: state.visionAssetsLoaded
 });
 
 const params = new URLSearchParams(location.search);
