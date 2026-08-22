@@ -1,12 +1,12 @@
-# TCGate — Alpha fermée 0.1 · Candidate 7
+# TCGate — Alpha fermée 0.1 · Candidate 8
 
-Candidate 7 repart strictement de Candidate 5. Le cœur Vision et la stratégie vidéo de C5 sont gelés.
+Candidate 8 repart strictement de Candidate 5. Le cœur Vision et la stratégie vidéo de C5 sont gelés.
 
 ## Objectif
 
 Supprimer la sensation d'attente dans le salon lorsque les joueurs se déclarent prêts, sans mélanger ce correctif avec de nouveaux changements Vision.
 
-## Candidate 7
+## Candidate 8
 
 - le clic sur **Je suis prêt** bascule immédiatement le bouton en **Attente de l’adversaire…** ;
 - le bouton est verrouillé après validation pour éviter les doubles clics ;
@@ -20,5 +20,10 @@ Supprimer la sensation d'attente dans le salon lorsque les joueurs se déclarent
 Le modèle, Vision State, Vision Core et l’identification sont inchangés par rapport à Candidate 5.
 
 
-## Candidate 7
+## Candidate 8
 Ajoute le mode **Sans jeu** (WebRTC pur, Vision non chargé) et termine le flux de préparation du lobby avec un fallback de synchronisation HTTP rapide.
+
+
+## Candidate 8
+
+Ajout du fallback TURN Cloudflare côté serveur, segmentation des rapports par salon et nettoyage des codes temporaires.

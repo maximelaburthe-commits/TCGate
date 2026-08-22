@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 7';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 8';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -56,6 +56,17 @@ const state = {
   remoteVideoStarted: false,
   rtcStatsTimer: null,
   lastRtcMetrics: null,
+  rtcConfig: null,
+  rtcConfigKey: null,
+  rtcConfigLoading: null,
+  turnStatus: {
+    configured: false,
+    available: false,
+    provider: null,
+    policy: 'all',
+    expiresAt: null,
+    reason: 'not-loaded'
+  },
   rtcQualityControl: {
     cpuEpisode: null,
     cpuEpisodes: [],
@@ -104,11 +115,11 @@ const state = {
   reportSeq: 0
 };
 
-const RTC_CONFIG = {
+const DEFAULT_RTC_CONFIG = {
   iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
-  ]
+    { urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }
+  ],
+  iceTransportPolicy: 'all'
 };
 
 function logEvent(type, data = {}) {
@@ -120,6 +131,87 @@ function logEvent(type, data = {}) {
     data
   });
   if (state.reportEvents.length > 5000) state.reportEvents.splice(0, 500);
+}
+
+function resetReportSession(meta = {}) {
+  state.reportStartedAt = Date.now();
+  state.reportEvents = [];
+  state.reportSeq = 0;
+  state.visionFeedback = [];
+  state.lastRtcMetrics = null;
+  state.remoteMediaState = { cameraEnabled: null, microphoneEnabled: null, receivedAt: null };
+
+  const q = state.rtcQualityControl;
+  q.cpuEpisode = null;
+  q.cpuEpisodes = [];
+  q.cpuSamples = 0;
+  q.recoverySamples = 0;
+  q.currentVisionThrottleMs = 0;
+  q.senderPolicyApplied = false;
+  q.senderPolicyError = null;
+  q.senderScaleResolutionDownBy = 1;
+  q.senderAdaptiveMode = 'native';
+  q.senderAdaptationPending = false;
+  q.senderAdaptations = [];
+  q.captureAdaptiveMode = 'native';
+  q.captureAdaptationPending = false;
+  q.captureAdaptationError = null;
+  q.captureAdaptations = [];
+  q.captureAdaptationAttempts = 0;
+  q.captureLastAttemptAtMs = 0;
+  q.lastReason = null;
+
+  logEvent('report-session-start', meta);
+}
+
+async function loadRtcConfig() {
+  if (!state.roomCode || !state.peerId) return DEFAULT_RTC_CONFIG;
+  const key = `${state.roomCode}:${state.peerId}`;
+  if (state.rtcConfig && state.rtcConfigKey === key) return state.rtcConfig;
+  if (state.rtcConfigLoading) return state.rtcConfigLoading;
+
+  state.rtcConfigLoading = (async () => {
+    try {
+      const result = await api(`/api/rtc-config?room=${encodeURIComponent(state.roomCode)}&peer=${encodeURIComponent(state.peerId)}`);
+      const config = {
+        iceServers: Array.isArray(result?.iceServers) && result.iceServers.length ? result.iceServers : DEFAULT_RTC_CONFIG.iceServers,
+        iceTransportPolicy: result?.iceTransportPolicy === 'relay' ? 'relay' : 'all'
+      };
+      state.rtcConfig = config;
+      state.rtcConfigKey = key;
+      state.turnStatus = {
+        configured: Boolean(result?.turn?.configured),
+        available: Boolean(result?.turn?.available),
+        provider: result?.turn?.provider || null,
+        policy: result?.turn?.policy || config.iceTransportPolicy,
+        expiresAt: result?.turn?.expiresAt || null,
+        reason: result?.turn?.reason || null
+      };
+      logEvent('rtc-config-loaded', {
+        iceServerEntries: config.iceServers.length,
+        iceTransportPolicy: config.iceTransportPolicy,
+        turn: { ...state.turnStatus }
+      });
+      return config;
+    } catch (err) {
+      state.rtcConfig = { ...DEFAULT_RTC_CONFIG, iceServers: [...DEFAULT_RTC_CONFIG.iceServers] };
+      state.rtcConfigKey = key;
+      state.turnStatus = {
+        configured: false,
+        available: false,
+        provider: null,
+        policy: 'all',
+        expiresAt: null,
+        reason: 'rtc-config-fetch-failed'
+      };
+      logEvent('rtc-config-error', { name: err?.name || null, message: err?.message || String(err) });
+      return state.rtcConfig;
+    } finally {
+      state.rtcConfigLoading = null;
+    }
+  })();
+
+  return state.rtcConfigLoading;
 }
 
 function showScreen(name) {
@@ -571,8 +663,9 @@ function configureSetup(mode) {
   $('roomCodeField').classList.toggle('hidden', create);
   $('gameField').classList.toggle('hidden', !create);
   $('setupContinue').textContent = create ? 'Créer le salon' : 'Rejoindre le salon';
+  if (!create && !new URLSearchParams(location.search).get('room')) $('roomCodeInput').value = '';
   showScreen('setup');
-  setTimeout(() => $('playerName').focus(), 0);
+  setTimeout(() => (create ? $('playerName') : $('roomCodeInput')).focus(), 0);
 }
 
 function currentVideoTrack() {
@@ -889,11 +982,22 @@ async function enterLobby() {
       });
     }
 
+    resetReportSession({
+      roomCode: result.code,
+      role: result.role,
+      game: result.room?.game || state.game || 'cyberpunk'
+    });
+
     state.roomCode = result.code;
     state.peerId = result.peerId;
     state.role = result.role;
     state.roomSnapshot = result.room;
     state.game = result.room?.game || state.game || 'cyberpunk';
+    state.rtcConfig = null;
+    state.rtcConfigKey = null;
+    state.rtcConfigLoading = null;
+    state.turnStatus = { configured: false, available: false, provider: null, policy: 'all', expiresAt: null, reason: 'not-loaded' };
+    $('roomCodeInput').value = '';
     applyGameModeUi();
 
     $('lobbyCode').textContent = state.roomCode;
@@ -1583,7 +1687,8 @@ function applyRemoteMediaState(payload = {}) {
 async function ensurePeerConnection() {
   if (state.pc) return state.pc;
 
-  const pc = new RTCPeerConnection(RTC_CONFIG);
+  const rtcConfig = await loadRtcConfig();
+  const pc = new RTCPeerConnection(rtcConfig);
   state.pc = pc;
   state.rtcStarted = true;
   state.pendingIce = [];
@@ -1933,6 +2038,11 @@ async function leaveRoom() {
   state.ownReady = false;
   state.opponentReady = false;
   state.roomSnapshot = null;
+  state.rtcConfig = null;
+  state.rtcConfigKey = null;
+  state.rtcConfigLoading = null;
+  state.turnStatus = { configured: false, available: false, provider: null, policy: 'all', expiresAt: null, reason: 'not-loaded' };
+  $('roomCodeInput').value = '';
   state.gameEntering = false;
   state.gameActive = false;
   state.offerInFlight = false;
@@ -2021,6 +2131,7 @@ async function snapshotRtcMetrics() {
       if (stat.type === 'inbound-rtp' && !stat.isRemote) {
         data.inbound.push({
           kind: stat.kind || stat.mediaType || null,
+          ssrc: stat.ssrc ?? null,
           packetsReceived: stat.packetsReceived ?? null,
           packetsLost: stat.packetsLost ?? null,
           jitter: stat.jitter ?? null,
@@ -2043,6 +2154,7 @@ async function snapshotRtcMetrics() {
       if (stat.type === 'outbound-rtp' && !stat.isRemote) {
         data.outbound.push({
           kind: stat.kind || stat.mediaType || null,
+          ssrc: stat.ssrc ?? null,
           packetsSent: stat.packetsSent ?? null,
           bytesSent: stat.bytesSent ?? null,
           framesEncoded: stat.framesEncoded ?? null,
@@ -2082,6 +2194,29 @@ async function snapshotRtcMetrics() {
         };
       }
     });
+
+    const previous = state.lastRtcMetrics;
+    const elapsedSeconds = previous?.capturedAt
+      ? (Date.parse(data.capturedAt) - Date.parse(previous.capturedAt)) / 1000
+      : 0;
+    if (elapsedSeconds > 0) {
+      const addBitrate = (current, prior, bytesKey) => {
+        for (const item of current) {
+          const prev = prior?.find(p => p.kind === item.kind && (item.ssrc == null || p.ssrc === item.ssrc))
+            || prior?.find(p => p.kind === item.kind);
+          const nowBytes = Number(item[bytesKey]);
+          const prevBytes = Number(prev?.[bytesKey]);
+          item.bitrateKbps = Number.isFinite(nowBytes) && Number.isFinite(prevBytes) && nowBytes >= prevBytes
+            ? Math.round(((nowBytes - prevBytes) * 8 / elapsedSeconds) / 1000)
+            : null;
+        }
+      };
+      addBitrate(data.inbound, previous?.inbound, 'bytesReceived');
+      addBitrate(data.outbound, previous?.outbound, 'bytesSent');
+    } else {
+      data.inbound.forEach(item => { item.bitrateKbps = null; });
+      data.outbound.forEach(item => { item.bitrateKbps = null; });
+    }
 
     updateRtcCpuQualityControl(data);
     state.lastRtcMetrics = data;
@@ -2209,6 +2344,11 @@ async function buildCompleteReport() {
         hasRemoteAnswer: Boolean(state.lastRemoteAnswerSdp)
       },
       webrtc: rtc,
+      rtcConfiguration: {
+        iceTransportPolicy: state.rtcConfig?.iceTransportPolicy || 'all',
+        iceServerEntries: state.rtcConfig?.iceServers?.length || DEFAULT_RTC_CONFIG.iceServers.length,
+        turn: { ...state.turnStatus }
+      },
       qualityControl: rtcQualitySummary()
     },
     calibration: visionEnabledForCurrentGame()
@@ -2236,6 +2376,8 @@ async function buildCompleteReport() {
 function reportText(report) {
   const inbound = report.network.webrtc.inbound || [];
   const outbound = report.network.webrtc.outbound || [];
+  const inboundVideo = inbound.find(x => x.kind === 'video') || null;
+  const outboundVideo = outbound.find(x => x.kind === 'video') || null;
   const lines = [
     'TCGATE — RAPPORT COMPLET ALPHA FERMÉE',
     `Version: ${report.version}`,
@@ -2265,6 +2407,11 @@ function reportText(report) {
     `Route ICE locale: ${report.network.webrtc.route?.localCandidateType || '—'}`,
     `Route ICE distante: ${report.network.webrtc.route?.remoteCandidateType || '—'}`,
     `TURN/relay utilisé: ${report.network.webrtc.route?.usingRelay ?? '—'}`,
+    `TURN configuré/disponible: ${report.network.rtcConfiguration?.turn?.configured ?? false} / ${report.network.rtcConfiguration?.turn?.available ?? false}`,
+    `Provider TURN: ${report.network.rtcConfiguration?.turn?.provider || '—'}`,
+    `Politique ICE: ${report.network.rtcConfiguration?.iceTransportPolicy || 'all'}`,
+    `Flux vidéo reçu: ${inboundVideo?.frameWidth || '—'}x${inboundVideo?.frameHeight || '—'} · ${inboundVideo?.framesPerSecond || '—'} fps · ${inboundVideo?.bitrateKbps ?? '—'} kb/s`,
+    `Flux vidéo envoyé: ${outboundVideo?.frameWidth || '—'}x${outboundVideo?.frameHeight || '—'} · ${outboundVideo?.framesPerSecond || '—'} fps · ${outboundVideo?.bitrateKbps ?? '—'} kb/s`,
     `Flux entrants: ${inbound.length}`,
     `Flux sortants: ${outbound.length}`,
     `Préférence vidéo: ${report.network.qualityControl?.degradationPreference || '—'}`,

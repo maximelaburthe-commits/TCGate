@@ -29,6 +29,114 @@ const ROOM_TTL_MS = 4 * 60 * 60 * 1000;
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ALLOWED_GAMES = new Set(['cyberpunk', 'no-game']);
 
+const FALLBACK_ICE_SERVERS = [
+  { urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }
+];
+const CLOUDFLARE_TURN_KEY_ID = String(process.env.CLOUDFLARE_TURN_KEY_ID || '').trim();
+const CLOUDFLARE_TURN_API_TOKEN = String(process.env.CLOUDFLARE_TURN_KEY_API_TOKEN || process.env.CLOUDFLARE_TURN_API_TOKEN || '').trim();
+const TURN_CONFIGURED = Boolean(CLOUDFLARE_TURN_KEY_ID && CLOUDFLARE_TURN_API_TOKEN);
+const TURN_TTL_SECONDS = Math.max(3600, Math.min(86400, Number(process.env.TCGATE_TURN_TTL_SECONDS || 21600) || 21600));
+const ICE_TRANSPORT_POLICY = String(process.env.TCGATE_ICE_TRANSPORT_POLICY || 'all').toLowerCase() === 'relay' ? 'relay' : 'all';
+const turnCredentialCache = new Map();
+
+async function generateCloudflareTurnIceServers(peerKey) {
+  if (!TURN_CONFIGURED) return null;
+  const cached = turnCredentialCache.get(peerKey);
+  if (cached && cached.expiresAtMs - Date.now() > 5 * 60 * 1000) return cached;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(
+      `https://rtc.live.cloudflare.com/v1/turn/keys/${encodeURIComponent(CLOUDFLARE_TURN_KEY_ID)}/credentials/generate-ice-servers`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${CLOUDFLARE_TURN_API_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ttl: TURN_TTL_SECONDS }),
+        signal: controller.signal
+      }
+    );
+    if (!response.ok) throw new Error(`Cloudflare TURN HTTP ${response.status}`);
+    const payload = await response.json();
+    if (!Array.isArray(payload?.iceServers) || payload.iceServers.length < 2) {
+      throw new Error('Réponse TURN Cloudflare invalide');
+    }
+    const record = {
+      iceServers: payload.iceServers,
+      expiresAtMs: Date.now() + TURN_TTL_SECONDS * 1000,
+      issuedAtMs: Date.now()
+    };
+    turnCredentialCache.set(peerKey, record);
+    return record;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function rtcConfigForPeer(peerKey) {
+  if (!TURN_CONFIGURED) {
+    return {
+      iceServers: FALLBACK_ICE_SERVERS,
+      iceTransportPolicy: 'all',
+      turn: {
+        configured: false,
+        available: false,
+        provider: null,
+        policy: 'all',
+        expiresAt: null,
+        reason: 'cloudflare-env-missing'
+      }
+    };
+  }
+
+  try {
+    const turn = await generateCloudflareTurnIceServers(peerKey);
+    return {
+      iceServers: turn.iceServers,
+      iceTransportPolicy: ICE_TRANSPORT_POLICY,
+      turn: {
+        configured: true,
+        available: true,
+        provider: 'cloudflare-realtime-turn',
+        policy: ICE_TRANSPORT_POLICY,
+        expiresAt: new Date(turn.expiresAtMs).toISOString(),
+        reason: null
+      }
+    };
+  } catch (err) {
+    console.error('[turn] génération credentials impossible:', err?.message || String(err));
+    if (ICE_TRANSPORT_POLICY === 'relay') {
+      return {
+        iceServers: [],
+        iceTransportPolicy: 'relay',
+        turn: {
+          configured: true,
+          available: false,
+          provider: 'cloudflare-realtime-turn',
+          policy: 'relay',
+          expiresAt: null,
+          reason: 'credential-generation-failed'
+        }
+      };
+    }
+    return {
+      iceServers: FALLBACK_ICE_SERVERS,
+      iceTransportPolicy: 'all',
+      turn: {
+        configured: true,
+        available: false,
+        provider: 'cloudflare-realtime-turn',
+        policy: 'all',
+        expiresAt: null,
+        reason: 'credential-generation-failed'
+      }
+    };
+  }
+}
+
 function makeCode() {
   for (let tries = 0; tries < 100; tries++) {
     let code = '';
@@ -127,6 +235,7 @@ function removePeer(room, id, reason = 'leave') {
   if (!peer) return;
   try { peer.sse?.end(); } catch {}
   room.peers.delete(id);
+  turnCredentialCache.delete(id);
   broadcast(room, 'peer-left', { peerId: id, reason });
   if (room.peers.size === 0) {
     rooms.delete(room.code);
@@ -165,10 +274,17 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && pathname === '/api/health') {
       return sendJson(res, 200, {
         ok: true,
-        version: 'tcgate-alpha-0.1-candidate-7',
+        version: 'tcgate-alpha-0.1-candidate-8',
         rooms: rooms.size,
         uptimeSeconds: Math.round(process.uptime()),
         railway: Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID),
+        turn: {
+          provider: 'cloudflare-realtime-turn',
+          configured: TURN_CONFIGURED,
+          iceTransportPolicy: ICE_TRANSPORT_POLICY,
+          ttlSeconds: TURN_TTL_SECONDS,
+          cachedCredentials: turnCredentialCache.size
+        },
         vision: {
           integrated: true,
           modelPresent: fs.existsSync(MODEL_FILE),
@@ -195,6 +311,16 @@ if (req.method === 'GET' && pathname === MODEL_ROUTE) {
   });
   return;
 }
+
+
+    if (req.method === 'GET' && pathname === '/api/rtc-config') {
+      const room = getRoom(url.searchParams.get('room'));
+      const peer = getPeer(room, url.searchParams.get('peer'));
+      if (!room || !peer) return sendJson(res, 404, { ok: false, error: 'Session inconnue' });
+      peer.lastSeen = Date.now();
+      const config = await rtcConfigForPeer(peer.id);
+      return sendJson(res, 200, { ok: true, ...config });
+    }
 
     if (req.method === 'POST' && pathname === '/api/rooms') {
       const body = await readJson(req);
@@ -382,7 +508,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 server.listen(PORT, HOST, () => {
-  console.log(`TCGate Alpha 0.1 Candidate 7 -> http://127.0.0.1:${PORT}`);
+  console.log(`TCGate Alpha 0.1 Candidate 8 -> http://127.0.0.1:${PORT}`);
   const nets = os.networkInterfaces();
   for (const entries of Object.values(nets)) {
     for (const net of entries || []) {
