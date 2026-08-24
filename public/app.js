@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 8';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 9';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -19,6 +19,7 @@ const state = {
   game: 'cyberpunk',
   roomCode: null,
   peerId: null,
+  authToken: null,
   role: null,
   roomSnapshot: null,
   opponentId: null,
@@ -34,6 +35,11 @@ const state = {
   rtcPrewarmPending: false,
   rtcPrewarmReady: false,
   rtcPrewarmError: null,
+  recoveryEpoch: 0,
+  sseReconnectTimer: null,
+  sseReconnectAttempts: 0,
+  rtcRecoveryTimer: null,
+  rtcRecoveryInFlight: false,
 
   eventSource: null,
   localStream: null,
@@ -241,12 +247,49 @@ function setRtcStatus(text, mode = '') {
   $('remoteVideoStatus').textContent = text;
 }
 
+const SESSION_STORAGE_KEY = 'tcgate-alpha-room-session-v1';
+
+function saveRoomSession() {
+  if (!state.roomCode || !state.peerId || !state.authToken) return;
+  try {
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+      roomCode: state.roomCode,
+      peerId: state.peerId,
+      authToken: state.authToken,
+      role: state.role,
+      playerName: state.playerName,
+      game: state.game,
+      savedAt: Date.now()
+    }));
+  } catch {}
+}
+
+function clearSavedRoomSession() {
+  try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch {}
+}
+
+function readSavedRoomSession() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (!saved?.roomCode || !saved?.peerId || !saved?.authToken) return null;
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
 async function api(path, options = {}) {
+  const headers = {};
+  if (options.body) headers['Content-Type'] = 'application/json';
+  if (options.auth !== false && state.authToken) headers.Authorization = `Bearer ${state.authToken}`;
   const response = await fetch(path, {
     method: options.method || 'GET',
-    headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
+    headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
-    cache: 'no-store'
+    cache: 'no-store',
+    credentials: 'same-origin'
   });
   let payload = {};
   try { payload = await response.json(); } catch {}
@@ -956,6 +999,67 @@ function stopLocalStream() {
   logEvent('media-stopped');
 }
 
+async function tryResumeSavedSession() {
+  const saved = readSavedRoomSession();
+  if (!saved) return false;
+
+  state.roomCode = saved.roomCode;
+  state.peerId = saved.peerId;
+  state.authToken = saved.authToken;
+  state.role = saved.role || null;
+  state.playerName = saved.playerName || 'Joueur';
+  state.game = saved.game || 'cyberpunk';
+
+  try {
+    const result = await api('/api/resume', {
+      method: 'POST',
+      body: { room: state.roomCode, peerId: state.peerId }
+    });
+
+    resetReportSession({
+      roomCode: result.code,
+      role: result.role,
+      game: result.room?.game || state.game,
+      resumed: true
+    });
+
+    state.roomCode = result.code;
+    state.peerId = result.peerId;
+    state.role = result.role;
+    state.playerName = result.name || state.playerName;
+    state.roomSnapshot = result.room;
+    state.game = result.room?.game || state.game;
+    state.recoveryEpoch = Number(result.room?.recoveryEpoch || 0);
+    state.rtcConfig = null;
+    state.rtcConfigKey = null;
+    state.rtcConfigLoading = null;
+    state.turnStatus = { configured: false, available: false, provider: null, policy: 'all', expiresAt: null, reason: 'not-loaded' };
+
+    applyGameModeUi();
+    $('lobbyCode').textContent = state.roomCode;
+    $('lobbyPlayerName').textContent = state.playerName;
+    $('localPlayerLabel').textContent = state.playerName;
+    $('gameCode').textContent = state.roomCode;
+    $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
+    history.replaceState({}, '', `${location.pathname}?room=${state.roomCode}`);
+    saveRoomSession();
+    applyRoomState(result.room);
+    showScreen('lobby');
+    connectEventStream().catch(() => {});
+    logEvent('room-resumed', { code: state.roomCode, role: state.role, game: state.game });
+    toast('Salon repris. Réactive caméra et micro si nécessaire.');
+    return true;
+  } catch (err) {
+    logEvent('room-resume-failed', { message: err?.message || String(err) });
+    clearSavedRoomSession();
+    state.roomCode = null;
+    state.peerId = null;
+    state.authToken = null;
+    state.role = null;
+    return false;
+  }
+}
+
 async function enterLobby() {
   const name = $('playerName').value.trim() || 'Joueur';
   state.playerName = name;
@@ -967,7 +1071,8 @@ async function enterLobby() {
     if (state.mode === 'create') {
       result = await api('/api/rooms', {
         method: 'POST',
-        body: { name, game: state.game }
+        body: { name, game: state.game },
+        auth: false
       });
     } else {
       const entered = $('roomCodeInput').value.trim().toUpperCase();
@@ -978,7 +1083,8 @@ async function enterLobby() {
       }
       result = await api(`/api/rooms/${encodeURIComponent(entered)}/join`, {
         method: 'POST',
-        body: { name }
+        body: { name },
+        auth: false
       });
     }
 
@@ -990,6 +1096,7 @@ async function enterLobby() {
 
     state.roomCode = result.code;
     state.peerId = result.peerId;
+    state.authToken = result.sessionToken;
     state.role = result.role;
     state.roomSnapshot = result.room;
     state.game = result.room?.game || state.game || 'cyberpunk';
@@ -1007,9 +1114,10 @@ async function enterLobby() {
     $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
 
     history.replaceState({}, '', `${location.pathname}?room=${state.roomCode}`);
+    saveRoomSession();
     logEvent('room-entered', { code: state.roomCode, role: state.role, game: state.game });
 
-    connectEventStream();
+    connectEventStream().catch(() => {});
     applyRoomState(result.room);
     showScreen('lobby');
   } catch (err) {
@@ -1020,12 +1128,30 @@ async function enterLobby() {
   }
 }
 
-function connectEventStream() {
+async function connectEventStream() {
+  if (!state.roomCode || !state.peerId || !state.authToken) return;
+  clearTimeout(state.sseReconnectTimer);
+  state.sseReconnectTimer = null;
   state.eventSource?.close();
-  const src = new EventSource(`/api/events?room=${encodeURIComponent(state.roomCode)}&peer=${encodeURIComponent(state.peerId)}`);
+
+  let ticketResult;
+  try {
+    ticketResult = await api('/api/events-ticket', {
+      method: 'POST',
+      body: { room: state.roomCode, peerId: state.peerId }
+    });
+  } catch (err) {
+    setNetworkStatus('Reconnexion au serveur…', 'warning');
+    logEvent('sse-ticket-error', { message: err?.message || String(err) });
+    scheduleEventStreamReconnect();
+    return;
+  }
+
+  const src = new EventSource(`/api/events?ticket=${encodeURIComponent(ticketResult.ticket)}`);
   state.eventSource = src;
 
   src.addEventListener('open', () => {
+    state.sseReconnectAttempts = 0;
     setNetworkStatus('Connecté au serveur de salon', 'connected');
     logEvent('sse-open');
   });
@@ -1033,6 +1159,11 @@ function connectEventStream() {
   src.addEventListener('room-state', event => {
     const snapshot = JSON.parse(event.data);
     applyRoomState(snapshot);
+  });
+
+  src.addEventListener('room-recovery', event => {
+    const payload = JSON.parse(event.data);
+    logEvent('room-recovery', payload);
   });
 
   src.addEventListener('peer-joined', event => {
@@ -1056,9 +1187,24 @@ function connectEventStream() {
   });
 
   src.addEventListener('error', () => {
+    if (state.eventSource !== src) return;
+    src.close();
+    state.eventSource = null;
     setNetworkStatus('Reconnexion au serveur…', 'warning');
     logEvent('sse-error');
+    scheduleEventStreamReconnect();
   });
+}
+
+function scheduleEventStreamReconnect() {
+  if (!state.roomCode || !state.peerId || !state.authToken || state.sseReconnectTimer) return;
+  const attempt = ++state.sseReconnectAttempts;
+  const delay = Math.min(5000, 500 * Math.pow(1.6, Math.min(attempt, 6)));
+  state.sseReconnectTimer = setTimeout(() => {
+    state.sseReconnectTimer = null;
+    connectEventStream().catch(() => {});
+  }, delay);
+  logEvent('sse-reconnect-scheduled', { attempt, delayMs: Math.round(delay) });
 }
 
 function stopReadyStatePolling(reason = 'stop') {
@@ -1095,6 +1241,19 @@ function startReadyStatePolling() {
 
 function applyRoomState(snapshot) {
   if (!snapshot) return;
+  const incomingRecoveryEpoch = Number(snapshot.recoveryEpoch || 0);
+  if (incomingRecoveryEpoch > state.recoveryEpoch && state.gameActive) {
+    logEvent('room-recovery-return-to-lobby', {
+      previousEpoch: state.recoveryEpoch,
+      nextEpoch: incomingRecoveryEpoch
+    });
+    state.gameActive = false;
+    state.gameEntering = false;
+    closePeerConnection('room-recovery');
+    showScreen('lobby');
+    toast('Connexion reprise · confirme à nouveau quand tu es prêt.');
+  }
+  state.recoveryEpoch = incomingRecoveryEpoch;
   state.roomSnapshot = snapshot;
   if (snapshot.game && snapshot.game !== state.game) {
     state.game = snapshot.game;
@@ -1684,6 +1843,40 @@ function applyRemoteMediaState(payload = {}) {
   });
 }
 
+function clearRtcRecoveryTimer() {
+  if (state.rtcRecoveryTimer) clearTimeout(state.rtcRecoveryTimer);
+  state.rtcRecoveryTimer = null;
+}
+
+function scheduleRtcRecovery(reason = 'disconnected') {
+  if (!state.gameActive || state.rtcRecoveryTimer || state.rtcRecoveryInFlight) return;
+  state.rtcRecoveryTimer = setTimeout(() => {
+    state.rtcRecoveryTimer = null;
+    attemptRtcRecovery(reason).catch(() => {});
+  }, reason === 'failed' ? 300 : 5000);
+  logEvent('rtc-recovery-scheduled', { reason });
+}
+
+async function attemptRtcRecovery(reason = 'unknown') {
+  if (!state.pc || state.rtcRecoveryInFlight || !state.gameActive) return;
+  state.rtcRecoveryInFlight = true;
+  logEvent('rtc-recovery-start', { reason, role: state.role });
+  try {
+    if (state.role === 'host') {
+      try { state.pc.restartIce?.(); } catch {}
+      state.offerSent = false;
+      state.offerInFlight = false;
+      await createAndSendOffer({ iceRestart: true });
+    } else {
+      await sendSignal('restart-request', { reason });
+    }
+  } catch (err) {
+    logEvent('rtc-recovery-error', { reason, message: err?.message || String(err) });
+  } finally {
+    state.rtcRecoveryInFlight = false;
+  }
+}
+
 async function ensurePeerConnection() {
   if (state.pc) return state.pc;
 
@@ -1763,13 +1956,22 @@ async function ensurePeerConnection() {
   pc.onconnectionstatechange = () => {
     const cs = pc.connectionState;
     if (cs === 'connected') {
+      clearRtcRecoveryTimer();
       setRtcStatus('WebRTC connecté', 'connected');
       configureVideoSenderPolicy(state.videoTransceiver?.sender, 'connected').catch(()=>{});
       sendCurrentMediaState('rtc-connected').catch(()=>{});
-    } else if (cs === 'connecting' || cs === 'new') setRtcStatus('Connexion WebRTC…', 'warning');
-    else if (cs === 'disconnected') setRtcStatus('Connexion interrompue', 'warning');
-    else if (cs === 'failed') setRtcStatus('Échec WebRTC', 'error');
-    else if (cs === 'closed') setRtcStatus('WebRTC fermé');
+    } else if (cs === 'connecting' || cs === 'new') {
+      setRtcStatus('Connexion WebRTC…', 'warning');
+    } else if (cs === 'disconnected') {
+      setRtcStatus('Connexion interrompue · tentative de reprise…', 'warning');
+      scheduleRtcRecovery('disconnected');
+    } else if (cs === 'failed') {
+      setRtcStatus('Reconnexion WebRTC…', 'warning');
+      scheduleRtcRecovery('failed');
+    } else if (cs === 'closed') {
+      clearRtcRecoveryTimer();
+      setRtcStatus('WebRTC fermé');
+    }
 
     logEvent('rtc-connection-state', { state: cs });
     snapshotRtcMetrics().catch(() => {});
@@ -1849,7 +2051,7 @@ async function sendSignal(type, payload) {
   }
 }
 
-async function createAndSendOffer() {
+async function createAndSendOffer(options = {}) {
   if (state.role !== 'host') return;
   if (state.offerInFlight || state.offerSent) return;
 
@@ -1861,7 +2063,7 @@ async function createAndSendOffer() {
 
   state.offerInFlight = true;
   try {
-    const offer = await pc.createOffer();
+    const offer = await pc.createOffer(options);
     await pc.setLocalDescription(offer);
     const result = await sendSignal('offer', pc.localDescription);
     state.offerSent = true;
@@ -1884,6 +2086,18 @@ async function handleSignal(signal) {
 
   if (signal.type === 'media-state') {
     applyRemoteMediaState(signal.payload || {});
+    return;
+  }
+
+  if (signal.type === 'restart-request') {
+    logEvent('rtc-restart-request-received', { fromRole: signal.fromRole || null });
+    if (state.role === 'host' && state.gameActive) {
+      const pc = await ensurePeerConnection();
+      try { pc.restartIce?.(); } catch {}
+      state.offerSent = false;
+      state.offerInFlight = false;
+      await createAndSendOffer({ iceRestart: true });
+    }
     return;
   }
 
@@ -2021,17 +2235,21 @@ async function leaveRoom() {
   state.eventSource = null;
   closePeerConnection('leave-room');
 
-  if (room && peerId) {
-    fetch('/api/leave', {
+  if (room && peerId && state.authToken) {
+    await api('/api/leave', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ room, peerId }),
-      keepalive: true
+      body: { room, peerId }
     }).catch(() => {});
   }
 
+  clearTimeout(state.sseReconnectTimer);
+  state.sseReconnectTimer = null;
+  clearTimeout(state.rtcRecoveryTimer);
+  state.rtcRecoveryTimer = null;
+  clearSavedRoomSession();
   state.roomCode = null;
   state.peerId = null;
+  state.authToken = null;
   state.role = null;
   state.opponentId = null;
   state.opponentPresent = false;
@@ -2754,11 +2972,10 @@ document.addEventListener('keydown', e => {
 });
 
 window.addEventListener('beforeunload', () => {
-  if (state.roomCode && state.peerId) {
-    navigator.sendBeacon?.('/api/leave', new Blob([
-      JSON.stringify({ room: state.roomCode, peerId: state.peerId })
-    ], { type: 'application/json' }));
-  }
+  // Do not explicitly leave on refresh/network loss: Candidate 9 keeps the
+  // session resumable for a short grace period. Explicit Quit buttons still
+  // remove the peer immediately.
+  saveRoomSession();
 });
 
 logEvent('page-loaded', {
@@ -2777,7 +2994,11 @@ logEvent('page-loaded', {
 
 const params = new URLSearchParams(location.search);
 const roomFromUrl = params.get('room');
-if (roomFromUrl) {
-  $('roomCodeInput').value = roomFromUrl.toUpperCase();
-  configureSetup('join');
-}
+
+(async () => {
+  const resumed = await tryResumeSavedSession();
+  if (!resumed && roomFromUrl) {
+    $('roomCodeInput').value = roomFromUrl.toUpperCase();
+    configureSetup('join');
+  }
+})();

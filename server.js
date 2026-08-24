@@ -1,4 +1,3 @@
-
 'use strict';
 
 const http = require('http');
@@ -12,6 +11,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = path.join(__dirname, 'public');
 const MODEL_FILE = path.join(__dirname, 'models', 'card_detector_v53_512.onnx');
 const MODEL_ROUTE = '/api/model/card-detector-v53-512-alpha9p1.onnx';
+const VERSION = 'tcgate-alpha-0.1-candidate-9';
 
 const mime = {
   '.html': 'text/html; charset=utf-8',
@@ -25,9 +25,15 @@ const mime = {
 };
 
 const rooms = new Map();
+const eventTickets = new Map();
+const rateBuckets = new Map();
 const ROOM_TTL_MS = 4 * 60 * 60 * 1000;
+const DISCONNECTED_PEER_GRACE_MS = 5 * 60 * 1000;
+const EVENT_TICKET_TTL_MS = 30 * 1000;
+const BODY_LIMIT_BYTES = 64 * 1024;
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ALLOWED_GAMES = new Set(['cyberpunk', 'no-game']);
+const ALLOWED_SIGNAL_TYPES = new Set(['offer', 'answer', 'candidate', 'media-state', 'restart-request']);
 
 const FALLBACK_ICE_SERVERS = [
   { urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }
@@ -38,6 +44,75 @@ const TURN_CONFIGURED = Boolean(CLOUDFLARE_TURN_KEY_ID && CLOUDFLARE_TURN_API_TO
 const TURN_TTL_SECONDS = Math.max(3600, Math.min(86400, Number(process.env.TCGATE_TURN_TTL_SECONDS || 21600) || 21600));
 const ICE_TRANSPORT_POLICY = String(process.env.TCGATE_ICE_TRANSPORT_POLICY || 'all').toLowerCase() === 'relay' ? 'relay' : 'all';
 const turnCredentialCache = new Map();
+
+function securityHeaders(req, res) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), fullscreen=(self), screen-wake-lock=(self)');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; " +
+    "script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; worker-src 'self' blob:; " +
+    "connect-src 'self' https://raw.githubusercontent.com https://cdn.jsdelivr.net https://rtc.live.cloudflare.com; " +
+    "img-src 'self' data: blob: https://raw.githubusercontent.com https://cdn.jsdelivr.net; " +
+    "style-src 'self'; media-src 'self' blob:"
+  );
+  const proto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
+  if (req.socket.encrypted || proto === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+  }
+}
+
+function requestFingerprint(req) {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  const remote = String(req.socket.remoteAddress || 'unknown');
+  return crypto.createHash('sha256').update(`${forwarded}|${remote}`).digest('hex').slice(0, 24);
+}
+
+function rateLimit(req, res, scope, limit, windowMs) {
+  const key = `${scope}:${requestFingerprint(req)}`;
+  const now = Date.now();
+  let bucket = rateBuckets.get(key);
+  if (!bucket || now >= bucket.resetAt) {
+    bucket = { count: 0, resetAt: now + windowMs };
+    rateBuckets.set(key, bucket);
+  }
+  bucket.count += 1;
+  res.setHeader('X-RateLimit-Limit', String(limit));
+  res.setHeader('X-RateLimit-Remaining', String(Math.max(0, limit - bucket.count)));
+  if (bucket.count <= limit) return true;
+  res.setHeader('Retry-After', String(Math.max(1, Math.ceil((bucket.resetAt - now) / 1000))));
+  sendJson(res, 429, { ok: false, error: 'Trop de requêtes. Réessaie dans un instant.' });
+  return false;
+}
+
+function sessionRateLimit(res, peer, scope, limit, windowMs) {
+  const key = `${scope}:peer:${peer.id}`;
+  const now = Date.now();
+  let bucket = rateBuckets.get(key);
+  if (!bucket || now >= bucket.resetAt) {
+    bucket = { count: 0, resetAt: now + windowMs };
+    rateBuckets.set(key, bucket);
+  }
+  bucket.count += 1;
+  if (bucket.count <= limit) return true;
+  res.setHeader('Retry-After', String(Math.max(1, Math.ceil((bucket.resetAt - now) / 1000))));
+  sendJson(res, 429, { ok: false, error: 'Trop de requêtes pour cette session.' });
+  return false;
+}
+
+function sameOriginRequest(req) {
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  try {
+    const u = new URL(origin);
+    return u.host === req.headers.host;
+  } catch {
+    return false;
+  }
+}
 
 async function generateCloudflareTurnIceServers(peerKey) {
   if (!TURN_CONFIGURED) return null;
@@ -140,9 +215,7 @@ async function rtcConfigForPeer(peerKey) {
 function makeCode() {
   for (let tries = 0; tries < 100; tries++) {
     let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += alphabet[Math.floor(Math.random() * alphabet.length)];
-    }
+    for (let i = 0; i < 6; i++) code += alphabet[crypto.randomInt(alphabet.length)];
     if (!rooms.has(code)) return code;
   }
   throw new Error('Impossible de générer un code de salon');
@@ -150,6 +223,38 @@ function makeCode() {
 
 function peerId() {
   return crypto.randomBytes(12).toString('hex');
+}
+
+function sessionToken() {
+  return crypto.randomBytes(32).toString('base64url');
+}
+
+function tokenHash(token) {
+  return crypto.createHash('sha256').update(String(token || '')).digest();
+}
+
+function tokenMatches(peer, token) {
+  if (!peer?.authHash || !token) return false;
+  const candidate = tokenHash(token);
+  return candidate.length === peer.authHash.length && crypto.timingSafeEqual(candidate, peer.authHash);
+}
+
+function bearerToken(req) {
+  const auth = String(req.headers.authorization || '');
+  return auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+}
+
+function sanitizeName(value) {
+  return String(value || 'Joueur')
+    .normalize('NFKC')
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .trim()
+    .slice(0, 24) || 'Joueur';
+}
+
+function normalizeRoomCode(value) {
+  const code = String(value || '').trim().toUpperCase();
+  return /^[A-HJ-NP-Z2-9]{6}$/.test(code) ? code : '';
 }
 
 function sendJson(res, status, body) {
@@ -165,17 +270,21 @@ function sendJson(res, status, body) {
 async function readJson(req) {
   return await new Promise((resolve, reject) => {
     let raw = '';
+    let bytes = 0;
+    req.setEncoding('utf8');
     req.on('data', chunk => {
-      raw += chunk;
-      if (raw.length > 256 * 1024) {
-        reject(new Error('Payload too large'));
+      bytes += Buffer.byteLength(chunk, 'utf8');
+      if (bytes > BODY_LIMIT_BYTES) {
+        reject(Object.assign(new Error('Payload too large'), { statusCode: 413 }));
         req.destroy();
+        return;
       }
+      raw += chunk;
     });
     req.on('end', () => {
       if (!raw) return resolve({});
       try { resolve(JSON.parse(raw)); }
-      catch { reject(new Error('JSON invalide')); }
+      catch { reject(Object.assign(new Error('JSON invalide'), { statusCode: 400 })); }
     });
     req.on('error', reject);
   });
@@ -196,6 +305,7 @@ function roomSnapshot(room) {
     code: room.code,
     game: room.game,
     createdAt: room.createdAt,
+    recoveryEpoch: room.recoveryEpoch || 0,
     peers: [...room.peers.values()].map(publicPeer)
   };
 }
@@ -223,11 +333,17 @@ function broadcastRoomState(room) {
 }
 
 function getRoom(code) {
-  return rooms.get(String(code || '').toUpperCase()) || null;
+  const normalized = normalizeRoomCode(code);
+  return normalized ? rooms.get(normalized) || null : null;
 }
 
 function getPeer(room, id) {
   return room?.peers.get(String(id || '')) || null;
+}
+
+function authenticatedPeer(req, room, id) {
+  const peer = getPeer(room, id);
+  return tokenMatches(peer, bearerToken(req)) ? peer : null;
 }
 
 function removePeer(room, id, reason = 'leave') {
@@ -245,106 +361,104 @@ function removePeer(room, id, reason = 'leave') {
   }
 }
 
+function validateSignal(type, payload) {
+  if (!ALLOWED_SIGNAL_TYPES.has(type)) return false;
+  if (type === 'restart-request') return payload == null || typeof payload === 'object';
+  if (type === 'media-state') {
+    return payload && typeof payload === 'object' &&
+      (payload.cameraEnabled == null || typeof payload.cameraEnabled === 'boolean') &&
+      (payload.microphoneEnabled == null || typeof payload.microphoneEnabled === 'boolean');
+  }
+  if (type === 'candidate') {
+    return payload && typeof payload === 'object' &&
+      typeof payload.candidate === 'string' && payload.candidate.length <= 4096;
+  }
+  return payload && typeof payload === 'object' && payload.type === type &&
+    typeof payload.sdp === 'string' && payload.sdp.length <= 56000;
+}
+
 function staticFile(req, res, pathname) {
-  let requestPath = pathname;
-  if (requestPath === '/') requestPath = '/index.html';
-  const file = path.normalize(path.join(ROOT, requestPath));
-  if (!file.startsWith(ROOT)) {
-    res.writeHead(403);
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return sendJson(res, 404, { ok: false, error: 'Route inconnue' });
+  }
+  const requestPath = pathname === '/' ? '/index.html' : pathname;
+  const file = path.resolve(ROOT, `.${requestPath}`);
+  const relative = path.relative(ROOT, file);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
     return res.end('Forbidden');
   }
   fs.readFile(file, (err, data) => {
     if (err) {
-      res.writeHead(404);
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end('Not found');
     }
     res.writeHead(200, {
       'Content-Type': mime[path.extname(file)] || 'application/octet-stream',
       'Cache-Control': 'no-store'
     });
+    if (req.method === 'HEAD') return res.end();
     res.end(data);
   });
 }
 
 const server = http.createServer(async (req, res) => {
+  securityHeaders(req, res);
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = url.pathname;
 
   try {
+    if (req.method === 'POST' && !sameOriginRequest(req)) {
+      return sendJson(res, 403, { ok: false, error: 'Origine refusée' });
+    }
+
     if (req.method === 'GET' && pathname === '/api/health') {
-      return sendJson(res, 200, {
-        ok: true,
-        version: 'tcgate-alpha-0.1-candidate-8',
-        rooms: rooms.size,
-        uptimeSeconds: Math.round(process.uptime()),
-        railway: Boolean(process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID),
-        turn: {
-          provider: 'cloudflare-realtime-turn',
-          configured: TURN_CONFIGURED,
-          iceTransportPolicy: ICE_TRANSPORT_POLICY,
-          ttlSeconds: TURN_TTL_SECONDS,
-          cachedCredentials: turnCredentialCache.size
-        },
-        vision: {
-          integrated: true,
-          modelPresent: fs.existsSync(MODEL_FILE),
-          modelBytes: fs.existsSync(MODEL_FILE) ? fs.statSync(MODEL_FILE).size : 0,
-          model: 'Vision V5.3 / 512',
-          stateEngine: '0.1.6-facewebcam-memory-hover',
-          identification: '0.2.4-alpha21-full-handoff-dedup-memory-api'
-        }
+      return sendJson(res, 200, { ok: true, version: VERSION });
+    }
+
+    if (req.method === 'GET' && pathname === MODEL_ROUTE) {
+      fs.stat(MODEL_FILE, (err, stat) => {
+        if (err || !stat.isFile()) return sendJson(res, 500, { ok: false, error: 'Modèle Vision absent.' });
+        res.writeHead(200, {
+          'Content-Type': 'application/octet-stream',
+          'Content-Length': stat.size,
+          'Cache-Control': 'no-store, max-age=0',
+          'X-Content-Type-Options': 'nosniff'
+        });
+        fs.createReadStream(MODEL_FILE).pipe(res);
       });
-    }
-
-if (req.method === 'GET' && pathname === MODEL_ROUTE) {
-  fs.stat(MODEL_FILE,(err,stat)=>{
-    if(err || !stat.isFile()){
-      return sendJson(res,500,{ok:false,error:'Modèle Vision alpha15 absent.'});
-    }
-    res.writeHead(200,{
-      'Content-Type':'application/octet-stream',
-      'Content-Length':stat.size,
-      'Cache-Control':'no-store, max-age=0',
-      'X-Content-Type-Options':'nosniff'
-    });
-    fs.createReadStream(MODEL_FILE).pipe(res);
-  });
-  return;
-}
-
-
-    if (req.method === 'GET' && pathname === '/api/rtc-config') {
-      const room = getRoom(url.searchParams.get('room'));
-      const peer = getPeer(room, url.searchParams.get('peer'));
-      if (!room || !peer) return sendJson(res, 404, { ok: false, error: 'Session inconnue' });
-      peer.lastSeen = Date.now();
-      const config = await rtcConfigForPeer(peer.id);
-      return sendJson(res, 200, { ok: true, ...config });
+      return;
     }
 
     if (req.method === 'POST' && pathname === '/api/rooms') {
+      if (!rateLimit(req, res, 'create-room', 12, 60 * 1000)) return;
       const body = await readJson(req);
       const code = makeCode();
       const id = peerId();
+      const token = sessionToken();
       const room = {
         code,
         game: ALLOWED_GAMES.has(String(body.game || '')) ? String(body.game) : 'cyberpunk',
         createdAt: Date.now(),
+        recoveryEpoch: 0,
         peers: new Map()
       };
       room.peers.set(id, {
         id,
         role: 'host',
-        name: String(body.name || 'Joueur').slice(0, 24),
+        name: sanitizeName(body.name),
         ready: false,
         sse: null,
-        lastSeen: Date.now()
+        lastSeen: Date.now(),
+        disconnectedAt: null,
+        authHash: tokenHash(token)
       });
       rooms.set(code, room);
       return sendJson(res, 201, {
         ok: true,
         code,
         peerId: id,
+        sessionToken: token,
         role: 'host',
         room: roomSnapshot(room)
       });
@@ -352,37 +466,79 @@ if (req.method === 'GET' && pathname === MODEL_ROUTE) {
 
     const joinMatch = pathname.match(/^\/api\/rooms\/([A-Z0-9]+)\/join$/i);
     if (req.method === 'POST' && joinMatch) {
-      const code = joinMatch[1].toUpperCase();
+      if (!rateLimit(req, res, 'join-room', 30, 60 * 1000)) return;
+      const code = normalizeRoomCode(joinMatch[1]);
       const room = getRoom(code);
       if (!room) return sendJson(res, 404, { ok: false, error: 'Salon introuvable' });
       if (room.peers.size >= 2) return sendJson(res, 409, { ok: false, error: 'Salon complet' });
 
       const body = await readJson(req);
       const id = peerId();
+      const token = sessionToken();
       room.peers.set(id, {
         id,
         role: 'guest',
-        name: String(body.name || 'Joueur').slice(0, 24),
+        name: sanitizeName(body.name),
         ready: false,
         sse: null,
-        lastSeen: Date.now()
+        lastSeen: Date.now(),
+        disconnectedAt: null,
+        authHash: tokenHash(token)
       });
 
       broadcast(room, 'peer-joined', { peer: publicPeer(room.peers.get(id)) }, id);
       broadcastRoomState(room);
-
       return sendJson(res, 200, {
         ok: true,
         code,
         peerId: id,
+        sessionToken: token,
         role: 'guest',
         room: roomSnapshot(room)
       });
     }
 
+    if (req.method === 'POST' && pathname === '/api/resume') {
+      if (!rateLimit(req, res, 'resume-room', 30, 60 * 1000)) return;
+      const body = await readJson(req);
+      const room = getRoom(body.room);
+      const peer = authenticatedPeer(req, room, body.peerId);
+      if (!room || !peer) return sendJson(res, 401, { ok: false, error: 'Session expirée ou invalide' });
+      peer.lastSeen = Date.now();
+      peer.disconnectedAt = null;
+      room.recoveryEpoch = (room.recoveryEpoch || 0) + 1;
+      for (const p of room.peers.values()) p.ready = false;
+      broadcast(room, 'room-recovery', { recoveryEpoch: room.recoveryEpoch, peerId: peer.id });
+      broadcastRoomState(room);
+      return sendJson(res, 200, {
+        ok: true,
+        code: room.code,
+        peerId: peer.id,
+        role: peer.role,
+        name: peer.name,
+        room: roomSnapshot(room)
+      });
+    }
+
+    if (req.method === 'POST' && pathname === '/api/events-ticket') {
+      const body = await readJson(req);
+      const room = getRoom(body.room);
+      const peer = authenticatedPeer(req, room, body.peerId);
+      if (!room || !peer) return sendJson(res, 401, { ok: false, error: 'Session inconnue' });
+      if (!sessionRateLimit(res, peer, 'events-ticket', 30, 60 * 1000)) return;
+      peer.lastSeen = Date.now();
+      const ticket = crypto.randomBytes(24).toString('base64url');
+      eventTickets.set(ticket, { roomCode: room.code, peerId: peer.id, expiresAt: Date.now() + EVENT_TICKET_TTL_MS });
+      return sendJson(res, 200, { ok: true, ticket, expiresInMs: EVENT_TICKET_TTL_MS });
+    }
+
     if (req.method === 'GET' && pathname === '/api/events') {
-      const room = getRoom(url.searchParams.get('room'));
-      const peer = getPeer(room, url.searchParams.get('peer'));
+      const ticket = String(url.searchParams.get('ticket') || '');
+      const record = eventTickets.get(ticket);
+      eventTickets.delete(ticket);
+      if (!record || record.expiresAt < Date.now()) return sendJson(res, 401, { ok: false, error: 'Ticket SSE invalide' });
+      const room = getRoom(record.roomCode);
+      const peer = getPeer(room, record.peerId);
       if (!room || !peer) return sendJson(res, 404, { ok: false, error: 'Session inconnue' });
 
       res.writeHead(200, {
@@ -398,7 +554,7 @@ if (req.method === 'GET' && pathname === MODEL_ROUTE) {
       }
       peer.sse = res;
       peer.lastSeen = Date.now();
-
+      peer.disconnectedAt = null;
       sseSend(res, 'room-state', roomSnapshot(room));
       broadcastRoomState(room);
 
@@ -406,17 +562,29 @@ if (req.method === 'GET' && pathname === MODEL_ROUTE) {
         if (peer.sse === res) {
           peer.sse = null;
           peer.lastSeen = Date.now();
+          peer.disconnectedAt = Date.now();
           broadcastRoomState(room);
         }
       });
       return;
     }
 
+    if (req.method === 'GET' && pathname === '/api/rtc-config') {
+      const room = getRoom(url.searchParams.get('room'));
+      const peer = authenticatedPeer(req, room, url.searchParams.get('peer'));
+      if (!room || !peer) return sendJson(res, 401, { ok: false, error: 'Session inconnue' });
+      if (!sessionRateLimit(res, peer, 'rtc-config', 20, 60 * 1000)) return;
+      peer.lastSeen = Date.now();
+      const config = await rtcConfigForPeer(peer.id);
+      return sendJson(res, 200, { ok: true, ...config });
+    }
+
     const stateMatch = pathname.match(/^\/api\/rooms\/([A-Z0-9]+)\/state$/i);
     if (req.method === 'GET' && stateMatch) {
       const room = getRoom(stateMatch[1]);
-      const peer = getPeer(room, url.searchParams.get('peer'));
-      if (!room || !peer) return sendJson(res, 404, { ok: false, error: 'Session inconnue' });
+      const peer = authenticatedPeer(req, room, url.searchParams.get('peer'));
+      if (!room || !peer) return sendJson(res, 401, { ok: false, error: 'Session inconnue' });
+      if (!sessionRateLimit(res, peer, 'room-state', 240, 60 * 1000)) return;
       peer.lastSeen = Date.now();
       return sendJson(res, 200, { ok: true, room: roomSnapshot(room) });
     }
@@ -424,9 +592,11 @@ if (req.method === 'GET' && pathname === MODEL_ROUTE) {
     if (req.method === 'POST' && pathname === '/api/ready') {
       const body = await readJson(req);
       const room = getRoom(body.room);
-      const peer = getPeer(room, body.peerId);
-      if (!room || !peer) return sendJson(res, 404, { ok: false, error: 'Session inconnue' });
-      peer.ready = Boolean(body.ready);
+      const peer = authenticatedPeer(req, room, body.peerId);
+      if (!room || !peer) return sendJson(res, 401, { ok: false, error: 'Session inconnue' });
+      if (!sessionRateLimit(res, peer, 'ready', 60, 60 * 1000)) return;
+      if (typeof body.ready !== 'boolean') return sendJson(res, 400, { ok: false, error: 'État ready invalide' });
+      peer.ready = body.ready;
       peer.lastSeen = Date.now();
       broadcastRoomState(room);
       return sendJson(res, 200, { ok: true, room: roomSnapshot(room) });
@@ -435,8 +605,14 @@ if (req.method === 'GET' && pathname === MODEL_ROUTE) {
     if (req.method === 'POST' && pathname === '/api/signal') {
       const body = await readJson(req);
       const room = getRoom(body.room);
-      const from = getPeer(room, body.from);
-      if (!room || !from) return sendJson(res, 404, { ok: false, error: 'Session inconnue' });
+      const from = authenticatedPeer(req, room, body.from);
+      if (!room || !from) return sendJson(res, 401, { ok: false, error: 'Session inconnue' });
+      if (!sessionRateLimit(res, from, 'signal', 360, 60 * 1000)) return;
+      if (!validateSignal(body.type, body.payload ?? null)) {
+        return sendJson(res, 400, { ok: false, error: 'Signal WebRTC invalide' });
+      }
+      if (body.to && !getPeer(room, body.to)) return sendJson(res, 400, { ok: false, error: 'Destinataire inconnu' });
+      if (body.to === from.id) return sendJson(res, 400, { ok: false, error: 'Signal vers soi-même refusé' });
 
       from.lastSeen = Date.now();
       const envelope = {
@@ -459,21 +635,30 @@ if (req.method === 'GET' && pathname === MODEL_ROUTE) {
     if (req.method === 'POST' && pathname === '/api/leave') {
       const body = await readJson(req);
       const room = getRoom(body.room);
-      if (room) removePeer(room, body.peerId, 'leave');
+      const peer = authenticatedPeer(req, room, body.peerId);
+      if (!room || !peer) return sendJson(res, 200, { ok: true });
+      removePeer(room, peer.id, 'leave');
       return sendJson(res, 200, { ok: true });
     }
 
     staticFile(req, res, pathname);
   } catch (err) {
-    console.error(err);
-    if (!res.headersSent) sendJson(res, 500, { ok: false, error: err.message || 'Erreur serveur' });
+    const status = Number(err?.statusCode) || 500;
+    if (status >= 500) console.error('[server]', err?.stack || err?.message || String(err));
+    if (!res.headersSent) sendJson(res, status, { ok: false, error: status >= 500 ? 'Erreur serveur' : (err.message || 'Requête invalide') });
     else res.end();
   }
 });
 
 setInterval(() => {
   const now = Date.now();
-  for (const room of rooms.values()) {
+  for (const [ticket, record] of eventTickets) {
+    if (record.expiresAt < now) eventTickets.delete(ticket);
+  }
+  for (const [key, bucket] of rateBuckets) {
+    if (bucket.resetAt + 60 * 1000 < now) rateBuckets.delete(key);
+  }
+  for (const room of [...rooms.values()]) {
     if (now - room.createdAt > ROOM_TTL_MS) {
       for (const peer of room.peers.values()) {
         try { peer.sse?.end(); } catch {}
@@ -481,13 +666,15 @@ setInterval(() => {
       rooms.delete(room.code);
       continue;
     }
-
-    for (const peer of room.peers.values()) {
+    for (const peer of [...room.peers.values()]) {
+      if (!peer.sse && peer.disconnectedAt && now - peer.disconnectedAt > DISCONNECTED_PEER_GRACE_MS) {
+        removePeer(room, peer.id, 'disconnect-timeout');
+        continue;
+      }
       if (peer.sse) sseSend(peer.sse, 'ping', { at: now });
     }
   }
 }, 15000).unref();
-
 
 function gracefulShutdown(signal) {
   console.log(`[shutdown] ${signal} reçu, fermeture propre...`);
@@ -499,7 +686,6 @@ function gracefulShutdown(signal) {
       } catch {}
     }
   }
-
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 8000).unref();
 }
@@ -508,13 +694,11 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 server.listen(PORT, HOST, () => {
-  console.log(`TCGate Alpha 0.1 Candidate 8 -> http://127.0.0.1:${PORT}`);
+  console.log(`TCGate Alpha 0.1 Candidate 9 -> http://127.0.0.1:${PORT}`);
   const nets = os.networkInterfaces();
   for (const entries of Object.values(nets)) {
     for (const net of entries || []) {
-      if (net.family === 'IPv4' && !net.internal) {
-        console.log(`Réseau local     -> http://${net.address}:${PORT}`);
-      }
+      if (net.family === 'IPv4' && !net.internal) console.log(`Réseau local     -> http://${net.address}:${PORT}`);
     }
   }
   console.log('Note: caméra/micro nécessitent HTTPS hors localhost dans les navigateurs modernes.');
