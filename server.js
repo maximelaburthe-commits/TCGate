@@ -33,7 +33,7 @@ const EVENT_TICKET_TTL_MS = 30 * 1000;
 const BODY_LIMIT_BYTES = 64 * 1024;
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ALLOWED_GAMES = new Set(['cyberpunk', 'no-game']);
-const ALLOWED_SIGNAL_TYPES = new Set(['offer', 'answer', 'candidate', 'media-state', 'restart-request']);
+const ALLOWED_SIGNAL_TYPES = new Set(['offer', 'answer', 'candidate', 'media-state', 'restart-request', 'gig-state']);
 
 const FALLBACK_ICE_SERVERS = [
   { urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }
@@ -368,6 +368,17 @@ function validateSignal(type, payload) {
     return payload && typeof payload === 'object' &&
       (payload.cameraEnabled == null || typeof payload.cameraEnabled === 'boolean') &&
       (payload.microphoneEnabled == null || typeof payload.microphoneEnabled === 'boolean');
+  }
+  if (type === 'gig-state') {
+    if (!payload || typeof payload !== 'object') return false;
+    if (payload.request === true) return true;
+    if (!Array.isArray(payload.dice) || payload.dice.length > 12) return false;
+    return payload.dice.every(die => die && typeof die === 'object' &&
+      typeof die.id === 'string' && die.id.length <= 32 &&
+      (die.origin === 'host' || die.origin === 'guest') &&
+      (die.owner === 'host' || die.owner === 'guest') &&
+      [4,6,8,10,12,20].includes(Number(die.sides)) &&
+      Number.isInteger(Number(die.value)) && Number(die.value) >= 1 && Number(die.value) <= Number(die.sides));
   }
   if (type === 'candidate') {
     return payload && typeof payload === 'object' &&

@@ -696,3 +696,272 @@ button.primary.waiting-state:active {
 .tcgate-game-session .rtc-status.connected::before { background:#67d9a2; box-shadow:0 0 0 4px rgba(103,217,162,.07); }
 .tcgate-game-session .rtc-status.warning::before { background:#d6b85d; box-shadow:0 0 0 4px rgba(214,184,93,.07); }
 .tcgate-game-session .rtc-status.error::before { background:#f06a75; box-shadow:0 0 0 4px rgba(240,106,117,.07); }
+
+/* ========================================================================== */
+/* UI 1.0 definitive integration — Cyberpunk Gig Dice + final game polish    */
+/* ========================================================================== */
+
+.tcgate-opponent-column { position:relative; min-width:0; }
+.tcgate-gig-mount { position:static; }
+.tcgate-gig-panel {
+  position:absolute;
+  left:50%;
+  bottom:34px;
+  transform:translateX(-50%);
+  width:min(920px,calc(100% - 28px));
+  z-index:48;
+  padding:18px 14px 10px;
+  border:1px solid rgba(112,126,158,.20);
+  border-radius:16px;
+  background:rgba(7,11,18,.86);
+  box-shadow:0 18px 44px rgba(0,0,0,.24);
+  backdrop-filter:blur(12px);
+  box-sizing:border-box;
+  overflow:visible;
+}
+.tcgate-gig-panel.hidden { display:none !important; }
+.tcgate-gig-panel.is-fullscreen {
+  left:18px;
+  bottom:18px;
+  top:auto;
+  right:auto;
+  transform:none;
+  width:min(980px,calc(100% - 230px));
+  z-index:88;
+}
+.opponent-feed-card:fullscreen .tcgate-gig-panel.is-fullscreen { opacity:1;pointer-events:auto; }
+
+.tcgate-gig-drag-handle {
+  position:absolute;
+  top:4px;
+  left:50%;
+  transform:translateX(-50%);
+  width:62px;
+  height:14px;
+  padding:0;
+  border:0;
+  background:transparent;
+  display:grid;
+  grid-template-columns:repeat(3,4px);
+  grid-template-rows:repeat(2,4px);
+  gap:3px;
+  place-content:center;
+  cursor:grab;
+  touch-action:none;
+  user-select:none;
+  z-index:20;
+  opacity:.72;
+}
+.tcgate-gig-drag-handle span { width:4px;height:4px;border-radius:50%;background:rgba(151,163,190,.5); }
+.tcgate-gig-panel:hover .tcgate-gig-drag-handle span,
+.tcgate-gig-panel[data-dragging="true"] .tcgate-gig-drag-handle span { background:rgba(181,165,255,.85); }
+.tcgate-gig-panel[data-dragging="true"] .tcgate-gig-drag-handle { cursor:grabbing;opacity:1; }
+
+.tcgate-gig-track {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr);
+  align-items:stretch;
+  justify-content:center;
+  gap:14px;
+  min-width:0;
+}
+.tcgate-gig-divider { width:1px;background:linear-gradient(180deg,transparent,rgba(119,132,162,.28),transparent); }
+.tcgate-gig-side {
+  min-width:0;
+  min-height:80px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:7px 10px;
+  border:1px solid rgba(118,132,164,.16);
+  border-radius:13px;
+  transition:flex-basis .18s ease,border-color .15s ease,background .15s ease,box-shadow .15s ease;
+  box-sizing:border-box;
+}
+.tcgate-gig-side-self {
+  justify-content:flex-end;
+  border-left:3px solid rgba(154,139,255,.72);
+  background:linear-gradient(90deg,rgba(154,139,255,.085),rgba(154,139,255,.018) 76%,rgba(7,11,18,.12));
+}
+.tcgate-gig-side-opp {
+  justify-content:flex-start;
+  border-right:3px solid rgba(255,154,111,.72);
+  background:linear-gradient(270deg,rgba(255,154,111,.085),rgba(255,154,111,.018) 76%,rgba(7,11,18,.12));
+}
+.tcgate-gig-side.die-drop-target { border-style:dashed; }
+.tcgate-gig-side-self.die-drop-active { border-color:rgba(154,139,255,.72);box-shadow:inset 0 0 28px rgba(154,139,255,.08),0 0 0 1px rgba(154,139,255,.12); }
+.tcgate-gig-side-opp.die-drop-active { border-color:rgba(255,154,111,.72);box-shadow:inset 0 0 28px rgba(255,154,111,.08),0 0 0 1px rgba(255,154,111,.12); }
+
+.tcgate-gig-dice-lane { display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;overflow:visible; }
+.tcgate-gig-score { flex:0 0 48px;text-align:center;line-height:1; }
+.tcgate-gig-score span { display:block;margin-bottom:3px;color:#8190aa;font-size:9px;font-weight:700;letter-spacing:.12em; }
+.tcgate-gig-score strong { display:block;font-size:22px;font-weight:800; }
+.tcgate-gig-score-self strong { color:#9a8bff; }
+.tcgate-gig-score-opp strong { color:#ff9a6f; }
+
+.tcgate-die-wrap {
+  position:relative;
+  width:52px;
+  height:92px;
+  flex:0 0 52px;
+  display:grid;
+  place-items:center;
+  overflow:visible;
+  transition:opacity .12s ease,transform .18s ease;
+}
+.tcgate-die-wrap.just-moved { animation:tcgate-die-arrive .5s cubic-bezier(.2,.85,.2,1); }
+.tcgate-die-wrap.is-dragging-die { opacity:.28; }
+@keyframes tcgate-die-arrive { 0%{transform:scale(.82)} 60%{transform:scale(1.08)} 100%{transform:scale(1)} }
+
+.tcgate-die-rail { position:relative;width:50px;height:88px;display:grid;place-items:center;color:inherit; }
+.tcgate-die-rail::before {
+  content:'';
+  position:absolute;
+  inset:0 7px;
+  border:1.5px solid currentColor;
+  border-radius:999px;
+  background:linear-gradient(180deg,rgba(16,22,34,.84),rgba(8,12,20,.95));
+  opacity:0;
+  transform:scaleY(.76);
+  transition:opacity .12s ease,transform .12s ease;
+  pointer-events:none;
+}
+.tcgate-die-rail.self { color:#9a8bff; }
+.tcgate-die-rail.opponent { color:#ff9a6f; }
+.tcgate-die-wrap:hover .tcgate-die-rail::before,
+.tcgate-die-wrap:focus-within .tcgate-die-rail::before { opacity:1;transform:scaleY(1); }
+
+.tcgate-die {
+  position:absolute;
+  left:50%;top:50%;transform:translate(-50%,-50%);
+  width:50px;height:50px;
+  display:grid;place-items:center;
+  z-index:4;
+  cursor:grab;
+  touch-action:none;
+  user-select:none;
+  color:inherit;
+}
+.tcgate-die:active { cursor:grabbing; }
+.tcgate-die-shape {
+  position:absolute;
+  inset:0;
+  display:block;
+  background:currentColor;
+  -webkit-mask:var(--die-mask) center/contain no-repeat;
+  mask:var(--die-mask) center/contain no-repeat;
+  filter:drop-shadow(0 0 8px color-mix(in srgb,currentColor 25%,transparent));
+  pointer-events:none;
+}
+.tcgate-die-value {
+  position:relative;
+  z-index:2;
+  min-width:22px;
+  padding:1px 3px 2px;
+  border-radius:5px;
+  background:rgba(7,11,18,.82);
+  color:currentColor;
+  font-size:12px;
+  font-weight:900;
+  line-height:1;
+  text-align:center;
+  pointer-events:none;
+}
+
+.tcgate-die-adjust {
+  position:absolute;
+  left:50%;transform:translateX(-50%);
+  width:34px;height:28px;
+  padding:0;border:0;background:transparent;color:currentColor;
+  font-size:22px;font-weight:800;line-height:1;
+  display:grid;place-items:center;
+  opacity:0;pointer-events:none;z-index:7;cursor:pointer;
+  transition:opacity .1s ease,transform .1s ease;
+}
+.tcgate-die-adjust-plus { top:2px; }
+.tcgate-die-adjust-minus { bottom:2px; }
+.tcgate-die-wrap:hover .tcgate-die-adjust,
+.tcgate-die-wrap:focus-within .tcgate-die-adjust { opacity:1;pointer-events:auto; }
+.tcgate-die-adjust:hover,.tcgate-die-adjust:focus-visible { transform:translateX(-50%) scale(1.18);outline:none; }
+
+.tcgate-die-drag-ghost {
+  position:fixed !important;
+  width:58px !important;height:58px !important;
+  z-index:10050 !important;
+  transform:translate(-50%,-50%) scale(1.08) !important;
+  opacity:.98 !important;
+  pointer-events:none !important;
+  filter:drop-shadow(0 14px 24px rgba(0,0,0,.52)) !important;
+}
+.opponent-feed-card:fullscreen .tcgate-die-drag-ghost { display:grid !important; }
+.tcgate-gig-track.is-tight .tcgate-die-wrap { width:48px;flex-basis:48px; }
+.tcgate-gig-track.is-tight .tcgate-die { width:46px;height:46px; }
+.tcgate-gig-track.is-tight .tcgate-gig-dice-lane { gap:3px; }
+
+/* Local preview eye: this only hides the local PiP; it never disables the camera track. */
+.local-feed-visibility {
+  position:absolute;z-index:44;width:30px;height:30px;display:grid;place-items:center;padding:0;
+  border:1px solid rgba(151,164,196,.28);border-radius:9px;background:rgba(7,11,18,.84);color:#dce4f5;
+  box-shadow:0 8px 20px rgba(0,0,0,.22);backdrop-filter:blur(8px);cursor:pointer;
+  transition:border-color .14s ease,background .14s ease,transform .14s ease;
+}
+.local-feed-visibility:hover { border-color:rgba(166,140,255,.54);background:rgba(14,18,31,.94);transform:translateY(-1px); }
+.local-feed-visibility svg { width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round; }
+#toggleLocalPreview { top:7px;right:7px; }
+.tcgate-local-pip.preview-hidden { display:none !important; }
+.local-feed-restore { left:16px;bottom:16px;min-height:0;padding:0; }
+.local-feed-restore.hidden { display:none !important; }
+
+/* Fullscreen controls stay in the top chrome, away from the movable dice bar. */
+.opponent-feed-card:fullscreen .tcgate-feed-head {
+  position:relative;z-index:95;padding-right:12px;background:rgba(6,10,16,.93);box-shadow:0 8px 26px rgba(0,0,0,.18);
+}
+.opponent-feed-card:fullscreen .tcgate-feed-actions {
+  padding:5px;border:1px solid rgba(113,126,158,.18);border-radius:11px;background:rgba(8,12,20,.70);
+}
+.opponent-feed-card:fullscreen .tcgate-fullscreen-media,
+.opponent-feed-card:fullscreen .tcgate-fullscreen-button { width:38px;height:38px;border-radius:9px; }
+.opponent-feed-card:fullscreen .local-feed-restore { left:18px;top:72px;bottom:auto;z-index:96; }
+
+/* Fullscreen card: keep the entire card visible and keep it clear of the controls. */
+.opponent-feed-card:fullscreen .fullscreen-card-preview.tcgate-fullscreen-card { top:72px;right:18px; }
+.opponent-feed-card:fullscreen .tcgate-fullscreen-card.expanded {
+  inset:54px 0 0 !important;
+  width:auto !important;height:auto !important;
+  padding:28px 24px 42px !important;
+  display:grid !important;place-items:center !important;
+  background:rgba(3,6,11,.94) !important;backdrop-filter:blur(16px);
+  z-index:100 !important;
+}
+.opponent-feed-card:fullscreen .tcgate-fullscreen-card.expanded .tcgate-fullscreen-card-slot {
+  width:min(520px,78vw) !important;height:min(76vh,760px) !important;
+  display:flex;align-items:center;justify-content:center;border:0;background:transparent;overflow:hidden;
+}
+.opponent-feed-card:fullscreen .tcgate-fullscreen-card.expanded .tcgate-fullscreen-card-slot img {
+  width:100% !important;height:100% !important;max-width:100% !important;max-height:100% !important;
+  object-fit:contain !important;object-position:center !important;border-radius:10px;
+}
+
+/* Normal zoom modal gets the same contain-only reading behaviour. */
+#cardModal .real-modal-card-wrap {
+  width:min(520px,86vw);height:min(82vh,760px);display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+#cardModal .modal-card-image { width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center;border-radius:10px; }
+
+/* Keep the alpha diagnostics secondary to the game surface. */
+.tcgate-alpha-diagnostics { opacity:.55;transition:opacity .15s ease; }
+.tcgate-alpha-diagnostics:hover { opacity:1; }
+
+@media (max-width:1180px) {
+  .tcgate-gig-panel,.tcgate-gig-panel.is-fullscreen { width:min(860px,calc(100% - 18px)); }
+  .tcgate-gig-track.is-tight .tcgate-die-wrap { width:44px;flex-basis:44px; }
+  .tcgate-gig-track.is-tight .tcgate-die { width:43px;height:43px; }
+}
+@media (max-width:900px) {
+  .tcgate-gig-panel { bottom:28px;width:calc(100% - 16px); }
+  .tcgate-gig-track { grid-template-columns:1fr !important;gap:7px; }
+  .tcgate-gig-divider { display:none; }
+  .tcgate-gig-side { justify-content:center; }
+  .tcgate-gig-panel.is-fullscreen { left:8px;right:8px;width:auto;bottom:8px; }
+}
+.opponent-feed-card:fullscreen { position:relative; }

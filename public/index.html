@@ -254,12 +254,18 @@
               </div>
 
               <div id="localFeed" class="video-placeholder local-video tcgate-local-pip">
+                <button id="toggleLocalPreview" class="local-feed-visibility" type="button" aria-label="Masquer votre flux" title="Masquer votre flux">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.7"/></svg>
+                </button>
                 <video id="localVideo" autoplay muted playsinline></video>
                 <div id="localVideoPlaceholder" class="video-center small">
                   <div class="camera-orb small">CAM</div>
                   <span>Aperçu caméra locale</span>
                 </div>
               </div>
+              <button id="restoreLocalFeed" class="local-feed-visibility local-feed-restore hidden" type="button" aria-label="Afficher votre flux" title="Afficher votre flux">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.1A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a14.6 14.6 0 0 1-2.3 3.1M6.2 7.2C3.8 9 2.5 12 2.5 12s3.5 6 9.5 6a10.5 10.5 0 0 0 3-.4"/><path d="M9.9 9.9A3 3 0 0 0 14.1 14.1"/></svg>
+              </button>
 
               <aside id="fullscreenCardPreview" class="fullscreen-card-preview tcgate-fullscreen-card vision-only hidden" aria-live="polite">
                 <div class="tcgate-fullscreen-card-slot">
@@ -272,6 +278,29 @@
 
               <button id="demoHoverCard" class="demo-hotspot hidden" tabindex="-1" aria-hidden="true">Simuler une carte survolée</button>
             </div>
+          </div>
+
+          <div id="gigDiceMount" class="tcgate-gig-mount game-specific-cyberpunk">
+            <section id="gigDicePanel" class="tcgate-gig-panel hidden" aria-label="Compteur de dés Cyberpunk">
+              <button id="gigDiceDragHandle" class="tcgate-gig-drag-handle" type="button" aria-label="Déplacer le panneau des dés" title="Déplacer le panneau">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+              </button>
+              <div class="tcgate-gig-track">
+                <div class="tcgate-gig-side tcgate-gig-side-self">
+                  <div class="tcgate-gig-score tcgate-gig-score-self" aria-label="Street Cred joueur">
+                    <span>SC</span><strong id="gigSelfCred">0</strong>
+                  </div>
+                  <div id="gigSelfDice" class="tcgate-gig-dice-lane" aria-label="Vos dés"></div>
+                </div>
+                <div class="tcgate-gig-divider" aria-hidden="true"></div>
+                <div class="tcgate-gig-side tcgate-gig-side-opp">
+                  <div id="gigOpponentDice" class="tcgate-gig-dice-lane" aria-label="Dés adverses"></div>
+                  <div class="tcgate-gig-score tcgate-gig-score-opp" aria-label="Street Cred adversaire">
+                    <span>SC</span><strong id="gigOpponentCred">0</strong>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
 
           <div class="game-hint vision-alpha-hint vision-only tcgate-alpha-diagnostics">
