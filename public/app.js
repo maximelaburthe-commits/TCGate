@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 10';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 10 · UI 1.0.1';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -55,6 +55,12 @@ const state = {
   micEnabled: false,
   selectedCameraId: null,
   selectedMicrophoneId: null,
+  localPreviewVisible: true,
+
+  gigDice: [],
+  dieDrag: null,
+  lastMovedDieId: null,
+
   lostCameraId: null,
   lostMicrophoneId: null,
   lostCameraLabel: null,
@@ -119,6 +125,8 @@ const state = {
   visionMetricsTimer: null,
   calibrationResizeTimer: null,
   currentIdentifiedCard: null,
+  cardDisplayHideTimer: null,
+  cardDisplayHovering: false,
   lastIdentificationEventKey: null,
   visionStateReady: false,
   visionFeedback: [],
@@ -293,6 +301,7 @@ function saveRoomSession() {
       role: state.role,
       playerName: state.playerName,
       game: state.game,
+      gigDice: gigDiceEnabledForCurrentGame() ? serializeGigState() : null,
       savedAt: Date.now()
     }));
   } catch {}
@@ -514,6 +523,339 @@ function visionEnabledForCurrentGame() {
   return state.game === 'cyberpunk';
 }
 
+function gigDiceEnabledForCurrentGame() {
+  return state.game === 'cyberpunk';
+}
+
+function localGigRole() {
+  return state.role === 'guest' ? 'guest' : 'host';
+}
+
+function opponentGigRole() {
+  return localGigRole() === 'host' ? 'guest' : 'host';
+}
+
+function createGigDiceState() {
+  const sides = [4, 6, 8, 10, 12, 20];
+  const hostValues = [3, 4, 5, 6, 7, 10];
+  const guestValues = [2, 3, 4, 5, 6, 9];
+  return [
+    ...sides.map((side, index) => ({ id: `host-d${side}`, origin: 'host', owner: 'host', sides: side, value: hostValues[index] })),
+    ...sides.map((side, index) => ({ id: `guest-d${side}`, origin: 'guest', owner: 'guest', sides: side, value: guestValues[index] }))
+  ];
+}
+
+function validGigDiceState(dice) {
+  if (!Array.isArray(dice) || dice.length !== 12) return false;
+  const allowedSides = new Set([4, 6, 8, 10, 12, 20]);
+  const ids = new Set();
+  for (const die of dice) {
+    if (!die || typeof die !== 'object') return false;
+    if (typeof die.id !== 'string' || ids.has(die.id)) return false;
+    ids.add(die.id);
+    if (!['host', 'guest'].includes(die.origin) || !['host', 'guest'].includes(die.owner)) return false;
+    const sides = Number(die.sides);
+    const value = Number(die.value);
+    if (!allowedSides.has(sides) || !Number.isInteger(value) || value < 1 || value > sides) return false;
+  }
+  return true;
+}
+
+function ensureGigDiceState() {
+  if (!validGigDiceState(state.gigDice)) state.gigDice = createGigDiceState();
+  return state.gigDice;
+}
+
+function getGigDice(uiOwner) {
+  ensureGigDiceState();
+  const canonicalOwner = uiOwner === 'self' ? localGigRole() : opponentGigRole();
+  return state.gigDice
+    .filter(die => die.owner === canonicalOwner)
+    .sort((a, b) => a.sides - b.sides || a.origin.localeCompare(b.origin) || a.id.localeCompare(b.id));
+}
+
+function streetCred(uiOwner) {
+  return getGigDice(uiOwner).reduce((sum, die) => sum + Number(die.value || 0), 0);
+}
+
+function dieUiOriginClass(die) {
+  return die.origin === localGigRole() ? 'self' : 'opponent';
+}
+
+function renderGigLane(uiOwner, containerId) {
+  const lane = $(containerId);
+  if (!lane) return;
+  lane.innerHTML = getGigDice(uiOwner).map(die => {
+    const originClass = dieUiOriginClass(die);
+    return `
+      <div class="tcgate-die-wrap ${state.lastMovedDieId === die.id ? 'just-moved' : ''}" data-die-id="${die.id}">
+        <div class="tcgate-die-rail ${originClass}">
+          <button class="tcgate-die-adjust tcgate-die-adjust-plus" type="button" data-action="increment" aria-label="Augmenter la valeur">+</button>
+          <div class="tcgate-die ${originClass}" aria-label="Dé à ${die.sides} faces, valeur ${die.value}">
+            <img class="tcgate-die-icon" src="/assets/dice/${originClass}/D${die.sides}.svg" alt="" aria-hidden="true">
+            <span class="tcgate-die-value">${die.value}</span>
+          </div>
+          <button class="tcgate-die-adjust tcgate-die-adjust-minus" type="button" data-action="decrement" aria-label="Diminuer la valeur">−</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderGigDicePanel() {
+  const panel = $('gigDicePanel');
+  const visible = gigDiceEnabledForCurrentGame();
+  panel?.classList.toggle('hidden', !visible);
+  if (!visible || !panel) return;
+
+  const selfDice = getGigDice('self');
+  const opponentDice = getGigDice('opponent');
+  const selfSide = panel.querySelector('.tcgate-gig-side-self');
+  const opponentSide = panel.querySelector('.tcgate-gig-side-opp');
+  const track = panel.querySelector('.tcgate-gig-track');
+  selfSide?.setAttribute('data-dice-count', String(selfDice.length));
+  opponentSide?.setAttribute('data-dice-count', String(opponentDice.length));
+
+  const SIDE_PADDING = 18;
+  const SCORE_WIDTH = 48;
+  const SCORE_LANE_GAP = 10;
+  const DIE_WIDTH = 52;
+  const DIE_GAP = 6;
+  const GRID_GAPS_AND_DIVIDER = 29;
+  const sideDemand = count => SIDE_PADDING + SCORE_WIDTH + SCORE_LANE_GAP +
+    (count ? count * DIE_WIDTH + Math.max(0, count - 1) * DIE_GAP : 0);
+  const selfDemand = sideDemand(selfDice.length);
+  const opponentDemand = sideDemand(opponentDice.length);
+
+  if (track) {
+    const usable = Math.max(0, track.clientWidth - GRID_GAPS_AND_DIVIDER);
+    const wanted = selfDemand + opponentDemand;
+    if (usable >= wanted || usable === 0) {
+      track.style.gridTemplateColumns = `${selfDemand}px 1px ${opponentDemand}px`;
+      track.classList.remove('is-tight');
+    } else {
+      const selfShare = selfDemand / Math.max(1, wanted);
+      track.style.gridTemplateColumns = `${selfShare}fr 1px ${1 - selfShare}fr`;
+      track.classList.add('is-tight');
+    }
+  }
+
+  renderGigLane('self', 'gigSelfDice');
+  renderGigLane('opponent', 'gigOpponentDice');
+  $('gigSelfCred').textContent = streetCred('self');
+  $('gigOpponentCred').textContent = streetCred('opponent');
+}
+
+function serializeGigState() {
+  ensureGigDiceState();
+  return state.gigDice.map(die => ({
+    id: die.id,
+    origin: die.origin,
+    owner: die.owner,
+    sides: Number(die.sides),
+    value: Number(die.value)
+  }));
+}
+
+function persistGigState() {
+  saveRoomSession();
+}
+
+async function sendGigState(source = 'local-change') {
+  if (!gigDiceEnabledForCurrentGame() || !state.opponentId) return null;
+  const result = await sendSignal('gig-state', { dice: serializeGigState(), source });
+  logEvent('gig-state-sent', { source, delivered: result?.delivered ?? null });
+  return result;
+}
+
+function requestGigState() {
+  if (!gigDiceEnabledForCurrentGame() || !state.opponentId) return;
+  if (state.role === 'guest') sendSignal('gig-state', { request: true }).catch(()=>{});
+  else sendGigState('host-initial').catch(()=>{});
+}
+
+function applyRemoteGigState(payload = {}) {
+  if (!gigDiceEnabledForCurrentGame() || !validGigDiceState(payload.dice)) return false;
+  state.gigDice = payload.dice.map(die => ({ ...die, sides: Number(die.sides), value: Number(die.value) }));
+  state.lastMovedDieId = null;
+  renderGigDicePanel();
+  persistGigState();
+  logEvent('gig-state-applied', { source: payload.source || 'remote' });
+  return true;
+}
+
+function changeDieValue(dieId, delta) {
+  const die = ensureGigDiceState().find(item => item.id === dieId);
+  if (!die) return;
+  die.value = Math.min(die.sides, Math.max(1, Number(die.value) + delta));
+  renderGigDicePanel();
+  persistGigState();
+  sendGigState('value-change').catch(()=>{});
+}
+
+function transferDie(dieId, targetUiOwner) {
+  const die = ensureGigDiceState().find(item => item.id === dieId);
+  if (!die) return false;
+  const targetOwner = targetUiOwner === 'self' ? localGigRole() : opponentGigRole();
+  if (die.owner === targetOwner) return false;
+  die.owner = targetOwner;
+  state.lastMovedDieId = die.id;
+  renderGigDicePanel();
+  persistGigState();
+  sendGigState('die-transfer').catch(()=>{});
+  window.setTimeout(() => {
+    if (state.lastMovedDieId === die.id) {
+      state.lastMovedDieId = null;
+      document.querySelector(`[data-die-id="${die.id}"]`)?.classList.remove('just-moved');
+    }
+  }, 520);
+  return true;
+}
+
+function clearDieDropTargets() {
+  document.querySelectorAll('.tcgate-gig-side').forEach(side => side.classList.remove('die-drop-target', 'die-drop-active'));
+}
+
+function dieDropOwnerAtPoint(clientX, clientY, sourceUiOwner) {
+  const targetUiOwner = sourceUiOwner === 'self' ? 'opponent' : 'self';
+  const targetSide = document.querySelector(`.tcgate-gig-side-${targetUiOwner === 'self' ? 'self' : 'opp'}`);
+  if (!targetSide) return null;
+  const rect = targetSide.getBoundingClientRect();
+  return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom ? targetUiOwner : null;
+}
+
+function uiOwnerForDie(die) {
+  return die.owner === localGigRole() ? 'self' : 'opponent';
+}
+
+function beginDieDrag(event, dieWrap) {
+  const dieId = dieWrap.dataset.dieId;
+  const die = ensureGigDiceState().find(item => item.id === dieId);
+  const dieEl = dieWrap.querySelector('.tcgate-die');
+  if (!die || !dieEl) return;
+  state.dieDrag = {
+    pointerId: event.pointerId,
+    dieId,
+    sourceUiOwner: uiOwnerForDie(die),
+    startX: event.clientX,
+    startY: event.clientY,
+    dragging: false,
+    ghost: null,
+    sourceEl: dieWrap
+  };
+  dieEl.setPointerCapture?.(event.pointerId);
+}
+
+function updateDieDrag(event) {
+  const drag = state.dieDrag;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  const distance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
+  if (!drag.dragging && distance < 6) return;
+
+  if (!drag.dragging) {
+    drag.dragging = true;
+    const dieEl = drag.sourceEl.querySelector('.tcgate-die');
+    drag.ghost = dieEl?.cloneNode(true) || null;
+    if (drag.ghost) {
+      drag.ghost.classList.add('tcgate-die-drag-ghost');
+      const fullscreenRoot = document.querySelector('.opponent-feed-card');
+      const ghostHost = document.fullscreenElement === fullscreenRoot ? fullscreenRoot : document.body;
+      ghostHost.appendChild(drag.ghost);
+    }
+    drag.sourceEl.classList.add('is-dragging-die');
+    const targetSide = document.querySelector(drag.sourceUiOwner === 'self' ? '.tcgate-gig-side-opp' : '.tcgate-gig-side-self');
+    targetSide?.classList.add('die-drop-target');
+  }
+
+  if (drag.ghost) {
+    drag.ghost.style.left = `${event.clientX}px`;
+    drag.ghost.style.top = `${event.clientY}px`;
+  }
+  const targetUiOwner = dieDropOwnerAtPoint(event.clientX, event.clientY, drag.sourceUiOwner);
+  const targetSide = document.querySelector(drag.sourceUiOwner === 'self' ? '.tcgate-gig-side-opp' : '.tcgate-gig-side-self');
+  targetSide?.classList.toggle('die-drop-active', Boolean(targetUiOwner));
+  event.preventDefault();
+}
+
+function finishDieDrag(event) {
+  const drag = state.dieDrag;
+  if (!drag || (event.pointerId != null && event.pointerId !== drag.pointerId)) return;
+  const targetUiOwner = drag.dragging ? dieDropOwnerAtPoint(event.clientX, event.clientY, drag.sourceUiOwner) : null;
+  drag.ghost?.remove();
+  drag.sourceEl?.classList.remove('is-dragging-die');
+  clearDieDropTargets();
+  state.dieDrag = null;
+  if (targetUiOwner && transferDie(drag.dieId, targetUiOwner)) toast('Dé transféré.');
+}
+
+function resetGigPanelPosition() {
+  const panel = $('gigDicePanel');
+  if (!panel) return;
+  panel.style.left = '';
+  panel.style.top = '';
+  panel.style.right = '';
+  panel.style.bottom = '';
+  panel.style.transform = '';
+}
+
+function moveGigPanelForFullscreen() {
+  const panel = $('gigDicePanel');
+  const mount = $('gigDiceMount');
+  const fullscreenRoot = document.querySelector('.opponent-feed-card');
+  if (!panel || !mount || !fullscreenRoot) return;
+  if (document.fullscreenElement === fullscreenRoot) {
+    if (panel.parentElement !== fullscreenRoot) fullscreenRoot.appendChild(panel);
+    panel.classList.add('is-fullscreen');
+  } else {
+    if (panel.parentElement !== mount) mount.appendChild(panel);
+    panel.classList.remove('is-fullscreen');
+  }
+  resetGigPanelPosition();
+}
+
+function setupDraggableGigPanel() {
+  const panel = $('gigDicePanel');
+  const handle = $('gigDiceDragHandle');
+  if (!panel || !handle || panel.dataset.draggableBound === '1') return;
+  panel.dataset.draggableBound = '1';
+  let drag = null;
+  const getContainer = () => panel.classList.contains('is-fullscreen')
+    ? document.querySelector('.opponent-feed-card')
+    : document.querySelector('.tcgate-opponent-column');
+
+  handle.addEventListener('pointerdown', event => {
+    const container = getContainer();
+    if (!container) return;
+    const rect = panel.getBoundingClientRect();
+    drag = { pointerId: event.pointerId, offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
+    panel.dataset.dragging = 'true';
+    handle.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  });
+  const move = event => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const container = getContainer();
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const left = Math.max(8, Math.min(rect.width - panel.offsetWidth - 8, event.clientX - rect.left - drag.offsetX));
+    const top = Math.max(8, Math.min(rect.height - panel.offsetHeight - 8, event.clientY - rect.top - drag.offsetY));
+    panel.style.left = `${left}px`;
+    panel.style.top = `${top}px`;
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+    panel.style.transform = 'none';
+    event.preventDefault();
+  };
+  const stop = event => {
+    if (!drag || (event.pointerId != null && event.pointerId !== drag.pointerId)) return;
+    try { handle.releasePointerCapture?.(drag.pointerId); } catch {}
+    drag = null;
+    panel.dataset.dragging = 'false';
+  };
+  window.addEventListener('pointermove', move, { passive: false });
+  window.addEventListener('pointerup', stop);
+  window.addEventListener('pointercancel', stop);
+}
+
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const existing = document.querySelector(`script[data-tcgate-dynamic="${src}"]`);
@@ -565,6 +907,7 @@ function applyGameModeUi() {
   screens.game?.classList.toggle('no-vision-mode', !visionEnabled);
   $('lobbyGameLabel').textContent = gameLabel();
   $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
+  renderGigDicePanel();
 
   if (!visionEnabled) {
     setVisionStatus('Vision : désactivée');
@@ -727,6 +1070,31 @@ function startVisionMetricsSampler() {
   },5000);
 }
 
+const CARD_DISPLAY_HIDE_DELAY_MS = 1200;
+
+function cancelCardDisplayHide() {
+  clearTimeout(state.cardDisplayHideTimer);
+  state.cardDisplayHideTimer = null;
+}
+
+function showSideIdentifiedCard(card) {
+  if(!card?.imageUrl) return;
+  const image=$('displayCardImage');
+  const button=$('displayCardButton');
+  const empty=$('displayCardEmpty');
+  if(image){
+    image.src=card.imageUrl;
+    image.alt=card.name || 'Carte identifiée';
+  }
+  button?.classList.remove('hidden');
+  empty?.classList.add('hidden');
+}
+
+function hideSideIdentifiedCard() {
+  $('displayCardButton')?.classList.add('hidden');
+  $('displayCardEmpty')?.classList.remove('hidden');
+}
+
 function showFullscreenIdentifiedCard(card) {
   if(!card?.imageUrl) return;
   $('fullscreenIdentImage').src=card.imageUrl;
@@ -738,6 +1106,33 @@ function showFullscreenIdentifiedCard(card) {
 function hideFullscreenIdentifiedCard() {
   $('fullscreenCardPreview')?.classList.add('hidden');
   $('fullscreenCardPreview')?.classList.remove('expanded');
+}
+
+function presentIdentifiedCard(card) {
+  if(!card?.imageUrl) return;
+  cancelCardDisplayHide();
+  state.currentIdentifiedCard={...card};
+  showSideIdentifiedCard(state.currentIdentifiedCard);
+  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')){
+    showFullscreenIdentifiedCard(state.currentIdentifiedCard);
+  }
+}
+
+function clearVisibleCardNow(reason='handoff') {
+  cancelCardDisplayHide();
+  state.currentIdentifiedCard=null;
+  hideSideIdentifiedCard();
+  hideFullscreenIdentifiedCard();
+  logEvent('visible-card-cleared',{reason});
+}
+
+function scheduleVisibleCardClear(reason='pointer-left-card') {
+  if(!state.currentIdentifiedCard || state.cardDisplayHovering) return;
+  cancelCardDisplayHide();
+  state.cardDisplayHideTimer=setTimeout(()=>{
+    if(state.cardDisplayHovering) return;
+    clearVisibleCardNow(reason);
+  },CARD_DISPLAY_HIDE_DELAY_MS);
 }
 
 function syncIdentifiedCardUi(detail) {
@@ -753,15 +1148,13 @@ function syncIdentifiedCardUi(detail) {
     }
 
     const snap=window.TCGIdentificationLab?.getSnapshot?.();
-    if(snap?.pointerInsideStage){
-      state.currentIdentifiedCard=null;
-      hideFullscreenIdentifiedCard();
-      $('cardPreview')?.classList.add('empty');
+    if(snap?.pointerInsideStage && !snap?.hoveredTrack){
+      scheduleVisibleCardClear('pointer-left-card');
     }
     return;
   }
 
-  state.currentIdentifiedCard={
+  const card={
     name:detail.name,
     type:detail.type,
     image:detail.image,
@@ -770,11 +1163,7 @@ function syncIdentifiedCardUi(detail) {
     mode:detail.mode,
     matcherMs:detail.matcherMs
   };
-  $('cardPreview')?.classList.remove('empty');
-
-  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')){
-    showFullscreenIdentifiedCard(state.currentIdentifiedCard);
-  }
+  presentIdentifiedCard(card);
 
   const key=`${detail.trackUid}:${detail.image}:${detail.mode}`;
   if(state.lastIdentificationEventKey!==key){
@@ -795,7 +1184,7 @@ function syncMemoryVisibleCard() {
   const snap=window.TCGIdentificationLab?.getSnapshot?.();
   const visible=snap?.visibleIdentity || null;
   if(!visible?.accepted || !visible?.imageUrl) return;
-  state.currentIdentifiedCard={
+  presentIdentifiedCard({
     name:visible.name,
     type:visible.type,
     image:visible.image,
@@ -803,18 +1192,11 @@ function syncMemoryVisibleCard() {
     visualIndex:null,
     mode:visible.mode || 'memory-hover',
     matcherMs:0
-  };
-  $('cardPreview')?.classList.remove('empty');
-  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')){
-    showFullscreenIdentifiedCard(state.currentIdentifiedCard);
-  }
+  });
 }
 
 function clearCurrentVisibleCard(reason='handoff') {
-  state.currentIdentifiedCard=null;
-  hideFullscreenIdentifiedCard();
-  $('cardPreview')?.classList.add('empty');
-  logEvent('visible-card-cleared',{reason});
+  scheduleVisibleCardClear(reason);
 }
 
 function captureTesterVisionFeedback(kind) {
@@ -1145,11 +1527,24 @@ function updateMediaUi() {
   $('lobbyToggleMic').classList.toggle('active', state.micEnabled);
   $('toggleCam').classList.toggle('active', state.cameraEnabled);
   $('toggleMic').classList.toggle('active', state.micEnabled);
+  $('fullscreenCam')?.classList.toggle('active', state.cameraEnabled);
+  $('fullscreenMic')?.classList.toggle('active', state.micEnabled);
+  $('toggleCam').classList.toggle('muted', !state.cameraEnabled);
+  $('toggleMic').classList.toggle('muted', !state.micEnabled);
+  $('fullscreenCam')?.classList.toggle('muted', !state.cameraEnabled);
+  $('fullscreenMic')?.classList.toggle('muted', !state.micEnabled);
+  $('toggleCam').title = state.cameraEnabled ? 'Caméra active' : 'Caméra coupée';
+  $('toggleMic').title = state.micEnabled ? 'Micro actif' : 'Micro coupé';
+  if($('fullscreenCam')) $('fullscreenCam').title = $('toggleCam').title;
+  if($('fullscreenMic')) $('fullscreenMic').title = $('toggleMic').title;
 
   $('lobbyPreviewPlaceholder').classList.toggle('hidden', Boolean(videoTrack && state.cameraEnabled));
   $('localVideoPlaceholder').classList.toggle('hidden', Boolean(videoTrack && state.cameraEnabled));
   $('lobbyPreviewShell').classList.toggle('camera-off', !state.cameraEnabled);
   $('localFeed').classList.toggle('camera-off', !state.cameraEnabled);
+  const localPreviewVisible = state.cameraEnabled && state.localPreviewVisible;
+  $('localFeed').classList.toggle('preview-hidden', !localPreviewVisible);
+  $('restoreLocalFeed')?.classList.toggle('hidden', localPreviewVisible || !state.cameraEnabled);
 
   $('lobbyToggleCam').textContent = state.cameraEnabled ? 'Caméra active' : 'Caméra coupée';
   $('lobbyToggleMic').textContent = state.micEnabled ? 'Micro actif' : 'Micro coupé';
@@ -1481,6 +1876,7 @@ async function tryResumeSavedSession() {
   state.role = saved.role || null;
   state.playerName = saved.playerName || 'Joueur';
   state.game = saved.game || 'cyberpunk';
+  state.gigDice = validGigDiceState(saved.gigDice) ? saved.gigDice.map(die => ({ ...die })) : createGigDiceState();
 
   try {
     const result = await api('/api/resume', {
@@ -1579,6 +1975,8 @@ async function enterLobby() {
     state.role = result.role;
     state.roomSnapshot = result.room;
     state.game = result.room?.game || state.game || 'cyberpunk';
+    state.gigDice = createGigDiceState();
+    state.lastMovedDieId = null;
     state.rtcConfig = null;
     state.rtcConfigKey = null;
     state.rtcConfigLoading = null;
@@ -1842,6 +2240,7 @@ function applyRoomState(snapshot) {
 
   if(opponent && state.game==='cyberpunk'){
     prepareVision().catch(()=>{});
+    if (state.gameActive) requestGigState();
   }
 
   if (
@@ -1943,6 +2342,8 @@ async function enterNetworkGame() {
     showScreen('game');
     $('localVideo').srcObject = state.localStream;
     updateMediaUi();
+    renderGigDicePanel();
+    setupDraggableGigPanel();
     if (visionEnabledForCurrentGame()) prepareVision().catch(()=>{});
     setRtcStatus('Initialisation WebRTC…', 'warning');
 
@@ -1954,6 +2355,7 @@ async function enterNetworkGame() {
     }
 
     state.gameActive = true;
+    requestGigState();
     logEvent('game-enter', { role: state.role });
   } catch (err) {
     logEvent('game-enter-error', {
@@ -2616,6 +3018,16 @@ async function handleSignal(signal) {
     return;
   }
 
+  if (signal.type === 'gig-state') {
+    const payload = signal.payload || {};
+    if (payload.request === true) {
+      if (state.role === 'host') sendGigState('request-response').catch(()=>{});
+    } else {
+      applyRemoteGigState(payload);
+    }
+    return;
+  }
+
   if (signal.type === 'restart-request') {
     logEvent('rtc-restart-request-received', { fromRole: signal.fromRole || null });
     if (state.role === 'host' && state.gameActive) {
@@ -2792,6 +3204,10 @@ async function leaveRoom() {
   $('roomCodeInput').value = '';
   state.gameEntering = false;
   state.gameActive = false;
+  state.gigDice = createGigDiceState();
+  state.dieDrag = null;
+  state.lastMovedDieId = null;
+  state.localPreviewVisible = true;
   state.offerInFlight = false;
   state.offerSent = false;
   history.replaceState({}, '', location.pathname);
@@ -3386,20 +3802,47 @@ window.addEventListener('tcg-table-hover-hit',()=>{
 window.addEventListener('tcg-identification-visible',(event)=>{
   const visible=event.detail || null;
   if(!visible?.accepted || !visible?.imageUrl) return;
-  state.currentIdentifiedCard={
+  presentIdentifiedCard({
     name:visible.name, type:visible.type, image:visible.image, imageUrl:visible.imageUrl,
     visualIndex:null, mode:visible.mode||'memory-hover', matcherMs:0
-  };
-  $('cardPreview')?.classList.remove('empty');
-  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')) showFullscreenIdentifiedCard(state.currentIdentifiedCard);
+  });
 });
 
 window.addEventListener('tcg-identification-visible-cleared',(event)=>{
-  clearCurrentVisibleCard(event.detail?.reason || 'atomic-handoff');
+  // UI retention only: Vision may clear its internal result immediately, but the
+  // player gets a short grace period to move from the physical card to the HD panel.
+  scheduleVisibleCardClear(event.detail?.reason || 'pointer-left-card');
 });
 
 /* ---------- Bindings ---------- */
 
+$('gigDicePanel')?.addEventListener('pointerdown', event => {
+  if (event.target.closest('.tcgate-die-adjust') || event.target.closest('#gigDiceDragHandle')) return;
+  const dieWrap = event.target.closest('.tcgate-die-wrap');
+  if (dieWrap) beginDieDrag(event, dieWrap);
+});
+window.addEventListener('pointermove', updateDieDrag, { passive: false });
+window.addEventListener('pointerup', finishDieDrag);
+window.addEventListener('pointercancel', finishDieDrag);
+$('gigDicePanel')?.addEventListener('click', event => {
+  const dieWrap = event.target.closest('.tcgate-die-wrap');
+  const action = event.target.closest('[data-action]')?.dataset.action;
+  if (!dieWrap || !action) return;
+  event.stopPropagation();
+  if (action === 'increment') changeDieValue(dieWrap.dataset.dieId, 1);
+  if (action === 'decrement') changeDieValue(dieWrap.dataset.dieId, -1);
+});
+
+$('toggleLocalPreview')?.addEventListener('click', event => {
+  event.stopPropagation();
+  state.localPreviewVisible = false;
+  updateMediaUi();
+});
+$('restoreLocalFeed')?.addEventListener('click', event => {
+  event.stopPropagation();
+  state.localPreviewVisible = true;
+  updateMediaUi();
+});
 
 $('gameSelect').addEventListener('change', () => {
   const noGame = $('gameSelect').value === 'no-game';
@@ -3446,6 +3889,8 @@ $('lobbyToggleMic').addEventListener('click', () => setMicEnabled(!state.micEnab
 $('lobbyToggleCam').addEventListener('click', () => setCameraEnabled(!state.cameraEnabled));
 $('toggleMic').addEventListener('click', () => setMicEnabled(!state.micEnabled));
 $('toggleCam').addEventListener('click', () => setCameraEnabled(!state.cameraEnabled));
+$('fullscreenMic')?.addEventListener('click', () => setMicEnabled(!state.micEnabled));
+$('fullscreenCam')?.addEventListener('click', () => setCameraEnabled(!state.cameraEnabled));
 
 $('startGame').addEventListener('click', async () => {
   if (!state.opponentPresent) return toast('En attente de l’adversaire.');
@@ -3465,6 +3910,7 @@ $('leaveLobby').addEventListener('click', async () => {
 
 $('leaveGame').addEventListener('click', async () => {
   toggleDemoCard(false);
+  clearVisibleCardNow('leave-game');
   await leaveRoom();
   stopLocalStream();
   showScreen('home');
@@ -3487,17 +3933,33 @@ $('fullscreenOpponent').addEventListener('click', async () => {
 
 $('demoHoverCard').addEventListener('click', () => toggleDemoCard());
 $('expandCard').addEventListener('click', openCardModal);
-$('fullscreenExpandCard').addEventListener('click', () => {
+$('displayCardButton')?.addEventListener('click', openCardModal);
+
+function toggleFullscreenCardZoom(){
   if(!state.currentIdentifiedCard?.imageUrl) return toast('Aucune carte identifiée.');
-
   const opponentCard=document.querySelector('.opponent-feed-card');
-  const preview=$('fullscreenCardPreview');
+  if(document.fullscreenElement!==opponentCard) return openCardModal();
+  $('fullscreenCardPreview')?.classList.toggle('expanded');
+}
+$('fullscreenExpandCard').addEventListener('click', toggleFullscreenCardZoom);
+$('fullscreenIdentImage')?.addEventListener('click', toggleFullscreenCardZoom);
 
-  if(document.fullscreenElement===opponentCard){
-    preview.classList.toggle('expanded');
-  }else{
-    openCardModal();
-  }
+[$('displayCardPanel'), $('fullscreenCardPreview')].forEach(panel=>{
+  if(!panel) return;
+  panel.addEventListener('pointerenter',()=>{
+    state.cardDisplayHovering=true;
+    cancelCardDisplayHide();
+  });
+  panel.addEventListener('pointerleave',()=>{
+    state.cardDisplayHovering=false;
+    scheduleVisibleCardClear('left-hd-panel');
+  });
+});
+
+$('opponentFeed')?.addEventListener('pointerleave',()=>{
+  // Identification deliberately keeps the last accepted result when the pointer
+  // exits the video stage. Start the same grace period at that exact moment.
+  scheduleVisibleCardClear('left-video-stage');
 });
 $('closeCardModal').addEventListener('click', () => $('cardModal').classList.add('hidden'));
 $('cardModal').addEventListener('click', e => {
@@ -3506,10 +3968,18 @@ $('cardModal').addEventListener('click', e => {
 
 document.addEventListener('fullscreenchange', () => {
   const opponentCard=document.querySelector('.opponent-feed-card');
+  const button=$('fullscreenOpponent');
+  const active=document.fullscreenElement===opponentCard;
+  moveGigPanelForFullscreen();
+  renderGigDicePanel();
+  if(button){
+    button.title=active ? 'Quitter le plein écran' : 'Plein écran';
+    button.setAttribute('aria-label',button.title);
+  }
 
-  if(document.fullscreenElement===opponentCard && state.currentIdentifiedCard?.imageUrl){
+  if(active && state.currentIdentifiedCard?.imageUrl){
     showFullscreenIdentifiedCard(state.currentIdentifiedCard);
-  }else if(document.fullscreenElement!==opponentCard){
+  }else if(!active){
     $('fullscreenCardPreview').classList.remove('expanded');
     $('fullscreenCardPreview').classList.add('hidden');
   }
@@ -3518,6 +3988,11 @@ document.addEventListener('fullscreenchange', () => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') $('cardModal').classList.add('hidden');
 });
+
+state.gigDice = createGigDiceState();
+renderGigDicePanel();
+setupDraggableGigPanel();
+window.addEventListener('resize', () => renderGigDicePanel());
 
 window.addEventListener('beforeunload', () => {
   // Candidate 10: refresh keeps sessionStorage, while a full tab close can

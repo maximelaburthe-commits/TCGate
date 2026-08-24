@@ -12,33 +12,60 @@
 
     <!-- HOME -->
     <section id="screenHome" class="screen active">
-      <div class="home-shell">
-        <header class="brand tcgate-brand">
-          <img class="tcgate-wordmark" src="/assets/tcgate-logo-final.png" alt="TCGate">
-          <div class="alpha-chip">Alpha fermée · 0.1</div>
+      <div class="home-shell tcgate-home-shell">
+        <header class="tcgate-home-header" aria-label="TCGate">
+          <img class="tcgate-home-logo" src="/assets/tcgate-logo-final.png" alt="TCGate">
         </header>
 
-        <div class="home-card">
-          <div class="home-copy">
-            <span class="eyebrow">TCGate · première porte</span>
-            <h2>Your table,<br><span>one gate away.</span></h2>
-            <p>Deux joueurs, deux tables, une partie. Crée ou rejoins un salon, active ta webcam et joue avec tes vraies cartes. Vision s’occupe silencieusement de la détection, de l’identification et de la lecture HD.</p>
-            <div class="home-signature"><img src="/assets/tcgate-mark.svg" alt=""><span>Webcam · Vision · Lecture HD instantanée</span></div>
+        <div class="tcgate-home-hero">
+          <div class="tcgate-home-copy">
+            <h1>Jouez à vos TCG physiques à distance.</h1>
+            <p>
+              Une table. Vos cartes. <span>Votre adversaire.</span><br>
+              Créez une partie ou rejoignez une table existante en quelques secondes.
+            </p>
+            <div class="tcgate-home-actions">
+              <div id="resumeSessionCard" class="resume-session-card hidden">
+                <span class="eyebrow">Partie en cours</span>
+                <strong id="resumeSessionTitle">Une partie peut être reprise</strong>
+                <small id="resumeSessionMeta">Reconnexion disponible pendant quelques minutes.</small>
+                <button id="resumeSessionButton" class="primary full">Reprendre la partie</button>
+              </div>
+              <button id="goCreate" class="primary large">Créer une partie</button>
+              <button id="goJoin" class="secondary large">Rejoindre une partie</button>
+            </div>
           </div>
 
-          <div class="home-actions">
-            <div id="resumeSessionCard" class="resume-session-card hidden">
-              <span class="eyebrow">Partie en cours</span>
-              <strong id="resumeSessionTitle">Une partie peut être reprise</strong>
-              <small id="resumeSessionMeta">Reconnexion disponible pendant quelques minutes.</small>
-              <button id="resumeSessionButton" class="primary full">Reprendre la partie</button>
-            </div>
-            <button id="goCreate" class="primary large">Créer une partie</button>
-            <button id="goJoin" class="secondary large">Rejoindre une partie</button>
+          <div class="tcgate-home-visual" aria-hidden="true">
+            <img src="/assets/home-portal-art-crop.png" alt="">
           </div>
         </div>
 
-        <p class="home-foot">TCGate Alpha fermée · réseau réel · Vision analyse uniquement le flux adverse · aucun enregistrement vidéo automatique.</p>
+        <div class="tcgate-home-steps" aria-label="Étapes principales">
+          <div class="tcgate-step-item">
+            <span class="tcgate-step-index">1</span>
+            <div>
+              <strong>Créer</strong>
+              <p>Créez votre table en un clic.</p>
+            </div>
+          </div>
+          <div class="tcgate-step-arrow">→</div>
+          <div class="tcgate-step-item">
+            <span class="tcgate-step-index">2</span>
+            <div>
+              <strong>Inviter</strong>
+              <p>Invitez un adversaire à vous rejoindre.</p>
+            </div>
+          </div>
+          <div class="tcgate-step-arrow">→</div>
+          <div class="tcgate-step-item">
+            <span class="tcgate-step-index">3</span>
+            <div>
+              <strong>Jouer</strong>
+              <p>Installez vos cartes et jouez.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -178,27 +205,31 @@
 
     <!-- GAME -->
     <section id="screenGame" class="screen game-screen">
-      <header class="game-topbar">
-        <div class="game-room tcgate-game-room">
-          <img class="tcgate-wordmark game" src="/assets/tcgate-logo-final.png" alt="TCGate">
-          <span class="live-dot"></span>
-          <div>
-            <strong id="gameTitle">Cyberpunk TCG</strong>
-            <small>Salon <span id="gameCode">R9K2MX</span> · Alpha fermée</small>
-          </div>
+      <header class="game-topbar tcgate-game-topbar">
+        <div class="tcgate-game-branding">
+          <img class="tcgate-wordmark game tcgate-game-logo" src="/assets/tcgate-logo-final.png" alt="TCGate">
         </div>
 
-        <div class="game-actions">
-          <span id="rtcStatus" class="rtc-status">Connexion…</span>
-          <button id="generateReportGame" class="ghost report-button compact-report">Rapport complet</button>
-          <button id="deviceMenuToggle" class="icon-button" title="Choisir caméra ou micro" aria-expanded="false">⚙</button>
-          <button id="toggleMic" class="icon-button active" title="Micro">🎙</button>
-          <button id="toggleCam" class="icon-button active" title="Caméra">◉</button>
-          <button id="leaveGame" class="danger-button">Quitter</button>
+        <div class="tcgate-game-session">
+          <span id="rtcStatus" class="rtc-status"><i></i> Connexion…</span>
+        </div>
+
+        <div class="game-actions tcgate-game-actions">
+          <button id="generateReportGame" class="ghost report-button compact-report tcgate-report-button" title="Générer un rapport complet">Rapport</button>
+          <button id="deviceMenuToggle" class="icon-button tcgate-media-button" title="Choisir caméra ou micro" aria-label="Périphériques" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="M19 13.5v-3l-2.2-.6a7.7 7.7 0 0 0-.7-1.6l1.1-2-2.1-2.1-2 1.1a7.7 7.7 0 0 0-1.6-.7L10.5 2h-3l-.6 2.2a7.7 7.7 0 0 0-1.6.7l-2-1.1-2.1 2.1 1.1 2a7.7 7.7 0 0 0-.7 1.6L0 10.5v3l2.2.6a7.7 7.7 0 0 0 .7 1.6l-1.1 2 2.1 2.1 2-1.1a7.7 7.7 0 0 0 1.6.7L8.5 22h3l.6-2.2a7.7 7.7 0 0 0 1.6-.7l2 1.1 2.1-2.1-1.1-2a7.7 7.7 0 0 0 .7-1.6L19 13.5Z"/></svg>
+          </button>
+          <button id="toggleMic" class="icon-button active tcgate-media-button" title="Micro actif" aria-label="Micro actif">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 1 0-7 0v5A3.5 3.5 0 0 0 12 15Z"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
+          </button>
+          <button id="toggleCam" class="icon-button active tcgate-media-button" title="Caméra active" aria-label="Caméra active">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h7A2.5 2.5 0 0 1 16 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 4 16.5v-9Z"/><path d="m16 10 4-2v8l-4-2"/></svg>
+          </button>
+          <button id="leaveGame" class="danger-button">Quitter la partie</button>
         </div>
       </header>
 
-      <div id="gameDeviceMenu" class="game-device-menu hidden">
+      <div id="gameDeviceMenu" class="game-device-menu hidden" aria-label="Choix des périphériques">
         <div>
           <strong>Périphériques</strong>
           <small id="gameDeviceStatus">Caméra et micro actifs</small>
@@ -214,18 +245,31 @@
         <button id="closeDeviceMenu" class="ghost small">Fermer</button>
       </div>
 
-      <main class="game-layout">
-        <section class="opponent-column">
-          <div class="feed-card opponent-feed-card">
-            <div class="feed-head">
-              <div>
+      <main class="game-layout tcgate-game-layout">
+        <section class="opponent-column tcgate-opponent-column">
+          <div class="feed-card opponent-feed-card tcgate-opponent-card">
+            <div class="feed-head tcgate-feed-head">
+              <div class="tcgate-peer-label">
                 <span class="feed-label">Adversaire</span>
-                <strong id="gameOpponentName">Joueur adverse</strong>
+                <div class="tcgate-peer-line">
+                  <strong id="gameOpponentName">Joueur adverse</strong>
+                  <span class="tcgate-peer-online"><i></i> En ligne</span>
+                </div>
               </div>
-              <button id="fullscreenOpponent" class="icon-button subtle" title="Plein écran">⛶</button>
+              <div class="tcgate-feed-actions">
+                <button id="fullscreenMic" class="icon-button subtle tcgate-fullscreen-media" title="Micro actif" aria-label="Micro actif">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 1 0-7 0v5A3.5 3.5 0 0 0 12 15Z"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
+                </button>
+                <button id="fullscreenCam" class="icon-button subtle tcgate-fullscreen-media" title="Caméra active" aria-label="Caméra active">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h7A2.5 2.5 0 0 1 16 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 4 16.5v-9Z"/><path d="m16 10 4-2v8l-4-2"/></svg>
+                </button>
+                <button id="fullscreenOpponent" class="icon-button subtle tcgate-fullscreen-button" title="Plein écran" aria-label="Plein écran">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4H4v4M16 4h4v4M8 20H4v-4M16 20h4v-4"/></svg>
+                </button>
+              </div>
             </div>
 
-            <div id="opponentFeed" class="video-placeholder opponent-video">
+            <div id="opponentFeed" class="video-placeholder opponent-video tcgate-opponent-video">
               <video id="remoteVideo" autoplay playsinline></video>
               <canvas id="visionOverlay" class="vision-overlay vision-only" aria-hidden="true"></canvas>
               <div id="remoteVideoPlaceholder" class="video-center">
@@ -234,28 +278,57 @@
                 <span id="remoteVideoStatus">En attente de la connexion WebRTC…</span>
               </div>
 
-              <aside id="fullscreenCardPreview" class="fullscreen-card-preview vision-only hidden" aria-live="polite">
-                <div class="fullscreen-card-head">
-                  <div>
-                    <span>Carte survolée</span>
-                    <strong>Lecture HD</strong>
-                  </div>
-                  <button id="fullscreenExpandCard" class="icon-button subtle" type="button" title="Agrandir la carte">⛶</button>
+              <div id="localFeed" class="video-placeholder local-video tcgate-local-pip">
+                <button id="toggleLocalPreview" class="local-feed-visibility" type="button" aria-label="Masquer votre flux" title="Masquer votre flux">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.7"/></svg>
+                </button>
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div id="localVideoPlaceholder" class="video-center small">
+                  <div class="camera-orb small">CAM</div>
+                  <span>Aperçu caméra locale</span>
                 </div>
+              </div>
+              <button id="restoreLocalFeed" class="local-feed-visibility local-feed-restore hidden" type="button" aria-label="Afficher votre flux" title="Afficher votre flux">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.1A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a14.6 14.6 0 0 1-2.3 3.1M6.2 7.2C3.8 9 2.5 12 2.5 12s3.5 6 9.5 6a10.5 10.5 0 0 0 3-.4"/><path d="M9.9 9.9A3 3 0 0 0 14.1 14.1"/></svg>
+              </button>
 
-                <div class="fullscreen-real-card">
+              <aside id="fullscreenCardPreview" class="fullscreen-card-preview tcgate-fullscreen-card vision-only hidden" aria-live="polite">
+                <div class="tcgate-fullscreen-card-slot">
                   <img id="fullscreenIdentImage" alt="Carte identifiée" />
-                  <strong id="fullscreenIdentName">Carte identifiée</strong>
+                  <strong id="fullscreenIdentName" class="sr-only">Carte identifiée</strong>
                 </div>
+                <p>Survolez une carte</p>
+                <button id="fullscreenExpandCard" class="sr-only" type="button" tabindex="-1">Agrandir</button>
               </aside>
 
-              <button id="demoHoverCard" class="demo-hotspot hidden" tabindex="-1" aria-hidden="true">
-                Simuler une carte survolée
-              </button>
+              <button id="demoHoverCard" class="demo-hotspot hidden" tabindex="-1" aria-hidden="true">Simuler une carte survolée</button>
             </div>
           </div>
 
-          <div class="game-hint vision-alpha-hint vision-only">
+          <div id="gigDiceMount" class="tcgate-gig-mount game-specific-cyberpunk">
+            <section id="gigDicePanel" class="tcgate-gig-panel hidden" aria-label="Compteur de dés Cyberpunk">
+              <button id="gigDiceDragHandle" class="tcgate-gig-drag-handle" type="button" aria-label="Déplacer le panneau des dés" title="Déplacer le panneau">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+              </button>
+              <div class="tcgate-gig-track">
+                <div class="tcgate-gig-side tcgate-gig-side-self">
+                  <div class="tcgate-gig-score tcgate-gig-score-self" aria-label="Street Cred joueur">
+                    <span>SC</span><strong id="gigSelfCred">0</strong>
+                  </div>
+                  <div id="gigSelfDice" class="tcgate-gig-dice-lane" aria-label="Vos dés"></div>
+                </div>
+                <div class="tcgate-gig-divider" aria-hidden="true"></div>
+                <div class="tcgate-gig-side tcgate-gig-side-opp">
+                  <div id="gigOpponentDice" class="tcgate-gig-dice-lane" aria-label="Dés adverses"></div>
+                  <div class="tcgate-gig-score tcgate-gig-score-opp" aria-label="Street Cred adversaire">
+                    <span>SC</span><strong id="gigOpponentCred">0</strong>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="game-hint vision-alpha-hint vision-only tcgate-alpha-diagnostics">
             <span class="hint-dot"></span>
             <span id="visionStatus" class="vision-status-pill">Vision : préparation</span>
             <span id="calibrationStatus" class="vision-status-pill">Calibration : attente</span>
@@ -264,56 +337,18 @@
           </div>
         </section>
 
-        <aside class="game-side">
-          <section class="card-inspector vision-only">
-            <div class="side-title">
-              <div>
-                <span class="eyebrow">Carte survolée</span>
-                <h3>Lecture HD</h3>
+        <aside class="game-side tcgate-card-rail vision-only">
+          <section id="displayCardPanel" class="card-inspector tcgate-card-inspector">
+            <div class="tcgate-card-panel-title">Carte détectée</div>
+            <div id="displayCardSlot" class="tcgate-card-slot">
+              <div id="displayCardEmpty" class="tcgate-card-empty" aria-hidden="true">
+                <span></span>
               </div>
-              <button id="expandCard" class="icon-button subtle" title="Agrandir la carte">⛶</button>
+              <button id="displayCardButton" class="tcgate-display-card hidden" type="button" aria-label="Agrandir la carte survolée">
+                <img id="displayCardImage" alt="Carte survolée">
+              </button>
             </div>
-
-            <div id="cardPreview" class="card-preview empty">
-              <div id="identEmpty" class="card-placeholder">Survole une carte du plateau adverse.</div>
-
-              <div id="identResult" class="ident-product-result hidden">
-                <img id="identImage" alt="" />
-                <div class="ident-product-copy">
-                  <strong id="identName">—</strong>
-                  <span id="identType">—</span>
-                  <small id="identScore">—</small>
-                  <small id="identMargin" class="hidden">—</small>
-                </div>
-              </div>
-
-              <div id="identCandidates" class="hidden"></div>
-              <article id="demoCard" class="demo-card hidden" aria-hidden="true"></article>
-            </div>
-
-            <p class="card-inspector-help">Clique sur l’icône d’agrandissement pour une lecture confortable.</p>
-            <div class="vision-feedback" aria-label="Retour testeur Vision">
-              <span>Un problème ?</span>
-              <button id="feedbackMissedCard" class="ghost tiny-feedback" type="button">Carte non détectée</button>
-              <button id="feedbackWrongCard" class="ghost tiny-feedback" type="button">Mauvaise carte affichée</button>
-            </div>
-          </section>
-
-          <section class="local-feed-section">
-            <div class="side-title compact">
-              <div>
-                <span class="eyebrow">Vous</span>
-                <h3 id="localPlayerLabel">Joueur</h3>
-              </div>
-              <span class="connection-pill">Local</span>
-            </div>
-            <div id="localFeed" class="video-placeholder local-video">
-              <video id="localVideo" autoplay muted playsinline></video>
-              <div id="localVideoPlaceholder" class="video-center small">
-                <div class="camera-orb small">CAM</div>
-                <span>Aperçu caméra locale</span>
-              </div>
-            </div>
+            <p class="tcgate-card-hint">Survolez une carte</p>
           </section>
         </aside>
       </main>
@@ -382,6 +417,27 @@
     <span id="identLibraryStatus"></span>
     <span id="identMatcherStatus"></span>
     <button id="identRefreshButton"></button>
+    <span id="gameTitle"></span>
+    <span id="gameCode"></span>
+    <span id="localPlayerLabel"></span>
+
+    <div id="cardPreview" class="card-preview empty">
+      <div id="identEmpty" class="card-placeholder">Survole une carte du plateau adverse.</div>
+      <div id="identResult" class="ident-product-result hidden">
+        <img id="identImage" alt="" />
+        <div class="ident-product-copy">
+          <strong id="identName">—</strong>
+          <span id="identType">—</span>
+          <small id="identScore">—</small>
+          <small id="identMargin" class="hidden">—</small>
+        </div>
+      </div>
+      <div id="identCandidates" class="hidden"></div>
+      <article id="demoCard" class="demo-card hidden" aria-hidden="true"></article>
+    </div>
+    <button id="expandCard" type="button"></button>
+    <button id="feedbackMissedCard" type="button"></button>
+    <button id="feedbackWrongCard" type="button"></button>
   </div>
 
   <div id="toast" class="toast hidden"></div>

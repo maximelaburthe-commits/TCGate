@@ -30,3 +30,7 @@ Voir :
 - `SECURITY_REVIEW_ALPHA_C9.md`
 - `SECURITY_REVIEW_ALPHA_C10_DELTA.md`
 - `DEPLOY_RAILWAY.md`
+
+
+## Base UI Candidate 10
+Cette Candidate 10 corrective est basée sur **Candidate 9 · UI 1.0.1 corrective**.
