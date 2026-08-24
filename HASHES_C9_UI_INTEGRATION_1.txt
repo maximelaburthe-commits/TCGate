@@ -1,0 +1,4 @@
+1f522eb6e08e404982c48007a1bdb97044f382ad7a7793f16a0c2d13d4077539  public/index.html
+a433bb194f1bbdd6fdda9cf074f1d234f91b832306c70264aea76ac71d961849  public/app.js
+2a220ea58d516cf8a1d42c7be6ad88a9830e60afd2a51c3baa8c962af51e1c0b  public/tcgate-alpha.css
+f49d347cf18d51d6852aa30e9dd41466120c9c60557e5746a8c668432f08cc1c  public/assets/home-portal-art-crop.png

@@ -110,6 +110,8 @@ const state = {
   visionMetricsTimer: null,
   calibrationResizeTimer: null,
   currentIdentifiedCard: null,
+  cardDisplayHideTimer: null,
+  cardDisplayHovering: false,
   lastIdentificationEventKey: null,
   visionStateReady: false,
   visionFeedback: [],
@@ -583,6 +585,31 @@ function startVisionMetricsSampler() {
   },5000);
 }
 
+const CARD_DISPLAY_HIDE_DELAY_MS = 1200;
+
+function cancelCardDisplayHide() {
+  clearTimeout(state.cardDisplayHideTimer);
+  state.cardDisplayHideTimer = null;
+}
+
+function showSideIdentifiedCard(card) {
+  if(!card?.imageUrl) return;
+  const image=$('displayCardImage');
+  const button=$('displayCardButton');
+  const empty=$('displayCardEmpty');
+  if(image){
+    image.src=card.imageUrl;
+    image.alt=card.name || 'Carte identifiée';
+  }
+  button?.classList.remove('hidden');
+  empty?.classList.add('hidden');
+}
+
+function hideSideIdentifiedCard() {
+  $('displayCardButton')?.classList.add('hidden');
+  $('displayCardEmpty')?.classList.remove('hidden');
+}
+
 function showFullscreenIdentifiedCard(card) {
   if(!card?.imageUrl) return;
   $('fullscreenIdentImage').src=card.imageUrl;
@@ -594,6 +621,33 @@ function showFullscreenIdentifiedCard(card) {
 function hideFullscreenIdentifiedCard() {
   $('fullscreenCardPreview')?.classList.add('hidden');
   $('fullscreenCardPreview')?.classList.remove('expanded');
+}
+
+function presentIdentifiedCard(card) {
+  if(!card?.imageUrl) return;
+  cancelCardDisplayHide();
+  state.currentIdentifiedCard={...card};
+  showSideIdentifiedCard(state.currentIdentifiedCard);
+  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')){
+    showFullscreenIdentifiedCard(state.currentIdentifiedCard);
+  }
+}
+
+function clearVisibleCardNow(reason='handoff') {
+  cancelCardDisplayHide();
+  state.currentIdentifiedCard=null;
+  hideSideIdentifiedCard();
+  hideFullscreenIdentifiedCard();
+  logEvent('visible-card-cleared',{reason});
+}
+
+function scheduleVisibleCardClear(reason='pointer-left-card') {
+  if(!state.currentIdentifiedCard || state.cardDisplayHovering) return;
+  cancelCardDisplayHide();
+  state.cardDisplayHideTimer=setTimeout(()=>{
+    if(state.cardDisplayHovering) return;
+    clearVisibleCardNow(reason);
+  },CARD_DISPLAY_HIDE_DELAY_MS);
 }
 
 function syncIdentifiedCardUi(detail) {
@@ -609,15 +663,13 @@ function syncIdentifiedCardUi(detail) {
     }
 
     const snap=window.TCGIdentificationLab?.getSnapshot?.();
-    if(snap?.pointerInsideStage){
-      state.currentIdentifiedCard=null;
-      hideFullscreenIdentifiedCard();
-      $('cardPreview')?.classList.add('empty');
+    if(snap?.pointerInsideStage && !snap?.hoveredTrack){
+      scheduleVisibleCardClear('pointer-left-card');
     }
     return;
   }
 
-  state.currentIdentifiedCard={
+  const card={
     name:detail.name,
     type:detail.type,
     image:detail.image,
@@ -626,11 +678,7 @@ function syncIdentifiedCardUi(detail) {
     mode:detail.mode,
     matcherMs:detail.matcherMs
   };
-  $('cardPreview')?.classList.remove('empty');
-
-  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')){
-    showFullscreenIdentifiedCard(state.currentIdentifiedCard);
-  }
+  presentIdentifiedCard(card);
 
   const key=`${detail.trackUid}:${detail.image}:${detail.mode}`;
   if(state.lastIdentificationEventKey!==key){
@@ -651,7 +699,7 @@ function syncMemoryVisibleCard() {
   const snap=window.TCGIdentificationLab?.getSnapshot?.();
   const visible=snap?.visibleIdentity || null;
   if(!visible?.accepted || !visible?.imageUrl) return;
-  state.currentIdentifiedCard={
+  presentIdentifiedCard({
     name:visible.name,
     type:visible.type,
     image:visible.image,
@@ -659,18 +707,11 @@ function syncMemoryVisibleCard() {
     visualIndex:null,
     mode:visible.mode || 'memory-hover',
     matcherMs:0
-  };
-  $('cardPreview')?.classList.remove('empty');
-  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')){
-    showFullscreenIdentifiedCard(state.currentIdentifiedCard);
-  }
+  });
 }
 
 function clearCurrentVisibleCard(reason='handoff') {
-  state.currentIdentifiedCard=null;
-  hideFullscreenIdentifiedCard();
-  $('cardPreview')?.classList.add('empty');
-  logEvent('visible-card-cleared',{reason});
+  scheduleVisibleCardClear(reason);
 }
 
 function captureTesterVisionFeedback(kind) {
@@ -732,6 +773,16 @@ function updateMediaUi() {
   $('lobbyToggleMic').classList.toggle('active', state.micEnabled);
   $('toggleCam').classList.toggle('active', state.cameraEnabled);
   $('toggleMic').classList.toggle('active', state.micEnabled);
+  $('fullscreenCam')?.classList.toggle('active', state.cameraEnabled);
+  $('fullscreenMic')?.classList.toggle('active', state.micEnabled);
+  $('toggleCam').classList.toggle('muted', !state.cameraEnabled);
+  $('toggleMic').classList.toggle('muted', !state.micEnabled);
+  $('fullscreenCam')?.classList.toggle('muted', !state.cameraEnabled);
+  $('fullscreenMic')?.classList.toggle('muted', !state.micEnabled);
+  $('toggleCam').title = state.cameraEnabled ? 'Caméra active' : 'Caméra coupée';
+  $('toggleMic').title = state.micEnabled ? 'Micro actif' : 'Micro coupé';
+  if($('fullscreenCam')) $('fullscreenCam').title = $('toggleCam').title;
+  if($('fullscreenMic')) $('fullscreenMic').title = $('toggleMic').title;
 
   $('lobbyPreviewPlaceholder').classList.toggle('hidden', Boolean(videoTrack && state.cameraEnabled));
   $('localVideoPlaceholder').classList.toggle('hidden', Boolean(videoTrack && state.cameraEnabled));
@@ -2849,16 +2900,16 @@ window.addEventListener('tcg-table-hover-hit',()=>{
 window.addEventListener('tcg-identification-visible',(event)=>{
   const visible=event.detail || null;
   if(!visible?.accepted || !visible?.imageUrl) return;
-  state.currentIdentifiedCard={
+  presentIdentifiedCard({
     name:visible.name, type:visible.type, image:visible.image, imageUrl:visible.imageUrl,
     visualIndex:null, mode:visible.mode||'memory-hover', matcherMs:0
-  };
-  $('cardPreview')?.classList.remove('empty');
-  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')) showFullscreenIdentifiedCard(state.currentIdentifiedCard);
+  });
 });
 
 window.addEventListener('tcg-identification-visible-cleared',(event)=>{
-  clearCurrentVisibleCard(event.detail?.reason || 'atomic-handoff');
+  // UI retention only: Vision may clear its internal result immediately, but the
+  // player gets a short grace period to move from the physical card to the HD panel.
+  scheduleVisibleCardClear(event.detail?.reason || 'pointer-left-card');
 });
 
 /* ---------- Bindings ---------- */
@@ -2898,6 +2949,8 @@ $('lobbyToggleMic').addEventListener('click', () => setMicEnabled(!state.micEnab
 $('lobbyToggleCam').addEventListener('click', () => setCameraEnabled(!state.cameraEnabled));
 $('toggleMic').addEventListener('click', () => setMicEnabled(!state.micEnabled));
 $('toggleCam').addEventListener('click', () => setCameraEnabled(!state.cameraEnabled));
+$('fullscreenMic')?.addEventListener('click', () => setMicEnabled(!state.micEnabled));
+$('fullscreenCam')?.addEventListener('click', () => setCameraEnabled(!state.cameraEnabled));
 
 $('startGame').addEventListener('click', async () => {
   if (!state.opponentPresent) return toast('En attente de l’adversaire.');
@@ -2917,6 +2970,7 @@ $('leaveLobby').addEventListener('click', async () => {
 
 $('leaveGame').addEventListener('click', async () => {
   toggleDemoCard(false);
+  clearVisibleCardNow('leave-game');
   await leaveRoom();
   stopLocalStream();
   showScreen('home');
@@ -2939,17 +2993,33 @@ $('fullscreenOpponent').addEventListener('click', async () => {
 
 $('demoHoverCard').addEventListener('click', () => toggleDemoCard());
 $('expandCard').addEventListener('click', openCardModal);
-$('fullscreenExpandCard').addEventListener('click', () => {
+$('displayCardButton')?.addEventListener('click', openCardModal);
+
+function toggleFullscreenCardZoom(){
   if(!state.currentIdentifiedCard?.imageUrl) return toast('Aucune carte identifiée.');
-
   const opponentCard=document.querySelector('.opponent-feed-card');
-  const preview=$('fullscreenCardPreview');
+  if(document.fullscreenElement!==opponentCard) return openCardModal();
+  $('fullscreenCardPreview')?.classList.toggle('expanded');
+}
+$('fullscreenExpandCard').addEventListener('click', toggleFullscreenCardZoom);
+$('fullscreenIdentImage')?.addEventListener('click', toggleFullscreenCardZoom);
 
-  if(document.fullscreenElement===opponentCard){
-    preview.classList.toggle('expanded');
-  }else{
-    openCardModal();
-  }
+[$('displayCardPanel'), $('fullscreenCardPreview')].forEach(panel=>{
+  if(!panel) return;
+  panel.addEventListener('pointerenter',()=>{
+    state.cardDisplayHovering=true;
+    cancelCardDisplayHide();
+  });
+  panel.addEventListener('pointerleave',()=>{
+    state.cardDisplayHovering=false;
+    scheduleVisibleCardClear('left-hd-panel');
+  });
+});
+
+$('opponentFeed')?.addEventListener('pointerleave',()=>{
+  // Identification deliberately keeps the last accepted result when the pointer
+  // exits the video stage. Start the same grace period at that exact moment.
+  scheduleVisibleCardClear('left-video-stage');
 });
 $('closeCardModal').addEventListener('click', () => $('cardModal').classList.add('hidden'));
 $('cardModal').addEventListener('click', e => {
@@ -2958,10 +3028,16 @@ $('cardModal').addEventListener('click', e => {
 
 document.addEventListener('fullscreenchange', () => {
   const opponentCard=document.querySelector('.opponent-feed-card');
+  const button=$('fullscreenOpponent');
+  const active=document.fullscreenElement===opponentCard;
+  if(button){
+    button.title=active ? 'Quitter le plein écran' : 'Plein écran';
+    button.setAttribute('aria-label',button.title);
+  }
 
-  if(document.fullscreenElement===opponentCard && state.currentIdentifiedCard?.imageUrl){
+  if(active && state.currentIdentifiedCard?.imageUrl){
     showFullscreenIdentifiedCard(state.currentIdentifiedCard);
-  }else if(document.fullscreenElement!==opponentCard){
+  }else if(!active){
     $('fullscreenCardPreview').classList.remove('expanded');
     $('fullscreenCardPreview').classList.add('hidden');
   }
