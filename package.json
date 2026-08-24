@@ -1,11 +1,11 @@
 {
   "name": "tcgate-alpha",
-  "version": "0.1.0-candidate.9",
+  "version": "0.1.0-candidate.10",
   "private": true,
   "scripts": {
     "start": "node server.js",
     "smoke": "node smoke-test.js",
-    "smoke:ui": "node smoke-test-ui-integration.js && node smoke-test-ui-v1.js && node smoke-test-ui-v1-0-1.js"
+    "test:c10": "node integration-test-c10.js"
   },
   "engines": {
     "node": ">=20"

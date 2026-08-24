@@ -1,0 +1,17 @@
+TCGate Alpha 0.1 Candidate 10 - SHA-256
+Generated: 2026-08-24
+
+Frozen Vision baseline (must remain unchanged):
+2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319  models/card_detector_v53_512.onnx
+e749551f11065a03bd2cfc75577f23c4ece893a2c7d08bc82a341b2a35619b7a  public/detection-worker.js
+7ad3e427e2ba2181d5ab74e4ad8d68b855144e5d6901c6fdf58cdc36263cdd04  public/table-state-engine.js
+520981919521befdf9b80e7432ca3ac885c846768a274d4a5456f771e63f68e6  public/vision-core.js
+92c8f946c4429c5979f0374f14c837436cb46cf6baf8c564d961589fbd844f35  public/identification.js
+
+Candidate 10 platform files:
+495ea4bad561f6b239cd1b45fd54953827b16f665b0a219562ce4736510416eb  public/app.js
+9a684458c2f4942c1f08f47f8c80488ae65aec75fabb47ab6126da12202f5b84  public/index.html
+b859f316e390eb27ccab7c76e971b400cd4694c86b443d3d55402af2948c132f  public/tcgate-alpha.css
+153e1a8027c93a800cc52085e134172e2da527fb78d8a3c26d350c32d56c86e2  server.js
+da188ba1ce25599b668d1a2133e4f9b612658b54a88f34a6c41beda14d4efe96  smoke-test.js
+550a6fc92f94fe259c321f9c3187a5793bfd62d3128290516ff4b8a150da493a  integration-test-c10.js

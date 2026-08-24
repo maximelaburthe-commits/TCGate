@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 9 · UI 1.0';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 10';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -25,6 +25,7 @@ const state = {
   opponentId: null,
   opponentName: 'Adversaire',
   opponentPresent: false,
+  opponentConnected: false,
   ownReady: false,
   opponentReady: false,
   readyRequestPending: false,
@@ -40,6 +41,7 @@ const state = {
   sseReconnectAttempts: 0,
   rtcRecoveryTimer: null,
   rtcRecoveryInFlight: false,
+  roomRecoveryInFlight: false,
 
   eventSource: null,
   localStream: null,
@@ -53,11 +55,13 @@ const state = {
   micEnabled: false,
   selectedCameraId: null,
   selectedMicrophoneId: null,
-  localPreviewVisible: true,
-
-  gigDice: [],
-  dieDrag: null,
-  lastMovedDieId: null,
+  lostCameraId: null,
+  lostMicrophoneId: null,
+  lostCameraLabel: null,
+  lostMicrophoneLabel: null,
+  deviceRecoveryInFlight: false,
+  deviceChangeTimer: null,
+  persistentRecovery: null,
 
   pc: null,
   videoTransceiver: null,
@@ -115,8 +119,6 @@ const state = {
   visionMetricsTimer: null,
   calibrationResizeTimer: null,
   currentIdentifiedCard: null,
-  cardDisplayHideTimer: null,
-  cardDisplayHovering: false,
   lastIdentificationEventKey: null,
   visionStateReady: false,
   visionFeedback: [],
@@ -255,6 +257,31 @@ function setRtcStatus(text, mode = '') {
 }
 
 const SESSION_STORAGE_KEY = 'tcgate-alpha-room-session-v1';
+const MEDIA_PREFS_KEY = 'tcgate-alpha-media-prefs-v1';
+
+function saveMediaPreferences() {
+  try {
+    localStorage.setItem(MEDIA_PREFS_KEY, JSON.stringify({
+      cameraId: state.selectedCameraId || null,
+      microphoneId: state.selectedMicrophoneId || null,
+      savedAt: Date.now()
+    }));
+  } catch {}
+}
+
+function readMediaPreferences() {
+  try {
+    const raw = localStorage.getItem(MEDIA_PREFS_KEY);
+    if (!raw) return { cameraId: null, microphoneId: null };
+    const prefs = JSON.parse(raw);
+    return {
+      cameraId: typeof prefs?.cameraId === 'string' ? prefs.cameraId : null,
+      microphoneId: typeof prefs?.microphoneId === 'string' ? prefs.microphoneId : null
+    };
+  } catch {
+    return { cameraId: null, microphoneId: null };
+  }
+}
 
 function saveRoomSession() {
   if (!state.roomCode || !state.peerId || !state.authToken) return;
@@ -266,7 +293,6 @@ function saveRoomSession() {
       role: state.role,
       playerName: state.playerName,
       game: state.game,
-      gigDice: gigDiceEnabledForCurrentGame() ? serializeGigState() : null,
       savedAt: Date.now()
     }));
   } catch {}
@@ -285,6 +311,116 @@ function readSavedRoomSession() {
     return saved;
   } catch {
     return null;
+  }
+}
+
+function hidePersistentRecoveryCard() {
+  state.persistentRecovery = null;
+  $('resumeSessionCard')?.classList.add('hidden');
+}
+
+async function checkPersistentRecovery() {
+  try {
+    const result = await api('/api/recovery-state', { auth: false });
+    if (!result?.available) {
+      hidePersistentRecoveryCard();
+      return false;
+    }
+    state.persistentRecovery = result;
+    const gameLabel = result.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
+    $('resumeSessionTitle').textContent = `Salon ${result.code} · ${gameLabel}`;
+    $('resumeSessionMeta').textContent = result.phase === 'game'
+      ? 'Partie en cours · reprise sécurisée disponible.'
+      : 'Salon encore actif · reprise sécurisée disponible.';
+    $('resumeSessionCard').classList.remove('hidden');
+    logEvent('persistent-recovery-available', {
+      code: result.code,
+      role: result.role,
+      game: result.game,
+      phase: result.phase
+    });
+    return true;
+  } catch (err) {
+    hidePersistentRecoveryCard();
+    logEvent('persistent-recovery-check-error', { message: err?.message || String(err) });
+    return false;
+  }
+}
+
+function hydrateSessionFromResult(result) {
+  state.roomCode = result.code;
+  state.peerId = result.peerId;
+  state.authToken = result.sessionToken || state.authToken;
+  state.role = result.role || null;
+  state.playerName = result.name || state.playerName || 'Joueur';
+  state.roomSnapshot = result.room || null;
+  state.game = result.room?.game || state.game || 'cyberpunk';
+  state.recoveryEpoch = Number(result.room?.recoveryEpoch || 0);
+  state.rtcConfig = null;
+  state.rtcConfigKey = null;
+  state.rtcConfigLoading = null;
+  state.turnStatus = { configured: false, available: false, provider: null, policy: 'all', expiresAt: null, reason: 'not-loaded' };
+
+  applyGameModeUi();
+  $('lobbyCode').textContent = state.roomCode;
+  $('lobbyPlayerName').textContent = state.playerName;
+  $('localPlayerLabel').textContent = state.playerName;
+  $('gameCode').textContent = state.roomCode;
+  $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
+  history.replaceState({}, '', `${location.pathname}?room=${state.roomCode}`);
+  saveRoomSession();
+  hidePersistentRecoveryCard();
+}
+
+async function recoverPersistentSession() {
+  const button = $('resumeSessionButton');
+  if (button) button.disabled = true;
+  try {
+    const result = await api('/api/recover', { method: 'POST', auth: false });
+    resetReportSession({
+      roomCode: result.code,
+      role: result.role,
+      game: result.room?.game || state.game || 'cyberpunk',
+      resumed: true
+    });
+    hydrateSessionFromResult(result);
+    state.gameEntering = true;
+    applyRoomState(result.room);
+    state.gameEntering = false;
+    await connectEventStream().catch(() => {});
+    await waitForEventStreamOpen().catch(() => false);
+
+    const prefs = readMediaPreferences();
+    await startLocalMedia({
+      cameraId: prefs.cameraId,
+      microphoneId: prefs.microphoneId
+    }).catch(() => false);
+
+    const wasInGame = (result.room?.phase || 'lobby') === 'game';
+    if (wasInGame) {
+      showScreen('game');
+      await enterNetworkGame();
+      if (state.role === 'guest') {
+        setTimeout(() => sendSignal('restart-request', { reason: 'persistent-recovery' }).catch(() => {}), 200);
+      }
+      toast('Partie reprise.');
+    } else {
+      showScreen('lobby');
+      toast('Salon repris.');
+    }
+    logEvent('persistent-recovery-success', {
+      code: state.roomCode,
+      role: state.role,
+      phase: result.room?.phase || 'lobby'
+    });
+    return true;
+  } catch (err) {
+    logEvent('persistent-recovery-error', { message: err?.message || String(err) });
+    toast(err?.message || 'Impossible de reprendre la partie.');
+    await checkPersistentRecovery();
+    return false;
+  } finally {
+    if (button) button.disabled = false;
   }
 }
 
@@ -378,339 +514,6 @@ function visionEnabledForCurrentGame() {
   return state.game === 'cyberpunk';
 }
 
-function gigDiceEnabledForCurrentGame() {
-  return state.game === 'cyberpunk';
-}
-
-function localGigRole() {
-  return state.role === 'guest' ? 'guest' : 'host';
-}
-
-function opponentGigRole() {
-  return localGigRole() === 'host' ? 'guest' : 'host';
-}
-
-function createGigDiceState() {
-  const sides = [4, 6, 8, 10, 12, 20];
-  const hostValues = [3, 4, 5, 6, 7, 10];
-  const guestValues = [2, 3, 4, 5, 6, 9];
-  return [
-    ...sides.map((side, index) => ({ id: `host-d${side}`, origin: 'host', owner: 'host', sides: side, value: hostValues[index] })),
-    ...sides.map((side, index) => ({ id: `guest-d${side}`, origin: 'guest', owner: 'guest', sides: side, value: guestValues[index] }))
-  ];
-}
-
-function validGigDiceState(dice) {
-  if (!Array.isArray(dice) || dice.length !== 12) return false;
-  const allowedSides = new Set([4, 6, 8, 10, 12, 20]);
-  const ids = new Set();
-  for (const die of dice) {
-    if (!die || typeof die !== 'object') return false;
-    if (typeof die.id !== 'string' || ids.has(die.id)) return false;
-    ids.add(die.id);
-    if (!['host', 'guest'].includes(die.origin) || !['host', 'guest'].includes(die.owner)) return false;
-    const sides = Number(die.sides);
-    const value = Number(die.value);
-    if (!allowedSides.has(sides) || !Number.isInteger(value) || value < 1 || value > sides) return false;
-  }
-  return true;
-}
-
-function ensureGigDiceState() {
-  if (!validGigDiceState(state.gigDice)) state.gigDice = createGigDiceState();
-  return state.gigDice;
-}
-
-function getGigDice(uiOwner) {
-  ensureGigDiceState();
-  const canonicalOwner = uiOwner === 'self' ? localGigRole() : opponentGigRole();
-  return state.gigDice
-    .filter(die => die.owner === canonicalOwner)
-    .sort((a, b) => a.sides - b.sides || a.origin.localeCompare(b.origin) || a.id.localeCompare(b.id));
-}
-
-function streetCred(uiOwner) {
-  return getGigDice(uiOwner).reduce((sum, die) => sum + Number(die.value || 0), 0);
-}
-
-function dieUiOriginClass(die) {
-  return die.origin === localGigRole() ? 'self' : 'opponent';
-}
-
-function renderGigLane(uiOwner, containerId) {
-  const lane = $(containerId);
-  if (!lane) return;
-  lane.innerHTML = getGigDice(uiOwner).map(die => {
-    const originClass = dieUiOriginClass(die);
-    return `
-      <div class="tcgate-die-wrap ${state.lastMovedDieId === die.id ? 'just-moved' : ''}" data-die-id="${die.id}">
-        <div class="tcgate-die-rail ${originClass}">
-          <button class="tcgate-die-adjust tcgate-die-adjust-plus" type="button" data-action="increment" aria-label="Augmenter la valeur">+</button>
-          <div class="tcgate-die ${originClass}" aria-label="Dé à ${die.sides} faces, valeur ${die.value}">
-            <img class="tcgate-die-icon" src="/assets/dice/${originClass}/D${die.sides}.svg" alt="" aria-hidden="true">
-            <span class="tcgate-die-value">${die.value}</span>
-          </div>
-          <button class="tcgate-die-adjust tcgate-die-adjust-minus" type="button" data-action="decrement" aria-label="Diminuer la valeur">−</button>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-function renderGigDicePanel() {
-  const panel = $('gigDicePanel');
-  const visible = gigDiceEnabledForCurrentGame();
-  panel?.classList.toggle('hidden', !visible);
-  if (!visible || !panel) return;
-
-  const selfDice = getGigDice('self');
-  const opponentDice = getGigDice('opponent');
-  const selfSide = panel.querySelector('.tcgate-gig-side-self');
-  const opponentSide = panel.querySelector('.tcgate-gig-side-opp');
-  const track = panel.querySelector('.tcgate-gig-track');
-  selfSide?.setAttribute('data-dice-count', String(selfDice.length));
-  opponentSide?.setAttribute('data-dice-count', String(opponentDice.length));
-
-  const SIDE_PADDING = 18;
-  const SCORE_WIDTH = 48;
-  const SCORE_LANE_GAP = 10;
-  const DIE_WIDTH = 52;
-  const DIE_GAP = 6;
-  const GRID_GAPS_AND_DIVIDER = 29;
-  const sideDemand = count => SIDE_PADDING + SCORE_WIDTH + SCORE_LANE_GAP +
-    (count ? count * DIE_WIDTH + Math.max(0, count - 1) * DIE_GAP : 0);
-  const selfDemand = sideDemand(selfDice.length);
-  const opponentDemand = sideDemand(opponentDice.length);
-
-  if (track) {
-    const usable = Math.max(0, track.clientWidth - GRID_GAPS_AND_DIVIDER);
-    const wanted = selfDemand + opponentDemand;
-    if (usable >= wanted || usable === 0) {
-      track.style.gridTemplateColumns = `${selfDemand}px 1px ${opponentDemand}px`;
-      track.classList.remove('is-tight');
-    } else {
-      const selfShare = selfDemand / Math.max(1, wanted);
-      track.style.gridTemplateColumns = `${selfShare}fr 1px ${1 - selfShare}fr`;
-      track.classList.add('is-tight');
-    }
-  }
-
-  renderGigLane('self', 'gigSelfDice');
-  renderGigLane('opponent', 'gigOpponentDice');
-  $('gigSelfCred').textContent = streetCred('self');
-  $('gigOpponentCred').textContent = streetCred('opponent');
-}
-
-function serializeGigState() {
-  ensureGigDiceState();
-  return state.gigDice.map(die => ({
-    id: die.id,
-    origin: die.origin,
-    owner: die.owner,
-    sides: Number(die.sides),
-    value: Number(die.value)
-  }));
-}
-
-function persistGigState() {
-  saveRoomSession();
-}
-
-async function sendGigState(source = 'local-change') {
-  if (!gigDiceEnabledForCurrentGame() || !state.opponentId) return null;
-  const result = await sendSignal('gig-state', { dice: serializeGigState(), source });
-  logEvent('gig-state-sent', { source, delivered: result?.delivered ?? null });
-  return result;
-}
-
-function requestGigState() {
-  if (!gigDiceEnabledForCurrentGame() || !state.opponentId) return;
-  if (state.role === 'guest') sendSignal('gig-state', { request: true }).catch(()=>{});
-  else sendGigState('host-initial').catch(()=>{});
-}
-
-function applyRemoteGigState(payload = {}) {
-  if (!gigDiceEnabledForCurrentGame() || !validGigDiceState(payload.dice)) return false;
-  state.gigDice = payload.dice.map(die => ({ ...die, sides: Number(die.sides), value: Number(die.value) }));
-  state.lastMovedDieId = null;
-  renderGigDicePanel();
-  persistGigState();
-  logEvent('gig-state-applied', { source: payload.source || 'remote' });
-  return true;
-}
-
-function changeDieValue(dieId, delta) {
-  const die = ensureGigDiceState().find(item => item.id === dieId);
-  if (!die) return;
-  die.value = Math.min(die.sides, Math.max(1, Number(die.value) + delta));
-  renderGigDicePanel();
-  persistGigState();
-  sendGigState('value-change').catch(()=>{});
-}
-
-function transferDie(dieId, targetUiOwner) {
-  const die = ensureGigDiceState().find(item => item.id === dieId);
-  if (!die) return false;
-  const targetOwner = targetUiOwner === 'self' ? localGigRole() : opponentGigRole();
-  if (die.owner === targetOwner) return false;
-  die.owner = targetOwner;
-  state.lastMovedDieId = die.id;
-  renderGigDicePanel();
-  persistGigState();
-  sendGigState('die-transfer').catch(()=>{});
-  window.setTimeout(() => {
-    if (state.lastMovedDieId === die.id) {
-      state.lastMovedDieId = null;
-      document.querySelector(`[data-die-id="${die.id}"]`)?.classList.remove('just-moved');
-    }
-  }, 520);
-  return true;
-}
-
-function clearDieDropTargets() {
-  document.querySelectorAll('.tcgate-gig-side').forEach(side => side.classList.remove('die-drop-target', 'die-drop-active'));
-}
-
-function dieDropOwnerAtPoint(clientX, clientY, sourceUiOwner) {
-  const targetUiOwner = sourceUiOwner === 'self' ? 'opponent' : 'self';
-  const targetSide = document.querySelector(`.tcgate-gig-side-${targetUiOwner === 'self' ? 'self' : 'opp'}`);
-  if (!targetSide) return null;
-  const rect = targetSide.getBoundingClientRect();
-  return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom ? targetUiOwner : null;
-}
-
-function uiOwnerForDie(die) {
-  return die.owner === localGigRole() ? 'self' : 'opponent';
-}
-
-function beginDieDrag(event, dieWrap) {
-  const dieId = dieWrap.dataset.dieId;
-  const die = ensureGigDiceState().find(item => item.id === dieId);
-  const dieEl = dieWrap.querySelector('.tcgate-die');
-  if (!die || !dieEl) return;
-  state.dieDrag = {
-    pointerId: event.pointerId,
-    dieId,
-    sourceUiOwner: uiOwnerForDie(die),
-    startX: event.clientX,
-    startY: event.clientY,
-    dragging: false,
-    ghost: null,
-    sourceEl: dieWrap
-  };
-  dieEl.setPointerCapture?.(event.pointerId);
-}
-
-function updateDieDrag(event) {
-  const drag = state.dieDrag;
-  if (!drag || event.pointerId !== drag.pointerId) return;
-  const distance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
-  if (!drag.dragging && distance < 6) return;
-
-  if (!drag.dragging) {
-    drag.dragging = true;
-    const dieEl = drag.sourceEl.querySelector('.tcgate-die');
-    drag.ghost = dieEl?.cloneNode(true) || null;
-    if (drag.ghost) {
-      drag.ghost.classList.add('tcgate-die-drag-ghost');
-      const fullscreenRoot = document.querySelector('.opponent-feed-card');
-      const ghostHost = document.fullscreenElement === fullscreenRoot ? fullscreenRoot : document.body;
-      ghostHost.appendChild(drag.ghost);
-    }
-    drag.sourceEl.classList.add('is-dragging-die');
-    const targetSide = document.querySelector(drag.sourceUiOwner === 'self' ? '.tcgate-gig-side-opp' : '.tcgate-gig-side-self');
-    targetSide?.classList.add('die-drop-target');
-  }
-
-  if (drag.ghost) {
-    drag.ghost.style.left = `${event.clientX}px`;
-    drag.ghost.style.top = `${event.clientY}px`;
-  }
-  const targetUiOwner = dieDropOwnerAtPoint(event.clientX, event.clientY, drag.sourceUiOwner);
-  const targetSide = document.querySelector(drag.sourceUiOwner === 'self' ? '.tcgate-gig-side-opp' : '.tcgate-gig-side-self');
-  targetSide?.classList.toggle('die-drop-active', Boolean(targetUiOwner));
-  event.preventDefault();
-}
-
-function finishDieDrag(event) {
-  const drag = state.dieDrag;
-  if (!drag || (event.pointerId != null && event.pointerId !== drag.pointerId)) return;
-  const targetUiOwner = drag.dragging ? dieDropOwnerAtPoint(event.clientX, event.clientY, drag.sourceUiOwner) : null;
-  drag.ghost?.remove();
-  drag.sourceEl?.classList.remove('is-dragging-die');
-  clearDieDropTargets();
-  state.dieDrag = null;
-  if (targetUiOwner && transferDie(drag.dieId, targetUiOwner)) toast('Dé transféré.');
-}
-
-function resetGigPanelPosition() {
-  const panel = $('gigDicePanel');
-  if (!panel) return;
-  panel.style.left = '';
-  panel.style.top = '';
-  panel.style.right = '';
-  panel.style.bottom = '';
-  panel.style.transform = '';
-}
-
-function moveGigPanelForFullscreen() {
-  const panel = $('gigDicePanel');
-  const mount = $('gigDiceMount');
-  const fullscreenRoot = document.querySelector('.opponent-feed-card');
-  if (!panel || !mount || !fullscreenRoot) return;
-  if (document.fullscreenElement === fullscreenRoot) {
-    if (panel.parentElement !== fullscreenRoot) fullscreenRoot.appendChild(panel);
-    panel.classList.add('is-fullscreen');
-  } else {
-    if (panel.parentElement !== mount) mount.appendChild(panel);
-    panel.classList.remove('is-fullscreen');
-  }
-  resetGigPanelPosition();
-}
-
-function setupDraggableGigPanel() {
-  const panel = $('gigDicePanel');
-  const handle = $('gigDiceDragHandle');
-  if (!panel || !handle || panel.dataset.draggableBound === '1') return;
-  panel.dataset.draggableBound = '1';
-  let drag = null;
-  const getContainer = () => panel.classList.contains('is-fullscreen')
-    ? document.querySelector('.opponent-feed-card')
-    : document.querySelector('.tcgate-opponent-column');
-
-  handle.addEventListener('pointerdown', event => {
-    const container = getContainer();
-    if (!container) return;
-    const rect = panel.getBoundingClientRect();
-    drag = { pointerId: event.pointerId, offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top };
-    panel.dataset.dragging = 'true';
-    handle.setPointerCapture?.(event.pointerId);
-    event.preventDefault();
-  });
-  const move = event => {
-    if (!drag || event.pointerId !== drag.pointerId) return;
-    const container = getContainer();
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const left = Math.max(8, Math.min(rect.width - panel.offsetWidth - 8, event.clientX - rect.left - drag.offsetX));
-    const top = Math.max(8, Math.min(rect.height - panel.offsetHeight - 8, event.clientY - rect.top - drag.offsetY));
-    panel.style.left = `${left}px`;
-    panel.style.top = `${top}px`;
-    panel.style.right = 'auto';
-    panel.style.bottom = 'auto';
-    panel.style.transform = 'none';
-    event.preventDefault();
-  };
-  const stop = event => {
-    if (!drag || (event.pointerId != null && event.pointerId !== drag.pointerId)) return;
-    try { handle.releasePointerCapture?.(drag.pointerId); } catch {}
-    drag = null;
-    panel.dataset.dragging = 'false';
-  };
-  window.addEventListener('pointermove', move, { passive: false });
-  window.addEventListener('pointerup', stop);
-  window.addEventListener('pointercancel', stop);
-}
-
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const existing = document.querySelector(`script[data-tcgate-dynamic="${src}"]`);
@@ -762,7 +565,6 @@ function applyGameModeUi() {
   screens.game?.classList.toggle('no-vision-mode', !visionEnabled);
   $('lobbyGameLabel').textContent = gameLabel();
   $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
-  renderGigDicePanel();
 
   if (!visionEnabled) {
     setVisionStatus('Vision : désactivée');
@@ -925,31 +727,6 @@ function startVisionMetricsSampler() {
   },5000);
 }
 
-const CARD_DISPLAY_HIDE_DELAY_MS = 1200;
-
-function cancelCardDisplayHide() {
-  clearTimeout(state.cardDisplayHideTimer);
-  state.cardDisplayHideTimer = null;
-}
-
-function showSideIdentifiedCard(card) {
-  if(!card?.imageUrl) return;
-  const image=$('displayCardImage');
-  const button=$('displayCardButton');
-  const empty=$('displayCardEmpty');
-  if(image){
-    image.src=card.imageUrl;
-    image.alt=card.name || 'Carte identifiée';
-  }
-  button?.classList.remove('hidden');
-  empty?.classList.add('hidden');
-}
-
-function hideSideIdentifiedCard() {
-  $('displayCardButton')?.classList.add('hidden');
-  $('displayCardEmpty')?.classList.remove('hidden');
-}
-
 function showFullscreenIdentifiedCard(card) {
   if(!card?.imageUrl) return;
   $('fullscreenIdentImage').src=card.imageUrl;
@@ -961,33 +738,6 @@ function showFullscreenIdentifiedCard(card) {
 function hideFullscreenIdentifiedCard() {
   $('fullscreenCardPreview')?.classList.add('hidden');
   $('fullscreenCardPreview')?.classList.remove('expanded');
-}
-
-function presentIdentifiedCard(card) {
-  if(!card?.imageUrl) return;
-  cancelCardDisplayHide();
-  state.currentIdentifiedCard={...card};
-  showSideIdentifiedCard(state.currentIdentifiedCard);
-  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')){
-    showFullscreenIdentifiedCard(state.currentIdentifiedCard);
-  }
-}
-
-function clearVisibleCardNow(reason='handoff') {
-  cancelCardDisplayHide();
-  state.currentIdentifiedCard=null;
-  hideSideIdentifiedCard();
-  hideFullscreenIdentifiedCard();
-  logEvent('visible-card-cleared',{reason});
-}
-
-function scheduleVisibleCardClear(reason='pointer-left-card') {
-  if(!state.currentIdentifiedCard || state.cardDisplayHovering) return;
-  cancelCardDisplayHide();
-  state.cardDisplayHideTimer=setTimeout(()=>{
-    if(state.cardDisplayHovering) return;
-    clearVisibleCardNow(reason);
-  },CARD_DISPLAY_HIDE_DELAY_MS);
 }
 
 function syncIdentifiedCardUi(detail) {
@@ -1003,13 +753,15 @@ function syncIdentifiedCardUi(detail) {
     }
 
     const snap=window.TCGIdentificationLab?.getSnapshot?.();
-    if(snap?.pointerInsideStage && !snap?.hoveredTrack){
-      scheduleVisibleCardClear('pointer-left-card');
+    if(snap?.pointerInsideStage){
+      state.currentIdentifiedCard=null;
+      hideFullscreenIdentifiedCard();
+      $('cardPreview')?.classList.add('empty');
     }
     return;
   }
 
-  const card={
+  state.currentIdentifiedCard={
     name:detail.name,
     type:detail.type,
     image:detail.image,
@@ -1018,7 +770,11 @@ function syncIdentifiedCardUi(detail) {
     mode:detail.mode,
     matcherMs:detail.matcherMs
   };
-  presentIdentifiedCard(card);
+  $('cardPreview')?.classList.remove('empty');
+
+  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')){
+    showFullscreenIdentifiedCard(state.currentIdentifiedCard);
+  }
 
   const key=`${detail.trackUid}:${detail.image}:${detail.mode}`;
   if(state.lastIdentificationEventKey!==key){
@@ -1039,7 +795,7 @@ function syncMemoryVisibleCard() {
   const snap=window.TCGIdentificationLab?.getSnapshot?.();
   const visible=snap?.visibleIdentity || null;
   if(!visible?.accepted || !visible?.imageUrl) return;
-  presentIdentifiedCard({
+  state.currentIdentifiedCard={
     name:visible.name,
     type:visible.type,
     image:visible.image,
@@ -1047,11 +803,18 @@ function syncMemoryVisibleCard() {
     visualIndex:null,
     mode:visible.mode || 'memory-hover',
     matcherMs:0
-  });
+  };
+  $('cardPreview')?.classList.remove('empty');
+  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')){
+    showFullscreenIdentifiedCard(state.currentIdentifiedCard);
+  }
 }
 
 function clearCurrentVisibleCard(reason='handoff') {
-  scheduleVisibleCardClear(reason);
+  state.currentIdentifiedCard=null;
+  hideFullscreenIdentifiedCard();
+  $('cardPreview')?.classList.add('empty');
+  logEvent('visible-card-cleared',{reason});
 }
 
 function captureTesterVisionFeedback(kind) {
@@ -1093,11 +856,280 @@ function configureSetup(mode) {
 }
 
 function currentVideoTrack() {
-  return state.localStream?.getVideoTracks?.()[0] || null;
+  return state.localStream?.getVideoTracks?.().find(track => track.readyState === 'live') || null;
 }
 
 function currentAudioTrack() {
-  return state.localStream?.getAudioTracks?.()[0] || null;
+  return state.localStream?.getAudioTracks?.().find(track => track.readyState === 'live') || null;
+}
+
+function updateGameDeviceStatus(message = null) {
+  const el = $('gameDeviceStatus');
+  if (!el) return;
+  if (message) {
+    el.textContent = message;
+    return;
+  }
+  const video = currentVideoTrack();
+  const audio = currentAudioTrack();
+  if (video && audio) el.textContent = 'Caméra et micro actifs';
+  else if (video) el.textContent = 'Caméra active · micro indisponible';
+  else if (audio) el.textContent = 'Micro actif · caméra indisponible';
+  else el.textContent = 'Caméra et micro indisponibles';
+}
+
+async function openGameDeviceMenu(message = null) {
+  await enumerateDevices();
+  const menu = $('gameDeviceMenu');
+  if (!menu) return;
+  menu.classList.remove('hidden');
+  $('deviceMenuToggle')?.setAttribute('aria-expanded', 'true');
+  updateGameDeviceStatus(message);
+}
+
+function closeGameDeviceMenu() {
+  $('gameDeviceMenu')?.classList.add('hidden');
+  $('deviceMenuToggle')?.setAttribute('aria-expanded', 'false');
+}
+
+function attachLocalTrackLifecycle(track, kind) {
+  if (!track || track.__tcgateLifecycleAttached) return;
+  try { track.__tcgateLifecycleAttached = true; } catch {}
+  track.addEventListener('ended', () => {
+    const current = kind === 'video' ? currentVideoTrack() : currentAudioTrack();
+    if (current && current !== track) return;
+    handleLocalTrackEnded(kind, track).catch(() => {});
+  }, { once: true });
+}
+
+async function handleLocalTrackEnded(kind, track) {
+  const isVideo = kind === 'video';
+  const settings = track?.getSettings?.() || {};
+  const lostId = settings.deviceId || (isVideo ? state.selectedCameraId : state.selectedMicrophoneId) || null;
+
+  if (state.localStream?.getTracks?.().includes(track)) {
+    try { state.localStream.removeTrack(track); } catch {}
+  }
+  try { track?.stop?.(); } catch {}
+
+  if (isVideo) {
+    state.lostCameraId = lostId;
+    state.lostCameraLabel = track?.label || null;
+    if (state.videoTransceiver?.sender) {
+      try { await state.videoTransceiver.sender.replaceTrack(null); } catch {}
+    }
+    toast('Caméra déconnectée · rebranche-la ou choisis-en une autre.');
+    updateGameDeviceStatus('Caméra déconnectée · choisissez une caméra.');
+  } else {
+    state.lostMicrophoneId = lostId;
+    state.lostMicrophoneLabel = track?.label || null;
+    if (state.audioTransceiver?.sender) {
+      try { await state.audioTransceiver.sender.replaceTrack(null); } catch {}
+    }
+    toast('Micro déconnecté · rebranche-le ou choisis-en un autre.');
+    updateGameDeviceStatus('Micro déconnecté · choisissez un micro.');
+  }
+
+  logEvent('media-track-ended', {
+    kind,
+    hadDeviceId: Boolean(lostId),
+    label: track?.label || null
+  });
+
+  $('lobbyPreview').srcObject = state.localStream;
+  $('localVideo').srcObject = state.localStream;
+  updateMediaUi();
+  sendCurrentMediaState(`device-${kind}-lost`).catch(() => {});
+  await enumerateDevices();
+}
+
+async function replaceMediaKind(kind, deviceId, { reason = 'manual-device-change', silent = false } = {}) {
+  if (!navigator.mediaDevices?.getUserMedia || state.deviceRecoveryInFlight) return false;
+  const isVideo = kind === 'video';
+  if (!deviceId) {
+    if (!silent) toast(isVideo ? 'Aucune caméra sélectionnée.' : 'Aucun micro sélectionné.');
+    return false;
+  }
+
+  state.deviceRecoveryInFlight = true;
+  const oldTrack = isVideo ? currentVideoTrack() : currentAudioTrack();
+  try {
+    let stream;
+    if (isVideo) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            deviceId: { exact: deviceId },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30, max: 30 }
+          },
+          audio: false
+        });
+      } catch (firstErr) {
+        logEvent('device-replace-video-relaxed', {
+          reason,
+          firstError: firstErr?.name || null
+        });
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            deviceId: { exact: deviceId },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            frameRate: { ideal: 30, max: 30 }
+          },
+          audio: false
+        });
+      }
+    } else {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: false,
+        audio: {
+          deviceId: { exact: deviceId },
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+    }
+
+    const newTrack = isVideo ? stream.getVideoTracks()[0] : stream.getAudioTracks()[0];
+    if (!newTrack) throw new Error(isVideo ? 'Caméra indisponible' : 'Micro indisponible');
+
+    const keptTrack = isVideo ? currentAudioTrack() : currentVideoTrack();
+    const tracks = isVideo
+      ? [newTrack, ...(keptTrack ? [keptTrack] : [])]
+      : [...(keptTrack ? [keptTrack] : []), newTrack];
+    const newLocalStream = new MediaStream(tracks);
+
+    state.localStream = newLocalStream;
+    if (isVideo) {
+      state.selectedCameraId = newTrack.getSettings?.().deviceId || deviceId;
+      state.lostCameraId = null;
+      state.lostCameraLabel = null;
+      const q = state.rtcQualityControl;
+      q.captureAdaptiveMode = 'native';
+      q.captureAdaptationPending = false;
+      q.captureAdaptationError = null;
+      q.captureLastAttemptAtMs = 0;
+      q.senderAdaptiveMode = 'native';
+      q.senderScaleResolutionDownBy = 1;
+      if (state.videoTransceiver?.sender) {
+        await state.videoTransceiver.sender.replaceTrack(newTrack);
+        await configureVideoSenderPolicy(state.videoTransceiver.sender, `device-${reason}`);
+      }
+    } else {
+      state.selectedMicrophoneId = newTrack.getSettings?.().deviceId || deviceId;
+      state.lostMicrophoneId = null;
+      state.lostMicrophoneLabel = null;
+      if (state.audioTransceiver?.sender) {
+        await state.audioTransceiver.sender.replaceTrack(newTrack);
+      }
+    }
+
+    attachLocalTrackLifecycle(newTrack, kind);
+    saveMediaPreferences();
+
+    $('lobbyPreview').srcObject = newLocalStream;
+    $('localVideo').srcObject = newLocalStream;
+    await Promise.allSettled([
+      $('lobbyPreview').play(),
+      $('localVideo').play()
+    ]);
+
+    if (oldTrack && oldTrack !== newTrack) {
+      try { oldTrack.stop(); } catch {}
+    }
+
+    await enumerateDevices();
+    updateMediaUi();
+    updateGameDeviceStatus();
+    sendCurrentMediaState(`device-${kind}-replaced`).catch(() => {});
+
+    logEvent('media-device-replaced', {
+      kind,
+      reason,
+      settings: safeTrackSettings(newTrack)
+    });
+    if (!silent) toast(isVideo ? 'Caméra changée.' : 'Micro changé.');
+    return true;
+  } catch (err) {
+    logEvent('media-device-replace-error', {
+      kind,
+      reason,
+      name: err?.name || null,
+      message: err?.message || String(err)
+    });
+    if (!silent) toast(`${isVideo ? 'Caméra' : 'Micro'} indisponible.`);
+    return false;
+  } finally {
+    state.deviceRecoveryInFlight = false;
+  }
+}
+
+async function handleMediaDeviceChange() {
+  clearTimeout(state.deviceChangeTimer);
+  state.deviceChangeTimer = setTimeout(async () => {
+    const devices = await enumerateDevices({ returnDevices: true });
+    if (!devices) return;
+
+    const cameras = devices.filter(d => d.kind === 'videoinput');
+    const microphones = devices.filter(d => d.kind === 'audioinput');
+
+    const activeVideo = currentVideoTrack();
+    const activeAudio = currentAudioTrack();
+    const activeCameraMissing = Boolean(
+      activeVideo &&
+      state.selectedCameraId &&
+      !cameras.some(d => d.deviceId === state.selectedCameraId)
+    );
+    const activeMicrophoneMissing = Boolean(
+      activeAudio &&
+      state.selectedMicrophoneId &&
+      !microphones.some(d => d.deviceId === state.selectedMicrophoneId)
+    );
+
+    if (activeCameraMissing) await handleLocalTrackEnded('video', activeVideo);
+    if (activeMicrophoneMissing) await handleLocalTrackEnded('audio', activeAudio);
+
+    const cameraMatch = cameras.find(d =>
+      (state.lostCameraId && d.deviceId === state.lostCameraId) ||
+      (state.lostCameraLabel && d.label && d.label === state.lostCameraLabel)
+    ) || null;
+    const microphoneMatch = microphones.find(d =>
+      (state.lostMicrophoneId && d.deviceId === state.lostMicrophoneId) ||
+      (state.lostMicrophoneLabel && d.label && d.label === state.lostMicrophoneLabel)
+    ) || null;
+
+    if (!currentVideoTrack() && cameraMatch) {
+      const recovered = await replaceMediaKind('video', cameraMatch.deviceId, {
+        reason: 'same-device-replug',
+        silent: true
+      });
+      if (recovered) toast('Caméra reconnectée automatiquement.');
+    }
+
+    if (!currentAudioTrack() && microphoneMatch) {
+      const recovered = await replaceMediaKind('audio', microphoneMatch.deviceId, {
+        reason: 'same-device-replug',
+        silent: true
+      });
+      if (recovered) toast('Micro reconnecté automatiquement.');
+    }
+
+    if ((!currentVideoTrack() && cameras.length) || (!currentAudioTrack() && microphones.length)) {
+      updateGameDeviceStatus('Périphérique détecté · sélectionnez-le si nécessaire.');
+    }
+
+    logEvent('media-devicechange', {
+      cameras: cameras.length,
+      microphones: microphones.length,
+      activeCameraMissing,
+      activeMicrophoneMissing,
+      sameCameraFound: Boolean(cameraMatch),
+      sameMicrophoneFound: Boolean(microphoneMatch)
+    });
+  }, 250);
 }
 
 function updateMediaUi() {
@@ -1113,24 +1145,11 @@ function updateMediaUi() {
   $('lobbyToggleMic').classList.toggle('active', state.micEnabled);
   $('toggleCam').classList.toggle('active', state.cameraEnabled);
   $('toggleMic').classList.toggle('active', state.micEnabled);
-  $('fullscreenCam')?.classList.toggle('active', state.cameraEnabled);
-  $('fullscreenMic')?.classList.toggle('active', state.micEnabled);
-  $('toggleCam').classList.toggle('muted', !state.cameraEnabled);
-  $('toggleMic').classList.toggle('muted', !state.micEnabled);
-  $('fullscreenCam')?.classList.toggle('muted', !state.cameraEnabled);
-  $('fullscreenMic')?.classList.toggle('muted', !state.micEnabled);
-  $('toggleCam').title = state.cameraEnabled ? 'Caméra active' : 'Caméra coupée';
-  $('toggleMic').title = state.micEnabled ? 'Micro actif' : 'Micro coupé';
-  if($('fullscreenCam')) $('fullscreenCam').title = $('toggleCam').title;
-  if($('fullscreenMic')) $('fullscreenMic').title = $('toggleMic').title;
 
   $('lobbyPreviewPlaceholder').classList.toggle('hidden', Boolean(videoTrack && state.cameraEnabled));
   $('localVideoPlaceholder').classList.toggle('hidden', Boolean(videoTrack && state.cameraEnabled));
   $('lobbyPreviewShell').classList.toggle('camera-off', !state.cameraEnabled);
   $('localFeed').classList.toggle('camera-off', !state.cameraEnabled);
-  const localPreviewVisible = state.cameraEnabled && state.localPreviewVisible;
-  $('localFeed').classList.toggle('preview-hidden', !localPreviewVisible);
-  $('restoreLocalFeed')?.classList.toggle('hidden', localPreviewVisible || !state.cameraEnabled);
 
   $('lobbyToggleCam').textContent = state.cameraEnabled ? 'Caméra active' : 'Caméra coupée';
   $('lobbyToggleMic').textContent = state.micEnabled ? 'Micro actif' : 'Micro coupé';
@@ -1147,42 +1166,73 @@ function updateMediaUi() {
   } else if (audioTrack) {
     $('mediaStatus').textContent = 'Micro prêt · caméra indisponible';
     $('mediaStatus').className = 'media-status warning';
+  } else {
+    $('mediaStatus').textContent = 'Périphériques déconnectés';
+    $('mediaStatus').className = 'media-status warning';
   }
+
+  updateGameDeviceStatus();
 
   if (state.roomSnapshot && screens.lobby.classList.contains('active')) {
     applyRoomState(state.roomSnapshot);
   }
 }
 
-async function enumerateDevices() {
+async function enumerateDevices({ returnDevices = false } = {}) {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
     const cameras = devices.filter(d => d.kind === 'videoinput');
     const microphones = devices.filter(d => d.kind === 'audioinput');
 
-    const fill = (select, items, fallback) => {
+    const fill = (select, items, fallback, selectedId = null, forceChoice = false) => {
+      if (!select) return;
       const previous = select.value;
       select.innerHTML = '';
+      if (!items.length) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = `Aucun ${fallback.toLowerCase()}`;
+        select.appendChild(option);
+        select.disabled = true;
+        return;
+      }
+      select.disabled = false;
+
+      const selectedStillExists = Boolean(selectedId && items.some(x => x.deviceId === selectedId));
+      if (forceChoice && !selectedStillExists) {
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = `Choisir ${fallback.toLowerCase()}…`;
+        select.appendChild(placeholder);
+      }
+
       items.forEach((device, index) => {
         const option = document.createElement('option');
         option.value = device.deviceId;
         option.textContent = device.label || `${fallback} ${index + 1}`;
         select.appendChild(option);
       });
-      if (items.some(x => x.deviceId === previous)) select.value = previous;
+
+      const preferred = selectedStillExists
+        ? selectedId
+        : (!forceChoice && items.some(x => x.deviceId === previous) ? previous : null);
+      select.value = preferred || '';
     };
 
-    fill($('cameraSelect'), cameras, 'Caméra');
-    fill($('microSelect'), microphones, 'Micro');
+    const needCameraChoice = !currentVideoTrack();
+    const needMicroChoice = !currentAudioTrack();
+    fill($('cameraSelect'), cameras, 'Caméra', state.selectedCameraId, needCameraChoice);
+    fill($('microSelect'), microphones, 'Micro', state.selectedMicrophoneId, needMicroChoice);
+    fill($('gameCameraSelect'), cameras, 'Caméra', state.selectedCameraId, needCameraChoice);
+    fill($('gameMicroSelect'), microphones, 'Micro', state.selectedMicrophoneId, needMicroChoice);
     $('deviceSelectors').classList.toggle('hidden', !(cameras.length || microphones.length));
 
-    if (state.selectedCameraId && cameras.some(d => d.deviceId === state.selectedCameraId)) {
-      $('cameraSelect').value = state.selectedCameraId;
-    }
-    if (state.selectedMicrophoneId && microphones.some(d => d.deviceId === state.selectedMicrophoneId)) {
-      $('microSelect').value = state.selectedMicrophoneId;
-    }
-  } catch {}
+    if (returnDevices) return devices;
+    return true;
+  } catch (err) {
+    logEvent('media-enumerate-error', { message: err?.message || String(err) });
+    return returnDevices ? null : false;
+  }
 }
 
 async function startLocalMedia({ cameraId = null, microphoneId = null } = {}) {
@@ -1300,6 +1350,21 @@ async function startLocalMedia({ cameraId = null, microphoneId = null } = {}) {
 
   state.selectedCameraId = v?.getSettings?.().deviceId || cameraId || null;
   state.selectedMicrophoneId = a?.getSettings?.().deviceId || microphoneId || null;
+  if (v) {
+    state.lostCameraId = null;
+    state.lostCameraLabel = null;
+    attachLocalTrackLifecycle(v, 'video');
+  } else if (cameraId) {
+    state.lostCameraId = cameraId;
+  }
+  if (a) {
+    state.lostMicrophoneId = null;
+    state.lostMicrophoneLabel = null;
+    attachLocalTrackLifecycle(a, 'audio');
+  } else if (microphoneId) {
+    state.lostMicrophoneId = microphoneId;
+  }
+  saveMediaPreferences();
 
   // A deliberate media start/device change begins a fresh native-quality session.
   // Candidate 5 never auto-upgrades an adapted track, but a manual camera restart
@@ -1363,11 +1428,18 @@ async function startLocalMedia({ cameraId = null, microphoneId = null } = {}) {
   return true;
 }
 
-async function restartFromDeviceSelectors() {
-  const cameraId = $('cameraSelect').value || null;
-  const microphoneId = $('microSelect').value || null;
-  logEvent('device-change-request', { camera: Boolean(cameraId), microphone: Boolean(microphoneId) });
-  await startLocalMedia({ cameraId, microphoneId });
+async function changeCameraFromSelector(selectId) {
+  const cameraId = $(selectId)?.value || null;
+  if (!cameraId) return;
+  logEvent('device-change-request', { kind: 'video', source: selectId });
+  await replaceMediaKind('video', cameraId, { reason: `selector-${selectId}` });
+}
+
+async function changeMicrophoneFromSelector(selectId) {
+  const microphoneId = $(selectId)?.value || null;
+  if (!microphoneId) return;
+  logEvent('device-change-request', { kind: 'audio', source: selectId });
+  await replaceMediaKind('audio', microphoneId, { reason: `selector-${selectId}` });
 }
 
 function safeTrackSettings(track) {
@@ -1387,8 +1459,14 @@ function safeTrackSettings(track) {
 function stopLocalStream() {
   if (state.localStream) state.localStream.getTracks().forEach(track => track.stop());
   state.localStream = null;
+  state.lostCameraId = null;
+  state.lostMicrophoneId = null;
+  state.lostCameraLabel = null;
+  state.lostMicrophoneLabel = null;
   $('lobbyPreview').srcObject = null;
   $('localVideo').srcObject = null;
+  $('gameDeviceMenu')?.classList.add('hidden');
+  $('deviceMenuToggle')?.setAttribute('aria-expanded', 'false');
   updateMediaUi();
   logEvent('media-stopped');
 }
@@ -1403,7 +1481,6 @@ async function tryResumeSavedSession() {
   state.role = saved.role || null;
   state.playerName = saved.playerName || 'Joueur';
   state.game = saved.game || 'cyberpunk';
-  state.gigDice = validGigDiceState(saved.gigDice) ? saved.gigDice.map(die => ({ ...die })) : createGigDiceState();
 
   try {
     const result = await api('/api/resume', {
@@ -1418,31 +1495,38 @@ async function tryResumeSavedSession() {
       resumed: true
     });
 
-    state.roomCode = result.code;
-    state.peerId = result.peerId;
-    state.role = result.role;
-    state.playerName = result.name || state.playerName;
-    state.roomSnapshot = result.room;
-    state.game = result.room?.game || state.game;
-    state.recoveryEpoch = Number(result.room?.recoveryEpoch || 0);
-    state.rtcConfig = null;
-    state.rtcConfigKey = null;
-    state.rtcConfigLoading = null;
-    state.turnStatus = { configured: false, available: false, provider: null, policy: 'all', expiresAt: null, reason: 'not-loaded' };
-
-    applyGameModeUi();
-    $('lobbyCode').textContent = state.roomCode;
-    $('lobbyPlayerName').textContent = state.playerName;
-    $('localPlayerLabel').textContent = state.playerName;
-    $('gameCode').textContent = state.roomCode;
-    $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
-    history.replaceState({}, '', `${location.pathname}?room=${state.roomCode}`);
-    saveRoomSession();
+    hydrateSessionFromResult(result);
+    state.gameEntering = true;
     applyRoomState(result.room);
-    showScreen('lobby');
-    connectEventStream().catch(() => {});
-    logEvent('room-resumed', { code: state.roomCode, role: state.role, game: state.game });
-    toast('Salon repris. Réactive caméra et micro si nécessaire.');
+    state.gameEntering = false;
+    await connectEventStream().catch(() => {});
+    await waitForEventStreamOpen().catch(() => false);
+
+    const prefs = readMediaPreferences();
+    await startLocalMedia({
+      cameraId: prefs.cameraId,
+      microphoneId: prefs.microphoneId
+    }).catch(() => false);
+
+    const wasInGame = (result.room?.phase || 'lobby') === 'game';
+    if (wasInGame) {
+      showScreen('game');
+      await enterNetworkGame();
+      if (state.role === 'guest') {
+        setTimeout(() => sendSignal('restart-request', { reason: 'session-resume' }).catch(() => {}), 200);
+      }
+      toast('Partie reprise.');
+    } else {
+      showScreen('lobby');
+      toast('Salon repris.');
+    }
+
+    logEvent('room-resumed', {
+      code: state.roomCode,
+      role: state.role,
+      game: state.game,
+      phase: result.room?.phase || 'lobby'
+    });
     return true;
   } catch (err) {
     logEvent('room-resume-failed', { message: err?.message || String(err) });
@@ -1495,8 +1579,6 @@ async function enterLobby() {
     state.role = result.role;
     state.roomSnapshot = result.room;
     state.game = result.room?.game || state.game || 'cyberpunk';
-    state.gigDice = createGigDiceState();
-    state.lastMovedDieId = null;
     state.rtcConfig = null;
     state.rtcConfigKey = null;
     state.rtcConfigLoading = null;
@@ -1593,6 +1675,15 @@ async function connectEventStream() {
   });
 }
 
+async function waitForEventStreamOpen(timeoutMs = 3500) {
+  const startedAt = performance.now();
+  while (performance.now() - startedAt < timeoutMs) {
+    if (state.eventSource?.readyState === EventSource.OPEN) return true;
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+  return state.eventSource?.readyState === EventSource.OPEN;
+}
+
 function scheduleEventStreamReconnect() {
   if (!state.roomCode || !state.peerId || !state.authToken || state.sseReconnectTimer) return;
   const attempt = ++state.sseReconnectAttempts;
@@ -1636,19 +1727,51 @@ function startReadyStatePolling() {
   state.readyStatePollTimer = setInterval(() => pollRoomStateOnce().catch(() => {}), 500);
 }
 
+async function recoverRtcInPlaceAfterRoomRecovery(previousEpoch, nextEpoch) {
+  if (!state.gameActive || state.roomRecoveryInFlight) return;
+  state.roomRecoveryInFlight = true;
+  logEvent('room-recovery-in-place-start', {
+    previousEpoch,
+    nextEpoch,
+    role: state.role
+  });
+
+  try {
+    setRtcStatus('Adversaire en reconnexion…', 'warning');
+    closePeerConnection('room-recovery-in-place');
+    await new Promise(resolve => setTimeout(resolve, 120));
+    if (!state.gameActive) return;
+
+    await ensurePeerConnection();
+    if (state.role === 'host') {
+      state.offerSent = false;
+      state.offerInFlight = false;
+      await createAndSendOffer({ iceRestart: true });
+    } else {
+      await sendSignal('restart-request', { reason: 'room-recovery-in-place' });
+    }
+    logEvent('room-recovery-in-place-ready', { role: state.role });
+  } catch (err) {
+    logEvent('room-recovery-in-place-error', {
+      name: err?.name || null,
+      message: err?.message || String(err)
+    });
+    setRtcStatus('Reconnexion en attente…', 'warning');
+  } finally {
+    state.roomRecoveryInFlight = false;
+  }
+}
+
 function applyRoomState(snapshot) {
   if (!snapshot) return;
   const incomingRecoveryEpoch = Number(snapshot.recoveryEpoch || 0);
   if (incomingRecoveryEpoch > state.recoveryEpoch && state.gameActive) {
-    logEvent('room-recovery-return-to-lobby', {
-      previousEpoch: state.recoveryEpoch,
+    const previousEpoch = state.recoveryEpoch;
+    logEvent('room-recovery-in-place', {
+      previousEpoch,
       nextEpoch: incomingRecoveryEpoch
     });
-    state.gameActive = false;
-    state.gameEntering = false;
-    closePeerConnection('room-recovery');
-    showScreen('lobby');
-    toast('Connexion reprise · confirme à nouveau quand tu es prêt.');
+    recoverRtcInPlaceAfterRoomRecovery(previousEpoch, incomingRecoveryEpoch).catch(() => {});
   }
   state.recoveryEpoch = incomingRecoveryEpoch;
   state.roomSnapshot = snapshot;
@@ -1665,6 +1788,7 @@ function applyRoomState(snapshot) {
     ? Boolean(state.readyRequestedValue)
     : serverOwnReady;
   state.opponentPresent = Boolean(opponent);
+  state.opponentConnected = Boolean(opponent?.connected);
   state.opponentId = opponent?.id || null;
   state.opponentName = opponent?.name || 'Adversaire';
   state.opponentReady = Boolean(opponent?.ready);
@@ -1678,6 +1802,12 @@ function applyRoomState(snapshot) {
     remoteRow.classList.remove('ready', 'remote-ready');
     remoteRow.classList.add('waiting');
     setNetworkStatus('En attente de l’adversaire…', 'warning');
+  } else if (!opponent.connected) {
+    $('opponentWaitingText').textContent = 'Reconnexion…';
+    remoteRow.classList.remove('remote-ready');
+    remoteRow.classList.add('ready', 'waiting');
+    setNetworkStatus('Adversaire en reconnexion…', 'warning');
+    if (state.gameActive) setRtcStatus('Adversaire en reconnexion…', 'warning');
   } else {
     $('opponentWaitingText').textContent = opponent.ready ? 'Connecté · prêt' : 'Connecté · préparation';
     remoteRow.classList.add('ready');
@@ -1712,7 +1842,6 @@ function applyRoomState(snapshot) {
 
   if(opponent && state.game==='cyberpunk'){
     prepareVision().catch(()=>{});
-    if (state.gameActive) requestGigState();
   }
 
   if (
@@ -1814,8 +1943,6 @@ async function enterNetworkGame() {
     showScreen('game');
     $('localVideo').srcObject = state.localStream;
     updateMediaUi();
-    renderGigDicePanel();
-    setupDraggableGigPanel();
     if (visionEnabledForCurrentGame()) prepareVision().catch(()=>{});
     setRtcStatus('Initialisation WebRTC…', 'warning');
 
@@ -1827,7 +1954,6 @@ async function enterNetworkGame() {
     }
 
     state.gameActive = true;
-    requestGigState();
     logEvent('game-enter', { role: state.role });
   } catch (err) {
     logEvent('game-enter-error', {
@@ -2490,16 +2616,6 @@ async function handleSignal(signal) {
     return;
   }
 
-  if (signal.type === 'gig-state') {
-    const payload = signal.payload || {};
-    if (payload.request === true) {
-      if (state.role === 'host') sendGigState('request-response').catch(()=>{});
-    } else {
-      applyRemoteGigState(payload);
-    }
-    return;
-  }
-
   if (signal.type === 'restart-request') {
     logEvent('rtc-restart-request-received', { fromRole: signal.fromRole || null });
     if (state.role === 'host' && state.gameActive) {
@@ -2658,12 +2774,14 @@ async function leaveRoom() {
   clearTimeout(state.rtcRecoveryTimer);
   state.rtcRecoveryTimer = null;
   clearSavedRoomSession();
+  hidePersistentRecoveryCard();
   state.roomCode = null;
   state.peerId = null;
   state.authToken = null;
   state.role = null;
   state.opponentId = null;
   state.opponentPresent = false;
+  state.opponentConnected = false;
   state.ownReady = false;
   state.opponentReady = false;
   state.roomSnapshot = null;
@@ -2674,10 +2792,6 @@ async function leaveRoom() {
   $('roomCodeInput').value = '';
   state.gameEntering = false;
   state.gameActive = false;
-  state.gigDice = createGigDiceState();
-  state.dieDrag = null;
-  state.lastMovedDieId = null;
-  state.localPreviewVisible = true;
   state.offerInFlight = false;
   state.offerSent = false;
   history.replaceState({}, '', location.pathname);
@@ -2686,7 +2800,11 @@ async function leaveRoom() {
 
 async function setCameraEnabled(enabled) {
   const track = currentVideoTrack();
-  if (!track) return toast('Aucune caméra active.');
+  if (!track) {
+    if (state.gameActive) await openGameDeviceMenu('Aucune caméra active · choisissez une caméra.');
+    toast('Aucune caméra active.');
+    return;
+  }
   track.enabled = enabled;
   updateMediaUi();
   logEvent('camera-toggle', { enabled });
@@ -2699,9 +2817,13 @@ async function setCameraEnabled(enabled) {
   toast(enabled ? 'Caméra activée' : 'Caméra coupée');
 }
 
-function setMicEnabled(enabled) {
+async function setMicEnabled(enabled) {
   const track = currentAudioTrack();
-  if (!track) return toast('Aucun micro actif.');
+  if (!track) {
+    if (state.gameActive) await openGameDeviceMenu('Aucun micro actif · choisissez un micro.');
+    toast('Aucun micro actif.');
+    return;
+  }
   track.enabled = enabled;
   updateMediaUi();
   logEvent('microphone-toggle', { enabled });
@@ -3264,47 +3386,20 @@ window.addEventListener('tcg-table-hover-hit',()=>{
 window.addEventListener('tcg-identification-visible',(event)=>{
   const visible=event.detail || null;
   if(!visible?.accepted || !visible?.imageUrl) return;
-  presentIdentifiedCard({
+  state.currentIdentifiedCard={
     name:visible.name, type:visible.type, image:visible.image, imageUrl:visible.imageUrl,
     visualIndex:null, mode:visible.mode||'memory-hover', matcherMs:0
-  });
+  };
+  $('cardPreview')?.classList.remove('empty');
+  if(document.fullscreenElement===document.querySelector('.opponent-feed-card')) showFullscreenIdentifiedCard(state.currentIdentifiedCard);
 });
 
 window.addEventListener('tcg-identification-visible-cleared',(event)=>{
-  // UI retention only: Vision may clear its internal result immediately, but the
-  // player gets a short grace period to move from the physical card to the HD panel.
-  scheduleVisibleCardClear(event.detail?.reason || 'pointer-left-card');
+  clearCurrentVisibleCard(event.detail?.reason || 'atomic-handoff');
 });
 
 /* ---------- Bindings ---------- */
 
-$('gigDicePanel')?.addEventListener('pointerdown', event => {
-  if (event.target.closest('.tcgate-die-adjust') || event.target.closest('#gigDiceDragHandle')) return;
-  const dieWrap = event.target.closest('.tcgate-die-wrap');
-  if (dieWrap) beginDieDrag(event, dieWrap);
-});
-window.addEventListener('pointermove', updateDieDrag, { passive: false });
-window.addEventListener('pointerup', finishDieDrag);
-window.addEventListener('pointercancel', finishDieDrag);
-$('gigDicePanel')?.addEventListener('click', event => {
-  const dieWrap = event.target.closest('.tcgate-die-wrap');
-  const action = event.target.closest('[data-action]')?.dataset.action;
-  if (!dieWrap || !action) return;
-  event.stopPropagation();
-  if (action === 'increment') changeDieValue(dieWrap.dataset.dieId, 1);
-  if (action === 'decrement') changeDieValue(dieWrap.dataset.dieId, -1);
-});
-
-$('toggleLocalPreview')?.addEventListener('click', event => {
-  event.stopPropagation();
-  state.localPreviewVisible = false;
-  updateMediaUi();
-});
-$('restoreLocalFeed')?.addEventListener('click', event => {
-  event.stopPropagation();
-  state.localPreviewVisible = true;
-  updateMediaUi();
-});
 
 $('gameSelect').addEventListener('change', () => {
   const noGame = $('gameSelect').value === 'no-game';
@@ -3315,6 +3410,7 @@ $('gameSelect').addEventListener('change', () => {
 
 $('goCreate').addEventListener('click', () => configureSetup('create'));
 $('goJoin').addEventListener('click', () => configureSetup('join'));
+$('resumeSessionButton').addEventListener('click', recoverPersistentSession);
 $('setupBack').addEventListener('click', () => showScreen('home'));
 $('setupContinue').addEventListener('click', enterLobby);
 $('roomCodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') enterLobby(); });
@@ -3334,14 +3430,22 @@ $('enableMedia').addEventListener('click', () => startLocalMedia({
   cameraId: $('cameraSelect').value || state.selectedCameraId,
   microphoneId: $('microSelect').value || state.selectedMicrophoneId
 }));
-$('cameraSelect').addEventListener('change', restartFromDeviceSelectors);
-$('microSelect').addEventListener('change', restartFromDeviceSelectors);
+$('cameraSelect').addEventListener('change', () => changeCameraFromSelector('cameraSelect'));
+$('microSelect').addEventListener('change', () => changeMicrophoneFromSelector('microSelect'));
+$('gameCameraSelect').addEventListener('change', () => changeCameraFromSelector('gameCameraSelect'));
+$('gameMicroSelect').addEventListener('change', () => changeMicrophoneFromSelector('gameMicroSelect'));
+
+$('deviceMenuToggle').addEventListener('click', async () => {
+  const menu = $('gameDeviceMenu');
+  if (menu.classList.contains('hidden')) await openGameDeviceMenu();
+  else closeGameDeviceMenu();
+});
+$('closeDeviceMenu').addEventListener('click', closeGameDeviceMenu);
+
 $('lobbyToggleMic').addEventListener('click', () => setMicEnabled(!state.micEnabled));
 $('lobbyToggleCam').addEventListener('click', () => setCameraEnabled(!state.cameraEnabled));
 $('toggleMic').addEventListener('click', () => setMicEnabled(!state.micEnabled));
 $('toggleCam').addEventListener('click', () => setCameraEnabled(!state.cameraEnabled));
-$('fullscreenMic')?.addEventListener('click', () => setMicEnabled(!state.micEnabled));
-$('fullscreenCam')?.addEventListener('click', () => setCameraEnabled(!state.cameraEnabled));
 
 $('startGame').addEventListener('click', async () => {
   if (!state.opponentPresent) return toast('En attente de l’adversaire.');
@@ -3361,7 +3465,6 @@ $('leaveLobby').addEventListener('click', async () => {
 
 $('leaveGame').addEventListener('click', async () => {
   toggleDemoCard(false);
-  clearVisibleCardNow('leave-game');
   await leaveRoom();
   stopLocalStream();
   showScreen('home');
@@ -3384,33 +3487,17 @@ $('fullscreenOpponent').addEventListener('click', async () => {
 
 $('demoHoverCard').addEventListener('click', () => toggleDemoCard());
 $('expandCard').addEventListener('click', openCardModal);
-$('displayCardButton')?.addEventListener('click', openCardModal);
-
-function toggleFullscreenCardZoom(){
+$('fullscreenExpandCard').addEventListener('click', () => {
   if(!state.currentIdentifiedCard?.imageUrl) return toast('Aucune carte identifiée.');
+
   const opponentCard=document.querySelector('.opponent-feed-card');
-  if(document.fullscreenElement!==opponentCard) return openCardModal();
-  $('fullscreenCardPreview')?.classList.toggle('expanded');
-}
-$('fullscreenExpandCard').addEventListener('click', toggleFullscreenCardZoom);
-$('fullscreenIdentImage')?.addEventListener('click', toggleFullscreenCardZoom);
+  const preview=$('fullscreenCardPreview');
 
-[$('displayCardPanel'), $('fullscreenCardPreview')].forEach(panel=>{
-  if(!panel) return;
-  panel.addEventListener('pointerenter',()=>{
-    state.cardDisplayHovering=true;
-    cancelCardDisplayHide();
-  });
-  panel.addEventListener('pointerleave',()=>{
-    state.cardDisplayHovering=false;
-    scheduleVisibleCardClear('left-hd-panel');
-  });
-});
-
-$('opponentFeed')?.addEventListener('pointerleave',()=>{
-  // Identification deliberately keeps the last accepted result when the pointer
-  // exits the video stage. Start the same grace period at that exact moment.
-  scheduleVisibleCardClear('left-video-stage');
+  if(document.fullscreenElement===opponentCard){
+    preview.classList.toggle('expanded');
+  }else{
+    openCardModal();
+  }
 });
 $('closeCardModal').addEventListener('click', () => $('cardModal').classList.add('hidden'));
 $('cardModal').addEventListener('click', e => {
@@ -3419,18 +3506,10 @@ $('cardModal').addEventListener('click', e => {
 
 document.addEventListener('fullscreenchange', () => {
   const opponentCard=document.querySelector('.opponent-feed-card');
-  const button=$('fullscreenOpponent');
-  const active=document.fullscreenElement===opponentCard;
-  moveGigPanelForFullscreen();
-  renderGigDicePanel();
-  if(button){
-    button.title=active ? 'Quitter le plein écran' : 'Plein écran';
-    button.setAttribute('aria-label',button.title);
-  }
 
-  if(active && state.currentIdentifiedCard?.imageUrl){
+  if(document.fullscreenElement===opponentCard && state.currentIdentifiedCard?.imageUrl){
     showFullscreenIdentifiedCard(state.currentIdentifiedCard);
-  }else if(!active){
+  }else if(document.fullscreenElement!==opponentCard){
     $('fullscreenCardPreview').classList.remove('expanded');
     $('fullscreenCardPreview').classList.add('hidden');
   }
@@ -3440,17 +3519,18 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') $('cardModal').classList.add('hidden');
 });
 
-state.gigDice = createGigDiceState();
-renderGigDicePanel();
-setupDraggableGigPanel();
-window.addEventListener('resize', () => renderGigDicePanel());
-
 window.addEventListener('beforeunload', () => {
-  // Do not explicitly leave on refresh/network loss: Candidate 9 keeps the
-  // session resumable for a short grace period. Explicit Quit buttons still
-  // remove the peer immediately.
+  // Candidate 10: refresh keeps sessionStorage, while a full tab close can
+  // still be recovered through the separate HttpOnly recovery credential.
+  // Explicit Quit buttons remain authoritative and remove the peer immediately.
   saveRoomSession();
 });
+
+if (navigator.mediaDevices?.addEventListener) {
+  navigator.mediaDevices.addEventListener('devicechange', handleMediaDeviceChange);
+} else if (navigator.mediaDevices) {
+  navigator.mediaDevices.ondevicechange = handleMediaDeviceChange;
+}
 
 logEvent('page-loaded', {
   secureContext: window.isSecureContext,
@@ -3471,8 +3551,20 @@ const roomFromUrl = params.get('room');
 
 (async () => {
   const resumed = await tryResumeSavedSession();
-  if (!resumed && roomFromUrl) {
-    $('roomCodeInput').value = roomFromUrl.toUpperCase();
+  if (resumed) return;
+
+  const recoveryAvailable = await checkPersistentRecovery();
+  const normalizedUrlRoom = roomFromUrl ? roomFromUrl.toUpperCase() : null;
+  if (
+    recoveryAvailable &&
+    (!normalizedUrlRoom || state.persistentRecovery?.code === normalizedUrlRoom)
+  ) {
+    showScreen('home');
+    return;
+  }
+
+  if (normalizedUrlRoom) {
+    $('roomCodeInput').value = normalizedUrlRoom;
     configureSetup('join');
   }
 })();

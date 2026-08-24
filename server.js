@@ -11,7 +11,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = path.join(__dirname, 'public');
 const MODEL_FILE = path.join(__dirname, 'models', 'card_detector_v53_512.onnx');
 const MODEL_ROUTE = '/api/model/card-detector-v53-512-alpha9p1.onnx';
-const VERSION = 'tcgate-alpha-0.1-candidate-9';
+const VERSION = 'tcgate-alpha-0.1-candidate-10';
 
 const mime = {
   '.html': 'text/html; charset=utf-8',
@@ -26,14 +26,16 @@ const mime = {
 
 const rooms = new Map();
 const eventTickets = new Map();
+const recoveryIndex = new Map();
 const rateBuckets = new Map();
 const ROOM_TTL_MS = 4 * 60 * 60 * 1000;
 const DISCONNECTED_PEER_GRACE_MS = 5 * 60 * 1000;
 const EVENT_TICKET_TTL_MS = 30 * 1000;
+const RECOVERY_COOKIE_NAME = 'tcgate_recovery';
 const BODY_LIMIT_BYTES = 64 * 1024;
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ALLOWED_GAMES = new Set(['cyberpunk', 'no-game']);
-const ALLOWED_SIGNAL_TYPES = new Set(['offer', 'answer', 'candidate', 'media-state', 'restart-request', 'gig-state']);
+const ALLOWED_SIGNAL_TYPES = new Set(['offer', 'answer', 'candidate', 'media-state', 'restart-request']);
 
 const FALLBACK_ICE_SERVERS = [
   { urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }
@@ -244,6 +246,78 @@ function bearerToken(req) {
   return auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
 }
 
+function recoveryToken() {
+  return crypto.randomBytes(32).toString('base64url');
+}
+
+function recoveryKey(token) {
+  return crypto.createHash('sha256').update(String(token || '')).digest('hex');
+}
+
+function parseCookies(req) {
+  const out = {};
+  const raw = String(req.headers.cookie || '');
+  for (const part of raw.split(';')) {
+    const index = part.indexOf('=');
+    if (index <= 0) continue;
+    const key = part.slice(0, index).trim();
+    const value = part.slice(index + 1).trim();
+    if (!key) continue;
+    try { out[key] = decodeURIComponent(value); }
+    catch { out[key] = value; }
+  }
+  return out;
+}
+
+function isHttpsRequest(req) {
+  const proto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
+  return Boolean(req.socket.encrypted || proto === 'https');
+}
+
+function setRecoveryCookie(req, res, token) {
+  const attrs = [
+    `${RECOVERY_COOKIE_NAME}=${encodeURIComponent(token)}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Strict',
+    `Max-Age=${Math.floor(ROOM_TTL_MS / 1000)}`
+  ];
+  if (isHttpsRequest(req)) attrs.push('Secure');
+  res.setHeader('Set-Cookie', attrs.join('; '));
+}
+
+function clearRecoveryCookie(req, res) {
+  const attrs = [
+    `${RECOVERY_COOKIE_NAME}=`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Strict',
+    'Max-Age=0'
+  ];
+  if (isHttpsRequest(req)) attrs.push('Secure');
+  res.setHeader('Set-Cookie', attrs.join('; '));
+}
+
+function attachRecoveryCredential(req, res, room, peer) {
+  if (peer.recoveryKey) recoveryIndex.delete(peer.recoveryKey);
+  const token = recoveryToken();
+  const key = recoveryKey(token);
+  peer.recoveryKey = key;
+  recoveryIndex.set(key, { roomCode: room.code, peerId: peer.id });
+  setRecoveryCookie(req, res, token);
+}
+
+function recoveryPeerFromCookie(req) {
+  const token = parseCookies(req)[RECOVERY_COOKIE_NAME];
+  if (!token) return null;
+  const record = recoveryIndex.get(recoveryKey(token));
+  if (!record) return null;
+  const room = getRoom(record.roomCode);
+  const peer = getPeer(room, record.peerId);
+  if (!room || !peer || peer.recoveryKey !== recoveryKey(token)) return null;
+  return { room, peer };
+}
+
 function sanitizeName(value) {
   return String(value || 'Joueur')
     .normalize('NFKC')
@@ -306,6 +380,7 @@ function roomSnapshot(room) {
     game: room.game,
     createdAt: room.createdAt,
     recoveryEpoch: room.recoveryEpoch || 0,
+    phase: room.phase || 'lobby',
     peers: [...room.peers.values()].map(publicPeer)
   };
 }
@@ -351,11 +426,13 @@ function removePeer(room, id, reason = 'leave') {
   if (!peer) return;
   try { peer.sse?.end(); } catch {}
   room.peers.delete(id);
+  if (peer.recoveryKey) recoveryIndex.delete(peer.recoveryKey);
   turnCredentialCache.delete(id);
   broadcast(room, 'peer-left', { peerId: id, reason });
   if (room.peers.size === 0) {
     rooms.delete(room.code);
   } else {
+    room.phase = 'lobby';
     for (const p of room.peers.values()) p.ready = false;
     broadcastRoomState(room);
   }
@@ -368,17 +445,6 @@ function validateSignal(type, payload) {
     return payload && typeof payload === 'object' &&
       (payload.cameraEnabled == null || typeof payload.cameraEnabled === 'boolean') &&
       (payload.microphoneEnabled == null || typeof payload.microphoneEnabled === 'boolean');
-  }
-  if (type === 'gig-state') {
-    if (!payload || typeof payload !== 'object') return false;
-    if (payload.request === true) return true;
-    if (!Array.isArray(payload.dice) || payload.dice.length > 12) return false;
-    return payload.dice.every(die => die && typeof die === 'object' &&
-      typeof die.id === 'string' && die.id.length <= 32 &&
-      (die.origin === 'host' || die.origin === 'guest') &&
-      (die.owner === 'host' || die.owner === 'guest') &&
-      [4,6,8,10,12,20].includes(Number(die.sides)) &&
-      Number.isInteger(Number(die.value)) && Number(die.value) >= 1 && Number(die.value) <= Number(die.sides));
   }
   if (type === 'candidate') {
     return payload && typeof payload === 'object' &&
@@ -452,6 +518,7 @@ const server = http.createServer(async (req, res) => {
         game: ALLOWED_GAMES.has(String(body.game || '')) ? String(body.game) : 'cyberpunk',
         createdAt: Date.now(),
         recoveryEpoch: 0,
+        phase: 'lobby',
         peers: new Map()
       };
       room.peers.set(id, {
@@ -461,10 +528,12 @@ const server = http.createServer(async (req, res) => {
         ready: false,
         sse: null,
         lastSeen: Date.now(),
-        disconnectedAt: null,
-        authHash: tokenHash(token)
+        disconnectedAt: Date.now(),
+        authHash: tokenHash(token),
+        recoveryKey: null
       });
       rooms.set(code, room);
+      attachRecoveryCredential(req, res, room, room.peers.get(id));
       return sendJson(res, 201, {
         ok: true,
         code,
@@ -493,9 +562,11 @@ const server = http.createServer(async (req, res) => {
         ready: false,
         sse: null,
         lastSeen: Date.now(),
-        disconnectedAt: null,
-        authHash: tokenHash(token)
+        disconnectedAt: Date.now(),
+        authHash: tokenHash(token),
+        recoveryKey: null
       });
+      attachRecoveryCredential(req, res, room, room.peers.get(id));
 
       broadcast(room, 'peer-joined', { peer: publicPeer(room.peers.get(id)) }, id);
       broadcastRoomState(room);
@@ -509,6 +580,64 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+
+    if (req.method === 'GET' && pathname === '/api/recovery-state') {
+      if (!rateLimit(req, res, 'recovery-state', 60, 60 * 1000)) return;
+      const found = recoveryPeerFromCookie(req);
+      if (!found) return sendJson(res, 200, { ok: true, available: false });
+      const { room, peer } = found;
+      if (!peer.sse && peer.disconnectedAt && Date.now() - peer.disconnectedAt > DISCONNECTED_PEER_GRACE_MS) {
+        return sendJson(res, 200, { ok: true, available: false });
+      }
+      return sendJson(res, 200, {
+        ok: true,
+        available: true,
+        code: room.code,
+        role: peer.role,
+        name: peer.name,
+        game: room.game,
+        phase: room.phase || 'lobby'
+      });
+    }
+
+    if (req.method === 'POST' && pathname === '/api/recover') {
+      if (!rateLimit(req, res, 'recover-room', 20, 60 * 1000)) return;
+      const found = recoveryPeerFromCookie(req);
+      if (!found) return sendJson(res, 401, { ok: false, error: 'Aucune partie récupérable' });
+      const { room, peer } = found;
+      if (!peer.sse && peer.disconnectedAt && Date.now() - peer.disconnectedAt > DISCONNECTED_PEER_GRACE_MS) {
+        return sendJson(res, 410, { ok: false, error: 'Le délai de reprise est dépassé' });
+      }
+
+      if (peer.sse) {
+        try { peer.sse.end(); } catch {}
+        peer.sse = null;
+      }
+      const token = sessionToken();
+      peer.authHash = tokenHash(token);
+      peer.lastSeen = Date.now();
+      peer.disconnectedAt = Date.now();
+      room.recoveryEpoch = (room.recoveryEpoch || 0) + 1;
+      broadcast(room, 'room-recovery', {
+        recoveryEpoch: room.recoveryEpoch,
+        peerId: peer.id,
+        phase: room.phase || 'lobby',
+        source: 'persistent-recovery'
+      });
+      broadcastRoomState(room);
+      attachRecoveryCredential(req, res, room, peer);
+
+      return sendJson(res, 200, {
+        ok: true,
+        code: room.code,
+        peerId: peer.id,
+        sessionToken: token,
+        role: peer.role,
+        name: peer.name,
+        room: roomSnapshot(room)
+      });
+    }
+
     if (req.method === 'POST' && pathname === '/api/resume') {
       if (!rateLimit(req, res, 'resume-room', 30, 60 * 1000)) return;
       const body = await readJson(req);
@@ -516,10 +645,17 @@ const server = http.createServer(async (req, res) => {
       const peer = authenticatedPeer(req, room, body.peerId);
       if (!room || !peer) return sendJson(res, 401, { ok: false, error: 'Session expirée ou invalide' });
       peer.lastSeen = Date.now();
-      peer.disconnectedAt = null;
+      peer.disconnectedAt = Date.now();
       room.recoveryEpoch = (room.recoveryEpoch || 0) + 1;
-      for (const p of room.peers.values()) p.ready = false;
-      broadcast(room, 'room-recovery', { recoveryEpoch: room.recoveryEpoch, peerId: peer.id });
+      if ((room.phase || 'lobby') !== 'game') {
+        for (const p of room.peers.values()) p.ready = false;
+      }
+      broadcast(room, 'room-recovery', {
+        recoveryEpoch: room.recoveryEpoch,
+        peerId: peer.id,
+        phase: room.phase || 'lobby',
+        source: 'session-resume'
+      });
       broadcastRoomState(room);
       return sendJson(res, 200, {
         ok: true,
@@ -609,6 +745,11 @@ const server = http.createServer(async (req, res) => {
       if (typeof body.ready !== 'boolean') return sendJson(res, 400, { ok: false, error: 'État ready invalide' });
       peer.ready = body.ready;
       peer.lastSeen = Date.now();
+      if (room.peers.size === 2 && [...room.peers.values()].every(p => p.ready)) {
+        room.phase = 'game';
+      } else if ((room.phase || 'lobby') !== 'game') {
+        room.phase = 'lobby';
+      }
       broadcastRoomState(room);
       return sendJson(res, 200, { ok: true, room: roomSnapshot(room) });
     }
@@ -647,8 +788,12 @@ const server = http.createServer(async (req, res) => {
       const body = await readJson(req);
       const room = getRoom(body.room);
       const peer = authenticatedPeer(req, room, body.peerId);
-      if (!room || !peer) return sendJson(res, 200, { ok: true });
+      if (!room || !peer) {
+        clearRecoveryCookie(req, res);
+        return sendJson(res, 200, { ok: true });
+      }
       removePeer(room, peer.id, 'leave');
+      clearRecoveryCookie(req, res);
       return sendJson(res, 200, { ok: true });
     }
 
@@ -673,6 +818,7 @@ setInterval(() => {
     if (now - room.createdAt > ROOM_TTL_MS) {
       for (const peer of room.peers.values()) {
         try { peer.sse?.end(); } catch {}
+        if (peer.recoveryKey) recoveryIndex.delete(peer.recoveryKey);
       }
       rooms.delete(room.code);
       continue;
@@ -705,7 +851,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 server.listen(PORT, HOST, () => {
-  console.log(`TCGate Alpha 0.1 Candidate 9 -> http://127.0.0.1:${PORT}`);
+  console.log(`TCGate Alpha 0.1 Candidate 10 -> http://127.0.0.1:${PORT}`);
   const nets = os.networkInterfaces();
   for (const entries of Object.values(nets)) {
     for (const net of entries || []) {
