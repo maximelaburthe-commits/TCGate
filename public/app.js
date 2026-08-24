@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 10 · UI 1.0.1';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 10 · UI 1.0.2';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -787,6 +787,42 @@ function finishDieDrag(event) {
   if (targetUiOwner && transferDie(drag.dieId, targetUiOwner)) toast('Dé transféré.');
 }
 
+const GIG_PANEL_POSITION_KEY = 'tcgate.alpha.gig-panel-position.v1';
+
+function gigPanelContextKey(panel = $('gigDicePanel')) {
+  return panel?.classList.contains('is-fullscreen') ? 'fullscreen' : 'normal';
+}
+function readGigPanelPositions() {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(GIG_PANEL_POSITION_KEY) || '{}');
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch { return {}; }
+}
+function saveGigPanelPosition(panel = $('gigDicePanel')) {
+  if (!panel) return;
+  const container = panel.classList.contains('is-fullscreen') ? document.querySelector('.opponent-feed-card') : document.querySelector('.tcgate-opponent-column');
+  if (!container) return;
+  const containerRect = container.getBoundingClientRect();
+  const panelRect = panel.getBoundingClientRect();
+  const positions = readGigPanelPositions();
+  positions[gigPanelContextKey(panel)] = { left: Math.max(8, panelRect.left - containerRect.left), top: Math.max(8, panelRect.top - containerRect.top) };
+  try { sessionStorage.setItem(GIG_PANEL_POSITION_KEY, JSON.stringify(positions)); } catch {}
+}
+function applySavedGigPanelPosition(panel = $('gigDicePanel')) {
+  if (!panel) return false;
+  const container = panel.classList.contains('is-fullscreen') ? document.querySelector('.opponent-feed-card') : document.querySelector('.tcgate-opponent-column');
+  const saved = readGigPanelPositions()[gigPanelContextKey(panel)];
+  if (!container || !saved || !Number.isFinite(saved.left) || !Number.isFinite(saved.top)) return false;
+  const rect = container.getBoundingClientRect();
+  const left = Math.max(8, Math.min(Math.max(8, rect.width - panel.offsetWidth - 8), saved.left));
+  const top = Math.max(8, Math.min(Math.max(8, rect.height - panel.offsetHeight - 8), saved.top));
+  panel.style.left = `${left}px`;
+  panel.style.top = `${top}px`;
+  panel.style.right = 'auto';
+  panel.style.bottom = 'auto';
+  panel.style.transform = 'none';
+  return true;
+}
 function resetGigPanelPosition() {
   const panel = $('gigDicePanel');
   if (!panel) return;
@@ -809,7 +845,7 @@ function moveGigPanelForFullscreen() {
     if (panel.parentElement !== mount) mount.appendChild(panel);
     panel.classList.remove('is-fullscreen');
   }
-  resetGigPanelPosition();
+  if (!applySavedGigPanelPosition(panel)) resetGigPanelPosition();
 }
 
 function setupDraggableGigPanel() {
@@ -850,6 +886,7 @@ function setupDraggableGigPanel() {
     try { handle.releasePointerCapture?.(drag.pointerId); } catch {}
     drag = null;
     panel.dataset.dragging = 'false';
+    saveGigPanelPosition(panel);
   };
   window.addEventListener('pointermove', move, { passive: false });
   window.addEventListener('pointerup', stop);
@@ -1105,7 +1142,7 @@ function showFullscreenIdentifiedCard(card) {
 
 function hideFullscreenIdentifiedCard() {
   $('fullscreenCardPreview')?.classList.add('hidden');
-  $('fullscreenCardPreview')?.classList.remove('expanded');
+  setFullscreenCardZoom(false);
 }
 
 function presentIdentifiedCard(card) {
@@ -3935,14 +3972,28 @@ $('demoHoverCard').addEventListener('click', () => toggleDemoCard());
 $('expandCard').addEventListener('click', openCardModal);
 $('displayCardButton')?.addEventListener('click', openCardModal);
 
+function setFullscreenCardZoom(expanded){
+  const preview=$('fullscreenCardPreview');
+  if(!preview) return;
+  preview.classList.toggle('expanded', Boolean(expanded));
+  preview.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+}
 function toggleFullscreenCardZoom(){
   if(!state.currentIdentifiedCard?.imageUrl) return toast('Aucune carte identifiée.');
   const opponentCard=document.querySelector('.opponent-feed-card');
   if(document.fullscreenElement!==opponentCard) return openCardModal();
-  $('fullscreenCardPreview')?.classList.toggle('expanded');
+  setFullscreenCardZoom(!$('fullscreenCardPreview')?.classList.contains('expanded'));
 }
 $('fullscreenExpandCard').addEventListener('click', toggleFullscreenCardZoom);
 $('fullscreenIdentImage')?.addEventListener('click', toggleFullscreenCardZoom);
+$('fullscreenZoomClose')?.addEventListener('click', event => {
+  event.stopPropagation();
+  setFullscreenCardZoom(false);
+});
+$('fullscreenCardPreview')?.addEventListener('click', event => {
+  if (!$('fullscreenCardPreview')?.classList.contains('expanded')) return;
+  if (event.target === $('fullscreenCardPreview')) setFullscreenCardZoom(false);
+});
 
 [$('displayCardPanel'), $('fullscreenCardPreview')].forEach(panel=>{
   if(!panel) return;
@@ -3980,7 +4031,7 @@ document.addEventListener('fullscreenchange', () => {
   if(active && state.currentIdentifiedCard?.imageUrl){
     showFullscreenIdentifiedCard(state.currentIdentifiedCard);
   }else if(!active){
-    $('fullscreenCardPreview').classList.remove('expanded');
+    setFullscreenCardZoom(false);
     $('fullscreenCardPreview').classList.add('hidden');
   }
 });
@@ -3992,7 +4043,13 @@ document.addEventListener('keydown', e => {
 state.gigDice = createGigDiceState();
 renderGigDicePanel();
 setupDraggableGigPanel();
-window.addEventListener('resize', () => renderGigDicePanel());
+window.addEventListener('resize', () => {
+  renderGigDicePanel();
+  requestAnimationFrame(() => {
+    const panel=$('gigDicePanel');
+    if (panel && !panel.classList.contains('hidden')) applySavedGigPanelPosition(panel);
+  });
+});
 
 window.addEventListener('beforeunload', () => {
   // Candidate 10: refresh keeps sessionStorage, while a full tab close can

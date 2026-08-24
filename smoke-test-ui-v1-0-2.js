@@ -1,0 +1,22 @@
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const root = __dirname;
+const app = fs.readFileSync(path.join(root, 'public/app.js'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'public/tcgate-alpha.css'), 'utf8');
+const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
+for (const token of [
+  "TCGate Alpha 0.1 Candidate 10 · UI 1.0.2",
+  'GIG_PANEL_POSITION_KEY',
+  'saveGigPanelPosition',
+  'applySavedGigPanelPosition',
+  'setFullscreenCardZoom',
+  'fullscreenZoomClose'
+]) if (!app.includes(token)) throw new Error(`Missing app token: ${token}`);
+for (const token of [
+  '.game-screen .tcgate-gig-panel:not(.is-fullscreen)',
+  '.tcgate-fullscreen-zoom-close',
+  '.opponent-feed-card:fullscreen .tcgate-fullscreen-card.expanded .tcgate-fullscreen-zoom-close'
+]) if (!css.includes(token)) throw new Error(`Missing CSS token: ${token}`);
+if (!html.includes('id="fullscreenZoomClose"')) throw new Error('Missing fullscreenZoomClose');
+console.log('SMOKE_OK_TCGATE_UI_1_0_2_CORRECTIVE');

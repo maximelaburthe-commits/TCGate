@@ -34,3 +34,7 @@ Voir :
 
 ## Base UI Candidate 10
 Cette Candidate 10 corrective est basée sur **Candidate 9 · UI 1.0.1 corrective**.
+
+## UI 1.0.2 corrective
+
+Patch mineur de Candidate 10 : réserve une zone sûre autour du PiP local pour Gig Dice, stabilise/mémorise le placement utilisateur du panneau Gig et ajoute une fermeture explicite du zoom carte en plein écran sans quitter le plein écran. Le pipeline WebRTC/Vision n'est pas modifié.
