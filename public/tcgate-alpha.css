@@ -965,3 +965,348 @@ button.primary.waiting-state:active {
   .tcgate-gig-panel.is-fullscreen { left:8px;right:8px;width:auto;bottom:8px; }
 }
 .opponent-feed-card:fullscreen { position:relative; }
+
+/* ========================================================================== */
+/* UI 1.0.1 corrective integration — strict prototype parity                 */
+/* ========================================================================== */
+
+/* Make the opponent feed the dominant surface. */
+.game-screen .tcgate-game-topbar {
+  height:68px;
+  min-height:68px;
+  padding:8px 16px;
+  background:rgba(5,9,16,.97);
+  border-bottom:1px solid rgba(101,115,148,.16);
+}
+.game-screen .tcgate-game-logo { width:154px !important;max-height:44px !important; }
+.game-screen .tcgate-game-layout {
+  height:calc(100dvh - 68px);
+  min-height:0;
+  padding:10px;
+  grid-template-columns:minmax(0,1fr) 214px;
+  gap:10px;
+  overflow:hidden;
+}
+.game-screen .tcgate-opponent-column {
+  height:100%;
+  min-height:0;
+  position:relative;
+  gap:6px;
+}
+.game-screen .tcgate-opponent-card {
+  height:100%;
+  min-height:0;
+  border-radius:15px;
+  grid-template-rows:48px minmax(0,1fr);
+}
+.game-screen .tcgate-feed-head {
+  min-height:48px;
+  height:48px;
+  padding:0 9px 0 13px;
+}
+.game-screen .tcgate-opponent-video {
+  min-height:0 !important;
+  height:100% !important;
+  aspect-ratio:auto !important;
+  background:#05080d;
+}
+.game-screen .tcgate-opponent-video > video {
+  width:100%;height:100%;object-fit:contain;background:#05080d;
+}
+.game-screen .tcgate-alpha-diagnostics {
+  position:absolute;
+  left:4px;
+  bottom:0;
+  z-index:11;
+  height:20px;
+  min-height:20px;
+  pointer-events:auto;
+  opacity:.46;
+}
+
+/* Local video: one clean PiP only. */
+.game-screen .tcgate-local-pip {
+  left:16px;
+  bottom:16px;
+  width:240px;
+  height:135px;
+  min-height:0;
+  aspect-ratio:auto;
+  border-radius:12px;
+  overflow:hidden;
+  z-index:42;
+  background:#05080d;
+  box-shadow:0 18px 42px rgba(0,0,0,.34),0 0 0 1px rgba(255,255,255,.07);
+}
+.game-screen .tcgate-local-pip video { width:100%;height:100%;object-fit:cover; }
+
+/* Card rail: useful, but deliberately small. */
+.game-screen .tcgate-card-rail {
+  min-width:0;
+  align-self:start;
+}
+.game-screen .tcgate-card-inspector {
+  height:auto !important;
+  min-height:0 !important;
+  padding:11px;
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  border-radius:15px;
+  background:linear-gradient(180deg,#0e1622,#0a111a);
+  box-shadow:0 18px 42px rgba(0,0,0,.15);
+}
+.game-screen .tcgate-card-panel-title {
+  font-size:15px;
+  font-weight:760;
+}
+.game-screen .tcgate-card-slot {
+  width:100%;
+  min-height:0 !important;
+  height:auto !important;
+  aspect-ratio:5/7;
+  padding:7px;
+  border-radius:11px;
+}
+.game-screen .tcgate-card-empty {
+  width:82%;
+  padding:8px;
+  border-radius:10px;
+}
+.game-screen .tcgate-display-card {
+  width:100%;
+  max-width:178px;
+  margin:auto;
+}
+.game-screen .tcgate-card-hint {
+  margin:0;
+  font-size:10px;
+}
+
+/* Gig Dice: exact visual logic of the validated test UI. */
+.game-screen .tcgate-gig-panel {
+  left:50%;
+  bottom:12px;
+  transform:translateX(-50%);
+  width:min(900px,calc(100% - 320px));
+  padding:18px 14px 10px;
+  border:1px solid rgba(118,132,164,.22);
+  border-radius:15px;
+  background:rgba(7,11,18,.88);
+  backdrop-filter:blur(11px);
+  box-shadow:0 16px 42px rgba(0,0,0,.24);
+  z-index:56;
+}
+.game-screen .tcgate-gig-track { gap:14px; }
+.game-screen .tcgate-gig-side {
+  min-height:80px;
+  gap:10px;
+  padding:7px 10px;
+  border-radius:13px;
+}
+.game-screen .tcgate-gig-dice-lane { gap:7px; }
+.game-screen .tcgate-die-wrap { width:54px;height:96px;flex:0 0 54px; }
+.game-screen .tcgate-die-rail { width:50px;height:92px; }
+.game-screen .tcgate-die {
+  width:50px;height:50px;
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+.game-screen .tcgate-die-icon {
+  position:absolute;
+  inset:0;
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  pointer-events:none;
+  filter:drop-shadow(0 0 9px rgba(154,139,255,.13));
+}
+.game-screen .tcgate-die.opponent .tcgate-die-icon {
+  filter:drop-shadow(0 0 9px rgba(255,154,111,.13));
+}
+.game-screen .tcgate-die-shape { display:none !important; }
+.game-screen .tcgate-die-value {
+  min-width:22px;
+  padding:1px 3px 2px;
+  border-radius:5px;
+  background:rgba(7,11,18,.84);
+  font-size:12px;
+  line-height:1;
+}
+.game-screen .tcgate-gig-track.is-tight .tcgate-die-wrap { width:50px;flex-basis:50px; }
+.game-screen .tcgate-gig-track.is-tight .tcgate-die { width:48px;height:48px; }
+.game-screen .tcgate-gig-track.is-tight .tcgate-gig-dice-lane { gap:4px; }
+
+/* Fullscreen: clean header + controls in a single top-right cluster. */
+.opponent-feed-card:fullscreen {
+  position:relative;
+  display:grid;
+  grid-template-rows:48px minmax(0,1fr);
+  background:#05080d;
+}
+.opponent-feed-card:fullscreen .tcgate-feed-head {
+  position:relative;
+  z-index:100;
+  display:flex !important;
+  min-height:48px;
+  height:48px;
+  padding:0 12px 0 14px;
+  background:rgba(5,9,16,.94);
+  border-bottom:1px solid rgba(112,126,158,.16);
+  box-shadow:none;
+}
+.opponent-feed-card:fullscreen .tcgate-feed-actions {
+  position:absolute;
+  top:6px;
+  right:8px;
+  z-index:108;
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  gap:5px;
+  padding:4px;
+  border:1px solid rgba(113,126,158,.18);
+  border-radius:11px;
+  background:rgba(8,12,20,.76);
+  backdrop-filter:blur(8px);
+}
+.opponent-feed-card:fullscreen .tcgate-fullscreen-media,
+.opponent-feed-card:fullscreen .tcgate-fullscreen-button {
+  display:inline-grid !important;
+  width:34px;
+  height:34px;
+  border-radius:8px;
+}
+.opponent-feed-card:fullscreen .tcgate-opponent-video { height:100% !important;min-height:0 !important; }
+.opponent-feed-card:fullscreen .tcgate-local-pip {
+  left:16px;
+  bottom:16px;
+  width:220px;
+  height:124px;
+  z-index:86;
+}
+.opponent-feed-card:fullscreen .tcgate-gig-panel.is-fullscreen {
+  left:50%;
+  right:auto;
+  bottom:14px;
+  top:auto;
+  transform:translateX(-50%);
+  width:min(900px,calc(100% - 520px));
+  z-index:92;
+}
+.opponent-feed-card:fullscreen .local-feed-restore {
+  left:16px;
+  top:auto;
+  bottom:150px;
+  z-index:94;
+}
+
+/* Compact fullscreen card preview. */
+.opponent-feed-card:fullscreen .fullscreen-card-preview.tcgate-fullscreen-card {
+  top:60px;
+  right:14px;
+  width:190px;
+  padding:9px;
+  gap:7px;
+  border-radius:12px;
+  z-index:89;
+}
+.opponent-feed-card:fullscreen .tcgate-fullscreen-card-slot {
+  min-height:0;
+  aspect-ratio:5/7;
+  border-radius:9px;
+}
+.opponent-feed-card:fullscreen .tcgate-fullscreen-card-slot img {
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  border-radius:7px;
+}
+
+/* Zoom: image only, full card always visible, no squeezed caption. */
+#cardModal {
+  background:rgba(3,6,11,.93);
+  backdrop-filter:blur(12px);
+}
+#cardModal .real-modal-card-wrap {
+  width:min(470px,88vw) !important;
+  height:min(82vh,760px) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:visible !important;
+  filter:none;
+}
+#cardModal .modal-card-image {
+  display:block !important;
+  width:auto !important;
+  height:auto !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+  object-position:center !important;
+  border-radius:10px;
+  box-shadow:0 28px 80px rgba(0,0,0,.52);
+}
+#cardModal .modal-card-name { display:none !important; }
+#cardModal .modal-close {
+  top:18px;
+  right:18px;
+  width:40px;
+  height:40px;
+  z-index:120;
+}
+.opponent-feed-card:fullscreen .tcgate-fullscreen-card.expanded {
+  inset:48px 0 0 !important;
+  width:auto !important;
+  height:auto !important;
+  padding:24px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:rgba(3,6,11,.94) !important;
+  z-index:120 !important;
+}
+.opponent-feed-card:fullscreen .tcgate-fullscreen-card.expanded .tcgate-fullscreen-card-slot {
+  width:min(470px,76vw) !important;
+  height:min(82vh,760px) !important;
+  aspect-ratio:auto !important;
+  border:0 !important;
+  background:transparent !important;
+}
+.opponent-feed-card:fullscreen .tcgate-fullscreen-card.expanded .tcgate-fullscreen-card-slot img {
+  width:auto !important;
+  height:auto !important;
+  max-width:100% !important;
+  max-height:100% !important;
+  object-fit:contain !important;
+}
+
+@media (max-width:1200px) {
+  .game-screen .tcgate-game-layout { grid-template-columns:minmax(0,1fr) 190px; }
+  .game-screen .tcgate-gig-panel { width:min(820px,calc(100% - 250px)); }
+  .game-screen .tcgate-local-pip { width:210px;height:118px; }
+  .game-screen .tcgate-card-panel-title { font-size:14px; }
+  .opponent-feed-card:fullscreen .tcgate-gig-panel.is-fullscreen { width:min(760px,calc(100% - 470px)); }
+}
+
+@media (max-width:900px) {
+  .game-screen .tcgate-game-layout { grid-template-columns:1fr;overflow:auto;height:auto; }
+  .game-screen .tcgate-card-rail { display:none; }
+  .game-screen .tcgate-gig-panel { width:calc(100% - 24px); }
+  .opponent-feed-card:fullscreen .tcgate-gig-panel.is-fullscreen { width:calc(100% - 300px); }
+}
+/* Match the validated prototype: value sits directly inside the die artwork. */
+.game-screen .tcgate-die-value {
+  min-width:0 !important;
+  padding:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:currentColor !important;
+  font-size:14px !important;
+  font-weight:900 !important;
+  line-height:1 !important;
+  text-shadow:0 0 3px #070b12,0 1px 1px #070b12;
+}

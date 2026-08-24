@@ -447,7 +447,7 @@ function renderGigLane(uiOwner, containerId) {
         <div class="tcgate-die-rail ${originClass}">
           <button class="tcgate-die-adjust tcgate-die-adjust-plus" type="button" data-action="increment" aria-label="Augmenter la valeur">+</button>
           <div class="tcgate-die ${originClass}" aria-label="Dé à ${die.sides} faces, valeur ${die.value}">
-            <span class="tcgate-die-shape" style="--die-mask:url('/assets/dice/D${die.sides}.svg')" aria-hidden="true"></span>
+            <img class="tcgate-die-icon" src="/assets/dice/${originClass}/D${die.sides}.svg" alt="" aria-hidden="true">
             <span class="tcgate-die-value">${die.value}</span>
           </div>
           <button class="tcgate-die-adjust tcgate-die-adjust-minus" type="button" data-action="decrement" aria-label="Diminuer la valeur">−</button>
