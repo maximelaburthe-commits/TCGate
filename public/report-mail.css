@@ -1,0 +1,100 @@
+/* TCGate v0.4 - Alpha report mail modal */
+.tcgate-report-mail-modal {
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  background:rgba(3,6,12,.68);
+  backdrop-filter:blur(10px);
+}
+.tcgate-report-mail-modal.hidden { display:none !important; }
+
+.tcgate-report-mail-card {
+  position:relative;
+  width:min(560px,100%);
+  padding:28px;
+  border:1px solid rgba(142,126,218,.28);
+  border-radius:18px;
+  background:
+    radial-gradient(circle at 92% 4%,rgba(124,92,255,.11),transparent 28%),
+    linear-gradient(180deg,#0e1623,#09101a);
+  box-shadow:0 28px 90px rgba(0,0,0,.48);
+}
+.tcgate-report-mail-card h2 {
+  margin:6px 0 10px;
+  color:#f5f6fb;
+  font-size:26px;
+}
+.tcgate-report-mail-help {
+  margin:0 0 22px;
+  color:#9da8bb;
+  line-height:1.55;
+  font-size:13px;
+}
+.tcgate-report-mail-label {
+  display:block;
+  margin-bottom:8px;
+  color:#d7dcec;
+  font-size:12px;
+  font-weight:760;
+}
+.tcgate-report-mail-card textarea {
+  width:100%;
+  min-height:138px;
+  resize:vertical;
+  padding:13px 14px;
+  border:1px solid rgba(111,125,158,.32);
+  border-radius:12px;
+  outline:0;
+  background:#080e17;
+  color:#f4f6fb;
+  font:inherit;
+  line-height:1.5;
+}
+.tcgate-report-mail-card textarea:focus {
+  border-color:#7762db;
+  box-shadow:0 0 0 3px rgba(124,92,255,.11);
+}
+.tcgate-report-mail-close {
+  position:absolute;
+  top:14px;
+  right:14px;
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border-radius:10px;
+  color:#e9e6ff;
+  background:rgba(12,17,27,.78);
+  font-size:25px;
+  line-height:1;
+}
+.tcgate-report-mail-status {
+  min-height:22px;
+  margin-top:10px;
+  color:#8591a6;
+  font-size:12px;
+}
+.tcgate-report-mail-status.working { color:#c0b5ff; }
+.tcgate-report-mail-status.success { color:#8de3b5; }
+.tcgate-report-mail-status.error { color:#ff9da7; }
+
+.tcgate-report-mail-actions {
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:16px;
+}
+.tcgate-report-mail-actions button {
+  min-height:44px;
+  padding-inline:18px;
+}
+
+@media (max-width:600px) {
+  .tcgate-report-mail-card { padding:22px 18px 18px; }
+  .tcgate-report-mail-actions { flex-direction:column-reverse; }
+  .tcgate-report-mail-actions button { width:100%; }
+}
