@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 11 · UI 1.0.3';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 11 · UI 1.0.4';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -648,6 +648,7 @@ function renderGigDicePanel() {
   renderGigLane('opponent', 'gigOpponentDice');
   $('gigSelfCred').textContent = streetCred('self');
   $('gigOpponentCred').textContent = streetCred('opponent');
+  scheduleGigPanelSafePlacement('render');
 }
 
 function serializeGigState() {
@@ -792,7 +793,7 @@ function finishDieDrag(event) {
   if (targetUiOwner && transferDie(drag.dieId, targetUiOwner)) toast('Dé transféré.');
 }
 
-const GIG_PANEL_POSITION_KEY = 'tcgate.alpha.gig-panel-position.v2';
+const GIG_PANEL_POSITION_KEY = 'tcgate.alpha.gig-panel-position.v3';
 
 function gigPanelContextKey(panel = $('gigDicePanel')) {
   return panel?.classList.contains('is-fullscreen') ? 'fullscreen' : 'normal';
@@ -803,21 +804,50 @@ function readGigPanelPositions() {
     return parsed && typeof parsed === 'object' ? parsed : {};
   } catch { return {}; }
 }
+function writeGigPanelPositions(positions) {
+  try { sessionStorage.setItem(GIG_PANEL_POSITION_KEY, JSON.stringify(positions || {})); } catch {}
+}
+function clearSavedGigPanelPosition(panel = $('gigDicePanel')) {
+  const positions = readGigPanelPositions();
+  delete positions[gigPanelContextKey(panel)];
+  writeGigPanelPositions(positions);
+}
+function gigPanelContainer(panel = $('gigDicePanel')) {
+  return panel?.classList.contains('is-fullscreen')
+    ? document.querySelector('.opponent-feed-card')
+    : document.querySelector('.tcgate-opponent-column');
+}
+function gigPanelHasLayout(panel) {
+  return Boolean(panel && !panel.classList.contains('hidden') && panel.offsetWidth >= 120 && panel.offsetHeight >= 40);
+}
+function setGigPanelCoordinates(panel, left, top) {
+  panel.style.left = `${Math.round(left)}px`;
+  panel.style.top = `${Math.round(top)}px`;
+  panel.style.right = 'auto';
+  panel.style.bottom = 'auto';
+  panel.style.transform = 'none';
+}
 function saveGigPanelPosition(panel = $('gigDicePanel')) {
-  if (!panel) return;
-  const container = panel.classList.contains('is-fullscreen') ? document.querySelector('.opponent-feed-card') : document.querySelector('.tcgate-opponent-column');
+  if (!gigPanelHasLayout(panel)) return;
+  const container = gigPanelContainer(panel);
   if (!container) return;
   const containerRect = container.getBoundingClientRect();
   const panelRect = panel.getBoundingClientRect();
   const positions = readGigPanelPositions();
-  positions[gigPanelContextKey(panel)] = { left: Math.max(8, panelRect.left - containerRect.left), top: Math.max(8, panelRect.top - containerRect.top) };
-  try { sessionStorage.setItem(GIG_PANEL_POSITION_KEY, JSON.stringify(positions)); } catch {}
+  positions[gigPanelContextKey(panel)] = {
+    left: Math.max(8, panelRect.left - containerRect.left),
+    top: Math.max(8, panelRect.top - containerRect.top)
+  };
+  writeGigPanelPositions(positions);
 }
-function gigPanelWouldOverlapLocalPip(container, panel, left, top, margin = 12) {
-  const pip = container?.querySelector?.('.tcgate-local-pip') || document.querySelector('.tcgate-local-pip');
-  if (!pip || pip.classList.contains('preview-hidden')) return false;
+function gigPanelWouldOverlapLocalPip(container, panel, left, top, margin = 14) {
+  const pip = document.querySelector('.tcgate-local-pip');
+  if (!container || !gigPanelHasLayout(panel) || !pip || pip.classList.contains('preview-hidden')) return false;
+  const pipStyle = getComputedStyle(pip);
+  if (pipStyle.display === 'none' || pipStyle.visibility === 'hidden') return false;
   const containerRect = container.getBoundingClientRect();
   const pipRect = pip.getBoundingClientRect();
+  if (pipRect.width < 8 || pipRect.height < 8) return false;
   const candidate = {
     left: containerRect.left + left,
     top: containerRect.top + top,
@@ -831,24 +861,61 @@ function gigPanelWouldOverlapLocalPip(container, panel, left, top, margin = 12) 
     candidate.top >= pipRect.bottom + margin
   );
 }
+function defaultSafeGigPanelPosition(panel = $('gigDicePanel')) {
+  const container = gigPanelContainer(panel);
+  if (!container || !gigPanelHasLayout(panel)) return null;
+  const margin = 14;
+  const rect = container.getBoundingClientRect();
+  const maxLeft = Math.max(margin, rect.width - panel.offsetWidth - margin);
+  const maxTop = Math.max(margin, rect.height - panel.offsetHeight - margin);
+  let left = maxLeft;
+  let top = maxTop;
 
+  const pip = document.querySelector('.tcgate-local-pip');
+  if (pip && !pip.classList.contains('preview-hidden')) {
+    const pipStyle = getComputedStyle(pip);
+    const pipRect = pip.getBoundingClientRect();
+    if (pipStyle.display !== 'none' && pipStyle.visibility !== 'hidden' && pipRect.width >= 8 && pipRect.height >= 8) {
+      const pipLeft = pipRect.left - rect.left;
+      const pipTop = pipRect.top - rect.top;
+      const pipRight = pipRect.right - rect.left;
+      const pipBottom = pipRect.bottom - rect.top;
+      const overlaps = () => !(
+        left + panel.offsetWidth + margin <= pipLeft ||
+        left >= pipRight + margin ||
+        top + panel.offsetHeight + margin <= pipTop ||
+        top >= pipBottom + margin
+      );
+      if (overlaps()) {
+        const rightOfPip = pipRight + margin;
+        if (rightOfPip + panel.offsetWidth <= rect.width - margin) {
+          left = rightOfPip;
+        } else {
+          const abovePip = pipTop - panel.offsetHeight - margin;
+          if (abovePip >= margin) top = abovePip;
+          else top = margin;
+        }
+      }
+    }
+  }
+  left = Math.max(margin, Math.min(maxLeft, left));
+  top = Math.max(margin, Math.min(maxTop, top));
+  return { left, top };
+}
 function applySavedGigPanelPosition(panel = $('gigDicePanel')) {
-  if (!panel) return false;
-  const container = panel.classList.contains('is-fullscreen') ? document.querySelector('.opponent-feed-card') : document.querySelector('.tcgate-opponent-column');
+  if (!gigPanelHasLayout(panel)) return false;
+  const container = gigPanelContainer(panel);
   const saved = readGigPanelPositions()[gigPanelContextKey(panel)];
   if (!container || !saved || !Number.isFinite(saved.left) || !Number.isFinite(saved.top)) return false;
   const rect = container.getBoundingClientRect();
   const left = Math.max(8, Math.min(Math.max(8, rect.width - panel.offsetWidth - 8), saved.left));
   const top = Math.max(8, Math.min(Math.max(8, rect.height - panel.offsetHeight - 8), saved.top));
   if (gigPanelWouldOverlapLocalPip(container, panel, left, top)) {
+    clearSavedGigPanelPosition(panel);
     logEvent('gig-position-reset-safe-zone', { context: gigPanelContextKey(panel) });
     return false;
   }
-  panel.style.left = `${left}px`;
-  panel.style.top = `${top}px`;
-  panel.style.right = 'auto';
-  panel.style.bottom = 'auto';
-  panel.style.transform = 'none';
+  setGigPanelCoordinates(panel, left, top);
   return true;
 }
 function resetGigPanelPosition() {
@@ -859,6 +926,34 @@ function resetGigPanelPosition() {
   panel.style.right = '';
   panel.style.bottom = '';
   panel.style.transform = '';
+}
+function placeGigPanelSafely(panel = $('gigDicePanel'), reason = 'layout') {
+  if (!gigPanelHasLayout(panel) || panel.dataset.dragging === 'true') return false;
+  if (applySavedGigPanelPosition(panel)) return true;
+  const safe = defaultSafeGigPanelPosition(panel);
+  if (!safe) return false;
+  setGigPanelCoordinates(panel, safe.left, safe.top);
+  logEvent('gig-position-default-safe', { context: gigPanelContextKey(panel), reason });
+  return true;
+}
+let gigPlacementFrame = 0;
+let gigPlacementTimer = 0;
+function scheduleGigPanelSafePlacement(reason = 'layout') {
+  const panel = $('gigDicePanel');
+  if (!panel || panel.classList.contains('hidden')) return;
+  if (gigPlacementFrame) cancelAnimationFrame(gigPlacementFrame);
+  if (gigPlacementTimer) clearTimeout(gigPlacementTimer);
+  let attempt = 0;
+  const tryPlace = () => {
+    gigPlacementFrame = requestAnimationFrame(() => {
+      gigPlacementFrame = 0;
+      if (placeGigPanelSafely(panel, reason)) return;
+      attempt += 1;
+      if (attempt < 4) tryPlace();
+      else gigPlacementTimer = window.setTimeout(() => placeGigPanelSafely(panel, `${reason}-delayed`), 80);
+    });
+  };
+  tryPlace();
 }
 
 function moveGigPanelForFullscreen() {
@@ -873,7 +968,8 @@ function moveGigPanelForFullscreen() {
     if (panel.parentElement !== mount) mount.appendChild(panel);
     panel.classList.remove('is-fullscreen');
   }
-  if (!applySavedGigPanelPosition(panel)) resetGigPanelPosition();
+  resetGigPanelPosition();
+  scheduleGigPanelSafePlacement('fullscreen-change');
 }
 
 function setupDraggableGigPanel() {
@@ -4293,10 +4389,10 @@ renderGigDicePanel();
 setupDraggableGigPanel();
 window.addEventListener('resize', () => {
   renderGigDicePanel();
-  requestAnimationFrame(() => {
-    const panel=$('gigDicePanel');
-    if (panel && !panel.classList.contains('hidden')) applySavedGigPanelPosition(panel);
-  });
+  scheduleGigPanelSafePlacement('window-resize');
+});
+window.visualViewport?.addEventListener?.('resize', () => {
+  scheduleGigPanelSafePlacement('visual-viewport-resize');
 });
 
 window.addEventListener('beforeunload', () => {

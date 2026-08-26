@@ -7,7 +7,7 @@ const css = fs.readFileSync('public/tcgate-alpha.css','utf8');
 const server = fs.readFileSync('server.js','utf8');
 
 for (const token of [
-  "TCGate Alpha 0.1 Candidate 11 · UI 1.0.3",
+  "TCGate Alpha 0.1 Candidate 11 · UI 1.0.4",
   'rtcPeerCreatePromise',
   'rtcCreateEpoch',
   'rtcPeerGeneration',
@@ -20,14 +20,14 @@ for (const token of [
   'vision-resume-start',
   'vision-resume-success',
   'remote-camera-recovering',
-  "tcgate.alpha.gig-panel-position.v2",
+  "tcgate.alpha.gig-panel-position.v3",
   'gigPanelWouldOverlapLocalPip'
 ]) {
   if (!app.includes(token)) throw new Error(`Missing Candidate 11 app token: ${token}`);
 }
 
 for (const token of [
-  'Candidate 11 · UI 1.0.3 corrective',
+  'Candidate 11 · UI 1.0.4 corrective',
   '@media (min-width:901px) and (max-height:780px)',
   '.tcgate-gig-drag-handle:hover',
   'border-radius:0 !important',
