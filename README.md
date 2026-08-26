@@ -1,40 +1,42 @@
-# TCGate — Alpha 0.1 · Candidate 10
+# TCGate — Alpha 0.1 · Candidate 11 · UI 1.0.3
 
-Candidate **MAJEURE de résilience de session et de périphériques**, basée sur Candidate 9.
+Candidate corrective basée sur **Candidate 10 · UI 1.0.2 corrective**.
 
-## Socle conservé
-- parties 2 joueurs webcam/micro ;
-- mode Cyberpunk avec Vision sur le flux adverse ;
-- mode Sans jeu sans chargement Vision ;
-- WebRTC P2P avec fallback Cloudflare TURN ;
-- adaptation vidéo 1080p → 720p sous pression d'encodage ;
-- rapports complets alpha ;
-- sécurité Candidate 9 : Bearer secret, tickets SSE, rate limits, validation signalisation et headers navigateur.
+## Objectif
 
-Le modèle ONNX, Detection Worker, Vision Core, Identification et Table State 0.1.6 restent gelés.
+Fermer les derniers problèmes observés avant la baseline Alpha privée :
+- reprise F5 qui restaurait la salle mais pouvait perdre le flux webcam ;
+- création concurrente de nombreuses PeerConnections pendant la reprise ;
+- reprise Vision hésitante après hot-plug caméra ;
+- derniers défauts d'affichage accueil / Gig Dice / plein écran.
 
-## Candidate 10
-- vraie reprise après **fermeture complète d'onglet** via credential de récupération `HttpOnly` séparé ;
-- reprise en phase de jeu sans retour volontaire au lobby ;
-- F5 préservé et rendu compatible avec la phase `game` ;
-- hot-plug caméra/micro ;
-- récupération automatique du même périphérique lorsqu'il revient ;
-- choix d'un **nouveau matériel en cours de partie** sans quitter la salle ;
-- remplacement indépendant des tracks audio/vidéo ;
-- menu Périphériques dans la barre de jeu ;
-- correctif responsive pour les portables à faible hauteur utile.
+## Correctifs Candidate 11
+
+- création WebRTC atomique et génération unique par reprise ;
+- candidats ICE mis en attente/filtrés sans créer de PeerConnection concurrente ;
+- callbacks d'anciennes PeerConnections ignorés ;
+- lecture vidéo distante stabilisée pendant la reprise ;
+- Vision reste en pause jusqu'à réception de nouvelles frames après hot-plug puis se recalibre ;
+- accueil responsive sur écrans courts ;
+- Gig Dice ne chevauche plus le PiP au départ et sa poignée reste fixe au hover ;
+- plein écran bord-à-bord sans contour hérité.
+
+## Baseline Vision gelée
+
+Les fichiers suivants ne sont pas modifiés :
+- `models/card_detector_v53_512.onnx`
+- `public/detection-worker.js`
+- `public/vision-core.js`
+- `public/identification.js`
+- `public/table-state-engine.js`
+
+## Validation
 
 Voir :
-- `PLAN_TEST_ALPHA_0.1_CANDIDATE_10.md`
-- `CHANGELOG_TCGATE_ALPHA_0.1_CANDIDATE_10.md`
+- `PLAN_TEST_ALPHA_0.1_CANDIDATE_11.md`
+- `CHANGELOG_TCGATE_ALPHA_0.1_CANDIDATE_11.md`
 - `SECURITY_REVIEW_ALPHA_C9.md`
 - `SECURITY_REVIEW_ALPHA_C10_DELTA.md`
 - `DEPLOY_RAILWAY.md`
 
-
-## Base UI Candidate 10
-Cette Candidate 10 corrective est basée sur **Candidate 9 · UI 1.0.1 corrective**.
-
-## UI 1.0.2 corrective
-
-Patch mineur de Candidate 10 : réserve une zone sûre autour du PiP local pour Gig Dice, stabilise/mémorise le placement utilisateur du panneau Gig et ajoute une fermeture explicite du zoom carte en plein écran sans quitter le plein écran. Le pipeline WebRTC/Vision n'est pas modifié.
+Si Candidate 11 passe le test ciblé, elle devient la baseline pour la préparation **Alpha privée + rapports automatiques par mail**.

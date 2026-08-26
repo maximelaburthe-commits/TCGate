@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 10 · UI 1.0.2';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 11 · UI 1.0.3';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -42,6 +42,10 @@ const state = {
   rtcRecoveryTimer: null,
   rtcRecoveryInFlight: false,
   roomRecoveryInFlight: false,
+  rtcPeerCreatePromise: null,
+  rtcCreateEpoch: 0,
+  rtcPeerGeneration: 0,
+  remoteVideoPlaybackRetryTimer: null,
 
   eventSource: null,
   localStream: null,
@@ -123,6 +127,7 @@ const state = {
   visionPreparing: false,
   visionAttachedStreamId: null,
   visionMetricsTimer: null,
+  visionResumeToken: 0,
   calibrationResizeTimer: null,
   currentIdentifiedCard: null,
   cardDisplayHideTimer: null,
@@ -787,7 +792,7 @@ function finishDieDrag(event) {
   if (targetUiOwner && transferDie(drag.dieId, targetUiOwner)) toast('Dé transféré.');
 }
 
-const GIG_PANEL_POSITION_KEY = 'tcgate.alpha.gig-panel-position.v1';
+const GIG_PANEL_POSITION_KEY = 'tcgate.alpha.gig-panel-position.v2';
 
 function gigPanelContextKey(panel = $('gigDicePanel')) {
   return panel?.classList.contains('is-fullscreen') ? 'fullscreen' : 'normal';
@@ -808,6 +813,25 @@ function saveGigPanelPosition(panel = $('gigDicePanel')) {
   positions[gigPanelContextKey(panel)] = { left: Math.max(8, panelRect.left - containerRect.left), top: Math.max(8, panelRect.top - containerRect.top) };
   try { sessionStorage.setItem(GIG_PANEL_POSITION_KEY, JSON.stringify(positions)); } catch {}
 }
+function gigPanelWouldOverlapLocalPip(container, panel, left, top, margin = 12) {
+  const pip = container?.querySelector?.('.tcgate-local-pip') || document.querySelector('.tcgate-local-pip');
+  if (!pip || pip.classList.contains('preview-hidden')) return false;
+  const containerRect = container.getBoundingClientRect();
+  const pipRect = pip.getBoundingClientRect();
+  const candidate = {
+    left: containerRect.left + left,
+    top: containerRect.top + top,
+    right: containerRect.left + left + panel.offsetWidth,
+    bottom: containerRect.top + top + panel.offsetHeight
+  };
+  return !(
+    candidate.right + margin <= pipRect.left ||
+    candidate.left >= pipRect.right + margin ||
+    candidate.bottom + margin <= pipRect.top ||
+    candidate.top >= pipRect.bottom + margin
+  );
+}
+
 function applySavedGigPanelPosition(panel = $('gigDicePanel')) {
   if (!panel) return false;
   const container = panel.classList.contains('is-fullscreen') ? document.querySelector('.opponent-feed-card') : document.querySelector('.tcgate-opponent-column');
@@ -816,6 +840,10 @@ function applySavedGigPanelPosition(panel = $('gigDicePanel')) {
   const rect = container.getBoundingClientRect();
   const left = Math.max(8, Math.min(Math.max(8, rect.width - panel.offsetWidth - 8), saved.left));
   const top = Math.max(8, Math.min(Math.max(8, rect.height - panel.offsetHeight - 8), saved.top));
+  if (gigPanelWouldOverlapLocalPip(container, panel, left, top)) {
+    logEvent('gig-position-reset-safe-zone', { context: gigPanelContextKey(panel) });
+    return false;
+  }
   panel.style.left = `${left}px`;
   panel.style.top = `${top}px`;
   panel.style.right = 'auto';
@@ -1021,7 +1049,8 @@ async function attachVisionToRemoteStream(stream) {
   try{
     await prepareVision();
     await window.TCGVisionEngine?.attachRemoteStream?.(stream);
-    if (state.remoteMediaState.cameraEnabled === false) {
+    const remoteCameraOff = state.remoteMediaState.cameraEnabled === false;
+    if (remoteCameraOff) {
       window.TCGVisionEngine?.setInputPaused?.(true, 'remote-camera-off');
       setVisionStatus('Vision : pause · caméra adverse coupée', 'warning');
     }
@@ -1036,11 +1065,14 @@ async function attachVisionToRemoteStream(stream) {
         logEvent('vision-state-attach-error',{name:err?.name||null,message:err?.message||String(err)});
       }
     }
-    setVisionStatus('Vision : active','good');
-
-    window.TCGVisionCalibration?.start?.($('remoteVideo'),'initial').catch(err=>{
-      logEvent('calibration-error',{name:err?.name||null,message:err?.message||String(err)});
-    });
+    if (!remoteCameraOff) {
+      setVisionStatus('Vision : active','good');
+      window.TCGVisionCalibration?.start?.($('remoteVideo'),'initial').catch(err=>{
+        logEvent('calibration-error',{name:err?.name||null,message:err?.message||String(err)});
+      });
+    } else {
+      window.TCGVisionCalibration?.stop?.();
+    }
 
     startVisionMetricsSampler();
     logEvent('vision-attached',{streamId:stream.id,videoTrack:videoTrack.label||null});
@@ -1051,6 +1083,7 @@ async function attachVisionToRemoteStream(stream) {
 }
 
 function detachVision() {
+  state.visionResumeToken += 1;
   clearInterval(state.visionMetricsTimer);
   state.visionMetricsTimer=null;
   clearTimeout(state.calibrationResizeTimer);
@@ -2785,6 +2818,109 @@ async function sendCurrentMediaState(source='local-change') {
   return result;
 }
 
+function cancelVisionResume(reason='cancelled') {
+  state.visionResumeToken += 1;
+  logEvent('vision-resume-cancelled', { reason, token: state.visionResumeToken });
+}
+
+function waitForFreshRemoteVideoFrames(video, token, frameCount = 3, timeoutMs = 3500) {
+  return new Promise(resolve => {
+    if (!video) return resolve(false);
+    const startedAt = performance.now();
+    let seen = 0;
+    let settled = false;
+    let lastTime = Number(video.currentTime || 0);
+
+    const finish = ok => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve(Boolean(ok));
+    };
+
+    const timeout = setTimeout(() => finish(false), timeoutMs);
+
+    const stillValid = () =>
+      token === state.visionResumeToken &&
+      state.remoteMediaState.cameraEnabled !== false &&
+      Boolean(state.remoteStream?.getVideoTracks?.().some(track => track.readyState === 'live'));
+
+    if (typeof video.requestVideoFrameCallback === 'function') {
+      const step = () => {
+        if (settled) return;
+        if (!stillValid()) return finish(false);
+        video.requestVideoFrameCallback(() => {
+          if (settled) return;
+          if (!stillValid()) return finish(false);
+          seen += 1;
+          if (seen >= frameCount) return finish(true);
+          if (performance.now() - startedAt >= timeoutMs) return finish(false);
+          step();
+        });
+      };
+      step();
+      return;
+    }
+
+    const poll = () => {
+      if (settled) return;
+      if (!stillValid()) return finish(false);
+      const nowTime = Number(video.currentTime || 0);
+      if (video.readyState >= 2 && video.videoWidth > 0 && nowTime > lastTime + 0.001) {
+        lastTime = nowTime;
+        seen += 1;
+        if (seen >= frameCount) return finish(true);
+      }
+      if (performance.now() - startedAt >= timeoutMs) return finish(false);
+      setTimeout(poll, 90);
+    };
+    poll();
+  });
+}
+
+async function resumeVisionAfterRemoteCamera() {
+  if (!visionEnabledForCurrentGame()) return false;
+  const token = ++state.visionResumeToken;
+  const video = $('remoteVideo');
+
+  window.TCGVisionEngine?.setInputPaused?.(true, 'remote-camera-recovering');
+  setVisionStatus('Vision : reprise caméra…', 'warning');
+  logEvent('vision-resume-start', { token });
+
+  const fresh = await waitForFreshRemoteVideoFrames(video, token, 3, 3500);
+  if (token !== state.visionResumeToken || state.remoteMediaState.cameraEnabled === false) return false;
+
+  if (!fresh) {
+    setVisionStatus('Vision : attente du flux caméra', 'warning');
+    logEvent('vision-resume-timeout', { token });
+    return false;
+  }
+
+  try {
+    if (!state.visionAttachedStreamId && state.remoteStream?.getVideoTracks?.().length) {
+      await attachVisionToRemoteStream(state.remoteStream);
+    } else {
+      window.TCGVisionEngine?.setInputPaused?.(false, 'remote-camera-stable');
+      await window.TCGVisionCalibration?.start?.(video, 'remote-camera-resume');
+      setVisionStatus('Vision : active', 'good');
+    }
+    logEvent('vision-resume-success', {
+      token,
+      width: Number(video?.videoWidth || 0),
+      height: Number(video?.videoHeight || 0)
+    });
+    return true;
+  } catch (err) {
+    setVisionStatus('Vision : reprise incomplète', 'warning');
+    logEvent('vision-resume-error', {
+      token,
+      name: err?.name || null,
+      message: err?.message || String(err)
+    });
+    return false;
+  }
+}
+
 function applyRemoteMediaState(payload = {}) {
   const previous = { ...state.remoteMediaState };
   const next = {
@@ -2796,10 +2932,15 @@ function applyRemoteMediaState(payload = {}) {
 
   const cameraChanged = previous.cameraEnabled !== next.cameraEnabled;
   if (cameraChanged && typeof next.cameraEnabled === 'boolean') {
-    const paused = !next.cameraEnabled;
-    window.TCGVisionEngine?.setInputPaused?.(paused, paused ? 'remote-camera-off' : 'remote-camera-on');
-    if (paused) setVisionStatus('Vision : pause · caméra adverse coupée', 'warning');
-    else if (state.visionAttachedStreamId) setVisionStatus('Vision : active', 'good');
+    if (!next.cameraEnabled) {
+      cancelVisionResume('remote-camera-off');
+      window.TCGVisionEngine?.setInputPaused?.(true, 'remote-camera-off');
+      window.TCGVisionCalibration?.stop?.();
+      setVisionStatus('Vision : pause · caméra adverse coupée', 'warning');
+      logEvent('vision-paused-remote-camera-off');
+    } else if (previous.cameraEnabled === false) {
+      resumeVisionAfterRemoteCamera().catch(() => {});
+    }
   }
 
   logEvent('remote-media-state', {
@@ -2843,125 +2984,188 @@ async function attemptRtcRecovery(reason = 'unknown') {
   }
 }
 
+
+function remoteIceUfrags(pc) {
+  const sdp = String(pc?.remoteDescription?.sdp || '');
+  return new Set([...sdp.matchAll(/^a=ice-ufrag:(.+)$/gm)].map(match => String(match[1] || '').trim()).filter(Boolean));
+}
+
+function candidateMatchesRemoteDescription(pc, candidate) {
+  const ufrags = remoteIceUfrags(pc);
+  if (!ufrags.size || !candidate?.usernameFragment) return true;
+  return ufrags.has(candidate.usernameFragment);
+}
+
+async function playRemoteVideoForPeer(pc, attempt = 0) {
+  if (!pc || pc !== state.pc) return false;
+  const video = $('remoteVideo');
+  if (!video?.srcObject || !video.srcObject.getVideoTracks?.().length) return false;
+  if (state.remotePlayPending) return false;
+
+  state.remotePlayPending = true;
+  try {
+    await video.play();
+    if (pc !== state.pc) return false;
+    state.remoteVideoStarted = true;
+    clearTimeout(state.remoteVideoPlaybackRetryTimer);
+    state.remoteVideoPlaybackRetryTimer = null;
+    return true;
+  } catch (err) {
+    logEvent('remote-video-play-error', {
+      name: err?.name || null,
+      message: err?.message || null,
+      attempt
+    });
+    if (pc === state.pc && attempt < 2 && (err?.name === 'AbortError' || err?.name === 'NotAllowedError')) {
+      clearTimeout(state.remoteVideoPlaybackRetryTimer);
+      state.remoteVideoPlaybackRetryTimer = setTimeout(() => {
+        playRemoteVideoForPeer(pc, attempt + 1).catch(() => {});
+      }, 160 * (attempt + 1));
+    }
+    return false;
+  } finally {
+    state.remotePlayPending = false;
+  }
+}
+
 async function ensurePeerConnection() {
+  if (state.rtcPeerCreatePromise) return state.rtcPeerCreatePromise;
   if (state.pc) return state.pc;
 
-  const rtcConfig = await loadRtcConfig();
-  const pc = new RTCPeerConnection(rtcConfig);
-  state.pc = pc;
-  state.rtcStarted = true;
-  state.pendingIce = [];
+  const createEpoch = state.rtcCreateEpoch;
+  const createPromise = (async () => {
+    const rtcConfig = await loadRtcConfig();
+    if (createEpoch !== state.rtcCreateEpoch) throw new Error('RTC creation superseded');
+    if (state.pc) return state.pc;
 
-  // Only the deterministic offerer creates m-lines before the offer.
-  // The answerer lets setRemoteDescription(offer) create matching
-  // transceivers, then attaches its local tracks to those transceivers.
-  if (state.role === 'host') {
-    state.videoTransceiver = pc.addTransceiver('video', { direction: 'sendrecv' });
-    state.audioTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' });
+    const pc = new RTCPeerConnection(rtcConfig);
+    const generation = ++state.rtcPeerGeneration;
+    pc.__tcgateGeneration = generation;
+    state.pc = pc;
+    state.rtcStarted = true;
 
-    await state.videoTransceiver.sender.replaceTrack(currentVideoTrack());
-    await configureVideoSenderPolicy(state.videoTransceiver.sender, 'host-create');
-    await state.audioTransceiver.sender.replaceTrack(currentAudioTrack());
-  }
+    // Only the deterministic offerer creates m-lines before the offer.
+    // The answerer lets setRemoteDescription(offer) create matching
+    // transceivers, then attaches its local tracks to those transceivers.
+    if (state.role === 'host') {
+      state.videoTransceiver = pc.addTransceiver('video', { direction: 'sendrecv' });
+      state.audioTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' });
 
-  pc.ontrack = async event => {
-    let stream = event.streams?.[0] || null;
+      await state.videoTransceiver.sender.replaceTrack(currentVideoTrack());
+      await configureVideoSenderPolicy(state.videoTransceiver.sender, 'host-create');
+      await state.audioTransceiver.sender.replaceTrack(currentAudioTrack());
+    }
 
-    if (!stream) {
-      if (!state.remoteStream) state.remoteStream = new MediaStream();
-      if (!state.remoteStream.getTracks().some(t => t.id === event.track.id)) {
-        state.remoteStream.addTrack(event.track);
+    if (createEpoch !== state.rtcCreateEpoch || state.pc !== pc) {
+      throw new Error('RTC creation superseded');
+    }
+
+    pc.ontrack = async event => {
+      if (pc !== state.pc) {
+        logEvent('rtc-stale-track-ignored', { generation, kind: event.track?.kind || null });
+        return;
       }
-    } else {
-      state.remoteStream = stream;
-    }
 
-    if (!state.remoteStream) return;
+      let stream = event.streams?.[0] || null;
 
-    $('remoteVideo').srcObject = state.remoteStream;
-    const hasRemoteVideo = Boolean(state.remoteStream.getVideoTracks().length);
-    $('remoteVideoPlaceholder').classList.toggle('hidden', hasRemoteVideo);
-
-    // Avoid two simultaneous play() calls when audio/video ontrack events
-    // arrive almost together.
-    if (hasRemoteVideo && !state.remoteVideoStarted && !state.remotePlayPending) {
-      state.remotePlayPending = true;
-      queueMicrotask(async () => {
-        try {
-          await $('remoteVideo').play();
-          state.remoteVideoStarted = true;
-        } catch (err) {
-          logEvent('remote-video-play-error', {
-            name: err?.name || null,
-            message: err?.message || null
-          });
-        } finally {
-          state.remotePlayPending = false;
+      if (!stream) {
+        if (!state.remoteStream) state.remoteStream = new MediaStream();
+        if (!state.remoteStream.getTracks().some(t => t.id === event.track.id)) {
+          state.remoteStream.addTrack(event.track);
         }
-      });
-    }
+      } else {
+        state.remoteStream = stream;
+      }
 
-    logEvent('rtc-track', {
-      kind: event.track.kind,
-      streamTracks: state.remoteStream.getTracks().map(t => t.kind)
+      if (!state.remoteStream || pc !== state.pc) return;
+
+      if ($('remoteVideo').srcObject !== state.remoteStream) {
+        $('remoteVideo').srcObject = state.remoteStream;
+        state.remoteVideoStarted = false;
+      }
+      const hasRemoteVideo = Boolean(state.remoteStream.getVideoTracks().length);
+      $('remoteVideoPlaceholder').classList.toggle('hidden', hasRemoteVideo);
+
+      if (hasRemoteVideo && !state.remoteVideoStarted) {
+        queueMicrotask(() => playRemoteVideoForPeer(pc).catch(() => {}));
+      }
+
+      logEvent('rtc-track', {
+        generation,
+        kind: event.track.kind,
+        streamTracks: state.remoteStream.getTracks().map(t => t.kind)
+      });
+
+      if (hasRemoteVideo) {
+        attachVisionToRemoteStream(state.remoteStream).catch(()=>{});
+      }
+    };
+
+    pc.onicecandidate = event => {
+      if (pc !== state.pc) return;
+      if (!event.candidate) {
+        logEvent('rtc-ice-complete', { generation });
+        return;
+      }
+      sendSignal('candidate', event.candidate.toJSON?.() || event.candidate);
+    };
+
+    pc.onconnectionstatechange = () => {
+      if (pc !== state.pc) return;
+      const cs = pc.connectionState;
+      if (cs === 'connected') {
+        clearRtcRecoveryTimer();
+        setRtcStatus('WebRTC connecté', 'connected');
+        configureVideoSenderPolicy(state.videoTransceiver?.sender, 'connected').catch(()=>{});
+        sendCurrentMediaState('rtc-connected').catch(()=>{});
+      } else if (cs === 'connecting' || cs === 'new') {
+        setRtcStatus('Connexion WebRTC…', 'warning');
+      } else if (cs === 'disconnected') {
+        setRtcStatus('Connexion interrompue · tentative de reprise…', 'warning');
+        scheduleRtcRecovery('disconnected');
+      } else if (cs === 'failed') {
+        setRtcStatus('Reconnexion WebRTC…', 'warning');
+        scheduleRtcRecovery('failed');
+      } else if (cs === 'closed') {
+        clearRtcRecoveryTimer();
+        setRtcStatus('WebRTC fermé');
+      }
+
+      logEvent('rtc-connection-state', { state: cs, generation });
+      snapshotRtcMetrics().catch(() => {});
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      if (pc !== state.pc) return;
+      logEvent('rtc-ice-state', { state: pc.iceConnectionState, generation });
+    };
+
+    pc.onsignalingstatechange = () => {
+      if (pc !== state.pc) return;
+      logEvent('rtc-signaling-state', { state: pc.signalingState, generation });
+    };
+
+    clearInterval(state.rtcStatsTimer);
+    state.rtcStatsTimer = setInterval(() => {
+      if (pc === state.pc) snapshotRtcMetrics().catch(() => {});
+    }, 2000);
+
+    logEvent('rtc-created', {
+      role: state.role,
+      generation,
+      recoveryEpoch: state.recoveryEpoch,
+      precreatedTransceivers: state.role === 'host' ? ['video', 'audio'] : []
     });
 
-    if(hasRemoteVideo){
-      attachVisionToRemoteStream(state.remoteStream).catch(()=>{});
-    }
-  };
+    return pc;
+  })();
 
-  pc.onicecandidate = event => {
-    if (!event.candidate) {
-      logEvent('rtc-ice-complete');
-      return;
-    }
-    sendSignal('candidate', event.candidate.toJSON?.() || event.candidate);
-  };
-
-  pc.onconnectionstatechange = () => {
-    const cs = pc.connectionState;
-    if (cs === 'connected') {
-      clearRtcRecoveryTimer();
-      setRtcStatus('WebRTC connecté', 'connected');
-      configureVideoSenderPolicy(state.videoTransceiver?.sender, 'connected').catch(()=>{});
-      sendCurrentMediaState('rtc-connected').catch(()=>{});
-    } else if (cs === 'connecting' || cs === 'new') {
-      setRtcStatus('Connexion WebRTC…', 'warning');
-    } else if (cs === 'disconnected') {
-      setRtcStatus('Connexion interrompue · tentative de reprise…', 'warning');
-      scheduleRtcRecovery('disconnected');
-    } else if (cs === 'failed') {
-      setRtcStatus('Reconnexion WebRTC…', 'warning');
-      scheduleRtcRecovery('failed');
-    } else if (cs === 'closed') {
-      clearRtcRecoveryTimer();
-      setRtcStatus('WebRTC fermé');
-    }
-
-    logEvent('rtc-connection-state', { state: cs });
-    snapshotRtcMetrics().catch(() => {});
-  };
-
-  pc.oniceconnectionstatechange = () => {
-    logEvent('rtc-ice-state', { state: pc.iceConnectionState });
-  };
-
-  pc.onsignalingstatechange = () => {
-    logEvent('rtc-signaling-state', { state: pc.signalingState });
-  };
-
-  clearInterval(state.rtcStatsTimer);
-  state.rtcStatsTimer = setInterval(() => {
-    snapshotRtcMetrics().catch(() => {});
-  }, 2000);
-
-  logEvent('rtc-created', {
-    role: state.role,
-    precreatedTransceivers: state.role === 'host' ? ['video', 'audio'] : []
-  });
-
-  return pc;
+  state.rtcPeerCreatePromise = createPromise;
+  try {
+    return await createPromise;
+  } finally {
+    if (state.rtcPeerCreatePromise === createPromise) state.rtcPeerCreatePromise = null;
+  }
 }
 
 async function bindAnswererTracks(pc) {
@@ -3077,7 +3281,39 @@ async function handleSignal(signal) {
     return;
   }
 
+  if (signal.type === 'candidate') {
+    try {
+      const candidate = new RTCIceCandidate(signal.payload);
+      const pc = state.pc;
+      if (!pc || !pc.remoteDescription) {
+        state.pendingIce.push(candidate);
+        if (state.pendingIce.length > 128) state.pendingIce.splice(0, state.pendingIce.length - 128);
+        logEvent('rtc-candidate-buffered', {
+          reason: !pc ? 'peer-not-created' : 'remote-description-missing',
+          usernameFragment: candidate.usernameFragment || null,
+          pending: state.pendingIce.length
+        });
+        return;
+      }
+      if (!candidateMatchesRemoteDescription(pc, candidate)) {
+        logEvent('rtc-candidate-stale-ignored', {
+          usernameFragment: candidate.usernameFragment || null,
+          generation: pc.__tcgateGeneration || null
+        });
+        return;
+      }
+      await pc.addIceCandidate(candidate);
+    } catch (err) {
+      logEvent('rtc-candidate-error', { message: err?.message || String(err) });
+    }
+    return;
+  }
+
   const pc = await ensurePeerConnection();
+  if (pc !== state.pc) {
+    logEvent('signal-ignored', { type: signal.type, reason: 'stale-peer-generation' });
+    return;
+  }
 
   try {
     if (signal.type === 'offer') {
@@ -3107,7 +3343,7 @@ async function handleSignal(signal) {
       // The remote offer has now created the exact m-lines on Chrome/Firefox.
       // Attach local camera/mic to those existing transceivers before answering.
       await bindAnswererTracks(pc);
-      await flushPendingIce();
+      await flushPendingIce(pc);
 
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
@@ -3139,19 +3375,11 @@ async function handleSignal(signal) {
 
       await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
       state.lastRemoteAnswerSdp = sdp;
-      await flushPendingIce();
+      await flushPendingIce(pc);
       logEvent('rtc-answer-applied');
       return;
     }
 
-    if (signal.type === 'candidate') {
-      const candidate = new RTCIceCandidate(signal.payload);
-      if (pc.remoteDescription) {
-        await pc.addIceCandidate(candidate);
-      } else {
-        state.pendingIce.push(candidate);
-      }
-    }
   } catch (err) {
     logEvent('signal-handle-error', {
       type: signal.type,
@@ -3162,19 +3390,39 @@ async function handleSignal(signal) {
   }
 }
 
-async function flushPendingIce() {
-  if (!state.pc?.remoteDescription) return;
-  while (state.pendingIce.length) {
+async function flushPendingIce(pc = state.pc) {
+  if (!pc?.remoteDescription || pc !== state.pc) return;
+  while (state.pendingIce.length && pc === state.pc) {
     const candidate = state.pendingIce.shift();
-    try { await state.pc.addIceCandidate(candidate); }
+    if (!candidateMatchesRemoteDescription(pc, candidate)) {
+      logEvent('rtc-candidate-stale-ignored', {
+        usernameFragment: candidate?.usernameFragment || null,
+        generation: pc.__tcgateGeneration || null,
+        source: 'pending'
+      });
+      continue;
+    }
+    try { await pc.addIceCandidate(candidate); }
     catch (err) { logEvent('rtc-candidate-error', { message: err.message }); }
   }
 }
 
 function closePeerConnection(reason = 'manual') {
+  state.rtcCreateEpoch += 1;
+  state.rtcPeerCreatePromise = null;
+  clearTimeout(state.remoteVideoPlaybackRetryTimer);
+  state.remoteVideoPlaybackRetryTimer = null;
+
   if (state.pc) {
     snapshotRtcMetrics().catch(() => {});
-    try { state.pc.ontrack = null; state.pc.onicecandidate = null; state.pc.close(); } catch {}
+    try {
+      state.pc.ontrack = null;
+      state.pc.onicecandidate = null;
+      state.pc.onconnectionstatechange = null;
+      state.pc.oniceconnectionstatechange = null;
+      state.pc.onsignalingstatechange = null;
+      state.pc.close();
+    } catch {}
   }
 
   clearInterval(state.rtcStatsTimer);
@@ -4052,7 +4300,7 @@ window.addEventListener('resize', () => {
 });
 
 window.addEventListener('beforeunload', () => {
-  // Candidate 10: refresh keeps sessionStorage, while a full tab close can
+  // Refresh keeps sessionStorage, while a full tab close can
   // still be recovered through the separate HttpOnly recovery credential.
   // Explicit Quit buttons remain authoritative and remove the peer immediately.
   saveRoomSession();

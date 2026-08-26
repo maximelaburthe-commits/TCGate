@@ -1,0 +1,14 @@
+TCGate Alpha 0.1 Candidate 11 · UI 1.0.3
+Generated: 2026-08-26
+
+Frozen TCG Vision baseline (must remain byte-identical):
+2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319  models/card_detector_v53_512.onnx
+e749551f11065a03bd2cfc75577f23c4ece893a2c7d08bc82a341b2a35619b7a  public/detection-worker.js
+7ad3e427e2ba2181d5ab74e4ad8d68b855144e5d6901c6fdf58cdc36263cdd04  public/table-state-engine.js
+520981919521befdf9b80e7432ca3ac885c846768a274d4a5456f771e63f68e6  public/vision-core.js
+92c8f946c4429c5979f0374f14c837436cb46cf6baf8c564d961589fbd844f35  public/identification.js
+
+Candidate 11 changed application files:
+3435edc9c2764c5d0a5f21a464b9943c59c887f73495d620b4761784ae1a75e5  public/app.js
+877bfa5d961a14154ff1c1b7af571a10b5c2e9d5285514161255718bc0a7e1ab  public/tcgate-alpha.css
+6b39d444cea5f0a052a35bc7991793dde2303c688ba9363c82903c44f157f9e1  server.js

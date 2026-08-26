@@ -6,7 +6,6 @@ const app = fs.readFileSync(path.join(root, 'public/app.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'public/tcgate-alpha.css'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
 for (const token of [
-  "TCGate Alpha 0.1 Candidate 10 · UI 1.0.2",
   'GIG_PANEL_POSITION_KEY',
   'saveGigPanelPosition',
   'applySavedGigPanelPosition',
