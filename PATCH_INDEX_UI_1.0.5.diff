@@ -1,0 +1,49 @@
+*** public/index.html
+--- public/index.html (UI 1.0.5)
+***************
+*** 7,9 ****
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/tcgate-alpha.css">
+  </head>
+--- 7,10 ----
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/tcgate-alpha.css">
++   <link rel="stylesheet" href="/tcgate-alpha-ui-1.0.5.css">
+  </head>
+***************
+*** 20,28 ****
+-             <h1>Jouez à vos TCG physiques à distance.</h1>
+-             <p>
+-               Une table. Vos cartes. <span>Votre adversaire.</span><br>
+-               Créez une partie ou rejoignez une table existante en quelques secondes.
+-             </p>
+--- 21,35 ----
++             <h1>La plateforme webcam conçue pour les TCG</h1>
++             <p>
++               Affrontez des joueurs en direct, affichez vos cartes en haute définition
++               et profitez d'une interface conçue pour jouer confortablement à distance.
++             </p>
++             <div class="tcgate-home-benefits" aria-label="Avantages TCGate">
++               <span class="tcgate-home-benefit">Jouez en direct</span>
++               <span class="tcgate-home-benefit">Cartes en HD</span>
++               <span class="tcgate-home-benefit">Pensé pour les TCG</span>
++             </div>
+***************
+*** 42,44 ****
+            <div class="tcgate-home-visual" aria-hidden="true">
+              <img src="/assets/home-portal-art-crop.png" alt="">
+            </div>
+--- 49,59 ----
+            <div class="tcgate-home-visual" aria-hidden="true">
+              <img src="/assets/home-portal-art-crop.png" alt="">
++             <div class="tcgate-hero-network">
++               <div class="tcgate-hero-link left"></div>
++               <div class="tcgate-hero-link right"></div>
++               <div class="tcgate-hero-player left"></div>
++               <div class="tcgate-hero-player right"></div>
++               <div class="tcgate-hero-gate"></div>
++               <div class="tcgate-hero-card one"></div>
++               <div class="tcgate-hero-card two"></div>
++               <div class="tcgate-hero-card three"></div>
++             </div>
+            </div>
