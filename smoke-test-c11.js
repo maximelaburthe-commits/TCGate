@@ -28,7 +28,7 @@ for (const token of [
 
 for (const token of [
   'Candidate 11 · UI 1.0.4 corrective',
-  '@media (min-width:901px) and (max-height:780px)',
+  '@media (min-width:901px) and (max-height:760px)',
   '.tcgate-gig-drag-handle:hover',
   'border-radius:0 !important',
   '.opponent-feed-card:fullscreen .tcgate-gig-panel.is-fullscreen'
