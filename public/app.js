@@ -341,7 +341,7 @@ async function checkPersistentRecovery() {
       return false;
     }
     state.persistentRecovery = result;
-    const gameLabel = result.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
+    const gameLabel = window.TCGateGameRegistry.label(result.game, { short: true });
     $('resumeSessionTitle').textContent = `Salon ${result.code} · ${gameLabel}`;
     $('resumeSessionMeta').textContent = result.phase === 'game'
       ? 'Partie en cours · reprise sécurisée disponible.'
@@ -380,7 +380,7 @@ function hydrateSessionFromResult(result) {
   $('lobbyPlayerName').textContent = state.playerName;
   $('localPlayerLabel').textContent = state.playerName;
   $('gameCode').textContent = state.roomCode;
-  $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
+  $('gameTitle').textContent = window.TCGateGameRegistry.label(state.game, { short: true });
   history.replaceState({}, '', `${location.pathname}?room=${state.roomCode}`);
   saveRoomSession();
   hidePersistentRecoveryCard();
@@ -519,17 +519,16 @@ const VISION_ASSETS = [
 ];
 
 function gameLabel(game = state.game) {
-  if (game === 'cyberpunk') return 'Cyberpunk Trading Card Game · Vision';
-  if (game === 'no-game') return 'Sans jeu · webcam uniquement';
-  return 'TCG';
+  return window.TCGateGameRegistry.label(game);
 }
 
 function visionEnabledForCurrentGame() {
-  return state.game === 'cyberpunk';
+  return window.TCGateGameRegistry.supports(state.game, 'vision') &&
+    window.TCGateGameRegistry.runtimeReady(state.game, 'vision');
 }
 
 function gigDiceEnabledForCurrentGame() {
-  return state.game === 'cyberpunk';
+  return window.TCGateGameRegistry.supports(state.game, 'gigDice');
 }
 
 function localGigRole() {
@@ -1067,7 +1066,7 @@ function applyGameModeUi() {
   const visionEnabled = visionEnabledForCurrentGame();
   screens.game?.classList.toggle('no-vision-mode', !visionEnabled);
   $('lobbyGameLabel').textContent = gameLabel();
-  $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
+  $('gameTitle').textContent = window.TCGateGameRegistry.label(state.game, { short: true });
   renderGigDicePanel();
 
   if (!visionEnabled) {
@@ -2154,7 +2153,7 @@ async function enterLobby() {
     $('lobbyPlayerName').textContent = state.playerName;
     $('localPlayerLabel').textContent = state.playerName;
     $('gameCode').textContent = state.roomCode;
-    $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
+    $('gameTitle').textContent = window.TCGateGameRegistry.label(state.game, { short: true });
 
     history.replaceState({}, '', `${location.pathname}?room=${state.roomCode}`);
     saveRoomSession();
@@ -2404,10 +2403,10 @@ function applyRoomState(snapshot) {
     prewarmRtcInLobby().catch(()=>{});
   }
 
-  if(opponent && state.game==='cyberpunk'){
+  if(opponent && visionEnabledForCurrentGame()){
     prepareVision().catch(()=>{});
-    if (state.gameActive) requestGigState();
   }
+  if(opponent && state.gameActive && gigDiceEnabledForCurrentGame()) requestGigState();
 
   if (
     state.ownReady &&
@@ -4226,10 +4225,10 @@ $('restoreLocalFeed')?.addEventListener('click', event => {
 });
 
 $('gameSelect').addEventListener('change', () => {
-  const noGame = $('gameSelect').value === 'no-game';
-  $('gameModeHelp').textContent = noGame
-    ? 'Mode webcam pur : aucun modèle, aucune base de cartes et aucun traitement Vision ne seront chargés.'
-    : 'Vision analyse uniquement le flux adverse pour ce jeu pris en charge.';
+  const visionEnabled = window.TCGateGameRegistry.supports($('gameSelect').value, 'vision');
+  $('gameModeHelp').textContent = visionEnabled
+    ? 'Vision analyse uniquement le flux adverse pour ce jeu pris en charge.'
+    : 'Mode webcam pur : aucun modèle, aucune base de cartes et aucun traitement Vision ne seront chargés.';
 });
 
 $('goCreate').addEventListener('click', () => configureSetup('create'));

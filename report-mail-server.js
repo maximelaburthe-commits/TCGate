@@ -66,9 +66,12 @@ function sameOrigin(req) {
 }
 
 function fingerprint(req) {
+  const realIp = String(req.headers['x-real-ip'] || '').trim();
   const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  const remote = String(req.socket.remoteAddress || 'unknown');
+  const address = realIp || forwarded || remote;
   return crypto.createHash('sha256')
-    .update(`${forwarded}|${req.socket.remoteAddress || 'unknown'}`)
+    .update(address)
     .digest('hex')
     .slice(0, 24);
 }

@@ -34,7 +34,7 @@ const EVENT_TICKET_TTL_MS = 30 * 1000;
 const RECOVERY_COOKIE_NAME = 'tcgate_recovery';
 const BODY_LIMIT_BYTES = 64 * 1024;
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const ALLOWED_GAMES = new Set(['cyberpunk', 'no-game']);
+const ALLOWED_GAMES = new Set(['cyberpunk', 'star-wars-unlimited', 'no-game']);
 const ALLOWED_SIGNAL_TYPES = new Set(['offer', 'answer', 'candidate', 'media-state', 'restart-request', 'gig-state']);
 
 const FALLBACK_ICE_SERVERS = [
@@ -68,9 +68,11 @@ function securityHeaders(req, res) {
 }
 
 function requestFingerprint(req) {
+  const realIp = String(req.headers['x-real-ip'] || '').trim();
   const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
   const remote = String(req.socket.remoteAddress || 'unknown');
-  return crypto.createHash('sha256').update(`${forwarded}|${remote}`).digest('hex').slice(0, 24);
+  const address = realIp || forwarded || remote;
+  return crypto.createHash('sha256').update(address).digest('hex').slice(0, 24);
 }
 
 function rateLimit(req, res, scope, limit, windowMs) {

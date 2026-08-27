@@ -56,6 +56,18 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
     const noRecovery = await fetch(`${BASE}/api/recovery-state`);
     assert(noRecovery.ok && (await noRecovery.json()).available === false, 'Recovery should be absent without cookie');
 
+    const swuCreate = await post('/api/rooms', { name: 'SWU Host', game: 'star-wars-unlimited' });
+    assert(swuCreate.status === 201, 'SWU must be accepted on the development branch');
+    const swu = await swuCreate.json();
+    assert(swu.room.game === 'star-wars-unlimited', 'SWU room game was not preserved');
+    const swuResume = await post('/api/resume', { room: swu.code, peerId: swu.peerId }, { token: swu.sessionToken });
+    assert(swuResume.ok, 'SWU Core session resume failed');
+    assert((await swuResume.json()).room.game === 'star-wars-unlimited', 'SWU game was not preserved on resume');
+
+    const unknownGameCreate = await post('/api/rooms', { name: 'Fallback Host', game: 'unknown-game' });
+    assert(unknownGameCreate.status === 201, 'Unknown game fallback room creation failed');
+    assert((await unknownGameCreate.json()).room.game === 'cyberpunk', 'Unknown games must retain the Cyberpunk fallback');
+
     const hostCreate = await post('/api/rooms', { name: 'Host', game: 'no-game' }, { forwardedHttps: true });
     assert(hostCreate.status === 201, 'Host create failed');
     const hostCookie = cookieFrom(hostCreate);
