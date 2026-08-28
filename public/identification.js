@@ -5,13 +5,6 @@
   const lab = window.TCGDetectionLab;
   if (!lab) return;
 
-  const REMOTE_DB = 'https://raw.githubusercontent.com/maximelaburthe-commits/cyberpunk_cards/main/cards.json';
-  const REMOTE_IMAGE_BASE = 'https://raw.githubusercontent.com/maximelaburthe-commits/cyberpunk_cards/main/images/';
-  const FALLBACK_DB = '/cards-fallback.json';
-
-  // New cache key is intentional: alpha1/2 descriptors are incompatible.
-  const CACHE_KEY = 'tcg-cyberpunk-ident-cache-template-v5-fast';
-
   // Reference resolution. Low enough for 120-card comparisons to remain immediate,
   // high enough to keep illustration structure and text/layout edges.
   const REF_W = 72;
@@ -52,7 +45,11 @@
   const state = {
     loading: false,
     ready: false,
+    runtimeId: null,
+    source: null,
+    cacheNamespace: null,
     cards: [],
+    imageUrls: new Map(),
     refs: [],
     lastTrackUid: null,
     lastIdentifiedAt: 0,
@@ -123,11 +120,11 @@
   };
 
   function imageUrl(card) {
-    return REMOTE_IMAGE_BASE + encodeURIComponent(card.image).replace(/%2F/g, '/');
+    return card?.imageUrl || state.imageUrls.get(card?.image) || null;
   }
 
   function hdUrlFromImage(image) {
-    return REMOTE_IMAGE_BASE + encodeURIComponent(image || '').replace(/%2F/g, '/');
+    return state.imageUrls.get(image) || null;
   }
 
   function preloadHdUrl(url) {
@@ -899,7 +896,8 @@
 
   function loadCache(fp) {
     try {
-      const raw=localStorage.getItem(CACHE_KEY);
+      if (!state.cacheNamespace) return null;
+      const raw=localStorage.getItem(state.cacheNamespace);
       if (!raw) return null;
       const data=JSON.parse(raw);
       if (data?.fingerprint!==fp || !Array.isArray(data.refs)) return null;
@@ -909,22 +907,18 @@
 
   function saveCache(fp, refs) {
     try {
-      localStorage.setItem(CACHE_KEY,JSON.stringify({fingerprint:fp,refs}));
+      if (!state.cacheNamespace) return;
+      localStorage.setItem(state.cacheNamespace,JSON.stringify({fingerprint:fp,refs}));
     } catch {}
   }
 
   async function loadCardList() {
-    try {
-      const r=await fetch(REMOTE_DB,{cache:'no-cache'});
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data=await r.json();
-      if (!Array.isArray(data) || !data.length) throw new Error('Liste vide');
-      return {cards:data,source:'GitHub'};
-    } catch (err) {
-      const r=await fetch(FALLBACK_DB,{cache:'no-cache'});
-      if (!r.ok) throw err;
-      return {cards:await r.json(),source:'fallback local'};
-    }
+    if (!state.runtimeId) throw new Error("Runtime d'identification non configure");
+    const loaded=await window.TCGateIdentificationSource?.load?.(state.runtimeId);
+    if (!loaded?.cards?.length) throw new Error(`Source d'identification indisponible : ${state.runtimeId}`);
+    state.source=loaded.source || null;
+    state.cacheNamespace=loaded.cacheNamespace || null;
+    return loaded;
   }
 
   async function buildLibrary(force=false) {
@@ -937,6 +931,7 @@
     try {
       const {cards,source}=await loadCardList();
       state.cards=cards.filter(c=>c?.name&&c?.image);
+      state.imageUrls=new Map(state.cards.map(card=>[card.image,card.imageUrl]));
       const fp=fingerprint(state.cards);
 
       if (!force) {
@@ -964,6 +959,7 @@
               name:card.name,
               type:card.type||'',
               image:card.image,
+              imageUrl:card.imageUrl,
               descriptor:descriptorFromCanvas(bitmap,.04,false)
             };
             bitmap.close?.();
@@ -1165,6 +1161,20 @@
     }));
   }
 
+  function attachImageUrl(ref) {
+    if (ref && !ref.imageUrl) ref.imageUrl=state.imageUrls.get(ref.image) || null;
+    return ref;
+  }
+
+  function attachResultImageUrls(result) {
+    if (!result) return result;
+    attachImageUrl(result.best?.ref);
+    attachImageUrl(result.second?.ref);
+    for (const item of result.ranked || []) attachImageUrl(item?.ref);
+    for (const item of result.maskDiagnostics?.candidates || []) attachImageUrl(item?.ref);
+    return result;
+  }
+
   function closeQueuedBitmap(task) {
     try { task?.bitmap?.close?.(); } catch {}
   }
@@ -1289,7 +1299,7 @@
             if (msg.type==='match-error') {
               task.reject(new Error(msg.error||'Erreur matcher worker'));
             } else {
-              const result=msg.result||null;
+              const result=attachResultImageUrls(msg.result||null);
               if (result?.timing) {
                 result.timing.roundTripMs=roundTripMs;
                 result.timing.queueMs=queueMs;
@@ -1559,7 +1569,7 @@
     const modeLabel=result.mode==='fragment'?' · fragment visible':result.mode==='masked'?' · zones visibles masquées':result.mode==='cached-normal'?' · cache instantané':'';
     ui.score.textContent=`Indice visuel : ${bestIndex}/100${modeLabel}`;
     ui.margin.textContent=`Écart brut avec le 2e candidat : ${marginIndex} points · mode ${result.mode||'normal'} · ce score n'est pas une probabilité`;
-    const hdUrl=imageUrl(result.best.ref);
+    const hdUrl=result.best.ref.imageUrl || imageUrl(result.best.ref);
     setHdImageAtomic(hdUrl,result.best.ref.name);
     state.visibleIdentity={
       accepted:true,
@@ -2283,7 +2293,7 @@ function applyQualityGuard(result,quality) {
   });
 
   ui.refresh?.addEventListener('click',async()=>{
-    try { localStorage.removeItem(CACHE_KEY); } catch {}
+    try { if (state.cacheNamespace) localStorage.removeItem(state.cacheNamespace); } catch {}
     state.hoverCache.clear();
     state.identityStability.tracks.clear();
     clearTimeout(state.temporalRecheckTimer);
@@ -2312,9 +2322,28 @@ function applyQualityGuard(result,quality) {
 
   let productStartPromise=null;
 
-  async function startProductIdentification() {
+  async function startProductIdentification(options={}) {
+    const runtimeId=String(options.runtimeId || '');
+    if (!runtimeId) throw new Error("Runtime d'identification requis");
+    if (state.runtimeId && state.runtimeId!==runtimeId) {
+      state.ready=false;
+      state.cards=[];
+      state.refs=[];
+      state.imageUrls.clear();
+      state.source=null;
+      state.cacheNamespace=null;
+      state.generation+=1;
+      state.hoverCache.clear();
+      state.identityStability.tracks.clear();
+      if (state.matcherWorker) {
+        try { state.matcherWorker.terminate(); } catch {}
+        state.matcherWorker=null;
+        state.matcherWorkerReady=false;
+      }
+    }
+    state.runtimeId=runtimeId;
     if (state.ready && state.matcherWorkerReady) {
-      return {ready:true,cards:state.refs.length,workerReady:true};
+      return {ready:true,cards:state.refs.length,workerReady:true,runtimeId:state.runtimeId};
     }
     if (productStartPromise) return productStartPromise;
 
@@ -2326,6 +2355,7 @@ function applyQualityGuard(result,quality) {
         ready:Boolean(state.ready),
         cards:state.refs.length,
         workerReady:Boolean(state.matcherWorkerReady),
+        runtimeId:state.runtimeId,
         error:state.matcherWorkerError || null
       };
       window.dispatchEvent(new CustomEvent('tcg-identification-library',{detail}));
@@ -2357,7 +2387,8 @@ function applyQualityGuard(result,quality) {
       ui.type.textContent=payload.type||'Carte';
       if (ui.score) ui.score.textContent=`Mémoire Vision · ${payload.tableId||'table'} · ${Number(payload.observations||0)} observation${Number(payload.observations||0)>1?'s':''}`;
       if (ui.margin) ui.margin.textContent='Pré-identifiée en arrière-plan · survol mémoire';
-      const url=hdUrlFromImage(image);
+      const url=payload.imageUrl || hdUrlFromImage(image);
+      if (!url) return false;
       setHdImageAtomic(url,name);
       state.visibleIdentity={accepted:true,name,type:payload.type||'Carte',image,imageUrl:url,source:'vision-state-memory',mode:'memory-hover',trackUid:targetUid,tableId:payload.tableId||null,at:performance.now()};
       window.dispatchEvent(new CustomEvent('tcg-identification-visible',{detail:{...state.visibleIdentity}}));
@@ -2371,6 +2402,9 @@ function applyQualityGuard(result,quality) {
       const result = state.lastResult;
       return {
         enabled: Boolean(ui.toggle?.checked),
+        runtimeId: state.runtimeId,
+        source: state.source,
+        cacheNamespace: state.cacheNamespace,
         libraryReady: state.ready,
         librarySize: state.refs.length,
         matcherMs: Number(state.lastMatcherMs || 0),

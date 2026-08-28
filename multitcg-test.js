@@ -6,7 +6,7 @@ const vm = require('vm');
 
 const window = {};
 const context = vm.createContext({ window });
-for (const file of ['public/game-registry.js', 'public/database-adapter.js']) {
+for (const file of ['public/game-registry.js', 'public/database-adapter.js', 'public/identification-source.js']) {
   vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
 }
 
@@ -31,6 +31,17 @@ assert(html.indexOf('/game-registry.js') < html.indexOf('/app.js'), 'Registry mu
 assert(html.indexOf('/database-adapter.js') < html.indexOf('/app.js'), 'Adapter must load before the Core');
 
 const app = fs.readFileSync('public/app.js', 'utf8');
+const identification = fs.readFileSync('public/identification.js', 'utf8');
+const identificationSource = window.TCGateIdentificationSource;
+const legacyCardsUrl = 'https://raw.githubusercontent.com/maximelaburthe-commits/cyberpunk_cards/main/cards.json';
+const legacyImageBaseUrl = 'https://raw.githubusercontent.com/maximelaburthe-commits/cyberpunk_cards/main/images/';
+assert(!identification.includes(legacyCardsUrl), 'Identification engine must not own the Cyberpunk cards URL');
+assert(!identification.includes(legacyImageBaseUrl), 'Identification engine must not own the Cyberpunk image base');
+assert(!identification.includes('/cards-fallback.json'), 'Identification engine must not own the fallback URL');
+assert(!identification.includes('tcg-cyberpunk-ident-cache-template-v5-fast'), 'Identification engine must not own a Cyberpunk cache key');
+assert(app.indexOf("'/identification-source.js'") < app.indexOf("'/identification.js'"), 'Identification source must load before the engine');
+assert(app.includes("TCGateGameRegistry.runtime(state.game,'vision')"), 'Vision runtime must come from the Game Registry');
+assert(app.includes('start?.({runtimeId:visionRuntime})'), 'Core must inject the current Vision runtime');
 const visionGuard = app.match(/function visionEnabledForCurrentGame\(\)\s*\{([\s\S]*?)\n\}/)?.[1] || '';
 assert(visionGuard.includes("supports(state.game, 'vision')"), 'Vision support capability guard missing');
 assert(visionGuard.includes("runtimeReady(state.game, 'vision')"), 'Vision runtime readiness guard missing');
@@ -77,6 +88,46 @@ const fetch = async url => {
 };
 
 (async () => {
+  const legacyCards = [
+    { name: 'Card One', type: 'Program', image: 'card-one.webp', aliases: ['one'] },
+    { name: 'Card Two', type: 'Character', image: 'folder/card two.webp', aliases: ['two'] }
+  ];
+  const sourceRequests = [];
+  const sourceFetch = async url => {
+    sourceRequests.push(url);
+    if (url === legacyCardsUrl) return { ok: true, json: async () => legacyCards };
+    return { ok: false, status: 404, json: async () => null };
+  };
+  const resolvedSource = await identificationSource.load('cyberpunk', { fetch: sourceFetch });
+  assert.strictEqual(resolvedSource.runtimeId, 'cyberpunk');
+  assert.strictEqual(resolvedSource.cacheNamespace, 'tcgate-ident:cyberpunk:template-v5-fast');
+  assert.strictEqual(resolvedSource.source, 'GitHub');
+  assert.deepStrictEqual(sourceRequests, [legacyCardsUrl]);
+  assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(resolvedSource.cards.map(({ imageUrl, ...card }) => card))),
+    legacyCards,
+    'Source refactor must preserve the legacy Cyberpunk card list'
+  );
+  assert.strictEqual(resolvedSource.cards[0].imageUrl, `${legacyImageBaseUrl}card-one.webp`);
+  assert.strictEqual(resolvedSource.cards[1].imageUrl, `${legacyImageBaseUrl}folder/card%20two.webp`);
+
+  const fallbackRequests = [];
+  const fallbackCards = [{ name: 'Fallback', type: 'Program', image: 'fallback.webp' }];
+  const fallbackFetch = async url => {
+    fallbackRequests.push(url);
+    if (url === '/cards-fallback.json') return { ok: true, json: async () => fallbackCards };
+    return { ok: false, status: 503, json: async () => null };
+  };
+  const fallbackSource = await identificationSource.load('cyberpunk', { fetch: fallbackFetch });
+  assert.deepStrictEqual(fallbackRequests, [legacyCardsUrl, '/cards-fallback.json']);
+  assert.strictEqual(fallbackSource.source, 'fallback local');
+  assert.strictEqual(fallbackSource.cards[0].imageUrl, `${legacyImageBaseUrl}fallback.webp`);
+  await assert.rejects(
+    identificationSource.load('star-wars-unlimited', { fetch: sourceFetch }),
+    /Runtime d'identification inconnu/,
+    'SWU must not resolve to the Cyberpunk identification source'
+  );
+
   const cyberpunk = await window.TCGateDatabaseAdapter.load('cyberpunk', {
     fetch, baseUrl: 'https://example.test/cyberpunk'
   });

@@ -514,6 +514,7 @@ const VISION_ASSETS = [
   '/vision-core.js',
   '/vision-calibration.js',
   '/table-state-bridge.js',
+  '/identification-source.js',
   '/identification.js',
   '/table-state-engine.js'
 ];
@@ -1079,6 +1080,8 @@ function applyGameModeUi() {
 
 async function prepareVision() {
   if(!visionEnabledForCurrentGame() || state.visionPrepared || state.visionPreparing) return;
+  const visionRuntime=window.TCGateGameRegistry.runtime(state.game,'vision');
+  if(!visionRuntime) return;
   state.visionPreparing=true;
   setVisionStatus('Vision : chargement…','warning');
   logEvent('vision-prepare-start');
@@ -1087,7 +1090,7 @@ async function prepareVision() {
     await ensureVisionAssets();
     const [detector,identifier]=await Promise.allSettled([
       window.TCGVisionEngine?.preload?.(),
-      window.TCGIdentificationLab?.start?.()
+      window.TCGIdentificationLab?.start?.({runtimeId:visionRuntime})
     ]);
 
     const detOk=detector.status==='fulfilled' && detector.value?.ready;
