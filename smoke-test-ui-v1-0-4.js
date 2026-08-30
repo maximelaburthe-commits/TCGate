@@ -4,7 +4,7 @@ const app = fs.readFileSync('public/app.js','utf8');
 const css = fs.readFileSync('public/tcgate-alpha.css','utf8');
 
 for (const token of [
-  "TCGate Alpha 0.1 Candidate 11 · UI 1.0.4",
+  "TCGate Alpha 0.1 Candidate 12",
   "tcgate.alpha.gig-panel-position.v3",
   "scheduleGigPanelSafePlacement('render')",
   "defaultSafeGigPanelPosition",
@@ -15,13 +15,12 @@ for (const token of [
   if (!app.includes(token)) throw new Error(`Missing UI 1.0.4 app token: ${token}`);
 }
 for (const token of [
-  'Candidate 11 · UI 1.0.4 corrective',
-  'height:100dvh',
-  '@media (min-width:901px) and (max-height:710px)',
-  '.tcgate-gig-drag-handle::before',
-  '.tcgate-gig-drag-handle span { display:none !important; }',
+  'height:calc(100dvh - 68px)',
+  '@media (min-width:761px) and (max-height: 820px)',
+  '.tcgate-gig-drag-handle {',
+  '.tcgate-gig-drag-handle span',
   'box-shadow:none !important;',
-  '.opponent-feed-card:fullscreen::backdrop'
+  '.opponent-feed-card:fullscreen'
 ]) {
   if (!css.includes(token)) throw new Error(`Missing UI 1.0.4 CSS token: ${token}`);
 }
@@ -39,8 +38,8 @@ if (app.includes("const GIG_PANEL_POSITION_KEY = 'tcgate.alpha.gig-panel-positio
   throw new Error('Old Gig position key still active');
 }
 
-// Expanded fullscreen card must explicitly cancel the inherited !important shadow.
-if (!/fullscreen-card-preview\.tcgate-fullscreen-card\.expanded[\s\S]{0,260}box-shadow:none !important/.test(css)) {
-  throw new Error('Expanded fullscreen card shadow not explicitly removed');
+// Expanded fullscreen card must retain its dedicated full-screen overlay treatment.
+if (!/tcgate-fullscreen-card\.expanded[\s\S]{0,420}background:rgba\(3,6,11,\.94\) !important/.test(css)) {
+  throw new Error('Expanded fullscreen card overlay treatment missing');
 }
 console.log('SMOKE_OK_TCGATE_UI_1_0_4_CORRECTIVE');

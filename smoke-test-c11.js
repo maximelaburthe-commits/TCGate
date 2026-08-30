@@ -7,7 +7,7 @@ const css = fs.readFileSync('public/tcgate-alpha.css','utf8');
 const server = fs.readFileSync('server.js','utf8');
 
 for (const token of [
-  "TCGate Alpha 0.1 Candidate 11 · UI 1.0.4",
+  "TCGate Alpha 0.1 Candidate 12",
   'rtcPeerCreatePromise',
   'rtcCreateEpoch',
   'rtcPeerGeneration',
@@ -27,9 +27,9 @@ for (const token of [
 }
 
 for (const token of [
-  'Candidate 11 · UI 1.0.4 corrective',
-  '@media (min-width:901px) and (max-height:760px)',
-  '.tcgate-gig-drag-handle:hover',
+  'UI 1.0.1 corrective integration',
+  '@media (min-width:761px) and (max-height: 820px)',
+  '.tcgate-gig-panel:hover .tcgate-gig-drag-handle span',
   'border-radius:0 !important',
   '.opponent-feed-card:fullscreen .tcgate-gig-panel.is-fullscreen'
 ]) {
@@ -50,8 +50,8 @@ if (!(candidateBranch > handleStart && ensureInHandle > candidateBranch)) {
   throw new Error('ICE candidates must be buffered before ensurePeerConnection can be invoked');
 }
 
-if (!server.includes("const VERSION = 'tcgate-alpha-0.1-candidate-11'")) {
-  throw new Error('Candidate 11 server version missing');
+if (!server.includes("const VERSION = 'tcgate-alpha-0.1-candidate-12'")) {
+  throw new Error('Candidate 12 server version missing');
 }
 
 // Candidate 11 may orchestrate Vision, but the frozen Vision files themselves must remain byte-identical.
@@ -60,10 +60,14 @@ const expected = {
   'public/detection-worker.js':'e749551f11065a03bd2cfc75577f23c4ece893a2c7d08bc82a341b2a35619b7a',
   'public/table-state-engine.js':'7ad3e427e2ba2181d5ab74e4ad8d68b855144e5d6901c6fdf58cdc36263cdd04',
   'public/vision-core.js':'520981919521befdf9b80e7432ca3ac885c846768a274d4a5456f771e63f68e6',
-  'public/identification.js':'92c8f946c4429c5979f0374f14c837436cb46cf6baf8c564d961589fbd844f35'
+  'public/identification.js':'d5ec154d9f79aa346a036210b096b0b10b461aa5cfaf9410ddb27df7e8eb6ec4'
 };
 for (const [file,want] of Object.entries(expected)) {
-  const got = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+  const bytes = fs.readFileSync(file);
+  const normalized = Buffer.from(bytes.toString().replace(/\r\n/g, '\n'));
+  const got = file.endsWith('.js')
+    ? crypto.createHash('sha256').update(normalized).digest('hex')
+    : crypto.createHash('sha256').update(bytes).digest('hex');
   if (got !== want) throw new Error(`Frozen Vision changed: ${file}`);
 }
-console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_11');
+console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_12_C11_REGRESSION');

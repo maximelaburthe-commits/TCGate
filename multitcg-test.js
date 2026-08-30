@@ -16,17 +16,17 @@ assert.strictEqual(registry.runtimeReady('cyberpunk', 'vision'), true);
 assert.strictEqual(registry.runtime('cyberpunk', 'vision'), 'cyberpunk');
 assert.strictEqual(registry.supports('cyberpunk', 'gigDice'), true);
 assert.strictEqual(registry.supports('star-wars-unlimited', 'vision'), true);
-assert.strictEqual(registry.runtimeReady('star-wars-unlimited', 'vision'), false);
-assert.strictEqual(registry.runtime('star-wars-unlimited', 'vision'), null);
+assert.strictEqual(registry.runtimeReady('star-wars-unlimited', 'vision'), true);
+assert.strictEqual(registry.runtime('star-wars-unlimited', 'vision'), 'swu-r14');
 assert.strictEqual(registry.supports('star-wars-unlimited', 'gigDice'), false);
-assert.strictEqual(registry.get('star-wars-unlimited').exposed, false);
+assert.strictEqual(registry.get('star-wars-unlimited').exposed, true);
 assert.strictEqual(registry.supports('no-game', 'vision'), false);
 assert.strictEqual(registry.runtimeReady('no-game', 'vision'), false);
 assert.strictEqual(registry.supports('no-game', 'gigDice'), false);
-assert.deepStrictEqual(Array.from(registry.exposed(), game => game.id), ['cyberpunk', 'no-game']);
+assert.deepStrictEqual(Array.from(registry.exposed(), game => game.id), ['cyberpunk', 'star-wars-unlimited', 'no-game']);
 
 const html = fs.readFileSync('public/index.html', 'utf8');
-assert(!html.includes('<option value="star-wars-unlimited"'), 'SWU must remain hidden from the UI');
+assert(html.includes('<option value="star-wars-unlimited"'), 'SWU must be exposed in the UI');
 assert(html.indexOf('/game-registry.js') < html.indexOf('/app.js'), 'Registry must load before the Core');
 assert(html.indexOf('/database-adapter.js') < html.indexOf('/app.js'), 'Adapter must load before the Core');
 
@@ -42,6 +42,12 @@ assert(!identification.includes('tcg-cyberpunk-ident-cache-template-v5-fast'), '
 assert(app.indexOf("'/identification-source.js'") < app.indexOf("'/identification.js'"), 'Identification source must load before the engine');
 assert(app.includes("TCGateGameRegistry.runtime(state.game,'vision')"), 'Vision runtime must come from the Game Registry');
 assert(app.includes('start?.({runtimeId:visionRuntime})'), 'Core must inject the current Vision runtime');
+assert(app.includes("'/swu-identification.js'"));
+assert(app.includes("'/identification-runtime.js'"));
+assert.strictEqual(registry.get('cyberpunk').databaseRef, 'main');
+assert.strictEqual(registry.get('star-wars-unlimited').databaseRef, 'develop-swu-db-v0.3');
+assert.strictEqual(window.TCGateDatabaseAdapter.repositoryUrl('cyberpunk'), 'https://raw.githubusercontent.com/maximelaburthe-commits/tcgate_db_cyberpunk/main');
+assert.strictEqual(window.TCGateDatabaseAdapter.repositoryUrl('star-wars-unlimited'), 'https://raw.githubusercontent.com/maximelaburthe-commits/tcgate_db_star_wars_unlimited/develop-swu-db-v0.3');
 const visionGuard = app.match(/function visionEnabledForCurrentGame\(\)\s*\{([\s\S]*?)\n\}/)?.[1] || '';
 assert(visionGuard.includes("supports(state.game, 'vision')"), 'Vision support capability guard missing');
 assert(visionGuard.includes("runtimeReady(state.game, 'vision')"), 'Vision runtime readiness guard missing');
@@ -169,6 +175,10 @@ const fetch = async url => {
   const server = fs.readFileSync('server.js', 'utf8');
   const mailServer = fs.readFileSync('report-mail-server.js', 'utf8');
   assert(server.includes("new Set(['cyberpunk', 'star-wars-unlimited', 'no-game'])"));
+  const csp=server.match(/Content-Security-Policy[\s\S]*?Permissions-Policy/)?.[0]||server;
+  assert(csp.includes("connect-src 'self' https://raw.githubusercontent.com https://cdn.jsdelivr.net https://rtc.live.cloudflare.com https://cdn.starwarsunlimited.com"));
+  assert(csp.includes("img-src 'self' data: blob: https://raw.githubusercontent.com https://cdn.jsdelivr.net https://cdn.starwarsunlimited.com"));
+  assert(!/connect-src[^;]*\*/.test(csp));
   for (const source of [server, mailServer]) {
     const real = source.indexOf("headers['x-real-ip']");
     const forwarded = source.indexOf("headers['x-forwarded-for']", real);

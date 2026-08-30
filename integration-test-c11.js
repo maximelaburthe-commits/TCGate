@@ -51,7 +51,7 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
 (async () => {
   try {
     const health = await waitForHealth();
-    assert(health.version === 'tcgate-alpha-0.1-candidate-11', 'Wrong health version');
+    assert(health.version === 'tcgate-alpha-0.1-candidate-12', 'Wrong health version');
 
     const noRecovery = await fetch(`${BASE}/api/recovery-state`);
     assert(noRecovery.ok && (await noRecovery.json()).available === false, 'Recovery should be absent without cookie');
@@ -60,9 +60,15 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
     assert(swuCreate.status === 201, 'SWU must be accepted on the development branch');
     const swu = await swuCreate.json();
     assert(swu.room.game === 'star-wars-unlimited', 'SWU room game was not preserved');
+    const swuGuestCreate = await post(`/api/rooms/${swu.code}/join`, { name: 'SWU Guest' });
+    assert(swuGuestCreate.ok, 'SWU guest join failed');
+    const swuGuest = await swuGuestCreate.json();
+    assert(swuGuest.room.game === 'star-wars-unlimited', 'SWU guest did not receive the room game');
     const swuResume = await post('/api/resume', { room: swu.code, peerId: swu.peerId }, { token: swu.sessionToken });
     assert(swuResume.ok, 'SWU Core session resume failed');
     assert((await swuResume.json()).room.game === 'star-wars-unlimited', 'SWU game was not preserved on resume');
+    const swuGigSignal = await post('/api/signal', { room: swu.code, from: swu.peerId, to: swuGuest.peerId, type: 'gig-state', payload: { dice: [] } }, { token: swu.sessionToken });
+    assert(swuGigSignal.ok, 'Unexpected SWU gig-state must not crash the Core');
 
     const unknownGameCreate = await post('/api/rooms', { name: 'Fallback Host', game: 'unknown-game' });
     assert(unknownGameCreate.status === 201, 'Unknown game fallback room creation failed');
@@ -129,7 +135,7 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
     const missingCookieRecover = await post('/api/recover');
     assert(missingCookieRecover.status === 401, 'Recover without cookie should fail');
 
-    console.log('INTEGRATION_OK_TCGATE_ALPHA_0.1_CANDIDATE_11');
+    console.log('INTEGRATION_OK_TCGATE_ALPHA_0.1_CANDIDATE_12');
   } catch (err) {
     console.error(err.stack || err.message || err);
     process.exitCode = 1;

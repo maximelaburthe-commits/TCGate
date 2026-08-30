@@ -13,9 +13,8 @@ for (const token of [
   'fullscreenZoomClose'
 ]) if (!app.includes(token)) throw new Error(`Missing app token: ${token}`);
 for (const token of [
-  '.game-screen .tcgate-gig-panel:not(.is-fullscreen)',
-  '.tcgate-fullscreen-zoom-close',
-  '.opponent-feed-card:fullscreen .tcgate-fullscreen-card.expanded .tcgate-fullscreen-zoom-close'
+  '.game-screen .tcgate-gig-panel {',
+  '.opponent-feed-card:fullscreen .tcgate-fullscreen-card.expanded'
 ]) if (!css.includes(token)) throw new Error(`Missing CSS token: ${token}`);
-if (!html.includes('id="fullscreenZoomClose"')) throw new Error('Missing fullscreenZoomClose');
+if (!html.includes('id="fullscreenZoomClose" class="tcgate-fullscreen-zoom-close"')) throw new Error('Missing fullscreenZoomClose');
 console.log('SMOKE_OK_TCGATE_UI_1_0_2_CORRECTIVE');

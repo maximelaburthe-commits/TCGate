@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 11 · UI 1.0.4';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 12';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -516,6 +516,8 @@ const VISION_ASSETS = [
   '/table-state-bridge.js',
   '/identification-source.js',
   '/identification.js',
+  '/swu-identification.js',
+  '/identification-runtime.js',
   '/table-state-engine.js'
 ];
 
@@ -1192,6 +1194,7 @@ function detachVision() {
 
   window.TCGVisionCalibration?.stop?.();
   window.TCGVisionEngine?.detachRemoteStream?.();
+  window.TCGIdentificationLab?.stop?.();
   window.TCGTableStateEngine?.reset?.('restart');
   state.visionStateReady=false;
 
@@ -4230,7 +4233,9 @@ $('restoreLocalFeed')?.addEventListener('click', event => {
 $('gameSelect').addEventListener('change', () => {
   const visionEnabled = window.TCGateGameRegistry.supports($('gameSelect').value, 'vision');
   $('gameModeHelp').textContent = visionEnabled
-    ? 'Vision analyse uniquement le flux adverse pour ce jeu pris en charge.'
+    ? ($('gameSelect').value === 'star-wars-unlimited'
+      ? 'Vision analyse uniquement le flux adverse pour Star Wars Unlimited.'
+      : 'Vision analyse uniquement le flux adverse pour Cyberpunk Trading Card Game.')
     : 'Mode webcam pur : aucun modèle, aucune base de cartes et aucun traitement Vision ne seront chargés.';
 });
 

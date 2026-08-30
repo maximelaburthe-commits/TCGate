@@ -80,7 +80,7 @@
     const fetchImpl = options.fetch || global.fetch?.bind(global);
     if (!fetchImpl) throw new Error('Fetch API unavailable');
     const baseUrl = options.baseUrl ||
-      `https://raw.githubusercontent.com/${DEFAULT_REPOSITORY_OWNER}/${game.database}/${DEFAULT_BRANCH}`;
+      `https://raw.githubusercontent.com/${DEFAULT_REPOSITORY_OWNER}/${game.database}/${game.databaseRef || DEFAULT_BRANCH}`;
     const manifest = await fetchJson(fetchImpl, joinUrl(baseUrl, 'manifest.json'));
     const cardsPayload = await fetchJson(fetchImpl, joinUrl(baseUrl, runtimePath(manifest, 'cards', 'runtime/cards.min.json')));
     const visionPayload = await fetchJson(fetchImpl, joinUrl(baseUrl, runtimePath(manifest, 'visionIndex', 'runtime/vision-index.json')));
@@ -95,5 +95,8 @@
     return { gameId: game.id, database: game.database, manifest, cards, visionIndex };
   }
 
-  global.TCGateDatabaseAdapter = Object.freeze({ load, normalizeCard, normalizeVisionRef });
+  global.TCGateDatabaseAdapter = Object.freeze({ load, normalizeCard, normalizeVisionRef, repositoryUrl(gameId) {
+    const game=global.TCGateGameRegistry?.get(gameId);if(!game?.database)return null;
+    return `https://raw.githubusercontent.com/${DEFAULT_REPOSITORY_OWNER}/${game.database}/${game.databaseRef || DEFAULT_BRANCH}`;
+  } });
 })(window);

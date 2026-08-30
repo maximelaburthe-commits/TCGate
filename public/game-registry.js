@@ -9,16 +9,18 @@
       capabilities: Object.freeze({ vision: true, gigDice: true }),
       runtimes: Object.freeze({ vision: 'cyberpunk' }),
       exposed: true,
-      database: 'tcgate_db_cyberpunk'
+      database: 'tcgate_db_cyberpunk',
+      databaseRef: 'main'
     }),
     'star-wars-unlimited': Object.freeze({
       id: 'star-wars-unlimited',
       label: 'Star Wars Unlimited · Vision',
       shortLabel: 'Star Wars Unlimited',
       capabilities: Object.freeze({ vision: true, gigDice: false }),
-      runtimes: Object.freeze({ vision: null }),
-      exposed: false,
-      database: 'tcgate_db_star_wars_unlimited'
+      runtimes: Object.freeze({ vision: 'swu-r14' }),
+      exposed: true,
+      database: 'tcgate_db_star_wars_unlimited',
+      databaseRef: 'develop-swu-db-v0.3'
     }),
     'no-game': Object.freeze({
       id: 'no-game',
@@ -27,7 +29,8 @@
       capabilities: Object.freeze({ vision: false, gigDice: false }),
       runtimes: Object.freeze({ vision: null }),
       exposed: true,
-      database: null
+      database: null,
+      databaseRef: null
     })
   });
 

@@ -11,7 +11,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = path.join(__dirname, 'public');
 const MODEL_FILE = path.join(__dirname, 'models', 'card_detector_v53_512.onnx');
 const MODEL_ROUTE = '/api/model/card-detector-v53-512-alpha9p1.onnx';
-const VERSION = 'tcgate-alpha-0.1-candidate-11';
+const VERSION = 'tcgate-alpha-0.1-candidate-12';
 
 const mime = {
   '.html': 'text/html; charset=utf-8',
@@ -33,6 +33,8 @@ const DISCONNECTED_PEER_GRACE_MS = 5 * 60 * 1000;
 const EVENT_TICKET_TTL_MS = 30 * 1000;
 const RECOVERY_COOKIE_NAME = 'tcgate_recovery';
 const BODY_LIMIT_BYTES = 64 * 1024;
+const SWU_IMAGE_HOST = 'cdn.starwarsunlimited.com';
+const SWU_IMAGE_LIMIT_BYTES = 15 * 1024 * 1024;
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ALLOWED_GAMES = new Set(['cyberpunk', 'star-wars-unlimited', 'no-game']);
 const ALLOWED_SIGNAL_TYPES = new Set(['offer', 'answer', 'candidate', 'media-state', 'restart-request', 'gig-state']);
@@ -57,8 +59,8 @@ function securityHeaders(req, res) {
     'Content-Security-Policy',
     "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; " +
     "script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; worker-src 'self' blob:; " +
-    "connect-src 'self' https://raw.githubusercontent.com https://cdn.jsdelivr.net https://rtc.live.cloudflare.com; " +
-    "img-src 'self' data: blob: https://raw.githubusercontent.com https://cdn.jsdelivr.net; " +
+    "connect-src 'self' https://raw.githubusercontent.com https://cdn.jsdelivr.net https://rtc.live.cloudflare.com https://cdn.starwarsunlimited.com; " +
+    "img-src 'self' data: blob: https://raw.githubusercontent.com https://cdn.jsdelivr.net https://cdn.starwarsunlimited.com; " +
     "style-src 'self'; media-src 'self' blob:"
   );
   const proto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
@@ -520,6 +522,26 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'GET' && pathname === '/api/image-proxy') {
+      let target;
+      try { target = new URL(url.searchParams.get('url') || ''); }
+      catch { return sendJson(res, 400, { ok: false, error: 'URL image invalide' }); }
+      if (target.protocol !== 'https:' || target.hostname !== SWU_IMAGE_HOST || target.username || target.password) {
+        return sendJson(res, 403, { ok: false, error: 'Origine image refusée' });
+      }
+      const upstream = await fetch(target, { redirect: 'error' });
+      if (!upstream.ok) return sendJson(res, upstream.status, { ok: false, error: 'Asset SWU indisponible' });
+      const contentType = String(upstream.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+      const contentLength = Number(upstream.headers.get('content-length') || 0);
+      if (!contentType.startsWith('image/') || contentLength > SWU_IMAGE_LIMIT_BYTES) {
+        return sendJson(res, 415, { ok: false, error: 'Asset SWU refusé' });
+      }
+      const bytes = Buffer.from(await upstream.arrayBuffer());
+      if (bytes.length > SWU_IMAGE_LIMIT_BYTES) return sendJson(res, 413, { ok: false, error: 'Asset SWU trop volumineux' });
+      res.writeHead(200, { 'Content-Type': contentType, 'Content-Length': bytes.length, 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+      return res.end(bytes);
+    }
+
     if (req.method === 'POST' && pathname === '/api/rooms') {
       if (!rateLimit(req, res, 'create-room', 12, 60 * 1000)) return;
       const body = await readJson(req);
@@ -864,7 +886,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 server.listen(PORT, HOST, () => {
-  console.log(`TCGate Alpha 0.1 Candidate 11 -> http://127.0.0.1:${PORT}`);
+  console.log(`TCGate Alpha 0.1 Candidate 12 -> http://127.0.0.1:${PORT}`);
   const nets = os.networkInterfaces();
   for (const entries of Object.values(nets)) {
     for (const net of entries || []) {

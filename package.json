@@ -1,12 +1,13 @@
 {
   "name": "tcgate-alpha",
-  "version": "0.1.0-candidate.11",
+  "version": "0.1.0-candidate.12",
   "private": true,
   "scripts": {
     "start": "node report-mail-server.js",
     "smoke": "node smoke-test.js && node smoke-test-c11.js",
     "test:c11": "node integration-test-c11.js",
     "test:multitcg": "node multitcg-test.js",
+    "test:swu": "node swu-test.js",
     "smoke:ui": "node smoke-test-ui-integration.js && node smoke-test-ui-v1.js && node smoke-test-ui-v1-0-1.js && node smoke-test-ui-v1-0-2.js && node smoke-test-ui-v1-0-3.js && node smoke-test-ui-v1-0-4.js"
   },
   "engines": {
