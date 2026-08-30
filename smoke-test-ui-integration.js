@@ -7,7 +7,7 @@ const app=fs.readFileSync('public/app.js','utf8');
 const css=fs.readFileSync('public/tcgate-alpha.css','utf8');
 
 for(const token of [
-  'tcgate-home-shell','home-portal-art-crop.png','tcgate-home-steps',
+  'tcgate-home-shell','home-alpha-orbit-hero.svg','tcgate-home-steps',
   'tcgate-game-topbar','displayCardPanel','displayCardButton','displayCardImage',
   'tcgate-local-pip','fullscreenMic','fullscreenCam','fullscreenCardPreview',
   'remoteVideo','visionOverlay','localVideo'
