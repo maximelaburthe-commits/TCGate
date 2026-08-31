@@ -8,4 +8,3 @@ module.exports = {
 	PATTERN110 : 6,
 	PATTERN111 : 7
 };
-

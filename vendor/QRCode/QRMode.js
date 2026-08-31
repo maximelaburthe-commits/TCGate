@@ -4,4 +4,3 @@ module.exports = {
     MODE_8BIT_BYTE :    1 << 2,
     MODE_KANJI :        1 << 3
 };
-
