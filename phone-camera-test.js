@@ -180,45 +180,55 @@ async function request(pathname, { method = 'GET', token = null, cookie = null, 
     await cameraDevices.replaceTrackSafely({ replaceTrack: async () => { throw new Error('replace failed'); } }, { stop: () => { stoppedAfterFailure = true; } }, {}).catch(() => {});
     assert(!stoppedAfterFailure, 'old track stopped after failed replaceTrack');
 
-    const seamlessOrder = [];
-    const seamless = await cameraDevices.runCameraSwitch({
-      acquireTarget: async () => ({ stream: {}, track: {} }),
-      activateTarget: async target => { seamlessOrder.push('activate-new'); assert(target.track, 'target track missing'); },
-      stopCurrent: () => seamlessOrder.push('stop-current'),
+    const handoffOrder = [];
+    const handoff = await cameraDevices.runCameraSwitch({
+      acquireTarget: async () => { handoffOrder.push('acquire-new'); return { stream: {}, track: {} }; },
+      activateTarget: async target => { handoffOrder.push('replace-new'); assert(target.track, 'target track missing'); },
+      stopCurrent: () => handoffOrder.push('stop-old'),
       acquirePrevious: async () => ({}),
       activatePrevious: async () => {},
     });
-    assert(seamless.strategy === 'seamless' && seamlessOrder.join('|') === 'activate-new', 'seamless camera strategy failed');
-
-    const fallbackOrder = [];
-    let fallbackAttempts = 0;
-    const fallback = await cameraDevices.runCameraSwitch({
-      acquireTarget: async () => {
-        fallbackAttempts += 1;
-        if (fallbackAttempts === 1) throw Object.assign(new Error('camera occupied'), { name: 'NotReadableError' });
-        fallbackOrder.push('acquire-after-stop');
-        return { stream: {}, track: {} };
-      },
-      activateTarget: async () => fallbackOrder.push('activate-new'),
-      stopCurrent: () => fallbackOrder.push('stop-old'),
-      acquirePrevious: async () => ({}),
-      activatePrevious: async () => {},
-    });
-    assert(fallback.strategy === 'controlled-handoff' && fallbackOrder.join('|') === 'stop-old|acquire-after-stop|activate-new', 'controlled mobile fallback failed');
+    assert(handoff.strategy === 'controlled-handoff' && handoffOrder.join('|') === 'stop-old|acquire-new|replace-new', 'camera handoff did not stop the old track before acquisition');
 
     const rollbackOrder = [];
-    let rollbackAttempts = 0;
     const rollbackError = await cameraDevices.runCameraSwitch({
-      acquireTarget: async () => {
-        rollbackAttempts += 1;
-        throw Object.assign(new Error(rollbackAttempts === 1 ? 'occupied' : 'new unavailable'), { name: rollbackAttempts === 1 ? 'AbortError' : 'NotFoundError' });
-      },
+      acquireTarget: async () => { throw Object.assign(new Error('new unavailable'), { name: 'NotFoundError' }); },
       activateTarget: async () => {},
       stopCurrent: () => rollbackOrder.push('stop-old'),
       acquirePrevious: async () => { rollbackOrder.push('reopen-old'); return { stream: {}, track: {} }; },
       activatePrevious: async () => rollbackOrder.push('restore-old'),
     }).catch(error => error);
     assert(rollbackError.rollbackRestored === true && rollbackOrder.join('|') === 'stop-old|reopen-old|restore-old', 'camera rollback failed');
+
+    const blockedOrder = [];
+    const blockedError = await cameraDevices.runCameraSwitch({
+      acquireTarget: () => new Promise(() => {}),
+      activateTarget: async () => blockedOrder.push('unexpected-target'),
+      stopCurrent: () => blockedOrder.push('stop-old'),
+      acquirePrevious: async () => { blockedOrder.push('reopen-old'); return { stream: {}, track: {} }; },
+      activatePrevious: async () => blockedOrder.push('restore-old'),
+      acquisitionTimeoutMs: 15,
+    }).catch(error => error);
+    assert(blockedError.name === 'CameraAcquisitionTimeoutError' && blockedError.rollbackRestored === true, 'blocked acquisition did not time out and rollback');
+    assert(blockedOrder.join('|') === 'stop-old|reopen-old|restore-old', 'blocked acquisition left camera switching pending');
+
+    let releaseLate;
+    let lateStopped = false;
+    let lateActivated = false;
+    const lateResult = cameraDevices.runCameraSwitch({
+      acquireTarget: () => new Promise(resolve => { releaseLate = resolve; }),
+      activateTarget: async () => { lateActivated = true; },
+      stopCurrent: () => {},
+      acquirePrevious: async () => ({ stream: {}, track: {} }),
+      activatePrevious: async () => {},
+      acquisitionTimeoutMs: 15,
+    }).catch(error => error);
+    await new Promise(resolve => setTimeout(resolve, 25));
+    releaseLate({ stream: { getTracks: () => [{ stop: () => { lateStopped = true; } }] }, track: {} });
+    const lateError = await lateResult;
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert(lateError.name === 'CameraAcquisitionTimeoutError' && lateError.rollbackRestored === true, 'late acquisition did not report controlled failure');
+    assert(lateStopped && !lateActivated, 'late camera stream was not stopped before activation');
 
     const controls = new PhoneCameraControlWaiter(25);
     const confirmed = controls.wait('success-1');
@@ -230,6 +240,7 @@ async function request(pathname, { method = 'GET', token = null, cookie = null, 
     const timedOut = await controls.wait('timeout-1').catch(error => error);
     assert(timedOut.name === 'TimeoutError', 'phone control timeout missing');
     const pcPhoneSource = fs.readFileSync(path.join(__dirname, 'public', 'phone-camera.js'), 'utf8');
+    assert(/PhoneCameraControlWaiter\(15000\)/.test(pcPhoneSource), 'PC control timeout must exceed mobile acquisition and rollback timeout');
     assert(/restoreCurrent/.test(pcPhoneSource) && /restart-request/.test(pcPhoneSource) && /connectEvents/.test(pcPhoneSource), 'PC phone receiver/SSE recovery missing');
     assert((appSource.match(/restorePhoneCameraAfterRecovery\(\)/g) || []).length >= 3, 'Phone Camera recovery is not used by both Candidate 11 recovery paths');
     const webcamReturn = appSource.slice(appSource.indexOf('async function returnToPcWebcam'), appSource.indexOf('function updateGameDeviceStatus'));

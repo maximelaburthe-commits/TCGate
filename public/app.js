@@ -4484,14 +4484,20 @@ $('reusePhoneCamera')?.addEventListener('click', reusePhoneCamera);
 $('phoneCameraLens')?.addEventListener('change', async event => {
   const select = event.currentTarget;
   select.disabled = true;
+  toast('Changement d’objectif…');
   try {
     const result = await window.TCGatePhoneCamera?.selectCamera?.(select.value);
     const label = result?.state?.selectedCameraLabel || select.selectedOptions[0]?.textContent || 'objectif sélectionné';
     toast(`Objectif changé : ${label}`);
   } catch (err) {
-    toast(`Impossible de changer d’objectif : ${err.name || err.message || 'erreur inconnue'}`);
+    toast(err.rollbackRestored
+      ? 'Changement impossible — caméra précédente restaurée'
+      : 'Changement impossible — caméra téléphone indisponible');
   } finally {
-    const cameras = window.TCGatePhoneCamera?.getSnapshot?.().diagnostics?.cameraDevices || [];
+    const diagnostics = window.TCGatePhoneCamera?.getSnapshot?.().diagnostics || {};
+    const cameras = diagnostics.cameraDevices || [];
+    const active = cameras.find(camera => camera.active)?.id || diagnostics.selectedCameraId || '';
+    if (active && cameras.some(camera => camera.id === active)) select.value = active;
     select.disabled = cameras.length < 2;
   }
 });

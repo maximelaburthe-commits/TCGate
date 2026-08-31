@@ -5,7 +5,7 @@
     api: null, room: null, peerId: null, pairId: null, phoneUrl: null, es: null, pc: null,
     pendingIce: [], signalChain: Promise.resolve(), connected: false, cameraActive: false,
     phoneState: null, phoneReport: null, events: [], reconnectTimer: null, onTrack: null, onState: null,
-    controls: new window.TCGatePhoneCameraControl.PhoneCameraControlWaiter(8000),
+    controls: new window.TCGatePhoneCameraControl.PhoneCameraControlWaiter(15000),
     remoteTrack: null,
     remoteStream: null, recoveryPending: false
   };

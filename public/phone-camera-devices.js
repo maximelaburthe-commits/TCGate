@@ -47,11 +47,32 @@
     return newTrack;
   }
 
-  function isCameraBusyError(error) {
-    const name = String(error?.name || '');
-    const message = String(error?.message || '');
-    return name === 'NotReadableError' || name === 'AbortError' ||
-      /busy|in use|already.*use|could not start video|camera.*occup/i.test(message);
+  function stopAcquired(result) {
+    result?.stream?.getTracks?.().forEach(track => track.stop());
+  }
+
+  function acquireWithTimeout(acquire, timeoutMs = 6000) {
+    let expired = false;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        expired = true;
+        const error = new Error('Camera acquisition timed out');
+        error.name = 'CameraAcquisitionTimeoutError';
+        reject(error);
+      }, timeoutMs);
+      Promise.resolve().then(acquire).then(result => {
+        if (expired) {
+          stopAcquired(result);
+          return;
+        }
+        clearTimeout(timer);
+        resolve(result);
+      }, error => {
+        if (expired) return;
+        clearTimeout(timer);
+        reject(error);
+      });
+    });
   }
 
   async function runCameraSwitch({
@@ -60,29 +81,21 @@
     stopCurrent,
     acquirePrevious,
     activatePrevious,
-    verifyTarget = () => true
+    verifyTarget = () => true,
+    acquisitionTimeoutMs = 6000
   }) {
-    let directTarget = null;
+    await stopCurrent();
+    let target = null;
     try {
-      directTarget = await acquireTarget();
-      if (!verifyTarget(directTarget)) throw Object.assign(new Error('La caméra obtenue ne correspond pas à l’objectif demandé'), { name: 'CameraMismatchError' });
-      await activateTarget(directTarget, 'seamless');
-      return { strategy: 'seamless', rollbackRestored: false };
-    } catch (error) {
-      if (directTarget || !isCameraBusyError(error)) throw error;
-    }
-
-    stopCurrent();
-    let fallbackTarget = null;
-    try {
-      fallbackTarget = await acquireTarget();
-      if (!verifyTarget(fallbackTarget)) throw Object.assign(new Error('La caméra obtenue ne correspond pas à l’objectif demandé'), { name: 'CameraMismatchError' });
-      await activateTarget(fallbackTarget, 'controlled-handoff');
+      target = await acquireWithTimeout(acquireTarget, acquisitionTimeoutMs);
+      if (!verifyTarget(target)) throw Object.assign(new Error('La caméra obtenue ne correspond pas à l’objectif demandé'), { name: 'CameraMismatchError' });
+      await activateTarget(target, 'controlled-handoff');
       return { strategy: 'controlled-handoff', rollbackRestored: false };
     } catch (switchError) {
-      fallbackTarget?.stream?.getTracks?.().forEach(track => track.stop());
+      stopAcquired(target);
+      let previous = null;
       try {
-        const previous = await acquirePrevious();
+        previous = await acquireWithTimeout(acquirePrevious, acquisitionTimeoutMs);
         await activatePrevious(previous);
         const error = new Error(switchError?.message || 'Changement de caméra impossible');
         error.name = switchError?.name || 'CameraSwitchError';
@@ -90,6 +103,7 @@
         throw error;
       } catch (rollbackError) {
         if (rollbackError?.rollbackRestored) throw rollbackError;
+        stopAcquired(previous);
         const error = new Error(switchError?.message || 'Caméra téléphone indisponible');
         error.name = switchError?.name || 'CameraSwitchError';
         error.rollbackRestored = false;
@@ -106,7 +120,7 @@
     publicCameraList,
     resolveOpaqueCamera,
     replaceTrackSafely,
-    isCameraBusyError,
+    acquireWithTimeout,
     runCameraSwitch
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
