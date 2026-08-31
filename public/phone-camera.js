@@ -4,7 +4,10 @@
   const state = {
     api: null, room: null, peerId: null, pairId: null, phoneUrl: null, es: null, pc: null,
     pendingIce: [], signalChain: Promise.resolve(), connected: false, cameraActive: false,
-    phoneState: null, phoneReport: null, events: [], reconnectTimer: null, onTrack: null, onState: null
+    phoneState: null, phoneReport: null, events: [], reconnectTimer: null, onTrack: null, onState: null,
+    controls: new window.TCGatePhoneCameraControl.PhoneCameraControlWaiter(8000),
+    remoteTrack: null,
+    remoteStream: null, recoveryPending: false
   };
 
   function record(type, data = {}) {
@@ -52,11 +55,26 @@
       state.es?.close();
       const es = new EventSource(`/api/phone/events?ticket=${encodeURIComponent(ticket)}`);
       state.es = es;
+      const opened = new Promise(resolve => {
+        const timer = setTimeout(() => resolve(false), 2500);
+        es.onopen = () => {
+          clearTimeout(timer);
+          resolve(true);
+        };
+      });
       es.addEventListener('phone-pair-state', event => {
         const data = JSON.parse(event.data);
         state.connected = Boolean(data.connected);
         state.cameraActive = Boolean(data.cameraActive);
         notify(state.connected ? (state.cameraActive ? 'streaming' : 'connected') : (data.joined ? 'disconnected' : 'waiting'));
+        if (state.connected && state.recoveryPending) {
+          signal('restart-request', { reason: 'pc-recovery-phone-return', at: Date.now() })
+            .then(result => {
+              if (result?.delivered) state.recoveryPending = false;
+              record('recovery-restart-request', { delivered: Boolean(result?.delivered), source: 'phone-return' });
+            })
+            .catch(() => {});
+        }
       });
       es.addEventListener('phone-state', event => {
         const data = JSON.parse(event.data);
@@ -70,6 +88,7 @@
         if (state.es === es) state.es = null;
         if (state.pairId) state.reconnectTimer = setTimeout(connectEvents, 1200);
       };
+      return await opened;
     } catch (error) {
       record('events-error', { message: error.message });
       if (state.pairId) state.reconnectTimer = setTimeout(connectEvents, 1500);
@@ -93,8 +112,11 @@
       if (event.track.kind !== 'video') return;
       state.connected = true;
       state.cameraActive = true;
+      state.recoveryPending = false;
+      state.remoteTrack = event.track;
+      state.remoteStream = event.streams?.[0] || new MediaStream([event.track]);
       record('video-track', { id: event.track.id });
-      state.onTrack?.(event.track, event.streams?.[0] || new MediaStream([event.track]));
+      state.onTrack?.(event.track, state.remoteStream);
       notify('streaming');
       event.track.addEventListener('ended', () => {
         state.cameraActive = false;
@@ -152,6 +174,15 @@
     }
     if (message.type === 'control-result') {
       if (message.payload?.state) state.phoneState = message.payload.state;
+      state.controls.settle(message.payload || {});
+      record('control-result', {
+        requestId: message.payload?.requestId || null,
+        action: message.payload?.action || null,
+        ok: Boolean(message.payload?.ok),
+        errorName: message.payload?.errorName || null,
+        message: message.payload?.error ? String(message.payload.error).slice(0, 180) : null,
+        rollbackRestored: message.payload?.rollbackRestored ?? null
+      });
       notify(state.cameraActive ? 'streaming' : 'connected', {
         diagnostics: state.phoneState,
         controlError: message.payload?.ok === false ? message.payload.error || 'Commande refusée' : null
@@ -164,10 +195,54 @@
     const known = state.phoneState?.cameraDevices?.some(camera => camera.id === id);
     if (!known) throw new Error('Objectif téléphone inconnu');
     const requestId = `camera-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const result = await signal('control', { requestId, action: 'select-camera', args: { cameraId: id } });
-    if (!result?.delivered) throw new Error('Téléphone indisponible');
-    record('camera-select-requested', { cameraId: id });
-    return result;
+    const completion = state.controls.wait(requestId);
+    let delivered;
+    try {
+      delivered = await signal('control', { requestId, action: 'select-camera', args: { cameraId: id } });
+    } catch (error) {
+      state.controls.cancel(requestId, error.message || 'Commande non délivrée');
+      await completion.catch(() => {});
+      throw error;
+    }
+    if (!delivered?.delivered) {
+      state.controls.cancel(requestId, 'Téléphone indisponible');
+      await completion.catch(() => {});
+      throw new Error('Téléphone indisponible');
+    }
+    record('camera-select-requested', { cameraId: id, requestId });
+    return completion;
+  }
+
+  async function findCurrent({ api, room, peerId }) {
+    const result = await api(`/api/phone/pairs/current?room=${encodeURIComponent(room)}&peer=${encodeURIComponent(peerId)}`);
+    return result?.available ? result : null;
+  }
+
+  async function restoreCurrent({ api, room, peerId, current = null, onTrack, onState }) {
+    await disconnect({ server: false, quiet: true });
+    Object.assign(state, { api, room, peerId, onTrack, onState });
+    const found = current || await findCurrent({ api, room, peerId });
+    if (!found?.pairId) return null;
+    state.pairId = found.pairId;
+    state.phoneState = found.state || null;
+    state.connected = Boolean(found.connected);
+    state.cameraActive = Boolean(found.cameraActive);
+    state.recoveryPending = true;
+    notify(state.connected ? (state.cameraActive ? 'streaming' : 'connected') : 'disconnected', { recovered: true });
+    const eventsReady = await connectEvents();
+    await ensurePeer();
+    if (eventsReady && state.recoveryPending) {
+      const restart = await signal('restart-request', { reason: 'pc-recovery', at: Date.now() }).catch(() => null);
+      if (restart?.delivered) state.recoveryPending = false;
+      record('recovery-restart-request', { delivered: Boolean(restart?.delivered) });
+    }
+    return found;
+  }
+
+  function usePhoneSource() {
+    if (!state.remoteTrack || state.remoteTrack.readyState !== 'live') throw new Error('Flux téléphone indisponible');
+    state.onTrack?.(state.remoteTrack, state.remoteStream || new MediaStream([state.remoteTrack]));
+    return true;
   }
 
   async function fetchDiagnostics() {
@@ -203,6 +278,10 @@
     try { state.pc?.close(); } catch {}
     state.pc = null;
     state.pendingIce = [];
+    state.remoteTrack = null;
+    state.remoteStream = null;
+    state.recoveryPending = false;
+    state.controls.cancelAll();
     const pairId = state.pairId;
     state.connected = false;
     state.cameraActive = false;
@@ -212,5 +291,14 @@
     if (!quiet) notify('idle');
   }
 
-  window.TCGatePhoneCamera = { createPair, disconnect, fetchDiagnostics, getSnapshot: snapshot, selectCamera };
+  window.TCGatePhoneCamera = {
+    createPair,
+    disconnect,
+    fetchDiagnostics,
+    getSnapshot: snapshot,
+    selectCamera,
+    findCurrent,
+    restoreCurrent,
+    usePhoneSource
+  };
 })();

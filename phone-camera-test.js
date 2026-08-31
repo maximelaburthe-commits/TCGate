@@ -6,6 +6,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { TextDecoder } = require('util');
 const cameraDevices = require('./public/phone-camera-devices.js');
+const { PhoneCameraControlWaiter } = require('./public/phone-camera-control.js');
 
 const PORT = 4331;
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -27,9 +28,10 @@ async function wait() {
   }
   throw new Error(`server unavailable: ${log}`);
 }
-async function request(pathname, { method = 'GET', token = null, body, origin } = {}) {
+async function request(pathname, { method = 'GET', token = null, cookie = null, body, origin } = {}) {
   const headers = {};
   if (token) headers.Authorization = `Bearer ${token}`;
+  if (cookie) headers.Cookie = cookie;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (origin) headers.Origin = origin;
   const response = await fetch(`${BASE}${pathname}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
@@ -43,6 +45,7 @@ async function request(pathname, { method = 'GET', token = null, body, origin } 
     assert(phonePage.status === 200 && (await phonePage.text()).includes('/phone-camera-client.js'), 'phone page unavailable');
     let result = await request('/api/rooms', { method: 'POST', body: { name: 'Phone owner', game: 'cyberpunk' } });
     assert(result.response.status === 201, 'room creation failed');
+    const ownerCookie = String(result.response.headers.get('set-cookie') || '').split(';')[0];
     const owner = result.json;
     const pcAuth = { token: owner.sessionToken };
 
@@ -92,17 +95,27 @@ async function request(pathname, { method = 'GET', token = null, body, origin } 
       body: { role: 'pc', type: 'control', payload: { requestId: 'camera-test-2', action: 'select-camera', args: { cameraId: 'raw-device-id' } } }
     });
     assert(result.response.status === 400, 'raw device id accepted by signaling');
-    result = await request(`/api/phone/pairs/${pair.pairId}`, { method: 'DELETE', token: owner.sessionToken });
+
+    const recoveredResult = await request('/api/recover', { method: 'POST', cookie: ownerCookie });
+    assert(recoveredResult.response.ok && recoveredResult.json.sessionToken !== owner.sessionToken, 'Candidate 11 recovery did not rotate PC bearer');
+    const recoveredToken = recoveredResult.json.sessionToken;
+    result = await request(`/api/phone/pairs/current?room=${owner.code}&peer=${owner.peerId}`, { token: recoveredToken });
+    assert(result.response.ok && result.json.available && result.json.pairId === pair.pairId, 'same peer could not recover phone pair');
+    assert(!JSON.stringify(result.json).includes(phoneToken) && !('phoneToken' in result.json), 'phone token exposed by recovery lookup');
+    result = await request(`/api/phone/pairs/current?room=${owner.code}&peer=${owner.peerId}`, { token: otherOwner.sessionToken });
+    assert(result.response.status === 401, 'another peer recovered phone pair');
+
+    result = await request(`/api/phone/pairs/${pair.pairId}`, { method: 'DELETE', token: recoveredToken });
     assert(result.response.ok, 'dissociation failed');
 
-    result = await request('/api/phone/pairs', { method: 'POST', token: owner.sessionToken, body: { room: owner.code, peerId: owner.peerId } });
+    result = await request('/api/phone/pairs', { method: 'POST', token: recoveredToken, body: { room: owner.code, peerId: owner.peerId } });
     const expiring = result.json;
     const expiringToken = new URL(expiring.phoneUrl).searchParams.get('token');
     await sleep(550);
     result = await request(`/api/phone/pairs/${expiring.pairId}/join`, { method: 'POST', token: expiringToken });
     assert([404, 410].includes(result.response.status), 'expired pairing token accepted');
 
-    result = await request('/api/phone/pairs', { method: 'POST', token: owner.sessionToken, origin: 'https://evil.invalid', body: { room: owner.code, peerId: owner.peerId } });
+    result = await request('/api/phone/pairs', { method: 'POST', token: recoveredToken, origin: 'https://evil.invalid', body: { room: owner.code, peerId: owner.peerId } });
     assert(result.response.status === 403, 'cross-origin pairing accepted');
 
     let limited = await request('/api/rooms', { method: 'POST', body: { name: 'Limited', game: 'no-game' } });
@@ -124,9 +137,10 @@ async function request(pathname, { method = 'GET', token = null, body, origin } 
 
     const phoneFiles = [
       'public/phone.html',
-      'public/phone-camera-client.js',
-      'public/phone-camera.js',
-      'public/phone-camera.css',
+  'public/phone-camera-client.js',
+  'public/phone-camera.js',
+  'public/phone-camera-control.js',
+  'public/phone-camera.css',
       'public/phone-camera-devices.js'
     ];
     for (const file of phoneFiles) {
@@ -165,6 +179,63 @@ async function request(pathname, { method = 'GET', token = null, body, origin } 
     let stoppedAfterFailure = false;
     await cameraDevices.replaceTrackSafely({ replaceTrack: async () => { throw new Error('replace failed'); } }, { stop: () => { stoppedAfterFailure = true; } }, {}).catch(() => {});
     assert(!stoppedAfterFailure, 'old track stopped after failed replaceTrack');
+
+    const seamlessOrder = [];
+    const seamless = await cameraDevices.runCameraSwitch({
+      acquireTarget: async () => ({ stream: {}, track: {} }),
+      activateTarget: async target => { seamlessOrder.push('activate-new'); assert(target.track, 'target track missing'); },
+      stopCurrent: () => seamlessOrder.push('stop-current'),
+      acquirePrevious: async () => ({}),
+      activatePrevious: async () => {},
+    });
+    assert(seamless.strategy === 'seamless' && seamlessOrder.join('|') === 'activate-new', 'seamless camera strategy failed');
+
+    const fallbackOrder = [];
+    let fallbackAttempts = 0;
+    const fallback = await cameraDevices.runCameraSwitch({
+      acquireTarget: async () => {
+        fallbackAttempts += 1;
+        if (fallbackAttempts === 1) throw Object.assign(new Error('camera occupied'), { name: 'NotReadableError' });
+        fallbackOrder.push('acquire-after-stop');
+        return { stream: {}, track: {} };
+      },
+      activateTarget: async () => fallbackOrder.push('activate-new'),
+      stopCurrent: () => fallbackOrder.push('stop-old'),
+      acquirePrevious: async () => ({}),
+      activatePrevious: async () => {},
+    });
+    assert(fallback.strategy === 'controlled-handoff' && fallbackOrder.join('|') === 'stop-old|acquire-after-stop|activate-new', 'controlled mobile fallback failed');
+
+    const rollbackOrder = [];
+    let rollbackAttempts = 0;
+    const rollbackError = await cameraDevices.runCameraSwitch({
+      acquireTarget: async () => {
+        rollbackAttempts += 1;
+        throw Object.assign(new Error(rollbackAttempts === 1 ? 'occupied' : 'new unavailable'), { name: rollbackAttempts === 1 ? 'AbortError' : 'NotFoundError' });
+      },
+      activateTarget: async () => {},
+      stopCurrent: () => rollbackOrder.push('stop-old'),
+      acquirePrevious: async () => { rollbackOrder.push('reopen-old'); return { stream: {}, track: {} }; },
+      activatePrevious: async () => rollbackOrder.push('restore-old'),
+    }).catch(error => error);
+    assert(rollbackError.rollbackRestored === true && rollbackOrder.join('|') === 'stop-old|reopen-old|restore-old', 'camera rollback failed');
+
+    const controls = new PhoneCameraControlWaiter(25);
+    const confirmed = controls.wait('success-1');
+    controls.settle({ requestId: 'success-1', ok: true, state: { selectedCameraId: 'camera-2' } });
+    assert((await confirmed).state.selectedCameraId === 'camera-2', 'PC did not wait for successful control-result');
+    const rejected = controls.wait('failure-1');
+    controls.settle({ requestId: 'failure-1', ok: false, error: 'NotReadableError', errorName: 'NotReadableError' });
+    assert((await rejected.catch(error => error)).name === 'NotReadableError', 'phone control error not propagated');
+    const timedOut = await controls.wait('timeout-1').catch(error => error);
+    assert(timedOut.name === 'TimeoutError', 'phone control timeout missing');
+    const pcPhoneSource = fs.readFileSync(path.join(__dirname, 'public', 'phone-camera.js'), 'utf8');
+    assert(/restoreCurrent/.test(pcPhoneSource) && /restart-request/.test(pcPhoneSource) && /connectEvents/.test(pcPhoneSource), 'PC phone receiver/SSE recovery missing');
+    assert((appSource.match(/restorePhoneCameraAfterRecovery\(\)/g) || []).length >= 3, 'Phone Camera recovery is not used by both Candidate 11 recovery paths');
+    const webcamReturn = appSource.slice(appSource.indexOf('async function returnToPcWebcam'), appSource.indexOf('function updateGameDeviceStatus'));
+    assert(!/\.disconnect\?\./.test(webcamReturn) && /videoSource = 'webcam'/.test(webcamReturn), 'returning to PC webcam dissociates the phone');
+    assert(/preservePhoneTrack/.test(appSource) && /!preservePhoneTrack/.test(appSource), 'phone receiver track is stopped when switching to PC webcam');
+    assert(/usePhoneSource/.test(pcPhoneSource) && /reusePhoneCamera/.test(appSource), 'switching back to the paired phone source is missing');
     assert(/Content-Security-Policy/.test(fs.readFileSync(path.join(__dirname, 'server.js'), 'utf8')), 'security headers missing');
     assert(fs.existsSync(path.join(__dirname, 'report-mail-server.js')), 'email report server missing');
     assert(fs.existsSync(path.join(__dirname, 'public', 'identification.js')), 'Vision baseline missing');

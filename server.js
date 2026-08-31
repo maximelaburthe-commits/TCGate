@@ -622,6 +622,29 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'GET' && pathname === '/api/phone/pairs/current') {
+      const room = getRoom(url.searchParams.get('room'));
+      const peer = authenticatedPeer(req, room, url.searchParams.get('peer'));
+      if (!room || !peer) return sendJson(res, 401, { ok: false, error: 'Session PC inconnue' });
+      if (!sessionRateLimit(res, peer, 'phone-pair-current', 60, 60 * 1000)) return;
+      const pair = [...phonePairs.values()].find(candidate =>
+        candidate.roomCode === room.code &&
+        candidate.peerId === peer.id &&
+        candidate.phoneAuthHash &&
+        candidate.phoneSessionExpiresAt > Date.now()
+      );
+      if (!pair) return sendJson(res, 200, { ok: true, available: false });
+      return sendJson(res, 200, {
+        ok: true,
+        available: true,
+        pairId: pair.id,
+        joined: true,
+        connected: Boolean(pair.phoneSse),
+        cameraActive: Boolean(pair.phoneState?.cameraActive),
+        state: pair.phoneState || null
+      });
+    }
+
     if (req.method === 'POST' && pathname === '/api/phone/pairs') {
       const body = await readJson(req);
       const room = getRoom(body.room);

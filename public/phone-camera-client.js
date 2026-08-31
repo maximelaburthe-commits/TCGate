@@ -83,6 +83,17 @@ function cleanCapabilities(caps = {}) {
   return out;
 }
 
+function cleanPhoneError(error) {
+  let message = String(error?.message || error || 'Erreur caméra');
+  for (const device of st.cameraDevices) {
+    if (device?.deviceId) message = message.split(device.deviceId).join('[camera]');
+  }
+  return {
+    name: String(error?.name || 'Error').slice(0, 60),
+    message: message.replace(/[\u0000-\u001F\u007F]/g, '').slice(0, 180)
+  };
+}
+
 function log(type, data = {}) {
   st.events.push({ at: new Date().toISOString(), type, data });
   if (st.events.length > 240) st.events.shift();
@@ -422,7 +433,8 @@ function cameraPublicId(device) {
 }
 
 function publicCameraDevices() {
-  const activeId = st.stream?.getVideoTracks()[0]?.getSettings?.().deviceId || $('camera').value || '';
+  const activeTrack = st.stream?.getVideoTracks()[0] || null;
+  const activeId = activeTrack?.readyState === 'live' ? (activeTrack.getSettings?.().deviceId || $('camera').value || '') : '';
   return st.cameraDevices.map((device, index) => ({
     id: cameraPublicId(device),
     label: cameraDisplayLabel(device, index),
@@ -566,20 +578,41 @@ async function switchCamera(deviceId) {
     return;
   }
   status('Changement d’objectif…');
-  let replacement = null;
   try {
-    replacement = await obtainStream(deviceId, currentProfile());
-    const { stream, track, settings } = replacement;
-    await activateStream(stream, track, settings, 'camera-switch');
+    const result = await window.TCGatePhoneCameraDevices.runCameraSwitch({
+      acquireTarget: () => obtainStream(deviceId, currentProfile()),
+      activateTarget: ({ stream, track, settings }, strategy) => activateStream(stream, track, settings, `camera-switch-${strategy}`),
+      stopCurrent: () => oldTrack?.stop(),
+      acquirePrevious: () => obtainStream(oldSettings.deviceId || '', currentProfile()),
+      activatePrevious: ({ stream, track, settings }) => activateStream(stream, track, settings, 'camera-switch-rollback'),
+      verifyTarget: ({ settings }) => !settings?.deviceId || settings.deviceId === deviceId
+    });
     await setMinimumZoom();
     await pushControlState('camera-switch');
-    log('camera-switch', { label: $('camera').selectedOptions[0]?.textContent || null, settings: cleanSettings(track.getSettings?.() || settings) });
-  } catch (e) {
-    replacement?.stream?.getTracks?.().forEach(track => {
-      if (track !== oldTrack) track.stop();
+    log('camera-switch', {
+      strategy: result.strategy,
+      label: $('camera').selectedOptions[0]?.textContent || null,
+      settings: cleanSettings(st.stream?.getVideoTracks?.()[0]?.getSettings?.() || {})
     });
-    log('camera-switch-error', { message: e.message, previous: cleanSettings(oldSettings) });
-    status('Changement impossible · caméra précédente conservée', true);
+    return { ...result, state: controlSnapshot('camera-switch') };
+  } catch (e) {
+    const cleanedError = cleanPhoneError(e);
+    log('camera-switch-error', {
+      name: cleanedError.name,
+      message: cleanedError.message,
+      rollbackRestored: e.rollbackRestored ?? null,
+      rollbackErrorName: e.rollbackErrorName || null,
+      previous: cleanSettings(oldSettings)
+    });
+    if (e.rollbackRestored) {
+      status('Changement impossible · caméra précédente restaurée', true);
+      await pushControlState('camera-switch-rollback').catch(() => {});
+    } else if (!st.stream?.getVideoTracks?.().some(track => track.readyState === 'live')) {
+      status('Caméra téléphone indisponible');
+      await pushControlState('camera-switch-unavailable').catch(() => {});
+    } else {
+      status('Changement impossible · caméra précédente conservée', true);
+    }
     throw e;
   } finally {
     st.captureBusy = false;
@@ -753,7 +786,7 @@ function controlSnapshot(reason = 'state') {
     : null;
   return {
     reason,
-    cameraActive: Boolean(st.stream),
+    cameraActive: track?.readyState === 'live',
     orientation: st.orientationLandscape ? 'landscape' : 'portrait',
     selectedCameraIndex: activeCameraIndex(),
     selectedCameraId: publicCameraDevices().find(camera => camera.active)?.id || null,
@@ -835,8 +868,9 @@ async function executeRemoteControl(payload = {}) {
       const device = window.TCGatePhoneCameraDevices.resolveOpaqueCamera(st.cameraDevices, cameraId, cameraPublicId);
       if (!device) throw new Error('Objectif inconnu');
       $('camera').value = device.deviceId;
-      await switchCamera(device.deviceId);
+      const switched = await switchCamera(device.deviceId);
       result = controlSnapshot('select-camera');
+      result.switchStrategy = switched?.strategy || null;
     } else if (action === 'set-quality') {
       const mode = String(args.mode || 'auto');
       if (!['auto','1280x720','1920x1080'].includes(mode)) throw new Error('Profil qualité invalide');
@@ -856,8 +890,17 @@ async function executeRemoteControl(payload = {}) {
     }
     await signal('control-result', { requestId, action, ok: true, state: result || controlSnapshot(action) });
   } catch (e) {
-    log('remote-control-error', { requestId, action, message: e.message });
-    await signal('control-result', { requestId, action, ok: false, error: e.message, state: controlSnapshot(`error:${action}`) }).catch(() => {});
+    const cleanedError = cleanPhoneError(e);
+    log('remote-control-error', { requestId, action, name: cleanedError.name, message: cleanedError.message });
+    await signal('control-result', {
+      requestId,
+      action,
+      ok: false,
+      error: cleanedError.message,
+      errorName: cleanedError.name,
+      rollbackRestored: e.rollbackRestored ?? null,
+      state: controlSnapshot(`error:${action}`)
+    }).catch(() => {});
   }
 }
 
@@ -1130,9 +1173,8 @@ async function handleSignal(s) {
     } else if (s.type === 'candidate') {
       await addRemoteCandidate(s.payload);
     } else if (s.type === 'restart-request') {
-      // V0.3 : le téléphone pilote seul la reprise. Une requête ancienne du PC ne doit
-      // plus lancer une seconde négociation concurrente.
-      log('restart-request-ignored-v03', { payload: s.payload || null });
+      log('restart-request-received', { reason: s.payload?.reason || null });
+      if (st.stream) await hardReset('pc-recovery-request');
     } else if (s.type === 'reset-peer') {
       log('remote-reset-ignored-v03', { payload: s.payload || null });
     } else if (s.type === 'control') {

@@ -47,7 +47,68 @@
     return newTrack;
   }
 
-  const api = { kindFromLabel, selectableVideoInputs, displayLabel, publicCameraList, resolveOpaqueCamera, replaceTrackSafely };
+  function isCameraBusyError(error) {
+    const name = String(error?.name || '');
+    const message = String(error?.message || '');
+    return name === 'NotReadableError' || name === 'AbortError' ||
+      /busy|in use|already.*use|could not start video|camera.*occup/i.test(message);
+  }
+
+  async function runCameraSwitch({
+    acquireTarget,
+    activateTarget,
+    stopCurrent,
+    acquirePrevious,
+    activatePrevious,
+    verifyTarget = () => true
+  }) {
+    let directTarget = null;
+    try {
+      directTarget = await acquireTarget();
+      if (!verifyTarget(directTarget)) throw Object.assign(new Error('La caméra obtenue ne correspond pas à l’objectif demandé'), { name: 'CameraMismatchError' });
+      await activateTarget(directTarget, 'seamless');
+      return { strategy: 'seamless', rollbackRestored: false };
+    } catch (error) {
+      if (directTarget || !isCameraBusyError(error)) throw error;
+    }
+
+    stopCurrent();
+    let fallbackTarget = null;
+    try {
+      fallbackTarget = await acquireTarget();
+      if (!verifyTarget(fallbackTarget)) throw Object.assign(new Error('La caméra obtenue ne correspond pas à l’objectif demandé'), { name: 'CameraMismatchError' });
+      await activateTarget(fallbackTarget, 'controlled-handoff');
+      return { strategy: 'controlled-handoff', rollbackRestored: false };
+    } catch (switchError) {
+      fallbackTarget?.stream?.getTracks?.().forEach(track => track.stop());
+      try {
+        const previous = await acquirePrevious();
+        await activatePrevious(previous);
+        const error = new Error(switchError?.message || 'Changement de caméra impossible');
+        error.name = switchError?.name || 'CameraSwitchError';
+        error.rollbackRestored = true;
+        throw error;
+      } catch (rollbackError) {
+        if (rollbackError?.rollbackRestored) throw rollbackError;
+        const error = new Error(switchError?.message || 'Caméra téléphone indisponible');
+        error.name = switchError?.name || 'CameraSwitchError';
+        error.rollbackRestored = false;
+        error.rollbackErrorName = rollbackError?.name || 'Error';
+        throw error;
+      }
+    }
+  }
+
+  const api = {
+    kindFromLabel,
+    selectableVideoInputs,
+    displayLabel,
+    publicCameraList,
+    resolveOpaqueCamera,
+    replaceTrackSafely,
+    isCameraBusyError,
+    runCameraSwitch
+  };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof window !== 'undefined') window.TCGatePhoneCameraDevices = api;
 })();
