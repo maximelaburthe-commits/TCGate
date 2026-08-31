@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
+const QRCode = require('./vendor/QRCode');
+const QRErrorCorrectLevel = require('./vendor/QRCode/QRErrorCorrectLevel');
 
 const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -28,9 +30,15 @@ const rooms = new Map();
 const eventTickets = new Map();
 const recoveryIndex = new Map();
 const rateBuckets = new Map();
+const phonePairs = new Map();
+const phoneEventTickets = new Map();
 const ROOM_TTL_MS = 4 * 60 * 60 * 1000;
 const DISCONNECTED_PEER_GRACE_MS = 5 * 60 * 1000;
 const EVENT_TICKET_TTL_MS = 30 * 1000;
+const PHONE_PAIRING_TTL_MS = Math.max(50, Number(process.env.TCGATE_PHONE_PAIRING_TTL_MS || 5 * 60 * 1000));
+const PHONE_SESSION_TTL_MS = 4 * 60 * 60 * 1000;
+const PHONE_REPORT_LIMIT_BYTES = 96 * 1024;
+const PHONE_SIGNAL_TYPES = new Set(['offer', 'answer', 'candidate', 'restart-request', 'reset', 'reset-peer', 'control', 'control-result', 'control-state']);
 const RECOVERY_COOKIE_NAME = 'tcgate_recovery';
 const BODY_LIMIT_BYTES = 64 * 1024;
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -341,14 +349,14 @@ function sendJson(res, status, body) {
   res.end(payload);
 }
 
-async function readJson(req) {
+async function readJson(req, maxBytes = BODY_LIMIT_BYTES) {
   return await new Promise((resolve, reject) => {
     let raw = '';
     let bytes = 0;
     req.setEncoding('utf8');
     req.on('data', chunk => {
       bytes += Buffer.byteLength(chunk, 'utf8');
-      if (bytes > BODY_LIMIT_BYTES) {
+      if (bytes > maxBytes) {
         reject(Object.assign(new Error('Payload too large'), { statusCode: 413 }));
         req.destroy();
         return;
@@ -362,6 +370,79 @@ async function readJson(req) {
     });
     req.on('error', reject);
   });
+}
+
+function secureToken() { return crypto.randomBytes(32).toString('base64url'); }
+function opaqueId() { return crypto.randomBytes(18).toString('base64url'); }
+function qrSvg(text) {
+  const qr = new QRCode(-1, QRErrorCorrectLevel.M);
+  qr.addData(text);
+  qr.make();
+  const count = qr.getModuleCount();
+  const quiet = 4;
+  const cells = [];
+  for (let y = 0; y < count; y++) for (let x = 0; x < count; x++) {
+    if (qr.isDark(y, x)) cells.push(`<rect x="${x + quiet}" y="${y + quiet}" width="1" height="1"/>`);
+  }
+  const size = count + quiet * 2;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="white"/><g fill="black">${cells.join('')}</g></svg>`;
+}
+
+function requestOrigin(req) {
+  const proto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() || (req.socket.encrypted ? 'https' : 'http');
+  return `${proto}://${req.headers.host}`;
+}
+
+function phonePairFromPath(pathname) {
+  const match = pathname.match(/^\/api\/phone\/pairs\/([A-Za-z0-9_-]{20,32})(?:\/(join|events-ticket|rtc-config|signal|state|report))?$/);
+  return match ? { pair: phonePairs.get(match[1]) || null, pairId: match[1], action: match[2] || '' } : null;
+}
+
+function phonePcPeer(req, pair) {
+  const room = getRoom(pair?.roomCode);
+  const peer = authenticatedPeer(req, room, pair?.peerId);
+  return room && peer ? peer : null;
+}
+
+function phoneAuthorized(req, pair) {
+  return Boolean(pair?.phoneAuthHash && tokenMatches({ authHash: pair.phoneAuthHash }, bearerToken(req)));
+}
+
+function closePhonePair(pair, reason = 'dissociated') {
+  if (!pair) return;
+  try { pair.pcSse?.end(); } catch {}
+  try { pair.phoneSse?.end(); } catch {}
+  pair.pcSse = null;
+  pair.phoneSse = null;
+  pair.closedAt = Date.now();
+  pair.closeReason = reason;
+  phonePairs.delete(pair.id);
+}
+
+function safeDiagnosticValue(value, depth = 0) {
+  if (depth > 5) return null;
+  if (value == null || typeof value === 'boolean') return value;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string') return /^(data:|blob:)/i.test(value) || value.length > 1000 ? null : value;
+  if (Array.isArray(value)) return value.slice(-120).map(item => safeDiagnosticValue(item, depth + 1));
+  if (typeof value !== 'object') return null;
+  const out = {};
+  for (const [key, item] of Object.entries(value).slice(0, 80)) {
+    if (/^(sdp|candidate|image|frame|video|audio|screenshot|token|authorization)$/i.test(key)) continue;
+    out[key] = safeDiagnosticValue(item, depth + 1);
+  }
+  return out;
+}
+
+function validatePhoneSignal(type, payload) {
+  if (!PHONE_SIGNAL_TYPES.has(type)) return false;
+  if (type === 'candidate') {
+    const candidate = payload?.candidate?.candidate ?? payload?.candidate;
+    return typeof candidate === 'string' && candidate.length <= 4096;
+  }
+  if (!['offer', 'answer'].includes(type)) return payload == null || (typeof payload === 'object' && !Array.isArray(payload));
+  const description = payload?.description ?? payload;
+  return description && description.type === type && typeof description.sdp === 'string' && description.sdp.length <= 56000;
 }
 
 function publicPeer(peer) {
@@ -428,6 +509,9 @@ function removePeer(room, id, reason = 'leave') {
   room.peers.delete(id);
   if (peer.recoveryKey) recoveryIndex.delete(peer.recoveryKey);
   turnCredentialCache.delete(id);
+  for (const pair of [...phonePairs.values()]) {
+    if (pair.roomCode === room.code && pair.peerId === id) closePhonePair(pair, `peer-${reason}`);
+  }
   broadcast(room, 'peer-left', { peerId: id, reason });
   if (room.peers.size === 0) {
     rooms.delete(room.code);
@@ -502,6 +586,138 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && pathname === '/api/health') {
       return sendJson(res, 200, { ok: true, version: VERSION });
+    }
+
+    if (req.method === 'GET' && pathname === '/phone') {
+      return staticFile(req, res, '/phone.html');
+    }
+
+    if (req.method === 'GET' && pathname === '/api/phone/events') {
+      const ticket = String(url.searchParams.get('ticket') || '');
+      const record = phoneEventTickets.get(ticket);
+      phoneEventTickets.delete(ticket);
+      const pair = record ? phonePairs.get(record.pairId) : null;
+      if (!record || !pair || record.expiresAt < Date.now()) return sendJson(res, 401, { ok: false, error: 'Ticket téléphone invalide' });
+      res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
+      res.write(': connected\n\n');
+      const key = record.role === 'phone' ? 'phoneSse' : 'pcSse';
+      if (pair[key] && pair[key] !== res) { try { pair[key].end(); } catch {} }
+      pair[key] = res;
+      pair.lastSeenAt = Date.now();
+      sseSend(res, 'phone-pair-state', { joined: Boolean(pair.phoneAuthHash), connected: Boolean(pair.phoneSse), cameraActive: Boolean(pair.phoneState?.cameraActive) });
+      sseSend(record.role === 'phone' ? pair.pcSse : pair.phoneSse, 'phone-pair-state', { joined: Boolean(pair.phoneAuthHash), connected: true, cameraActive: Boolean(pair.phoneState?.cameraActive) });
+      req.on('close', () => {
+        if (pair[key] !== res) return;
+        pair[key] = null;
+        pair.lastSeenAt = Date.now();
+        sseSend(record.role === 'phone' ? pair.pcSse : pair.phoneSse, 'phone-pair-state', { joined: Boolean(pair.phoneAuthHash), connected: false, cameraActive: false });
+      });
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/api/phone/pairs') {
+      const body = await readJson(req);
+      const room = getRoom(body.room);
+      const peer = authenticatedPeer(req, room, body.peerId);
+      if (!room || !peer) return sendJson(res, 401, { ok: false, error: 'Session PC inconnue' });
+      if (!sessionRateLimit(res, peer, 'phone-pair-create', 6, 60 * 1000)) return;
+      for (const existing of [...phonePairs.values()]) {
+        if (existing.roomCode === room.code && existing.peerId === peer.id) closePhonePair(existing, 'replaced');
+      }
+      const id = opaqueId();
+      const pairingToken = secureToken();
+      const phoneUrl = `${requestOrigin(req)}/phone?pair=${encodeURIComponent(id)}&token=${encodeURIComponent(pairingToken)}`;
+      phonePairs.set(id, {
+        id, roomCode: room.code, peerId: peer.id, createdAt: Date.now(), expiresAt: Date.now() + PHONE_PAIRING_TTL_MS,
+        pairingHash: tokenHash(pairingToken), pairingConsumedAt: null, phoneAuthHash: null, phoneSessionExpiresAt: null,
+        pcSse: null, phoneSse: null, phoneState: null, phoneReport: null, lastSeenAt: Date.now()
+      });
+      return sendJson(res, 201, { ok: true, pairId: id, phoneUrl, qrSvg: qrSvg(phoneUrl), expiresInMs: PHONE_PAIRING_TTL_MS });
+    }
+
+    const phoneRoute = phonePairFromPath(pathname);
+    if (phoneRoute) {
+      const { pair, action } = phoneRoute;
+      if (!pair) return sendJson(res, 404, { ok: false, error: 'Association téléphone inconnue' });
+      if (req.method === 'POST' && action === 'join') {
+        if (!rateLimit(req, res, 'phone-pair-join', 20, 60 * 1000)) return;
+        const supplied = bearerToken(req);
+        if (phoneAuthorized(req, pair) && pair.phoneSessionExpiresAt > Date.now()) {
+          pair.lastSeenAt = Date.now();
+          return sendJson(res, 200, { ok: true, resumed: true, pairId: pair.id });
+        }
+        if (pair.pairingConsumedAt) return sendJson(res, 409, { ok: false, error: 'Ce lien a déjà été utilisé' });
+        if (pair.expiresAt < Date.now()) return sendJson(res, 410, { ok: false, error: 'Ce lien a expiré' });
+        if (!tokenMatches({ authHash: pair.pairingHash }, supplied)) return sendJson(res, 401, { ok: false, error: 'Lien invalide' });
+        const phoneToken = secureToken();
+        pair.pairingConsumedAt = Date.now();
+        pair.pairingHash = null;
+        pair.phoneAuthHash = tokenHash(phoneToken);
+        pair.phoneSessionExpiresAt = Date.now() + PHONE_SESSION_TTL_MS;
+        pair.lastSeenAt = Date.now();
+        sseSend(pair.pcSse, 'phone-pair-state', { joined: true, connected: false, cameraActive: false });
+        return sendJson(res, 200, { ok: true, resumed: false, pairId: pair.id, phoneToken, expiresInMs: PHONE_SESSION_TTL_MS });
+      }
+
+      const pcPeer = phonePcPeer(req, pair);
+      const isPhone = phoneAuthorized(req, pair) && pair.phoneSessionExpiresAt > Date.now();
+      if (req.method === 'DELETE' && !action) {
+        if (!pcPeer) return sendJson(res, 401, { ok: false, error: 'Session PC inconnue' });
+        closePhonePair(pair, 'pc-dissociated');
+        return sendJson(res, 200, { ok: true });
+      }
+      if (req.method === 'GET' && !action) {
+        if (!pcPeer) return sendJson(res, 401, { ok: false, error: 'Session PC inconnue' });
+        return sendJson(res, 200, { ok: true, pairId: pair.id, joined: Boolean(pair.phoneAuthHash), connected: Boolean(pair.phoneSse), cameraActive: Boolean(pair.phoneState?.cameraActive) });
+      }
+      if (req.method === 'POST' && action === 'events-ticket') {
+        const body = await readJson(req);
+        const role = body.role === 'phone' ? 'phone' : 'pc';
+        if ((role === 'phone' && !isPhone) || (role === 'pc' && !pcPeer)) return sendJson(res, 401, { ok: false, error: 'Session téléphone inconnue' });
+        const ticket = opaqueId();
+        phoneEventTickets.set(ticket, { pairId: pair.id, role, expiresAt: Date.now() + EVENT_TICKET_TTL_MS });
+        return sendJson(res, 200, { ok: true, ticket, expiresInMs: EVENT_TICKET_TTL_MS });
+      }
+      if (req.method === 'GET' && action === 'rtc-config') {
+        const role = url.searchParams.get('role') === 'phone' ? 'phone' : 'pc';
+        if ((role === 'phone' && !isPhone) || (role === 'pc' && !pcPeer)) return sendJson(res, 401, { ok: false, error: 'Session téléphone inconnue' });
+        return sendJson(res, 200, { ok: true, ...await rtcConfigForPeer(`phone:${pair.id}:${role}`) });
+      }
+      if (req.method === 'POST' && action === 'signal') {
+        const body = await readJson(req);
+        const role = body.role === 'phone' ? 'phone' : 'pc';
+        if ((role === 'phone' && !isPhone) || (role === 'pc' && !pcPeer)) return sendJson(res, 401, { ok: false, error: 'Session téléphone inconnue' });
+        if (!validatePhoneSignal(body.type, body.payload ?? null)) return sendJson(res, 400, { ok: false, error: 'Signal téléphone invalide' });
+        const phoneSignals = new Set(['offer', 'candidate', 'reset-peer', 'control-result', 'control-state']);
+        const pcSignals = new Set(['answer', 'candidate', 'restart-request', 'reset', 'control']);
+        if (!(role === 'phone' ? phoneSignals : pcSignals).has(body.type)) return sendJson(res, 400, { ok: false, error: 'Signal interdit pour ce rôle' });
+        const delivered = sseSend(role === 'phone' ? pair.pcSse : pair.phoneSse, 'signal', { role, type: body.type, payload: body.payload ?? null, at: Date.now() }) ? 1 : 0;
+        return sendJson(res, 200, { ok: true, delivered });
+      }
+      if (action === 'state' && req.method === 'POST') {
+        if (!isPhone) return sendJson(res, 401, { ok: false, error: 'Session téléphone inconnue' });
+        const body = await readJson(req, 32 * 1024);
+        pair.phoneState = safeDiagnosticValue(body.state || {});
+        pair.lastSeenAt = Date.now();
+        sseSend(pair.pcSse, 'phone-state', { state: pair.phoneState, updatedAt: new Date().toISOString() });
+        return sendJson(res, 200, { ok: true });
+      }
+      if (action === 'state' && req.method === 'GET') {
+        if (!pcPeer) return sendJson(res, 401, { ok: false, error: 'Session PC inconnue' });
+        return sendJson(res, 200, { ok: true, state: pair.phoneState, updatedAt: pair.lastSeenAt ? new Date(pair.lastSeenAt).toISOString() : null });
+      }
+      if (action === 'report' && req.method === 'POST') {
+        if (!isPhone) return sendJson(res, 401, { ok: false, error: 'Session téléphone inconnue' });
+        const body = await readJson(req, PHONE_REPORT_LIMIT_BYTES);
+        pair.phoneReport = safeDiagnosticValue(body.report || {});
+        pair.lastSeenAt = Date.now();
+        return sendJson(res, 200, { ok: true, stored: true });
+      }
+      if (action === 'report' && req.method === 'GET') {
+        if (!pcPeer) return sendJson(res, 401, { ok: false, error: 'Session PC inconnue' });
+        return sendJson(res, 200, { ok: true, available: Boolean(pair.phoneReport), report: pair.phoneReport });
+      }
+      return sendJson(res, 404, { ok: false, error: 'Route téléphone inconnue' });
     }
 
     if (req.method === 'GET' && pathname === MODEL_ROUTE) {
@@ -821,6 +1037,18 @@ setInterval(() => {
   const now = Date.now();
   for (const [ticket, record] of eventTickets) {
     if (record.expiresAt < now) eventTickets.delete(ticket);
+  }
+  for (const [ticket, record] of phoneEventTickets) {
+    if (record.expiresAt < now) phoneEventTickets.delete(ticket);
+  }
+  for (const pair of [...phonePairs.values()]) {
+    const expiredBeforeJoin = !pair.pairingConsumedAt && pair.expiresAt < now;
+    const expiredSession = pair.phoneSessionExpiresAt && pair.phoneSessionExpiresAt < now;
+    if (expiredBeforeJoin || expiredSession || !getPeer(getRoom(pair.roomCode), pair.peerId)) closePhonePair(pair, 'expired');
+    else {
+      if (pair.pcSse) sseSend(pair.pcSse, 'ping', { at: now });
+      if (pair.phoneSse) sseSend(pair.phoneSse, 'ping', { at: now });
+    }
   }
   for (const [key, bucket] of rateBuckets) {
     if (bucket.resetAt + 60 * 1000 < now) rateBuckets.delete(key);
