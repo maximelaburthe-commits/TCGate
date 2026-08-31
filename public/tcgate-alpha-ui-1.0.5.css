@@ -325,6 +325,17 @@
 }
 
 .phone-camera-panel p { margin: 6px 0 12px; color: var(--muted); }
+.phone-camera-lens { display: grid; gap: 6px; margin: 0 0 12px; }
+.phone-camera-lens span { color: var(--muted); font-size: 12px; }
+.phone-camera-lens select {
+  width: 100%;
+  min-height: 38px;
+  color: #eef3ff;
+  background: rgba(5, 9, 22, .88);
+  border: 1px solid rgba(143, 95, 255, .3);
+  border-radius: 9px;
+  padding: 7px 9px;
+}
 .phone-camera-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 @media (max-width: 680px) {

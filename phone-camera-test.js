@@ -4,12 +4,14 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { TextDecoder } = require('util');
+const cameraDevices = require('./public/phone-camera-devices.js');
 
 const PORT = 4331;
 const BASE = `http://127.0.0.1:${PORT}`;
 const child = spawn(process.execPath, ['server.js'], {
   cwd: __dirname,
-  env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', TCGATE_PHONE_PAIRING_TTL_MS: '120' },
+  env: { ...process.env, PORT: String(PORT), HOST: '127.0.0.1', TCGATE_PHONE_PAIRING_TTL_MS: '500' },
   stdio: ['ignore', 'pipe', 'pipe']
 });
 let log = '';
@@ -74,17 +76,29 @@ async function request(pathname, { method = 'GET', token = null, body, origin } 
     assert(result.response.status === 401, 'phone token gained PC privileges');
     result = await request(`/api/phone/pairs/${pair.pairId}/signal`, { method: 'POST', token: phoneToken, body: { role: 'phone', type: 'offer', payload: { description: { type: 'offer', sdp: 42 } } } });
     assert(result.response.status === 400, 'invalid phone signal accepted');
-    result = await request(`/api/phone/pairs/${pair.pairId}/state`, { method: 'POST', token: phoneToken, body: { state: { cameraActive: true, candidate: 'private', image: 'data:image/png;base64,abc', fps: 30 } } });
+    result = await request(`/api/phone/pairs/${pair.pairId}/state`, { method: 'POST', token: phoneToken, body: { state: { cameraActive: true, candidate: 'private', image: 'data:image/png;base64,abc', deviceId: 'raw-device-id', fps: 30 } } });
     assert(result.response.ok, 'phone state rejected');
     result = await request(`/api/phone/pairs/${pair.pairId}/state`, { token: owner.sessionToken });
-    assert(result.json.state.fps === 30 && !('candidate' in result.json.state) && !('image' in result.json.state), 'diagnostic sanitizer failed');
+    assert(result.json.state.fps === 30 && !('candidate' in result.json.state) && !('image' in result.json.state) && !('deviceId' in result.json.state), 'diagnostic sanitizer failed');
+    result = await request(`/api/phone/pairs/${pair.pairId}/signal`, {
+      method: 'POST',
+      token: owner.sessionToken,
+      body: { role: 'pc', type: 'control', payload: { requestId: 'camera-test-1', action: 'select-camera', args: { cameraId: 'camera-1' } } }
+    });
+    assert(result.response.ok, 'valid select-camera command rejected');
+    result = await request(`/api/phone/pairs/${pair.pairId}/signal`, {
+      method: 'POST',
+      token: owner.sessionToken,
+      body: { role: 'pc', type: 'control', payload: { requestId: 'camera-test-2', action: 'select-camera', args: { cameraId: 'raw-device-id' } } }
+    });
+    assert(result.response.status === 400, 'raw device id accepted by signaling');
     result = await request(`/api/phone/pairs/${pair.pairId}`, { method: 'DELETE', token: owner.sessionToken });
     assert(result.response.ok, 'dissociation failed');
 
     result = await request('/api/phone/pairs', { method: 'POST', token: owner.sessionToken, body: { room: owner.code, peerId: owner.peerId } });
     const expiring = result.json;
     const expiringToken = new URL(expiring.phoneUrl).searchParams.get('token');
-    await sleep(160);
+    await sleep(550);
     result = await request(`/api/phone/pairs/${expiring.pairId}/join`, { method: 'POST', token: expiringToken });
     assert([404, 410].includes(result.response.status), 'expired pairing token accepted');
 
@@ -107,6 +121,50 @@ async function request(pathname, { method = 'GET', token = null, body, origin } 
     assert(/new MediaStream\(\[track, \.\.\.\(audio/.test(appSource), 'PC microphone is not preserved with phone video');
     assert(/audio:\s*false/.test(phoneSource), 'phone microphone may be captured');
     assert(/autoProfile:\s*'1280x720'/.test(phoneSource) && /frameRate:\s*\{ ideal:\s*30, max:\s*30 \}/.test(phoneSource), '720p30 default profile missing');
+
+    const phoneFiles = [
+      'public/phone.html',
+      'public/phone-camera-client.js',
+      'public/phone-camera.js',
+      'public/phone-camera.css',
+      'public/phone-camera-devices.js'
+    ];
+    for (const file of phoneFiles) {
+      const bytes = fs.readFileSync(path.join(__dirname, file));
+      const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      assert(!/[\uFFFD]|Ã|Â|â€|ðŸ/.test(text), `mojibake detected in ${file}`);
+    }
+
+    const mockCameras = [
+      { kind: 'videoinput', deviceId: 'front-secret', label: 'Front Camera' },
+      { kind: 'videoinput', deviceId: 'wide-secret', label: 'Back Camera' },
+      { kind: 'videoinput', deviceId: 'ultra-secret', label: 'Ultra Wide Camera' },
+      { kind: 'audioinput', deviceId: 'audio-secret', label: 'Microphone' }
+    ];
+    const publicList = cameraDevices.publicCameraList(mockCameras, 'wide-secret');
+    assert(publicList.length === 2, 'front camera was not filtered when rear cameras exist');
+    assert(publicList[0].id === 'camera-1' && publicList[0].active, 'active opaque camera id missing');
+    assert(publicList[1].label === 'Ultra grand-angle', 'reliable ultra-wide label not exposed');
+    assert(!JSON.stringify(publicList).includes('secret'), 'raw deviceId leaked in public camera list');
+    const oneCamera = cameraDevices.publicCameraList([{ kind: 'videoinput', deviceId: 'only-secret', label: '' }], 'only-secret');
+    assert(oneCamera.length === 1 && oneCamera[0].label === 'Caméra principale', 'single camera fallback label invalid');
+    const unknownCameras = cameraDevices.publicCameraList([
+      { kind: 'videoinput', deviceId: 'a-secret', label: '' },
+      { kind: 'videoinput', deviceId: 'b-secret', label: '' }
+    ]);
+    assert(unknownCameras.map(camera => camera.label).join('|') === 'Caméra arrière 1|Caméra arrière 2', 'neutral fallback labels invalid');
+    assert(cameraDevices.resolveOpaqueCamera(mockCameras.slice(1, 3), 'camera-2')?.deviceId === 'ultra-secret', 'known opaque camera id rejected');
+    assert(cameraDevices.resolveOpaqueCamera(mockCameras.slice(1, 3), 'camera-9') === null, 'unknown opaque camera id accepted');
+
+    const order = [];
+    const oldTrack = { stop: () => order.push('stop-old') };
+    const newTrack = {};
+    const sender = { replaceTrack: async track => { assert(track === newTrack, 'wrong replacement track'); order.push('replace'); } };
+    await cameraDevices.replaceTrackSafely(sender, oldTrack, newTrack);
+    assert(order.join('|') === 'replace|stop-old', 'old track stopped before successful replaceTrack');
+    let stoppedAfterFailure = false;
+    await cameraDevices.replaceTrackSafely({ replaceTrack: async () => { throw new Error('replace failed'); } }, { stop: () => { stoppedAfterFailure = true; } }, {}).catch(() => {});
+    assert(!stoppedAfterFailure, 'old track stopped after failed replaceTrack');
     assert(/Content-Security-Policy/.test(fs.readFileSync(path.join(__dirname, 'server.js'), 'utf8')), 'security headers missing');
     assert(fs.existsSync(path.join(__dirname, 'report-mail-server.js')), 'email report server missing');
     assert(fs.existsSync(path.join(__dirname, 'public', 'identification.js')), 'Vision baseline missing');

@@ -13,7 +13,14 @@
   }
 
   function notify(status, extra = {}) {
-    state.onState?.({ status, pairId: state.pairId, connected: state.connected, cameraActive: state.cameraActive, ...extra });
+    state.onState?.({
+      status,
+      pairId: state.pairId,
+      connected: state.connected,
+      cameraActive: state.cameraActive,
+      diagnostics: state.phoneState,
+      ...extra
+    });
   }
 
   async function call(path, options = {}) {
@@ -141,7 +148,26 @@
     if (message.type === 'control-state') {
       state.phoneState = message.payload || null;
       notify(state.cameraActive ? 'streaming' : 'connected', { diagnostics: state.phoneState });
+      return;
     }
+    if (message.type === 'control-result') {
+      if (message.payload?.state) state.phoneState = message.payload.state;
+      notify(state.cameraActive ? 'streaming' : 'connected', {
+        diagnostics: state.phoneState,
+        controlError: message.payload?.ok === false ? message.payload.error || 'Commande refusée' : null
+      });
+    }
+  }
+
+  async function selectCamera(cameraId) {
+    const id = String(cameraId || '');
+    const known = state.phoneState?.cameraDevices?.some(camera => camera.id === id);
+    if (!known) throw new Error('Objectif téléphone inconnu');
+    const requestId = `camera-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const result = await signal('control', { requestId, action: 'select-camera', args: { cameraId: id } });
+    if (!result?.delivered) throw new Error('Téléphone indisponible');
+    record('camera-select-requested', { cameraId: id });
+    return result;
   }
 
   async function fetchDiagnostics() {
@@ -186,5 +212,5 @@
     if (!quiet) notify('idle');
   }
 
-  window.TCGatePhoneCamera = { createPair, disconnect, fetchDiagnostics, getSnapshot: snapshot };
+  window.TCGatePhoneCamera = { createPair, disconnect, fetchDiagnostics, getSnapshot: snapshot, selectCamera };
 })();

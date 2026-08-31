@@ -42,6 +42,8 @@ const st = {
   autoProfile: '1280x720',
   autoDowngrades: 0,
   cameraDevices: [],
+  cameraAliases: new Map(),
+  nextCameraAlias: 1,
   cameraCapabilities: null,
   captureBusy: false,
   lastCaptureChangeAt: 0,
@@ -118,12 +120,12 @@ function updateBatteryUi(snapshot = st.energy.lastBattery) {
     return;
   }
   if (!snapshot) {
-    $('batteryDebug').textContent = 'Analyse en attente�?�';
-    $('batteryBadge').textContent = 'Batterie : �?�';
+    $('batteryDebug').textContent = 'Analyse en attente…';
+    $('batteryBadge').textContent = 'Batterie : …';
     return;
   }
-  $('batteryDebug').textContent = `${snapshot.levelPct ?? '�?"'} %${snapshot.charging ? ' �� en charge' : ' �� sur batterie'}`;
-  $('batteryBadge').textContent = `Batterie : ${snapshot.levelPct ?? '�?"'} %`;
+  $('batteryDebug').textContent = `${snapshot.levelPct ?? '—'} %${snapshot.charging ? ' · en charge' : ' · sur batterie'}`;
+  $('batteryBadge').textContent = `Batterie : ${snapshot.levelPct ?? '—'} %`;
   $('batteryBadge').classList.toggle('good', snapshot.levelPct != null && snapshot.levelPct >= 30);
 }
 
@@ -243,7 +245,7 @@ function thermalAnalysis() {
     status,
     throttlingSuspected,
     userFeel: st.energy.manualThermalFeel,
-    note: 'Proxy de pression thermique basǸ sur WebRTC/encodage ; aucune tempǸrature matǸrielle n�?Test accessible au navigateur.',
+    note: 'Proxy de pression thermique basé sur WebRTC/encodage ; aucune température matérielle n’est accessible au navigateur.',
     fpsMedian,
     fpsTailMedian,
     lowFpsRatePct: lowFpsRate != null ? Math.round(lowFpsRate * 1000) / 10 : null,
@@ -261,7 +263,7 @@ function thermalAnalysis() {
 function updateThermalUi() {
   if (!$('thermalDebug')) return;
   const t = thermalAnalysis();
-  const labels = { stable: 'Stable �� aucun signe de throttling', 'pressure-observed': 'Pression observǸe �� �� surveiller', 'throttling-suspected': 'Throttling possible �� vǸrifier la chauffe' };
+  const labels = { stable: 'Stable · aucun signe de throttling', 'pressure-observed': 'Pression observée · à surveiller', 'throttling-suspected': 'Throttling possible · vérifier la chauffe' };
   $('thermalDebug').textContent = labels[t.status] || t.status;
 }
 
@@ -296,7 +298,7 @@ function updateStartState() {
   $('orientationBadge').textContent = landscape ? 'Orientation : paysage' : 'Orientation : portrait';
   $('orientationBadge').classList.toggle('good', landscape);
   $('start').disabled = !landscape || Boolean(st.stream);
-  if (!landscape && !st.stream) status('Tournez le tǸlǸphone �� l�?Thorizontale');
+  if (!landscape && !st.stream) status('Tournez le téléphone à l’horizontale');
 }
 
 let orientationTimer = null;
@@ -308,7 +310,7 @@ function orientationChanged() {
     if (wasLandscape && !st.orientationLandscape && st.stream) {
       log('orientation-portrait-stop');
       await stopCamera({ reason: 'orientation-portrait' });
-      status('CamǸra arrǦtǸe �� repassez en paysage');
+      status('Caméra arrêtée · repassez en paysage');
     }
   }, 180);
 }
@@ -320,8 +322,8 @@ async function wake() {
     if ('wakeLock' in navigator) {
       if (st.wake && !st.wake.released) return;
       st.wake = await navigator.wakeLock.request('screen');
-      $('wakeBadge').textContent = '�%cran : maintenu';
-      st.wake.addEventListener('release', () => { $('wakeBadge').textContent = '�%cran : auto'; });
+      $('wakeBadge').textContent = 'Écran : maintenu';
+      st.wake.addEventListener('release', () => { $('wakeBadge').textContent = 'Écran : auto'; });
     }
   } catch {}
 }
@@ -337,13 +339,13 @@ async function loadRtc() {
 }
 
 async function join() {
-  if (!st.pair || !st.token) throw new Error('Lien d�?Tassociation incomplet');
+  if (!st.pair || !st.token) throw new Error('Lien d’association incomplet');
   const joined = await api(`/api/phone/pairs/${st.pair}/join`, { method: 'POST' });
   if (joined.phoneToken) {
     st.token = joined.phoneToken;
     try { sessionStorage.setItem(tokenKey, joined.phoneToken); } catch {}
   }
-  $('pairBadge').textContent = `AssociǸ �� ${st.pair}`;
+  $('pairBadge').textContent = `Associé · ${st.pair}`;
   await loadRtc();
   connectEvents();
   updateStartState();
@@ -405,35 +407,33 @@ function captureConstraints(deviceId = $('camera').value, profile = currentProfi
 }
 
 function cameraKind(label = '') {
-  const s = label.toLowerCase();
-  if (/front|user|face|avant/.test(s)) return 'front';
-  if (/ultra|0[.,]5|0\.5|grand.?angle|ultrawide|ultra.?wide/.test(s)) return 'ultrawide';
-  if (/tele|tǸlǸ|2x|3x|4x|5x/.test(s)) return 'tele';
-  if (/back|rear|environment|arri��re|world/.test(s)) return 'rear';
-  return 'unknown';
+  return window.TCGatePhoneCameraDevices.kindFromLabel(label);
 }
 
 function cameraDisplayLabel(device, index) {
-  const label = device.label || `CamǸra ${index + 1}`;
-  const kind = cameraKind(label);
-  const letter = String.fromCharCode(65 + Math.min(index, 25));
-  const prefix = kind === 'ultrawide'
-    ? 'Ultra grand-angle'
-    : kind === 'tele'
-      ? 'TǸlǸobjectif'
-      : kind === 'rear'
-        ? `Arri��re ${letter}`
-        : kind === 'front'
-          ? 'Avant'
-          : `Objectif ${letter}`;
-  return `${prefix} �� ${label}`;
+  return window.TCGatePhoneCameraDevices.displayLabel(device, index, st.cameraDevices.length);
+}
+
+function cameraPublicId(device) {
+  if (!st.cameraAliases.has(device.deviceId)) {
+    st.cameraAliases.set(device.deviceId, `camera-${st.nextCameraAlias++}`);
+  }
+  return st.cameraAliases.get(device.deviceId);
+}
+
+function publicCameraDevices() {
+  const activeId = st.stream?.getVideoTracks()[0]?.getSettings?.().deviceId || $('camera').value || '';
+  return st.cameraDevices.map((device, index) => ({
+    id: cameraPublicId(device),
+    label: cameraDisplayLabel(device, index),
+    kind: cameraKind(device.label),
+    active: device.deviceId === activeId
+  }));
 }
 
 async function devices(activeId = '') {
   const list = await navigator.mediaDevices.enumerateDevices();
-  let cams = list.filter(d => d.kind === 'videoinput');
-  const withoutKnownFront = cams.filter(d => cameraKind(d.label) !== 'front');
-  if (withoutKnownFront.length) cams = withoutKnownFront;
+  const cams = window.TCGatePhoneCameraDevices.selectableVideoInputs(list);
   st.cameraDevices = cams;
 
   const preferred = activeId || (() => { try { return localStorage.getItem(preferredCameraKey) || ''; } catch { return ''; } })();
@@ -445,14 +445,14 @@ async function devices(activeId = '') {
   }));
   if (preferred && cams.some(c => c.deviceId === preferred)) $('camera').value = preferred;
   $('lensHelp').textContent = cams.length > 1
-    ? `${cams.length} objectifs/camǸras accessibles. Teste-les : garde celui qui montre le plus de tapis.`
-    : `1 camǸra arri��re accessible au navigateur. Certains tǸlǸphones ne publient pas sǸparǸment leurs objectifs 0,5�- / 1�-.`;
+    ? `${cams.length} objectifs/caméras accessibles. Teste-les : garde celui qui montre le plus de tapis.`
+    : `1 caméra arrière accessible au navigateur. Certains téléphones ne publient pas séparément leurs objectifs 0,5× / 1×.`;
   return cams;
 }
 
 function setTrackHint(track) {
-  // Une partie TCG est une sc��ne de webcam avec mains/cartes en mouvement.
-  // V0.3 utilisait \"detail\". V0.4 privilǸgie la cadence rǸelle.
+  // Une partie TCG est une scène de webcam avec mains/cartes en mouvement.
+  // V0.3 utilisait \"detail\". V0.4 privilégie la cadence réelle.
   try { track.contentHint = 'motion'; } catch {}
 }
 
@@ -468,10 +468,10 @@ function describeZoom(track) {
     $('zoom').step = String(zoom.step || 0.1);
     const current = track.getSettings?.().zoom ?? Math.max(zoom.min, 1);
     $('zoom').value = String(current);
-    $('zoomValue').textContent = `${Number(current).toFixed(1)}�-`;
+    $('zoomValue').textContent = `${Number(current).toFixed(1)}×`;
   } else {
     wrap.classList.add('hidden');
-    $('zoomValue').textContent = '�?"';
+    $('zoomValue').textContent = '—';
   }
   return caps;
 }
@@ -479,14 +479,14 @@ function describeZoom(track) {
 function updateCaptureUi(track) {
   const settings = track?.getSettings?.() || {};
   st.lastCapture = settings;
-  $('capture').textContent = `${settings.width || '�?"'}�-${settings.height || '�?"'} @ ${Math.round(settings.frameRate || 0)} fps`;
-  const selectedLabel = $('camera').selectedOptions[0]?.textContent || 'CamǸra arri��re';
+  $('capture').textContent = `${settings.width || '—'}×${settings.height || '—'} @ ${Math.round(settings.frameRate || 0)} fps`;
+  const selectedLabel = $('camera').selectedOptions[0]?.textContent || 'Caméra arrière';
   $('lens').textContent = selectedLabel;
   describeZoom(track);
   $('profile').textContent = $('resolution').value === 'auto'
-    ? 'Auto �� 720p30 stabilitǸ'
-    : `${settings.width || '�?"'}�-${settings.height || '�?"'} fixe`;
-  if ($('focusDebug')) $('focusDebug').textContent = `Autofocus natif${settings.focusMode ? ` �� ${settings.focusMode}` : ''}`;
+    ? 'Auto · 720p30 stabilité'
+    : `${settings.width || '—'}×${settings.height || '—'} fixe`;
+  if ($('focusDebug')) $('focusDebug').textContent = `Autofocus natif${settings.focusMode ? ` · ${settings.focusMode}` : ''}`;
 }
 
 async function obtainStream(deviceId = $('camera').value, profile = currentProfile()) {
@@ -497,14 +497,14 @@ async function obtainStream(deviceId = $('camera').value, profile = currentProfi
   if ((settings.width || 0) < (settings.height || 0)) {
     next.getTracks().forEach(t => t.stop());
     log('capture-rejected-portrait', { settings: cleanSettings(settings) });
-    throw new Error(`Flux portrait re��u (${settings.width || '?'}�-${settings.height || '?'}). Tournez le tǸlǸphone en paysage puis rǸessayez.`);
+    throw new Error(`Flux portrait reçu (${settings.width || '?'}×${settings.height || '?'}). Tournez le téléphone en paysage puis réessayez.`);
   }
   return { stream: next, track, settings };
 }
 
 async function activateStream(next, track, settings, reason) {
   const old = st.stream;
-  st.stream = next;
+  const oldTrack = old?.getVideoTracks?.()[0] || null;
   await devices(settings.deviceId || '');
   if (settings.deviceId) {
     $('camera').value = settings.deviceId;
@@ -512,16 +512,17 @@ async function activateStream(next, track, settings, reason) {
   }
   await wake();
   const pc = await ensurePc();
-  await st.sender.replaceTrack(track);
+  await window.TCGatePhoneCameraDevices.replaceTrackSafely(st.sender, oldTrack, track);
+  st.stream = next;
   await tuneSender();
-  old?.getTracks().forEach(t => t.stop());
+  old?.getTracks().filter(t => t !== oldTrack).forEach(t => t.stop());
   await ensureContinuousAutofocus(track);
   updateCaptureUi(track);
   st.lastCaptureChangeAt = Date.now();
   st.lowFpsStreak = 0;
   $('start').disabled = true;
   $('stop').disabled = false;
-  $('start').textContent = 'CamǸra active';
+  $('start').textContent = 'Caméra active';
   document.body.classList.add('camera-active');
   beginEnergySession();
   $('resolution').disabled = false;
@@ -534,11 +535,11 @@ async function activateStream(next, track, settings, reason) {
 async function startCamera() {
   if (!isLandscape()) {
     updateStartState();
-    throw new Error('Tournez le tǸlǸphone �� l�?Thorizontale avant d�?Tactiver la camǸra');
+    throw new Error('Tournez le téléphone à l’horizontale avant d’activer la caméra');
   }
   if ($('resolution').value === 'auto') st.autoProfile = '1280x720';
   st.lowFpsStreak = 0;
-  status('Activation camǸra�?�');
+  status('Activation caméra…');
   let preferred = '';
   try { preferred = localStorage.getItem(preferredCameraKey) || ''; } catch {}
   let acquired;
@@ -556,34 +557,29 @@ async function startCamera() {
 
 async function switchCamera(deviceId) {
   if (!st.stream || !deviceId || st.captureBusy) return;
-  if (!isLandscape()) throw new Error('Repassez le tǸlǸphone en paysage');
+  if (!isLandscape()) throw new Error('Repassez le téléphone en paysage');
   st.captureBusy = true;
-  const oldStream = st.stream;
-  const oldTrack = oldStream.getVideoTracks()[0];
+  const oldTrack = st.stream.getVideoTracks()[0];
   const oldSettings = oldTrack?.getSettings?.() || {};
   if (oldSettings.deviceId === deviceId) {
     st.captureBusy = false;
     return;
   }
-  status('Changement d�?Tobjectif�?�');
-  oldTrack?.stop();
+  status('Changement d’objectif…');
+  let replacement = null;
   try {
-    const { stream, track, settings } = await obtainStream(deviceId, currentProfile());
+    replacement = await obtainStream(deviceId, currentProfile());
+    const { stream, track, settings } = replacement;
     await activateStream(stream, track, settings, 'camera-switch');
     await setMinimumZoom();
     await pushControlState('camera-switch');
     log('camera-switch', { label: $('camera').selectedOptions[0]?.textContent || null, settings: cleanSettings(track.getSettings?.() || settings) });
   } catch (e) {
+    replacement?.stream?.getTracks?.().forEach(track => {
+      if (track !== oldTrack) track.stop();
+    });
     log('camera-switch-error', { message: e.message, previous: cleanSettings(oldSettings) });
-    if (oldSettings.deviceId) {
-      try {
-        const fallback = await obtainStream(oldSettings.deviceId, currentProfile());
-        await activateStream(fallback.stream, fallback.track, fallback.settings, 'camera-switch-rollback');
-      } catch (rollbackError) {
-        log('camera-switch-rollback-error', { message: rollbackError.message });
-        st.stream = null;
-      }
-    }
+    status('Changement impossible · caméra précédente conservée', true);
     throw e;
   } finally {
     st.captureBusy = false;
@@ -594,7 +590,7 @@ async function switchCamera(deviceId) {
 
 async function applyCaptureProfile(profile, reason = 'manual-resolution') {
   if (!st.stream || st.captureBusy) return false;
-  if (!isLandscape()) throw new Error('Repassez le tǸlǸphone en paysage');
+  if (!isLandscape()) throw new Error('Repassez le téléphone en paysage');
   st.captureBusy = true;
   const [w, h] = profile.split('x').map(Number);
   const track = st.stream.getVideoTracks()[0];
@@ -609,7 +605,7 @@ async function applyCaptureProfile(profile, reason = 'manual-resolution') {
     if ((settings.width || 0) < (settings.height || 0)) {
       log('resolution-rejected-portrait', { settings: cleanSettings(settings), requested: profile });
       await stopCamera({ reason: 'resolution-portrait' });
-      throw new Error(`Le navigateur a basculǸ en portrait (${settings.width || '?'}�-${settings.height || '?'}). RǸactivez la camǸra en paysage.`);
+      throw new Error(`Le navigateur a basculé en portrait (${settings.width || '?'}×${settings.height || '?'}). Réactivez la caméra en paysage.`);
     }
     if ($('resolution').value === 'auto') st.autoProfile = profile;
     st.lastCapture = settings;
@@ -642,7 +638,7 @@ async function changeZoom() {
   const value = Number($('zoom').value);
   try {
     await track.applyConstraints({ advanced: [{ zoom: value }] });
-    $('zoomValue').textContent = `${value.toFixed(1)}�-`;
+    $('zoomValue').textContent = `${value.toFixed(1)}×`;
     log('zoom-change', { value, settings: cleanSettings(track.getSettings?.() || {}) });
     await pushControlState('zoom-change');
   } catch (e) {
@@ -660,10 +656,10 @@ async function stopCamera({ reason = 'manual' } = {}) {
   $('start').disabled = !isLandscape();
   $('stop').disabled = true;
   $('camera').disabled = false;
-  $('start').textContent = 'DǸmarrer la camǸra';
+  $('start').textContent = 'Démarrer la caméra';
   document.body.classList.remove('camera-active');
   recordBatterySample('camera-stop', true);
-  status(reason === 'manual' ? 'CamǸra arrǦtǸe' : 'CamǸra suspendue');
+  status(reason === 'manual' ? 'Caméra arrêtée' : 'Caméra suspendue');
   log('camera-stop', { reason });
   await pushControlState('camera-stop');
 }
@@ -733,7 +729,7 @@ async function setMinimumZoom() {
   try {
     await track.applyConstraints({ advanced: [{ zoom: min }] });
     $('zoom').value = String(min);
-    $('zoomValue').textContent = `${min.toFixed(1)}�-`;
+    $('zoomValue').textContent = `${min.toFixed(1)}×`;
     log('zoom-min', { value: min, settings: cleanSettings(track.getSettings?.() || {}) });
     await pushControlState('zoom-min');
   } catch (e) {
@@ -760,8 +756,9 @@ function controlSnapshot(reason = 'state') {
     cameraActive: Boolean(st.stream),
     orientation: st.orientationLandscape ? 'landscape' : 'portrait',
     selectedCameraIndex: activeCameraIndex(),
+    selectedCameraId: publicCameraDevices().find(camera => camera.active)?.id || null,
     selectedCameraLabel: $('camera').selectedOptions[0]?.textContent || null,
-    cameraDevices: st.cameraDevices.map((d, i) => ({ index: i, label: cameraDisplayLabel(d, i), inferredKind: cameraKind(d.label) })),
+    cameraDevices: publicCameraDevices(),
     requestedMode: $('resolution').value,
     activeProfile: currentProfile(),
     capture: settings,
@@ -810,14 +807,14 @@ async function pushControlState(reason = 'state') {
 
 async function setZoomRemote(value) {
   const track = st.stream?.getVideoTracks()[0];
-  if (!track) throw new Error('CamǸra inactive');
+  if (!track) throw new Error('Caméra inactive');
   const caps = track.getCapabilities?.() || {};
   const min = Number(caps.zoom?.min), max = Number(caps.zoom?.max);
   if (!Number.isFinite(min) || !Number.isFinite(max)) throw new Error('Zoom indisponible');
   const v = Math.max(min, Math.min(max, Number(value)));
   await track.applyConstraints({ advanced: [{ zoom: v }] });
   $('zoom').value = String(v);
-  $('zoomValue').textContent = `${v.toFixed(1)}�-`;
+  $('zoomValue').textContent = `${v.toFixed(1)}×`;
   log('zoom-remote', { value: v });
   await pushControlState('zoom-remote');
   return controlSnapshot('zoom-remote');
@@ -833,16 +830,16 @@ async function executeRemoteControl(payload = {}) {
     let result = null;
     if (action === 'request-state') {
       result = controlSnapshot('request-state');
-    } else if (action === 'switch-camera') {
-      const index = Number(args.index);
-      const device = st.cameraDevices[index];
+    } else if (action === 'select-camera') {
+      const cameraId = String(args.cameraId || '');
+      const device = window.TCGatePhoneCameraDevices.resolveOpaqueCamera(st.cameraDevices, cameraId, cameraPublicId);
       if (!device) throw new Error('Objectif inconnu');
       $('camera').value = device.deviceId;
       await switchCamera(device.deviceId);
-      result = controlSnapshot('switch-camera');
+      result = controlSnapshot('select-camera');
     } else if (action === 'set-quality') {
       const mode = String(args.mode || 'auto');
-      if (!['auto','1280x720','1920x1080'].includes(mode)) throw new Error('Profil qualitǸ invalide');
+      if (!['auto','1280x720','1920x1080'].includes(mode)) throw new Error('Profil qualité invalide');
       $('resolution').value = mode;
       await changeResolution();
       result = controlSnapshot('set-quality');
@@ -900,11 +897,11 @@ function newPeer() {
     if (cs === 'connected') {
       st.lastConnectedAt = Date.now();
       cancelRecovery('connected');
-      status(st.stream ? 'Diffusion active' : 'Connexion prǦte', true);
+      status(st.stream ? 'Diffusion active' : 'Connexion prête', true);
     } else if (cs === 'connecting') {
-      status('Connexion du flux�?�');
+      status('Connexion du flux…');
     } else if (cs === 'disconnected' || cs === 'failed') {
-      status(navigator.onLine ? 'Liaison interrompue �� reprise�?�' : 'RǸseau perdu �� attente du retour�?�');
+      status(navigator.onLine ? 'Liaison interrompue · reprise…' : 'Réseau perdu · attente du retour…');
       beginRecovery(pc, cs);
     }
   };
@@ -1029,7 +1026,7 @@ async function waitForNetwork(epoch) {
     if (!announced) {
       announced = true;
       st.recoveryState = 'waiting-network';
-      status('RǸseau indisponible �� attente du retour�?�');
+      status('Réseau indisponible · attente du retour…');
       log('recovery-wait-network', { online: navigator.onLine, epoch });
     }
     await sleep(navigator.onLine ? 1200 : 700);
@@ -1045,7 +1042,7 @@ async function beginRecovery(pc, trigger) {
   log('recovery-start', { trigger, generation: pc.__generation, epoch });
 
   try {
-    // Laisse 1,5 s �� WebRTC pour absorber une micro-coupure sans aucune renǸgociation.
+    // Laisse 1,5 s à WebRTC pour absorber une micro-coupure sans aucune renégociation.
     await sleep(1500);
     if (epoch !== st.recoveryEpoch || st.pc !== pc || pc.connectionState === 'connected') return;
 
@@ -1053,7 +1050,7 @@ async function beginRecovery(pc, trigger) {
     if (epoch !== st.recoveryEpoch) return;
 
     st.recoveryState = 'ice-restart';
-    status('RǸseau revenu �� reprise WebRTC�?�');
+    status('Réseau revenu · reprise WebRTC…');
     try {
       await loadRtc();
       st.restartAttempts += 1;
@@ -1067,14 +1064,14 @@ async function beginRecovery(pc, trigger) {
 
     if (epoch !== st.recoveryEpoch || pc.connectionState === 'connected') return;
     st.recoveryState = 'hard-reset';
-    status('Reconstruction de la liaison�?�');
+    status('Reconstruction de la liaison…');
     const rebuilt = await hardReset('recovery-fallback', epoch);
     if (rebuilt) {
       const activePc = st.pc;
       if (await waitForConnected(activePc, epoch, 9000)) return;
     }
 
-    // Si le rǸseau vient de retomber pendant la reconstruction, on attend proprement
+    // Si le réseau vient de retomber pendant la reconstruction, on attend proprement
     // son prochain retour au lieu d'empiler des offres et des timers concurrents.
     if (epoch === st.recoveryEpoch && st.stream && st.pc?.connectionState !== 'connected') {
       st.recoveryState = 'waiting-network';
@@ -1133,8 +1130,8 @@ async function handleSignal(s) {
     } else if (s.type === 'candidate') {
       await addRemoteCandidate(s.payload);
     } else if (s.type === 'restart-request') {
-      // V0.3 : le tǸlǸphone pilote seul la reprise. Une requǦte ancienne du PC ne doit
-      // plus lancer une seconde nǸgociation concurrente.
+      // V0.3 : le téléphone pilote seul la reprise. Une requête ancienne du PC ne doit
+      // plus lancer une seconde négociation concurrente.
       log('restart-request-ignored-v03', { payload: s.payload || null });
     } else if (s.type === 'reset-peer') {
       log('remote-reset-ignored-v03', { payload: s.payload || null });
@@ -1152,14 +1149,14 @@ async function maybeAutoAdapt(metrics) {
   const requested = $('resolution').value;
   const capture = st.stream.getVideoTracks()[0]?.getSettings?.() || {};
 
-  // 1080p reste expǸrimental : en cas de cadence durablement trop faible, retour contr��lǸ au 720p.
+  // 1080p reste expérimental : en cas de cadence durablement trop faible, retour contrôlé au 720p.
   if (requested === '1920x1080' && metrics.fps != null) {
     if (metrics.fps < 24) st.lowFpsStreak += 1;
     else st.lowFpsStreak = 0;
     if (st.lowFpsStreak >= 4) {
       log('quality-1080-downgrade-attempt', { from: '1920x1080', to: '1280x720', fps: metrics.fps, streak: st.lowFpsStreak });
       $('resolution').value = '1280x720';
-      status('1080p instable �� retour en 720p30�?�');
+      status('1080p instable · retour en 720p30…');
       const changed = await applyCaptureProfile('1280x720', '1080-low-fps');
       if (changed) {
         st.autoDowngrades += 1;
@@ -1169,8 +1166,8 @@ async function maybeAutoAdapt(metrics) {
     return;
   }
 
-  // Profil standard : la capture est 720p et WebRTC re��oit l'instruction de conserver la rǸsolution.
-  // On ne dǸgrade pas automatiquement : on mesure seulement les violations rǸelles du plancher pour le Lab.
+  // Profil standard : la capture est 720p et WebRTC reçoit l'instruction de conserver la résolution.
+  // On ne dégrade pas automatiquement : on mesure seulement les violations réelles du plancher pour le Lab.
   const wants720 = requested === 'auto' || requested === '1280x720';
   if (wants720 && Number(capture.width) >= 1280 && Number(capture.height) >= 720 && metrics.width) {
     if (metrics.width < 1280 || metrics.height < 720) st.lowResolutionStreak += 1;
@@ -1226,9 +1223,9 @@ async function stats() {
   st.performanceHistory.push(sample);
   if (st.performanceHistory.length > 180) st.performanceHistory.shift();
 
-  $('fps').textContent = out.framesPerSecond != null ? `${out.framesPerSecond} fps` : '�?"';
-  $('bitrate').textContent = kbps != null ? `${kbps} kb/s` : '�?"';
-  $('quality').textContent = `${out.qualityLimitationReason || 'none'}${codec?.mimeType ? ` �� ${codec.mimeType.replace('video/', '')}` : ''}`;
+  $('fps').textContent = out.framesPerSecond != null ? `${out.framesPerSecond} fps` : '—';
+  $('bitrate').textContent = kbps != null ? `${kbps} kb/s` : '—';
+  $('quality').textContent = `${out.qualityLimitationReason || 'none'}${codec?.mimeType ? ` · ${codec.mimeType.replace('video/', '')}` : ''}`;
   maybeAutoAdapt(st.metrics).catch(e => log('auto-adapt-error', { message: e.message }));
   recordBatterySample('stats');
   updateThermalUi();
@@ -1244,7 +1241,8 @@ function buildPhoneReport() {
     orientation: st.orientationLandscape ? 'landscape' : 'portrait',
     capture: cleanSettings(st.stream?.getVideoTracks()[0]?.getSettings?.() || st.lastCapture || {}),
     cameraCapabilities: st.cameraCapabilities,
-    cameraDevices: st.cameraDevices.map((d, i) => ({ label: d.label || '', inferredKind: cameraKind(d.label), displayLabel: cameraDisplayLabel(d, i) })),
+    cameraDevices: publicCameraDevices(),
+    selectedCameraId: publicCameraDevices().find(camera => camera.active)?.id || null,
     selectedCameraLabel: $('camera').selectedOptions[0]?.textContent || null,
     requestedMode: $('resolution').value,
     activeProfile: currentProfile(),
@@ -1302,19 +1300,19 @@ async function report() {
   try {
     const stored = await api(`/api/phone/pairs/${st.pair}/report`, { method: 'POST', body: { report: data } });
     log('report-export-success', { transport: 'server-to-pc', bytes: stored.bytes || null });
-    if ($('reportStatus')) $('reportStatus').textContent = 'Diagnostic transmis au PC �o"';
-    if (button) button.textContent = 'Diagnostic transmis �o"';
+    if ($('reportStatus')) $('reportStatus').textContent = 'Diagnostic transmis au PC ✓';
+    if (button) button.textContent = 'Diagnostic transmis ✓';
     await pushControlState('report-staged').catch(() => {});
   } catch (e) {
     log('report-export-failure', { transport: 'server-to-pc', message: e.message });
-    if ($('reportStatus')) $('reportStatus').textContent = `Transmission impossible �� secours local : ${e.message}`;
+    if ($('reportStatus')) $('reportStatus').textContent = `Transmission impossible · secours local : ${e.message}`;
     try {
       const fallbackData = buildPhoneReport();
       await downloadPhoneReport(fallbackData);
       log('report-export-success', { transport: 'mobile-fallback' });
     } catch (fallbackError) {
       log('report-export-failure', { transport: 'mobile-fallback', message: fallbackError.message });
-      status(`Diagnostic non exportǸ : ${fallbackError.message}`);
+      status(`Diagnostic non exporté : ${fallbackError.message}`);
     }
   } finally {
     if (button) {
@@ -1349,13 +1347,13 @@ if ($('thermalFeel')) $('thermalFeel').onchange = () => {
 window.addEventListener('online', () => {
   log('network-online');
   if (st.stream && st.pc && st.pc.connectionState !== 'connected') {
-    status('RǸseau revenu �� reprise�?�');
+    status('Réseau revenu · reprise…');
     if (!st.recoveryActive) beginRecovery(st.pc, 'browser-online');
   }
 });
 window.addEventListener('offline', () => {
   log('network-offline');
-  if (st.stream) status('RǸseau perdu �� attente du retour�?�');
+  if (st.stream) status('Réseau perdu · attente du retour…');
 });
 
 updateStartState();

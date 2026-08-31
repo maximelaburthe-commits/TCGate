@@ -18,12 +18,12 @@
     </div>
 
     <div id="orientationGuard" class="phone-orientation-message hidden">
-      <b>Tournez le tǸlǸphone �� l�?Thorizontale</b>
-      <span>La camǸra de table fonctionne en paysage 16:9.</span>
+      <b>Tournez le téléphone à l’horizontale</b>
+      <span>La caméra de table fonctionne en paysage 16:9.</span>
     </div>
 
     <div id="phonePrimary" class="phone-minimal-primary">
-      <button id="start" class="button phone-start">DǸmarrer la camǸra</button>
+      <button id="start" class="button phone-start">Démarrer la caméra</button>
       <p id="status" class="status"><span class="dot"></span><span>En attente</span></p>
     </div>
 
@@ -31,60 +31,61 @@
       <summary>Diagnostic</summary>
       <div class="debug-content">
         <div class="row phone-badges mt12">
-          <span id="pairBadge" class="badge">Association�?�</span>
-          <span id="wakeBadge" class="badge">�%cran : auto</span>
-          <span id="orientationBadge" class="badge">Orientation : �?�</span>
-          <span id="batteryBadge" class="badge">Batterie : �?�</span>
+          <span id="pairBadge" class="badge">Association…</span>
+          <span id="wakeBadge" class="badge">Écran : auto</span>
+          <span id="orientationBadge" class="badge">Orientation : …</span>
+          <span id="batteryBadge" class="badge">Batterie : …</span>
         </div>
 
         <div class="metrics">
-          <div class="metric"><b>Capture</b><span id="capture">�?"</span></div>
-          <div class="metric"><b>Profil</b><span id="profile">Auto �� 720p stabilitǸ</span></div>
-          <div class="metric"><b>Objectif</b><span id="lens">�?"</span></div>
-          <div class="metric"><b>Envoi</b><span id="fps">�?"</span></div>
-          <div class="metric"><b>Bitrate</b><span id="bitrate">�?"</span></div>
-          <div class="metric"><b>WebRTC</b><span id="rtc">�?"</span></div>
-          <div class="metric wide"><b>Encodeur / limitation</b><span id="quality">�?"</span></div>
+          <div class="metric"><b>Capture</b><span id="capture">—</span></div>
+          <div class="metric"><b>Profil</b><span id="profile">Auto · 720p stabilité</span></div>
+          <div class="metric"><b>Objectif</b><span id="lens">—</span></div>
+          <div class="metric"><b>Envoi</b><span id="fps">—</span></div>
+          <div class="metric"><b>Bitrate</b><span id="bitrate">—</span></div>
+          <div class="metric"><b>WebRTC</b><span id="rtc">—</span></div>
+          <div class="metric wide"><b>Encodeur / limitation</b><span id="quality">—</span></div>
           <div class="metric wide"><b>Mise au point</b><span id="focusDebug">Autofocus natif</span></div>
-          <div class="metric"><b>Batterie</b><span id="batteryDebug">Analyse en attente�?�</span></div>
-          <div class="metric"><b>�%cran</b><span id="screenDebug">Mode sombre �� luminositǸ syst��me au minimum recommandǸe</span></div>
+          <div class="metric"><b>Batterie</b><span id="batteryDebug">Analyse en attente…</span></div>
+          <div class="metric"><b>Écran</b><span id="screenDebug">Mode sombre · luminosité système au minimum recommandée</span></div>
           <div class="metric wide thermal-feel-metric"><b>Ressenti thermique</b>
-            <select id="thermalFeel" class="select thermal-select" aria-label="Ressenti thermique du tǸlǸphone">
-              <option value="not-provided">Non renseignǸ</option>
+            <select id="thermalFeel" class="select thermal-select" aria-label="Ressenti thermique du téléphone">
+              <option value="not-provided">Non renseigné</option>
               <option value="cold">Froid</option>
-              <option value="warm">Ti��de</option>
+              <option value="warm">Tiède</option>
               <option value="hot">Chaud</option>
-              <option value="very-hot">Tr��s chaud</option>
+              <option value="very-hot">Très chaud</option>
             </select>
           </div>
-          <div class="metric wide"><b>Analyse thermique</b><span id="thermalDebug">TǸlǸmǸtrie en cours�?�</span></div>
+          <div class="metric wide"><b>Analyse thermique</b><span id="thermalDebug">Télémétrie en cours…</span></div>
         </div>
 
         <div class="row mt12">
           <button id="report" class="button secondary">Transmettre diagnostic au PC</button>
-          <button id="stop" class="button danger compact-button" disabled>ArrǦter la camǸra</button>
+          <button id="stop" class="button danger compact-button" disabled>Arrêter la caméra</button>
         </div>
-        <p id="reportStatus" class="hint no-margin">Le diagnostic sera stockǸ temporairement sur la liaison et rǸcupǸrable depuis le PC.</p>
+        <p id="reportStatus" class="hint no-margin">Le diagnostic sera stocké temporairement sur la liaison et récupérable depuis le PC.</p>
       </div>
     </details>
 
-    <!-- Contr��les techniques conservǸs hors interface : ils sont pilotǸs depuis le PC. -->
+    <!-- Contrôles techniques conservés hors interface : ils sont pilotés depuis le PC. -->
     <div class="hidden" aria-hidden="true">
       <select id="resolution">
-        <option value="auto">Auto stable �� 720p30 de rǸfǸrence</option>
-        <option value="1920x1080">1080p �� haute qualitǸ expǸrimentale</option>
-        <option value="1280x720">720p �� 30 fps cible</option>
+        <option value="auto">Auto stable · 720p30 de référence</option>
+        <option value="1920x1080">1080p · haute qualité expérimentale</option>
+        <option value="1280x720">720p · 30 fps cible</option>
       </select>
-      <select id="camera" aria-label="Objectif camǸra"></select>
+      <select id="camera" aria-label="Objectif caméra"></select>
       <p id="lensHelp"></p>
       <div id="zoomWrap" class="hidden">
         <input id="zoom" type="range" min="1" max="1" step="0.1" value="1">
-        <span id="zoomValue">�?"</span>
+        <span id="zoomValue">—</span>
         <button id="wide" type="button">Champ max</button>
       </div>
     </div>
   </section>
 </main>
+<script src="/phone-camera-devices.js"></script>
 <script src="/phone-camera-client.js"></script>
 </body>
 </html>

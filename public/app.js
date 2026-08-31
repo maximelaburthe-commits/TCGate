@@ -1446,6 +1446,8 @@ function updatePhoneCameraUi(info = {}) {
   const statusEl = $('phoneCameraStatus');
   const title = $('phoneCameraTitle');
   const help = $('phoneCameraHelp');
+  const lensField = $('phoneCameraLensField');
+  const lensSelect = $('phoneCameraLens');
   if (!panel || !statusEl) return;
   const labels = {
     idle: ['Optionnel', 'Téléphone dissocié'],
@@ -1458,9 +1460,28 @@ function updatePhoneCameraUi(info = {}) {
   statusEl.textContent = short;
   title.textContent = heading;
   panel.classList.toggle('hidden', status === 'idle');
+  const cameras = Array.isArray(info.diagnostics?.cameraDevices) ? info.diagnostics.cameraDevices : [];
+  if (lensField && lensSelect) {
+    lensField.classList.toggle('hidden', !['connected', 'streaming', 'disconnected'].includes(status));
+    if (cameras.length) {
+      const active = cameras.find(camera => camera.active)?.id || info.diagnostics?.selectedCameraId || '';
+      lensSelect.replaceChildren(...cameras.map(camera => {
+        const option = document.createElement('option');
+        option.value = camera.id;
+        option.textContent = camera.label;
+        return option;
+      }));
+      if (active && cameras.some(camera => camera.id === active)) lensSelect.value = active;
+      lensSelect.disabled = cameras.length < 2 || status === 'disconnected';
+    } else {
+      lensSelect.replaceChildren(new Option('Liste indisponible', ''));
+      lensSelect.disabled = true;
+    }
+  }
   $('returnToWebcam')?.classList.toggle('hidden', status !== 'streaming' && state.videoSource !== 'phone');
   if (status === 'disconnected') help.textContent = 'La partie reste active. Garde cette page ouverte pendant la reconnexion.';
   else if (status === 'streaming') help.textContent = 'Le téléphone remplace la webcam. Le microphone reste celui du PC.';
+  if (info.controlError) toast(info.controlError);
 }
 
 async function pairPhoneCamera() {
@@ -4360,6 +4381,19 @@ $('cancelPhoneCamera')?.addEventListener('click', async () => {
   updatePhoneCameraUi({ status: 'idle' });
 });
 $('returnToWebcam')?.addEventListener('click', returnToPcWebcam);
+$('phoneCameraLens')?.addEventListener('change', async event => {
+  const select = event.currentTarget;
+  select.disabled = true;
+  try {
+    await window.TCGatePhoneCamera?.selectCamera?.(select.value);
+    toast('Changement d’objectif demandé.');
+  } catch (err) {
+    toast(err.message || 'Changement d’objectif impossible.');
+  } finally {
+    const cameras = window.TCGatePhoneCamera?.getSnapshot?.().diagnostics?.cameraDevices || [];
+    select.disabled = cameras.length < 2;
+  }
+});
 $('cameraSelect').addEventListener('change', () => changeCameraFromSelector('cameraSelect'));
 $('microSelect').addEventListener('change', () => changeMicrophoneFromSelector('microSelect'));
 $('gameCameraSelect').addEventListener('change', () => changeCameraFromSelector('gameCameraSelect'));

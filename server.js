@@ -428,7 +428,7 @@ function safeDiagnosticValue(value, depth = 0) {
   if (typeof value !== 'object') return null;
   const out = {};
   for (const [key, item] of Object.entries(value).slice(0, 80)) {
-    if (/^(sdp|candidate|image|frame|video|audio|screenshot|token|authorization)$/i.test(key)) continue;
+    if (/^(sdp|candidate|image|frame|video|audio|screenshot|token|authorization|deviceId|groupId)$/i.test(key)) continue;
     out[key] = safeDiagnosticValue(item, depth + 1);
   }
   return out;
@@ -439,6 +439,13 @@ function validatePhoneSignal(type, payload) {
   if (type === 'candidate') {
     const candidate = payload?.candidate?.candidate ?? payload?.candidate;
     return typeof candidate === 'string' && candidate.length <= 4096;
+  }
+  if (type === 'control') {
+    return payload && typeof payload === 'object' &&
+      typeof payload.requestId === 'string' && payload.requestId.length >= 6 && payload.requestId.length <= 80 &&
+      payload.action === 'select-camera' &&
+      payload.args && typeof payload.args === 'object' &&
+      /^camera-[1-9][0-9]{0,2}$/.test(String(payload.args.cameraId || ''));
   }
   if (!['offer', 'answer'].includes(type)) return payload == null || (typeof payload === 'object' && !Array.isArray(payload));
   const description = payload?.description ?? payload;
