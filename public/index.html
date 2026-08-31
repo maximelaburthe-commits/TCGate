@@ -179,6 +179,23 @@
                 <select id="microSelect"></select>
               </label>
             </div>
+
+            <div class="phone-camera-entry">
+              <button id="usePhoneCamera" type="button" class="secondary smallish">Utiliser mon téléphone</button>
+              <span id="phoneCameraStatus" class="media-status">Optionnel</span>
+            </div>
+            <div id="phoneCameraPanel" class="phone-camera-panel hidden" aria-live="polite">
+              <img id="phoneCameraQr" alt="QR code d’association du téléphone">
+              <div>
+                <strong id="phoneCameraTitle">En attente du téléphone</strong>
+                <p id="phoneCameraHelp">Scanne ce QR code avec le téléphone qui servira de caméra.</p>
+                <div class="phone-camera-actions">
+                  <button id="copyPhoneCameraLink" type="button" class="secondary smallish">Copier le lien</button>
+                  <button id="cancelPhoneCamera" type="button" class="secondary smallish">Annuler</button>
+                  <button id="returnToWebcam" type="button" class="secondary smallish hidden">Revenir à la webcam</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="lobby-preview-wrap">
@@ -448,6 +465,7 @@
   <div id="toast" class="toast hidden"></div>
 
   <!-- Vision assets are loaded on demand by app.js only for a supported game. -->
+  <script src="/phone-camera.js"></script>
   <script src="/app.js"></script>
   <script src="/report-mail-ui.js"></script>
 </body>

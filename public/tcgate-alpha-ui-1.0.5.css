@@ -297,3 +297,37 @@
 .opponent-feed-card:fullscreen .tcgate-fullscreen-card:not(.expanded) .tcgate-fullscreen-zoom-close {
   display:none !important;
 }
+.phone-camera-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.phone-camera-panel {
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(143, 95, 255, .28);
+  border-radius: 16px;
+  background: rgba(8, 12, 28, .72);
+}
+
+.phone-camera-panel img {
+  width: 148px;
+  height: 148px;
+  padding: 7px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.phone-camera-panel p { margin: 6px 0 12px; color: var(--muted); }
+.phone-camera-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+@media (max-width: 680px) {
+  .phone-camera-panel { grid-template-columns: 104px minmax(0, 1fr); }
+  .phone-camera-panel img { width: 104px; height: 104px; }
+}

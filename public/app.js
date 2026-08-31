@@ -60,6 +60,8 @@ const state = {
   selectedCameraId: null,
   selectedMicrophoneId: null,
   localPreviewVisible: true,
+  videoSource: 'webcam',
+  phoneCameraQrUrl: null,
 
   gigDice: [],
   dieDrag: null,
@@ -1411,6 +1413,94 @@ function currentAudioTrack() {
   return state.localStream?.getAudioTracks?.().find(track => track.readyState === 'live') || null;
 }
 
+async function usePhoneVideoTrack(track, stream) {
+  if (!track || track.kind !== 'video') return;
+  const oldVideo = currentVideoTrack();
+  const audio = currentAudioTrack();
+  const local = new MediaStream([track, ...(audio ? [audio] : [])]);
+  state.localStream = local;
+  state.videoSource = 'phone';
+  state.cameraEnabled = true;
+  state.lostCameraId = null;
+  state.lostCameraLabel = null;
+  attachLocalTrackLifecycle(track, 'video');
+  $('lobbyPreview').srcObject = local;
+  $('localVideo').srcObject = local;
+  await Promise.allSettled([$('lobbyPreview').play(), $('localVideo').play()]);
+  if (state.videoTransceiver?.sender) {
+    await state.videoTransceiver.sender.replaceTrack(track);
+    await configureVideoSenderPolicy(state.videoTransceiver.sender, 'phone-camera');
+  }
+  if (oldVideo && oldVideo !== track) {
+    try { oldVideo.stop(); } catch {}
+  }
+  updateMediaUi();
+  updateGameDeviceStatus('Téléphone connecté · micro du PC actif');
+  sendCurrentMediaState('phone-camera-active').catch(() => {});
+  logEvent('phone-camera-track-active', { settings: safeTrackSettings(track), audioSource: audio ? 'pc' : null });
+}
+
+function updatePhoneCameraUi(info = {}) {
+  const status = info.status || 'idle';
+  const panel = $('phoneCameraPanel');
+  const statusEl = $('phoneCameraStatus');
+  const title = $('phoneCameraTitle');
+  const help = $('phoneCameraHelp');
+  if (!panel || !statusEl) return;
+  const labels = {
+    idle: ['Optionnel', 'Téléphone dissocié'],
+    waiting: ['En attente', 'En attente du téléphone'],
+    connected: ['Téléphone connecté', 'Téléphone associé'],
+    streaming: ['Téléphone connecté', 'Caméra du téléphone active'],
+    disconnected: ['Téléphone déconnecté', 'Connexion temporairement perdue']
+  };
+  const [short, heading] = labels[status] || labels.idle;
+  statusEl.textContent = short;
+  title.textContent = heading;
+  panel.classList.toggle('hidden', status === 'idle');
+  $('returnToWebcam')?.classList.toggle('hidden', status !== 'streaming' && state.videoSource !== 'phone');
+  if (status === 'disconnected') help.textContent = 'La partie reste active. Garde cette page ouverte pendant la reconnexion.';
+  else if (status === 'streaming') help.textContent = 'Le téléphone remplace la webcam. Le microphone reste celui du PC.';
+}
+
+async function pairPhoneCamera() {
+  if (!state.roomCode || !state.peerId || !window.TCGatePhoneCamera) return toast('Entre d’abord dans un salon.');
+  $('usePhoneCamera').disabled = true;
+  try {
+    const result = await window.TCGatePhoneCamera.createPair({
+      api,
+      room: state.roomCode,
+      peerId: state.peerId,
+      onTrack: (track, stream) => usePhoneVideoTrack(track, stream).catch(err => {
+        logEvent('phone-camera-track-error', { message: err.message });
+        toast('Impossible d’utiliser la caméra du téléphone.');
+      }),
+      onState: updatePhoneCameraUi
+    });
+    if (state.phoneCameraQrUrl) URL.revokeObjectURL(state.phoneCameraQrUrl);
+    state.phoneCameraQrUrl = URL.createObjectURL(new Blob([result.qrSvg], { type: 'image/svg+xml' }));
+    $('phoneCameraQr').src = state.phoneCameraQrUrl;
+    $('copyPhoneCameraLink').dataset.url = result.phoneUrl;
+    updatePhoneCameraUi({ status: 'waiting' });
+  } catch (err) {
+    logEvent('phone-camera-pair-error', { message: err.message });
+    toast(err.message || 'Association téléphone impossible.');
+  } finally {
+    $('usePhoneCamera').disabled = false;
+  }
+}
+
+async function returnToPcWebcam() {
+  const cameraId = $('cameraSelect')?.value || state.selectedCameraId;
+  if (!cameraId) return toast('Sélectionne une webcam PC.');
+  const changed = await replaceMediaKind('video', cameraId, { reason: 'return-from-phone' });
+  if (!changed) return;
+  state.videoSource = 'webcam';
+  await window.TCGatePhoneCamera?.disconnect?.({ server: true });
+  updatePhoneCameraUi({ status: 'idle' });
+  toast('Webcam PC réactivée.');
+}
+
 function updateGameDeviceStatus(message = null) {
   const el = $('gameDeviceStatus');
   if (!el) return;
@@ -1552,6 +1642,7 @@ async function replaceMediaKind(kind, deviceId, { reason = 'manual-device-change
 
     state.localStream = newLocalStream;
     if (isVideo) {
+      state.videoSource = 'webcam';
       state.selectedCameraId = newTrack.getSettings?.().deviceId || deviceId;
       state.lostCameraId = null;
       state.lostCameraLabel = null;
@@ -1905,6 +1996,7 @@ async function startLocalMedia({ cameraId = null, microphoneId = null } = {}) {
 
   const oldStream = state.localStream;
   state.localStream = stream;
+  state.videoSource = 'webcam';
 
   const v = stream.getVideoTracks()[0] || null;
   const a = stream.getAudioTracks()[0] || null;
@@ -2020,6 +2112,7 @@ function safeTrackSettings(track) {
 function stopLocalStream() {
   if (state.localStream) state.localStream.getTracks().forEach(track => track.stop());
   state.localStream = null;
+  state.videoSource = 'webcam';
   state.lostCameraId = null;
   state.lostMicrophoneId = null;
   state.lostCameraLabel = null;
@@ -3809,6 +3902,7 @@ function median(values) {
 async function buildCompleteReport() {
   const rtc = await collectRtcMetrics();
   const nav = performance.getEntriesByType('navigation')[0];
+  const phoneCamera = await window.TCGatePhoneCamera?.fetchDiagnostics?.().catch(() => window.TCGatePhoneCamera?.getSnapshot?.() || null) || null;
 
   return {
     format: 'tcgate-alpha-complete-report',
@@ -3876,6 +3970,7 @@ async function buildCompleteReport() {
       remoteTracks: state.remoteStream?.getTracks?.().map(safeTrackSettings) || [],
       remoteMediaState: { ...state.remoteMediaState }
     },
+    phoneCamera,
     network: {
       signaling: {
         eventSourceReadyState: state.eventSource?.readyState ?? null
@@ -4254,6 +4349,17 @@ $('enableMedia').addEventListener('click', () => startLocalMedia({
   cameraId: $('cameraSelect').value || state.selectedCameraId,
   microphoneId: $('microSelect').value || state.selectedMicrophoneId
 }));
+$('usePhoneCamera')?.addEventListener('click', pairPhoneCamera);
+$('copyPhoneCameraLink')?.addEventListener('click', async () => {
+  const link = $('copyPhoneCameraLink').dataset.url || '';
+  try { await navigator.clipboard.writeText(link); toast('Lien téléphone copié.'); }
+  catch { toast(link); }
+});
+$('cancelPhoneCamera')?.addEventListener('click', async () => {
+  await window.TCGatePhoneCamera?.disconnect?.({ server: true });
+  updatePhoneCameraUi({ status: 'idle' });
+});
+$('returnToWebcam')?.addEventListener('click', returnToPcWebcam);
 $('cameraSelect').addEventListener('change', () => changeCameraFromSelector('cameraSelect'));
 $('microSelect').addEventListener('change', () => changeMicrophoneFromSelector('microSelect'));
 $('gameCameraSelect').addEventListener('change', () => changeCameraFromSelector('gameCameraSelect'));
