@@ -195,6 +195,12 @@
                     <option>Liste indisponible</option>
                   </select>
                 </label>
+                <label id="phoneCameraMicroField" class="phone-camera-lens">
+                  <span>Micro du PC</span>
+                  <select id="phoneCameraMicro" disabled>
+                    <option>Liste indisponible</option>
+                  </select>
+                </label>
                 <div class="phone-camera-actions">
                   <button id="copyPhoneCameraLink" type="button" class="secondary smallish">Copier le lien</button>
                   <button id="cancelPhoneCamera" type="button" class="secondary smallish">Annuler</button>
@@ -263,8 +269,12 @@
           <small id="gameDeviceStatus">Caméra et micro actifs</small>
         </div>
         <label>
-          <span>Caméra</span>
+          <span>Source caméra</span>
           <select id="gameCameraSelect"></select>
+        </label>
+        <label id="gamePhoneCameraLensField" class="hidden">
+          <span>Objectif téléphone</span>
+          <select id="gamePhoneCameraLens" disabled></select>
         </label>
         <label>
           <span>Micro</span>

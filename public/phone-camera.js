@@ -239,9 +239,9 @@
     return found;
   }
 
-  function usePhoneSource() {
+  async function usePhoneSource() {
     if (!state.remoteTrack || state.remoteTrack.readyState !== 'live') throw new Error('Flux téléphone indisponible');
-    state.onTrack?.(state.remoteTrack, state.remoteStream || new MediaStream([state.remoteTrack]));
+    await state.onTrack?.(state.remoteTrack, state.remoteStream || new MediaStream([state.remoteTrack]));
     return true;
   }
 

@@ -130,9 +130,15 @@ async function request(pathname, { method = 'GET', token = null, cookie = null, 
     assert(!/api\/phone\/(upload|image|frame)/.test(sources), 'media upload route introduced');
     const appSource = fs.readFileSync(path.join(__dirname, 'public', 'app.js'), 'utf8');
     const phoneSource = fs.readFileSync(path.join(__dirname, 'public', 'phone-camera-client.js'), 'utf8');
+    const indexSource = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
     assert(/sender\.replaceTrack\(track\)/.test(appSource), 'phone track does not replace the player video sender');
     assert(/new MediaStream\(\[track, \.\.\.\(audio/.test(appSource), 'PC microphone is not preserved with phone video');
     assert(/audio:\s*false/.test(phoneSource), 'phone microphone may be captured');
+    const pairPhoneSource = appSource.slice(appSource.indexOf('async function pairPhoneCamera'), appSource.indexOf('async function returnToPcWebcam'));
+    assert(/startPcMicrophoneOnly/.test(pairPhoneSource), 'Phone Camera does not request the PC microphone directly');
+    const microphoneOnlySource = appSource.slice(appSource.indexOf('async function startPcMicrophoneOnly'), appSource.indexOf('async function restorePhoneCameraAfterRecovery'));
+    assert(/video:\s*false/.test(microphoneOnlySource) && !/video:\s*true/.test(microphoneOnlySource), 'Phone Camera microphone setup opens a PC webcam');
+    assert(/phoneCameraMicro/.test(indexSource) && /gamePhoneCameraLens/.test(indexSource), 'source-aware media controls are missing');
     assert(/autoProfile:\s*'1280x720'/.test(phoneSource) && /frameRate:\s*\{ ideal:\s*30, max:\s*30 \}/.test(phoneSource), '720p30 default profile missing');
 
     const phoneFiles = [
@@ -247,6 +253,13 @@ async function request(pathname, { method = 'GET', token = null, cookie = null, 
     assert(!/\.disconnect\?\./.test(webcamReturn) && /videoSource = 'webcam'/.test(webcamReturn), 'returning to PC webcam dissociates the phone');
     assert(/preservePhoneTrack/.test(appSource) && /!preservePhoneTrack/.test(appSource), 'phone receiver track is stopped when switching to PC webcam');
     assert(/usePhoneSource/.test(pcPhoneSource) && /reusePhoneCamera/.test(appSource), 'switching back to the paired phone source is missing');
+    assert(/cameraId === 'phone'/.test(appSource) && /replaceMediaKind\('video', cameraId/.test(appSource), 'in-game phone/webcam source switching is missing');
+    assert(/phoneCameraMicro/.test(appSource) && /gameMicroSelect/.test(appSource), 'PC microphone selectors are not synchronized');
+    assert((appSource.match(/prepareMainRtcRecovery\('/g) || []).length >= 2, 'main RTC generation is not reset by both recovery paths');
+    assert(/rtc-restart-request-pending/.test(appSource) && /pendingRtcRestartRequest/.test(appSource), 'early guest restart request can still be discarded');
+    for (const eventName of ['remote-recovery-start', 'remote-recovery-success', 'remote-recovery-retry', 'remote-recovery-failed']) {
+      assert(appSource.includes(eventName), `remote recovery watchdog event missing: ${eventName}`);
+    }
     assert(/Content-Security-Policy/.test(fs.readFileSync(path.join(__dirname, 'server.js'), 'utf8')), 'security headers missing');
     assert(fs.existsSync(path.join(__dirname, 'report-mail-server.js')), 'email report server missing');
     assert(fs.existsSync(path.join(__dirname, 'public', 'identification.js')), 'Vision baseline missing');
