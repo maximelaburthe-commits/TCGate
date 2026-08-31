@@ -35,4 +35,9 @@
 .phone-v063.camera-active .status{color:#59605f}
 .phone-v063.camera-active .phone-minimal-debug summary{background:#020202;color:#646b72;border-color:#0b0b0b}
 .phone-v063.camera-active .dot.ok{background:#2c7650}
-
+.phone-tcgate-logo {
+  display: block;
+  width: min(190px, 58vw);
+  height: auto;
+  margin: 0 auto 10px;
+}
