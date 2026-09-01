@@ -20,6 +20,7 @@ const st = {
   lastBytes: null,
   lastAt: null,
   metrics: null,
+  pathDiagnostics: null,
   wake: null,
   eventsReconnect: null,
   statsTimer: null,
@@ -802,6 +803,7 @@ function controlSnapshot(reason = 'state') {
       currentMode: settings.focusMode || null,
     },
     metrics: st.metrics,
+    diagnostics: st.pathDiagnostics,
     rtcState: st.pc?.connectionState || null,
     encoder: {
       implementation: st.metrics?.encoderImplementation || null,
@@ -1231,6 +1233,8 @@ async function maybeAutoAdapt(metrics) {
 async function stats() {
   if (!st.pc) return;
   const reports = await st.pc.getStats();
+  const pathDiagnostics = window.TCGatePhoneCameraDiagnostics.collect(reports);
+  st.pathDiagnostics = pathDiagnostics;
   let out = null, pairRec = null, codec = null;
   reports.forEach(r => {
     if (r.type === 'outbound-rtp' && r.kind === 'video') out = r;
@@ -1246,6 +1250,7 @@ async function stats() {
   }
   st.lastBytes = out.bytesSent;
   st.lastAt = now;
+  if(pathDiagnostics.sender) pathDiagnostics.sender.bitrateKbps=kbps;
   st.metrics = {
     width: out.frameWidth || null,
     height: out.frameHeight || null,
@@ -1255,6 +1260,7 @@ async function stats() {
     framesEncoded: out.framesEncoded ?? null,
     framesSent: out.framesSent ?? null,
     totalEncodeTime: out.totalEncodeTime ?? null,
+    averageEncodeMsPerFrame: pathDiagnostics.sender?.averageEncodeMsPerFrame ?? null,
     qualityLimitationReason: out.qualityLimitationReason || null,
     qualityLimitationDurations: out.qualityLimitationDurations || null,
     encoderImplementation: out.encoderImplementation || null,
@@ -1296,6 +1302,7 @@ function buildPhoneReport() {
     supportedVideoCodecs: st.supportedVideoCodecs,
     contentHint: st.stream?.getVideoTracks()[0]?.contentHint || null,
     metrics: st.metrics,
+    diagnostics: st.pathDiagnostics,
     energy: {
       battery: batteryAnalysis(),
       thermal: thermalAnalysis(),

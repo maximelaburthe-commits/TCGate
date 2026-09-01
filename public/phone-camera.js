@@ -7,7 +7,7 @@
     phoneState: null, phoneReport: null, events: [], reconnectTimer: null, onTrack: null, onState: null,
     controls: new window.TCGatePhoneCameraControl.PhoneCameraControlWaiter(15000),
     remoteTrack: null,
-    remoteStream: null, recoveryPending: false
+    remoteStream: null, recoveryPending: false, pcDiagnostics: null
   };
 
   function record(type, data = {}) {
@@ -253,6 +253,7 @@
     ]);
     if (phoneState?.state) state.phoneState = phoneState.state;
     if (phoneReport?.available) state.phoneReport = phoneReport.report;
+    if (state.pc) state.pcDiagnostics = await state.pc.getStats().then(report=>window.TCGatePhoneCameraDiagnostics.collect(report)).catch(()=>state.pcDiagnostics);
     return snapshot();
   }
 
@@ -264,7 +265,12 @@
       connected: state.connected,
       cameraActive: state.cameraActive,
       connectionState: state.pc?.connectionState || null,
-      diagnostics: state.phoneState,
+      diagnostics: {
+        ...(state.phoneState || {}),
+        route: state.pcDiagnostics?.route || state.phoneState?.diagnostics?.route || state.phoneReport?.diagnostics?.route || null,
+        sender: state.phoneState?.diagnostics?.sender || state.phoneReport?.diagnostics?.sender || null,
+        receiver: state.pcDiagnostics?.receiver || null
+      },
       report: state.phoneReport,
       events: state.events.slice()
     };
@@ -280,6 +286,7 @@
     state.pendingIce = [];
     state.remoteTrack = null;
     state.remoteStream = null;
+    state.pcDiagnostics = null;
     state.recoveryPending = false;
     state.controls.cancelAll();
     const pairId = state.pairId;
