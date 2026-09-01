@@ -51,7 +51,7 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
 (async () => {
   try {
     const health = await waitForHealth();
-    assert(health.version === 'tcgate-alpha-0.1-candidate-12', 'Wrong health version');
+    assert(health.version === 'tcgate-alpha-0.1-candidate-12.1', 'Wrong health version');
 
     const noRecovery = await fetch(`${BASE}/api/recovery-state`);
     assert(noRecovery.ok && (await noRecovery.json()).available === false, 'Recovery should be absent without cookie');
@@ -135,7 +135,7 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
     const missingCookieRecover = await post('/api/recover');
     assert(missingCookieRecover.status === 401, 'Recover without cookie should fail');
 
-    console.log('INTEGRATION_OK_TCGATE_ALPHA_0.1_CANDIDATE_12');
+    console.log('INTEGRATION_OK_TCGATE_ALPHA_0.1_CANDIDATE_12_1');
   } catch (err) {
     console.error(err.stack || err.message || err);
     process.exitCode = 1;

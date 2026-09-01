@@ -1,6 +1,6 @@
 {
   "name": "tcgate-alpha",
-  "version": "0.1.0-candidate.12",
+  "version": "0.1.0-candidate.12.1",
   "private": true,
   "scripts": {
     "start": "node report-mail-server.js",

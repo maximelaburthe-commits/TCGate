@@ -17,7 +17,7 @@ for(const f of required) if(!fs.existsSync(f)) throw new Error(`Missing ${f}`);
 
 const app=fs.readFileSync('public/app.js','utf8');
 for(const token of [
-  "TCGate Alpha 0.1 Candidate 12",'authToken','SESSION_STORAGE_KEY','MEDIA_PREFS_KEY',
+  "TCGate Alpha 0.1 Candidate 12.1",'authToken','SESSION_STORAGE_KEY','MEDIA_PREFS_KEY',
   'tryResumeSavedSession','checkPersistentRecovery','recoverPersistentSession',
   '/api/recovery-state','/api/recover','room-recovery-in-place','waitForEventStreamOpen',
   'replaceMediaKind','handleLocalTrackEnded','handleMediaDeviceChange',"addEventListener('devicechange'",
@@ -31,7 +31,7 @@ if (app.includes("localStorage.setItem(SESSION_STORAGE_KEY")) throw new Error('R
 
 const server=fs.readFileSync('server.js','utf8');
 for(const token of [
-  "const VERSION = 'tcgate-alpha-0.1-candidate-12'",'crypto.randomInt','sessionToken','timingSafeEqual',
+  "const VERSION = 'tcgate-alpha-0.1-candidate-12.1'",'crypto.randomInt','sessionToken','timingSafeEqual',
   'RECOVERY_COOKIE_NAME','recoveryIndex','HttpOnly','SameSite=Strict','setRecoveryCookie','clearRecoveryCookie',
   '/api/recovery-state','/api/recover','persistent-recovery','room.phase','phase: room.phase',
   '/api/events-ticket','EVENT_TICKET_TTL_MS','DISCONNECTED_PEER_GRACE_MS','/api/resume',
@@ -64,5 +64,5 @@ const expected={
 };
 for(const [file,want] of Object.entries(expected)) if(hash(file,want)!==want) throw new Error(`Vision baseline changed: ${file}`);
 
-console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_12');
+console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_12_1');
 for(const file of Object.keys(expected)) console.log(`${file}=${hash(file)}`);

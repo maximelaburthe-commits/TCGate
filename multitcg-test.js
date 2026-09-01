@@ -15,14 +15,17 @@ assert.strictEqual(registry.supports('cyberpunk', 'vision'), true);
 assert.strictEqual(registry.runtimeReady('cyberpunk', 'vision'), true);
 assert.strictEqual(registry.runtime('cyberpunk', 'vision'), 'cyberpunk');
 assert.strictEqual(registry.supports('cyberpunk', 'gigDice'), true);
+assert.strictEqual(registry.supports('cyberpunk', 'tableMemory'), true);
 assert.strictEqual(registry.supports('star-wars-unlimited', 'vision'), true);
 assert.strictEqual(registry.runtimeReady('star-wars-unlimited', 'vision'), true);
 assert.strictEqual(registry.runtime('star-wars-unlimited', 'vision'), 'swu-r14');
 assert.strictEqual(registry.supports('star-wars-unlimited', 'gigDice'), false);
+assert.strictEqual(registry.supports('star-wars-unlimited', 'tableMemory'), false);
 assert.strictEqual(registry.get('star-wars-unlimited').exposed, true);
 assert.strictEqual(registry.supports('no-game', 'vision'), false);
 assert.strictEqual(registry.runtimeReady('no-game', 'vision'), false);
 assert.strictEqual(registry.supports('no-game', 'gigDice'), false);
+assert.strictEqual(registry.supports('no-game', 'tableMemory'), false);
 assert.deepStrictEqual(Array.from(registry.exposed(), game => game.id), ['cyberpunk', 'star-wars-unlimited', 'no-game']);
 
 const html = fs.readFileSync('public/index.html', 'utf8');
@@ -44,6 +47,7 @@ assert(app.includes("TCGateGameRegistry.runtime(state.game,'vision')"), 'Vision 
 assert(app.includes('start?.({runtimeId:visionRuntime})'), 'Core must inject the current Vision runtime');
 assert(app.includes("'/swu-identification.js'"));
 assert(app.includes("'/identification-runtime.js'"));
+assert(app.includes("tableMemoryEnabledForCurrentGame() && window.TCGTableStateEngine"), 'Table State must be capability-gated');
 assert.strictEqual(registry.get('cyberpunk').databaseRef, 'main');
 assert.strictEqual(registry.get('star-wars-unlimited').databaseRef, 'develop-swu-db-v0.3');
 assert.strictEqual(window.TCGateDatabaseAdapter.repositoryUrl('cyberpunk'), 'https://raw.githubusercontent.com/maximelaburthe-commits/tcgate_db_cyberpunk/main');

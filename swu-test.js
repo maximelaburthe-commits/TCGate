@@ -3,6 +3,8 @@
 const assert=require('assert');
 const fs=require('fs');
 const crypto=require('crypto');
+const {createLatestOnlySingleFlight}=require('./public/vision/swu/latest-only-single-flight.js');
+const {productDisplayUrl}=require('./public/vision/swu/product-display-url.js');
 
 (async()=>{
   const {expectedSwuLayout,normalizeStarWarsUnlimited}=await import('./public/vision/swu/database.js');
@@ -15,6 +17,14 @@ const crypto=require('crypto');
   assert.strictEqual(expectedSwuLayout({type:'Base'},'front'),'landscape');
   assert.strictEqual(expectedSwuLayout({type:'Unit'},'front'),'portrait');
   assert.deepStrictEqual([...PROGRESSIVE_K],[8,24,44]);
+  let releaseFirst,active=0,maxActive=0;const executed=[];
+  const runner=createLatestOnlySingleFlight(async payload=>{active++;maxActive=Math.max(maxActive,active);executed.push(payload.id);if(payload.id===0)await new Promise(resolve=>{releaseFirst=resolve;});active--;return payload.stale?{stale:true}:null;});
+  runner.request({id:0});await new Promise(resolve=>setImmediate(resolve));for(let id=1;id<=20;id++)runner.request({id});
+  assert.strictEqual(runner.getSnapshot().started,1);assert.strictEqual(runner.getSnapshot().maxConcurrent,1);releaseFirst();await runner.whenIdle();
+  assert.deepStrictEqual(executed,[0,20]);assert.strictEqual(runner.getSnapshot().coalesced,19);assert.strictEqual(maxActive,1);
+  const staleRunner=createLatestOnlySingleFlight(async payload=>({stale:payload.generation!==11}));staleRunner.request({trackUid:1,generation:10});await staleRunner.whenIdle();assert.strictEqual(staleRunner.getSnapshot().staleDropped,1);
+  assert.strictEqual(productDisplayUrl('https://cdn.starwarsunlimited.com/foo/bar.png'),'/api/image-proxy?url=https%3A%2F%2Fcdn.starwarsunlimited.com%2Ffoo%2Fbar.png');
+  assert.strictEqual(productDisplayUrl('https://example.com/foo.png'),'https://example.com/foo.png');
   const cards=Array.from({length:3048},(_,index)=>({id:`card-${index}`,name:`Card ${index}`,type:'Unit'}));
   const canonicalRefs=Array.from({length:7180},(_,index)=>({refId:`ref-${index}`,cardId:'card-0',side:index<6719?'front':'back',visualFamilyId:'family',recognitionGroupId:'group',imageUrl:`ref-${index}.jpg`}));
   const baseFixture={source:{url:value=>value},manifest:{game:'star-wars-unlimited',databaseVersion:'0.3.0-dev.3',recognitionProfileId:'swu-v1-canonical-dev',descriptorVersion:'tcgate-ident-v5-fast-72x108-b63435e'},cards,canonical:canonicalRefs,printingIndex:{cards:[]},descriptorManifest:{},printings:[]};
@@ -31,7 +41,7 @@ const crypto=require('crypto');
   const stale=new VariantConsensus({trackUid:'track-b',cardId:'leia',side:'front'});assert.strictEqual(stale.add(observation).sampleCount,0);
   const cyberpunk={cards:[{cardId:'cp-card',name:'Cyberpunk card',primaryPrintingId:'cp-primary'}],printings:[{cardId:'cp-card',printingId:'cp-primary',displayAssetPath:'primary.jpg'},{cardId:'cp-card',printingId:'cp-alt',displayAssetPath:'alt.jpg'}],recognitionGroups:[{cardId:'cp-card',recognitionGroupId:'exact',mode:'exact',candidatePrintingIds:['cp-alt']},{cardId:'cp-card',recognitionGroupId:'shared',mode:'shared',candidatePrintingIds:['cp-primary','cp-alt']}]};
   const exact=resolvePrintingResult(cyberpunk,'cp-card','exact'),shared=resolvePrintingResult(cyberpunk,'cp-card','shared'),canonicalOnly=resolvePrintingResult(cyberpunk,'cp-card');assert.strictEqual(exact.printingId,'cp-alt');assert.strictEqual(exact.displayAssetPath,'alt.jpg');assert.strictEqual(shared.printingId,null);assert.strictEqual(shared.displayAssetPath,'primary.jpg');assert.strictEqual(canonicalOnly.printingId,null);assert.strictEqual(canonicalOnly.displayAssetPath,'primary.jpg');
-  const runtime=fs.readFileSync('public/swu-identification.js','utf8'),server=fs.readFileSync('server.js','utf8'),scalable=fs.readFileSync('public/vision/swu/scalable-reference-engine.js','utf8');assert(runtime.includes('COARSE + ON-DEMAND'));assert(runtime.includes('tcgate_db_star_wars_unlimited/develop-swu-db-v0.3'));assert(runtime.includes("rejectionReason='glare-high'"));assert(scalable.includes('/api/image-proxy?url='));assert(server.includes("target.hostname !== SWU_IMAGE_HOST"));assert(server.includes("target.protocol !== 'https:'"));assert(!runtime.includes('lab-track-selector'));assert(!runtime.includes('landscapeForensics'));
+  const runtime=fs.readFileSync('public/swu-identification.js','utf8'),server=fs.readFileSync('server.js','utf8'),scalable=fs.readFileSync('public/vision/swu/scalable-reference-engine.js','utf8');assert(runtime.includes('COARSE + ON-DEMAND'));assert(runtime.includes('tcgate_db_star_wars_unlimited/develop-swu-db-v0.3'));assert(runtime.includes("rejectionReason='glare-high'"));assert(runtime.includes('stage1SingleFlight'));assert(runtime.includes("state.lastResult?.reason==='no-hovered-card'"));assert(scalable.includes('/api/image-proxy?url='));assert(server.includes("target.hostname !== SWU_IMAGE_HOST"));assert(server.includes("target.protocol !== 'https:'"));assert(!runtime.includes('lab-track-selector'));assert(!runtime.includes('landscapeForensics'));
   const rawIdentification=fs.readFileSync('public/identification-worker.js'),rawDetection=fs.readFileSync('public/detection-worker.js'),hash=value=>crypto.createHash('sha256').update(value).digest('hex');
   const hashes={identification:hash(rawIdentification),detection:hash(Buffer.from(rawDetection.toString('utf8').replace(/\r\n/g,'\n'),'utf8'))};
   assert.strictEqual(hashes.identification,'306eafe4decdcce26287683bc581cd8ca24a0c2f58cd299873b093942127a14a');assert.strictEqual(hashes.detection,'e749551f11065a03bd2cfc75577f23c4ece893a2c7d08bc82a341b2a35619b7a');

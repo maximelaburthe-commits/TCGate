@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 12';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 12.1';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -489,6 +489,11 @@ function setCalibrationStatus(s) {
 function setVisionStateStatus(snapshot=null) {
   const el=$('visionStateStatus');
   if (!el) return;
+  if(snapshot?.disabled){
+    el.textContent='Mémoire : non utilisée';
+    el.className='vision-status-pill';
+    return;
+  }
   if(!snapshot){
     el.textContent='Mémoire : attente';
     el.className='vision-status-pill';
@@ -514,6 +519,8 @@ const VISION_ASSETS = [
   '/vision-core.js',
   '/vision-calibration.js',
   '/table-state-bridge.js',
+  '/vision/swu/latest-only-single-flight.js',
+  '/vision/swu/product-display-url.js',
   '/identification-source.js',
   '/identification.js',
   '/swu-identification.js',
@@ -528,6 +535,10 @@ function gameLabel(game = state.game) {
 function visionEnabledForCurrentGame() {
   return window.TCGateGameRegistry.supports(state.game, 'vision') &&
     window.TCGateGameRegistry.runtimeReady(state.game, 'vision');
+}
+
+function tableMemoryEnabledForCurrentGame() {
+  return window.TCGateGameRegistry.supports(state.game, 'tableMemory');
 }
 
 function gigDiceEnabledForCurrentGame() {
@@ -1099,7 +1110,7 @@ async function prepareVision() {
     const idOk=identifier.status==='fulfilled' && identifier.value?.ready;
 
     let tableState=null;
-    if(detOk && idOk && window.TCGTableStateEngine){
+    if(detOk && idOk && tableMemoryEnabledForCurrentGame() && window.TCGTableStateEngine){
       try {
         tableState=await window.TCGTableStateEngine.start?.();
         state.visionStateReady=Boolean(tableState?.workerReady);
@@ -1109,6 +1120,9 @@ async function prepareVision() {
         setVisionStateStatus({workerError:err?.message||String(err)});
         logEvent('vision-state-start-error',{name:err?.name||null,message:err?.message||String(err)});
       }
+    } else if (!tableMemoryEnabledForCurrentGame()) {
+      state.visionStateReady=false;
+      setVisionStateStatus({disabled:true,reason:'game-runtime-disabled'});
     }
 
     state.visionPrepared=Boolean(detOk && idOk);
@@ -1154,7 +1168,7 @@ async function attachVisionToRemoteStream(stream) {
       window.TCGVisionEngine?.setInputPaused?.(true, 'remote-camera-off');
       setVisionStatus('Vision : pause · caméra adverse coupée', 'warning');
     }
-    if(window.TCGTableStateEngine){
+    if(tableMemoryEnabledForCurrentGame() && window.TCGTableStateEngine){
       try {
         const before=window.TCGTableStateEngine.getSnapshot?.();
         if(before?.started) window.TCGTableStateEngine.reset?.('restart');
@@ -1195,7 +1209,7 @@ function detachVision() {
   window.TCGVisionCalibration?.stop?.();
   window.TCGVisionEngine?.detachRemoteStream?.();
   window.TCGIdentificationLab?.stop?.();
-  window.TCGTableStateEngine?.reset?.('restart');
+  if(tableMemoryEnabledForCurrentGame()) window.TCGTableStateEngine?.reset?.('restart');
   state.visionStateReady=false;
 
   setVisionStatus('Vision : attente');
@@ -1211,7 +1225,7 @@ function startVisionMetricsSampler() {
     const detection=window.TCGVisionEngine?.getSnapshot?.() || null;
     const identification=window.TCGIdentificationLab?.getSnapshot?.() || null;
     const calibration=window.TCGVisionCalibration?.getSnapshot?.() || null;
-    const tableState=window.TCGTableStateEngine?.getSnapshot?.() || null;
+    const tableState=tableMemoryEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getSnapshot?.() || null) : {enabled:false,reason:'game-runtime-disabled'};
     setVisionStateStatus(tableState);
 
     logEvent('vision-sample',{
@@ -1227,7 +1241,8 @@ function startVisionMetricsSampler() {
         librarySize:identification.librarySize,
         matcherMs:identification.matcherMs,
         hoverCache:identification.hoverCache,
-        identityStability:identification.identityStability || null
+        identityStability:identification.identityStability || null,
+        stage1SingleFlight:identification.stage1SingleFlight || null
       }:null,
       tableState:tableState?{
         version:tableState.version,
@@ -1243,6 +1258,15 @@ function startVisionMetricsSampler() {
 
 const CARD_DISPLAY_HIDE_DELAY_MS = 1200;
 
+function setProductCardImage(image, card, mode) {
+  if(!image || !card?.imageUrl) return;
+  let host=null,sameOrigin=false;
+  try{const parsed=new URL(card.imageUrl,location.href);host=parsed.host;sameOrigin=parsed.origin===location.origin;}catch{}
+  image.onload=()=>logEvent('card-display-image-loaded',{game:state.game,mode,host,sameOrigin,name:card.name||null});
+  image.onerror=()=>logEvent('card-display-image-error',{game:state.game,mode,host,sameOrigin,name:card.name||null});
+  image.src=card.imageUrl;
+}
+
 function cancelCardDisplayHide() {
   clearTimeout(state.cardDisplayHideTimer);
   state.cardDisplayHideTimer = null;
@@ -1254,7 +1278,7 @@ function showSideIdentifiedCard(card) {
   const button=$('displayCardButton');
   const empty=$('displayCardEmpty');
   if(image){
-    image.src=card.imageUrl;
+    setProductCardImage(image,card,'side');
     image.alt=card.name || 'Carte identifiée';
   }
   button?.classList.remove('hidden');
@@ -1268,7 +1292,7 @@ function hideSideIdentifiedCard() {
 
 function showFullscreenIdentifiedCard(card) {
   if(!card?.imageUrl) return;
-  $('fullscreenIdentImage').src=card.imageUrl;
+  setProductCardImage($('fullscreenIdentImage'),card,'fullscreen');
   $('fullscreenIdentImage').alt=card.name || 'Carte identifiée';
   $('fullscreenIdentName').textContent=card.name || 'Carte identifiée';
   $('fullscreenCardPreview').classList.remove('hidden');
@@ -1374,7 +1398,7 @@ function captureTesterVisionFeedback(kind) {
   if (!visionEnabledForCurrentGame()) return;
   const detector=window.TCGVisionEngine?.getSnapshot?.() || null;
   const identification=window.TCGIdentificationLab?.getSnapshot?.() || null;
-  const tableState=window.TCGTableStateEngine?.getSnapshot?.() || null;
+  const tableState=tableMemoryEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getSnapshot?.() || null) : {enabled:false,reason:'game-runtime-disabled'};
   const feedback={
     id:`vf-${String(state.visionFeedback.length+1).padStart(3,'0')}`,
     at:new Date().toISOString(),
@@ -3655,7 +3679,7 @@ function openCardModal() {
   const card=state.currentIdentifiedCard;
   if(!card?.imageUrl) return toast('Aucune carte identifiée.');
 
-  $('modalCardImage').src=card.imageUrl;
+  setProductCardImage($('modalCardImage'),card,'modal');
   $('modalCardImage').alt=card.name || 'Carte identifiée';
   $('modalCardName').textContent=card.name || '';
   $('cardModal').classList.remove('hidden');
@@ -3922,8 +3946,8 @@ async function buildCompleteReport() {
       scope: 'opponent-stream-only',
       detector: visionEnabledForCurrentGame() ? (window.TCGVisionEngine?.getSnapshot?.() || null) : null,
       identification: visionEnabledForCurrentGame() ? (window.TCGIdentificationLab?.getSnapshot?.() || null) : null,
-      tableState: visionEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getSnapshot?.() || null) : null,
-      tableStateEvents: visionEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getEvents?.() || []) : [],
+      tableState: visionEnabledForCurrentGame() ? (tableMemoryEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getSnapshot?.() || null) : {enabled:false,reason:'game-runtime-disabled'}) : null,
+      tableStateEvents: visionEnabledForCurrentGame() && tableMemoryEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getEvents?.() || []) : [],
       testerFeedback: [...state.visionFeedback]
     },
     events: state.reportEvents
@@ -4177,6 +4201,7 @@ window.addEventListener('tcg-identification-library',(event)=>{
 });
 
 window.addEventListener('tcg-table-state-updated',(event)=>{
+  if(!tableMemoryEnabledForCurrentGame()) return;
   const snapshot=event.detail?.snapshot || window.TCGTableStateEngine?.getSnapshot?.() || null;
   setVisionStateStatus(snapshot);
 });

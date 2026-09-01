@@ -7,7 +7,7 @@ const css = fs.readFileSync('public/tcgate-alpha.css','utf8');
 const server = fs.readFileSync('server.js','utf8');
 
 for (const token of [
-  "TCGate Alpha 0.1 Candidate 12",
+  "TCGate Alpha 0.1 Candidate 12.1",
   'rtcPeerCreatePromise',
   'rtcCreateEpoch',
   'rtcPeerGeneration',
@@ -50,8 +50,8 @@ if (!(candidateBranch > handleStart && ensureInHandle > candidateBranch)) {
   throw new Error('ICE candidates must be buffered before ensurePeerConnection can be invoked');
 }
 
-if (!server.includes("const VERSION = 'tcgate-alpha-0.1-candidate-12'")) {
-  throw new Error('Candidate 12 server version missing');
+if (!server.includes("const VERSION = 'tcgate-alpha-0.1-candidate-12.1'")) {
+  throw new Error('Candidate 12.1 server version missing');
 }
 
 // Candidate 11 may orchestrate Vision, but the frozen Vision files themselves must remain byte-identical.
@@ -70,4 +70,4 @@ for (const [file,want] of Object.entries(expected)) {
     : crypto.createHash('sha256').update(bytes).digest('hex');
   if (got !== want) throw new Error(`Frozen Vision changed: ${file}`);
 }
-console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_12_C11_REGRESSION');
+console.log('SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_12_1_C11_REGRESSION');
