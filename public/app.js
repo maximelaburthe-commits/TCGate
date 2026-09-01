@@ -44,6 +44,7 @@ const state = {
   remoteRecoveryWatchdogTimer: null,
   remoteRecoveryRetryUsed: false,
   pendingRtcRestartRequest: false,
+  mainRtcRecoveryActive: false,
   roomRecoveryInFlight: false,
   rtcPeerCreatePromise: null,
   rtcCreateEpoch: 0,
@@ -1714,7 +1715,7 @@ async function handleLocalTrackEnded(kind, track) {
   await enumerateDevices();
 }
 
-async function replaceMediaKind(kind, deviceId, { reason = 'manual-device-change', silent = false } = {}) {
+async function replaceMediaKind(kind, deviceId, { reason = 'manual-device-change', silent = false, acquiredStream = null } = {}) {
   if (!navigator.mediaDevices?.getUserMedia || state.deviceRecoveryInFlight) return false;
   const isVideo = kind === 'video';
   if (!deviceId) {
@@ -1726,8 +1727,8 @@ async function replaceMediaKind(kind, deviceId, { reason = 'manual-device-change
   const oldTrack = isVideo ? currentVideoTrack() : currentAudioTrack();
   const preservePhoneTrack = isVideo && state.videoSource === 'phone';
   try {
-    let stream;
-    if (isVideo) {
+    let stream = acquiredStream;
+    if (isVideo && !stream) {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
@@ -1753,7 +1754,7 @@ async function replaceMediaKind(kind, deviceId, { reason = 'manual-device-change
           audio: false
         });
       }
-    } else {
+    } else if (!isVideo && !stream) {
       stream = await navigator.mediaDevices.getUserMedia({
         video: false,
         audio: {
@@ -2012,28 +2013,14 @@ async function enumerateDevices({ returnDevices = false } = {}) {
     fill($('phoneCameraMicro'), microphones, 'Micro', state.selectedMicrophoneId, needMicroChoice);
     fill($('gameMicroSelect'), microphones, 'Micro', state.selectedMicrophoneId, needMicroChoice);
 
-    const gameCamera = $('gameCameraSelect');
-    if (gameCamera) {
-      const previous = gameCamera.value;
-      gameCamera.replaceChildren();
-      if (phoneCameraAvailable()) {
-        const option = document.createElement('option');
-        option.value = 'phone';
-        option.textContent = 'Téléphone';
-        gameCamera.appendChild(option);
-      }
-      cameras.forEach((device, index) => {
-        const option = document.createElement('option');
-        option.value = device.deviceId;
-        option.textContent = device.label || `Caméra ${index + 1}`;
-        gameCamera.appendChild(option);
-      });
-      const desired = state.videoSource === 'phone' && phoneCameraAvailable()
-        ? 'phone'
-        : (state.selectedCameraId || previous);
-      if (desired && [...gameCamera.options].some(option => option.value === desired)) gameCamera.value = desired;
-      gameCamera.disabled = gameCamera.options.length === 0;
+    fill($('gameCameraSelect'), cameras, 'Webcam', state.selectedCameraId, needCameraChoice);
+    const sourceSelect = $('gameVideoSourceSelect');
+    if (sourceSelect) {
+      sourceSelect.replaceChildren(...window.TCGateMediaRecovery.videoSourceOptions(phoneCameraAvailable())
+        .map(source => new Option(source.label, source.value)));
+      sourceSelect.value = state.videoSource === 'phone' && phoneCameraAvailable() ? 'phone' : 'webcam';
     }
+    $('gameWebcamField')?.classList.toggle('hidden', state.videoSource !== 'webcam');
     $('gamePhoneCameraLensField')?.classList.toggle('hidden', state.videoSource !== 'phone');
     $('deviceSelectors').classList.toggle('hidden', !(cameras.length || microphones.length));
 
@@ -2242,7 +2229,13 @@ async function startLocalMedia({ cameraId = null, microphoneId = null } = {}) {
 async function changeCameraFromSelector(selectId) {
   const cameraId = $(selectId)?.value || null;
   if (!cameraId) return;
-  if (selectId === 'gameCameraSelect' && cameraId === 'phone') {
+  logEvent('device-change-request', { kind: 'video', source: selectId });
+  await replaceMediaKind('video', cameraId, { reason: `selector-${selectId}` });
+}
+
+async function changeGameVideoSource() {
+  const source = $('gameVideoSourceSelect')?.value;
+  if (source === 'phone') {
     try {
       await window.TCGatePhoneCamera?.usePhoneSource?.();
       await enumerateDevices();
@@ -2253,8 +2246,29 @@ async function changeCameraFromSelector(selectId) {
     }
     return;
   }
-  logEvent('device-change-request', { kind: 'video', source: selectId });
-  await replaceMediaKind('video', cameraId, { reason: `selector-${selectId}` });
+  if (source !== 'webcam' || state.videoSource === 'webcam') {
+    await enumerateDevices();
+    return;
+  }
+
+  let permissionStream = null;
+  try {
+    permissionStream = await window.TCGateMediaRecovery.acquirePcWebcam(navigator.mediaDevices);
+    const track = permissionStream.getVideoTracks()[0] || null;
+    if (!track) throw new Error('Webcam PC indisponible');
+    const deviceId = track.getSettings?.().deviceId || '';
+    const changed = await replaceMediaKind('video', deviceId || 'default', {
+      reason: 'game-source-webcam',
+      acquiredStream: permissionStream
+    });
+    if (!changed) throw new Error('Webcam PC indisponible');
+    permissionStream = null;
+    await enumerateDevices();
+  } catch (err) {
+    permissionStream?.getTracks?.().forEach(track => track.stop());
+    await enumerateDevices();
+    toast('Autorisation webcam refusée — téléphone conservé.');
+  }
 }
 
 async function changeMicrophoneFromSelector(selectId) {
@@ -2565,19 +2579,17 @@ async function recoverRtcInPlaceAfterRoomRecovery(previousEpoch, nextEpoch) {
 
   try {
     setRtcStatus('Adversaire en reconnexion…', 'warning');
+    state.mainRtcRecoveryActive = true;
     closePeerConnection('room-recovery-in-place');
     await new Promise(resolve => setTimeout(resolve, 120));
     if (!state.gameActive) return;
 
     await ensurePeerConnection();
-    if (state.role === 'host') {
-      state.offerSent = false;
-      state.offerInFlight = false;
-      await createAndSendOffer({ iceRestart: true });
-    } else {
-      await sendSignal('restart-request', { reason: 'room-recovery-in-place' });
-    }
-    logEvent('room-recovery-in-place-ready', { role: state.role });
+    scheduleRemoteRecoveryWatchdog('room-recovery-in-place');
+    logEvent('room-recovery-in-place-ready', {
+      role: state.role,
+      action: state.role === 'host' ? 'await-guest-restart' : 'await-host-offer'
+    });
   } catch (err) {
     logEvent('room-recovery-in-place-error', {
       name: err?.name || null,
@@ -2776,6 +2788,8 @@ async function enterNetworkGame({ recovery = false, reason = 'game-enter' } = {}
     if (visionEnabledForCurrentGame()) prepareVision().catch(()=>{});
     setRtcStatus('Initialisation WebRTC…', 'warning');
 
+    if (recovery) await ensureRecoveryLocalTracksReady();
+
     await ensurePeerConnection();
 
     // Host is the single deterministic offerer.
@@ -2784,7 +2798,8 @@ async function enterNetworkGame({ recovery = false, reason = 'game-enter' } = {}
     }
 
     state.gameActive = true;
-    if (state.role === 'guest' && recovery) {
+    const recoveryAction = recovery ? window.TCGateMediaRecovery.recoveryAction(state.role) : null;
+    if (recoveryAction === 'restart-request') {
       await sendSignal('restart-request', { reason });
     } else if (state.role === 'host' && state.pendingRtcRestartRequest) {
       state.pendingRtcRestartRequest = false;
@@ -3330,11 +3345,22 @@ function hasLiveRemoteMedia() {
   return Boolean(state.remoteStream?.getTracks?.().some(track => track.readyState === 'live'));
 }
 
+function localRtcSendersReady() {
+  return Boolean(window.TCGateMediaRecovery?.localSendersReady?.({
+    videoSender: state.videoTransceiver?.sender,
+    audioSender: state.audioTransceiver?.sender,
+    videoTrack: currentVideoTrack(),
+    audioTrack: currentAudioTrack()
+  }));
+}
+
 function markRemoteRecoverySuccess(source = 'remote-track') {
   if (!state.remoteRecoveryWatchdogTimer && !state.remoteRecoveryRetryUsed) return;
+  if (!hasLiveRemoteMedia() || !localRtcSendersReady()) return;
   clearRemoteRecoveryWatchdog();
   logEvent('remote-recovery-success', { source, role: state.role });
   state.remoteRecoveryRetryUsed = false;
+  state.mainRtcRecoveryActive = false;
 }
 
 function scheduleRemoteRecoveryWatchdog(reason = 'recovery') {
@@ -3346,14 +3372,14 @@ function scheduleRemoteRecoveryWatchdog(reason = 'recovery') {
       state.remoteRecoveryWatchdogTimer = null;
       return;
     }
-    if (hasLiveRemoteMedia()) return markRemoteRecoverySuccess('watchdog-check');
+    if (hasLiveRemoteMedia() && localRtcSendersReady()) return markRemoteRecoverySuccess('watchdog-check');
     state.remoteRecoveryWatchdogTimer = null;
     state.remoteRecoveryRetryUsed = true;
     logEvent('remote-recovery-retry', { reason, role: state.role, connectionState: state.pc?.connectionState || null });
     await attemptRtcRecovery(`remote-watchdog:${reason}`);
     state.remoteRecoveryWatchdogTimer = setTimeout(() => {
       state.remoteRecoveryWatchdogTimer = null;
-      if (hasLiveRemoteMedia()) return markRemoteRecoverySuccess('watchdog-retry');
+      if (hasLiveRemoteMedia() && localRtcSendersReady()) return markRemoteRecoverySuccess('watchdog-retry');
       logEvent('remote-recovery-failed', { reason, role: state.role, connectionState: state.pc?.connectionState || null });
       state.remoteRecoveryRetryUsed = false;
     }, 7000);
@@ -3366,6 +3392,7 @@ function prepareMainRtcRecovery(reason) {
   state.gameActive = false;
   state.pendingRtcRestartRequest = false;
   state.remoteRecoveryRetryUsed = false;
+  state.mainRtcRecoveryActive = true;
   logEvent('remote-recovery-prepared', { reason, role: state.role });
 }
 
@@ -3408,6 +3435,56 @@ function candidateMatchesRemoteDescription(pc, candidate) {
   const ufrags = remoteIceUfrags(pc);
   if (!ufrags.size || !candidate?.usernameFragment) return true;
   return ufrags.has(candidate.usernameFragment);
+}
+
+async function waitForLiveLocalTrack(kind, timeoutMs = 7000) {
+  const getter = kind === 'video' ? currentVideoTrack : currentAudioTrack;
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const track = getter();
+    if (track?.readyState === 'live') return track;
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  throw new Error(`Local ${kind} track unavailable during recovery`);
+}
+
+async function ensureRecoveryLocalTracksReady() {
+  if (!currentAudioTrack()) {
+    const prefs = readMediaPreferences();
+    await startPcMicrophoneOnly(prefs.microphoneId);
+  }
+  if (!currentVideoTrack() && state.videoSource === 'webcam') {
+    const prefs = readMediaPreferences();
+    const cameraId = state.selectedCameraId || prefs.cameraId;
+    if (cameraId) await replaceMediaKind('video', cameraId, { reason: 'rtc-recovery-webcam', silent: true });
+  }
+  await Promise.all([waitForLiveLocalTrack('video'), waitForLiveLocalTrack('audio')]);
+  logEvent('rtc-local-media-ready', { source: state.videoSource });
+}
+
+function logRtcLocalTrackBound(data) {
+  logEvent('rtc-local-track-bound', data);
+}
+
+async function bindRtcLocalTracks({ strict = false, source = 'rtc-bind' } = {}) {
+  const videoTrack = currentVideoTrack();
+  const audioTrack = currentAudioTrack();
+  if (strict) {
+    await window.TCGateMediaRecovery.bindLocalTracks({
+      videoSender: state.videoTransceiver?.sender,
+      audioSender: state.audioTransceiver?.sender,
+      videoTrack,
+      audioTrack,
+      source: state.videoSource,
+      generation: state.pc?.__tcgateGeneration || null,
+      onBound: logRtcLocalTrackBound
+    });
+  } else {
+    if (state.videoTransceiver?.sender) await state.videoTransceiver.sender.replaceTrack(videoTrack);
+    if (state.audioTransceiver?.sender) await state.audioTransceiver.sender.replaceTrack(audioTrack);
+  }
+  if (state.videoTransceiver?.sender) await configureVideoSenderPolicy(state.videoTransceiver.sender, source);
+  return localRtcSendersReady();
 }
 
 async function playRemoteVideoForPeer(pc, attempt = 0) {
@@ -3464,10 +3541,7 @@ async function ensurePeerConnection() {
     if (state.role === 'host') {
       state.videoTransceiver = pc.addTransceiver('video', { direction: 'sendrecv' });
       state.audioTransceiver = pc.addTransceiver('audio', { direction: 'sendrecv' });
-
-      await state.videoTransceiver.sender.replaceTrack(currentVideoTrack());
-      await configureVideoSenderPolicy(state.videoTransceiver.sender, 'host-create');
-      await state.audioTransceiver.sender.replaceTrack(currentAudioTrack());
+      await bindRtcLocalTracks({ strict: state.mainRtcRecoveryActive, source: 'host-create' });
     }
 
     if (createEpoch !== state.rtcCreateEpoch || state.pc !== pc) {
@@ -3594,18 +3668,18 @@ async function bindAnswererTracks(pc) {
 
   if (state.videoTransceiver) {
     state.videoTransceiver.direction = 'sendrecv';
-    await state.videoTransceiver.sender.replaceTrack(currentVideoTrack());
-    await configureVideoSenderPolicy(state.videoTransceiver.sender, 'guest-bind');
   }
 
   if (state.audioTransceiver) {
     state.audioTransceiver.direction = 'sendrecv';
-    await state.audioTransceiver.sender.replaceTrack(currentAudioTrack());
   }
+
+  const senderReady = await bindRtcLocalTracks({ strict: state.mainRtcRecoveryActive, source: 'guest-bind' });
 
   logEvent('rtc-answerer-tracks-bound', {
     video: Boolean(state.videoTransceiver?.sender?.track),
     audio: Boolean(state.audioTransceiver?.sender?.track),
+    senderReady,
     transceivers: transceivers.map(t => ({
       kind: t.receiver?.track?.kind || t.sender?.track?.kind || null,
       direction: t.direction,
@@ -4616,6 +4690,7 @@ $('gamePhoneCameraLens')?.addEventListener('change', changePhoneLensFromSelector
 $('cameraSelect').addEventListener('change', () => changeCameraFromSelector('cameraSelect'));
 $('microSelect').addEventListener('change', () => changeMicrophoneFromSelector('microSelect'));
 $('phoneCameraMicro')?.addEventListener('change', () => changeMicrophoneFromSelector('phoneCameraMicro'));
+$('gameVideoSourceSelect')?.addEventListener('change', changeGameVideoSource);
 $('gameCameraSelect').addEventListener('change', () => changeCameraFromSelector('gameCameraSelect'));
 $('gameMicroSelect').addEventListener('change', () => changeMicrophoneFromSelector('gameMicroSelect'));
 

@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const { TextDecoder } = require('util');
 const cameraDevices = require('./public/phone-camera-devices.js');
 const { PhoneCameraControlWaiter } = require('./public/phone-camera-control.js');
+const mediaRecovery = require('./public/media-recovery.js');
 
 const PORT = 4331;
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -43,6 +44,8 @@ async function request(pathname, { method = 'GET', token = null, cookie = null, 
     await wait();
     const phonePage = await fetch(`${BASE}/phone`);
     assert(phonePage.status === 200 && (await phonePage.text()).includes('/phone-camera-client.js'), 'phone page unavailable');
+    const mediaRecoveryScript = await fetch(`${BASE}/media-recovery.js`);
+    assert(mediaRecoveryScript.status === 200 && (await mediaRecoveryScript.text()).includes('bindLocalTracks'), 'media recovery helper unavailable');
     let result = await request('/api/rooms', { method: 'POST', body: { name: 'Phone owner', game: 'cyberpunk' } });
     assert(result.response.status === 201, 'room creation failed');
     const ownerCookie = String(result.response.headers.get('set-cookie') || '').split(';')[0];
@@ -139,6 +142,7 @@ async function request(pathname, { method = 'GET', token = null, cookie = null, 
     const microphoneOnlySource = appSource.slice(appSource.indexOf('async function startPcMicrophoneOnly'), appSource.indexOf('async function restorePhoneCameraAfterRecovery'));
     assert(/video:\s*false/.test(microphoneOnlySource) && !/video:\s*true/.test(microphoneOnlySource), 'Phone Camera microphone setup opens a PC webcam');
     assert(/phoneCameraMicro/.test(indexSource) && /gamePhoneCameraLens/.test(indexSource), 'source-aware media controls are missing');
+    assert(/gameVideoSourceSelect/.test(indexSource) && /gameWebcamField/.test(indexSource), 'camera source and physical webcam selectors are not separated');
     assert(/autoProfile:\s*'1280x720'/.test(phoneSource) && /frameRate:\s*\{ ideal:\s*30, max:\s*30 \}/.test(phoneSource), '720p30 default profile missing');
 
     const phoneFiles = [
@@ -146,6 +150,7 @@ async function request(pathname, { method = 'GET', token = null, cookie = null, 
   'public/phone-camera-client.js',
   'public/phone-camera.js',
   'public/phone-camera-control.js',
+  'public/media-recovery.js',
   'public/phone-camera.css',
       'public/phone-camera-devices.js'
     ];
@@ -236,6 +241,40 @@ async function request(pathname, { method = 'GET', token = null, cookie = null, 
     assert(lateError.name === 'CameraAcquisitionTimeoutError' && lateError.rollbackRestored === true, 'late acquisition did not report controlled failure');
     assert(lateStopped && !lateActivated, 'late camera stream was not stopped before activation');
 
+    for (const role of ['host', 'guest']) {
+      for (const source of ['webcam', 'phone']) {
+        const videoTrack = { kind: 'video', readyState: 'live', enabled: true, getSettings: () => ({ width: 1280, height: 720 }) };
+        const audioTrack = { kind: 'audio', readyState: 'live', enabled: true, getSettings: () => ({}) };
+        const videoSender = { track: null, async replaceTrack(track) { this.track = track; } };
+        const audioSender = { track: null, async replaceTrack(track) { this.track = track; } };
+        const bound = [];
+        await mediaRecovery.bindLocalTracks({
+          videoSender, audioSender, videoTrack, audioTrack, source, generation: 4, onBound: data => bound.push(data)
+        });
+        assert(mediaRecovery.localSendersReady({ videoSender, audioSender, videoTrack, audioTrack }), `${role}/${source} local senders not ready`);
+        assert(videoSender.track === videoTrack && audioSender.track === audioTrack, `${role}/${source} wrong sender tracks`);
+        assert(bound.length === 2 && bound.every(item => item.generation === 4 && !('deviceId' in item)), `${role}/${source} unsafe or incomplete binding diagnostics`);
+        assert(mediaRecovery.recoveryAction(role) === (role === 'host' ? 'offer' : 'restart-request'), `${role}/${source} negotiation role invalid`);
+      }
+    }
+    const missingVideoError = await mediaRecovery.bindLocalTracks({
+      videoSender: { async replaceTrack() {} }, audioSender: { async replaceTrack() {} },
+      videoTrack: null, audioTrack: { kind: 'audio', readyState: 'live' }, source: 'webcam', generation: 5
+    }).catch(error => error);
+    assert(/video track not live/.test(missingVideoError.message), 'recovery accepted a missing webcam sender track');
+    assert(mediaRecovery.videoSourceOptions(true).map(option => option.value).join('|') === 'phone|webcam', 'phone/webcam source types are not separated');
+    assert(mediaRecovery.videoSourceOptions(false).map(option => option.value).join('|') === 'webcam', 'unavailable phone source is offered');
+    let webcamConstraints = null;
+    const permissionStream = { getVideoTracks: () => [{ kind: 'video' }] };
+    const acquiredWebcam = await mediaRecovery.acquirePcWebcam({
+      getUserMedia: async constraints => { webcamConstraints = constraints; return permissionStream; }
+    });
+    assert(acquiredWebcam === permissionStream && webcamConstraints.video === true && webcamConstraints.audio === false, 'Webcam PC permission is not video-only');
+    const deniedWebcam = await mediaRecovery.acquirePcWebcam({
+      getUserMedia: async () => { throw Object.assign(new Error('denied'), { name: 'NotAllowedError' }); }
+    }).catch(error => error);
+    assert(deniedWebcam.name === 'NotAllowedError', 'webcam permission refusal is not preserved');
+
     const controls = new PhoneCameraControlWaiter(25);
     const confirmed = controls.wait('success-1');
     controls.settle({ requestId: 'success-1', ok: true, state: { selectedCameraId: 'camera-2' } });
@@ -253,7 +292,7 @@ async function request(pathname, { method = 'GET', token = null, cookie = null, 
     assert(!/\.disconnect\?\./.test(webcamReturn) && /videoSource = 'webcam'/.test(webcamReturn), 'returning to PC webcam dissociates the phone');
     assert(/preservePhoneTrack/.test(appSource) && /!preservePhoneTrack/.test(appSource), 'phone receiver track is stopped when switching to PC webcam');
     assert(/usePhoneSource/.test(pcPhoneSource) && /reusePhoneCamera/.test(appSource), 'switching back to the paired phone source is missing');
-    assert(/cameraId === 'phone'/.test(appSource) && /replaceMediaKind\('video', cameraId/.test(appSource), 'in-game phone/webcam source switching is missing');
+    assert(/changeGameVideoSource/.test(appSource) && /replaceMediaKind\('video', cameraId/.test(appSource), 'in-game phone/webcam source switching is missing');
     assert(/phoneCameraMicro/.test(appSource) && /gameMicroSelect/.test(appSource), 'PC microphone selectors are not synchronized');
     assert((appSource.match(/prepareMainRtcRecovery\('/g) || []).length >= 2, 'main RTC generation is not reset by both recovery paths');
     assert(/rtc-restart-request-pending/.test(appSource) && /pendingRtcRestartRequest/.test(appSource), 'early guest restart request can still be discarded');

@@ -270,6 +270,13 @@
         </div>
         <label>
           <span>Source caméra</span>
+          <select id="gameVideoSourceSelect">
+            <option value="phone">Téléphone</option>
+            <option value="webcam">Webcam PC</option>
+          </select>
+        </label>
+        <label id="gameWebcamField" class="hidden">
+          <span>Webcam</span>
           <select id="gameCameraSelect"></select>
         </label>
         <label id="gamePhoneCameraLensField" class="hidden">
@@ -483,6 +490,7 @@
 
   <!-- Vision assets are loaded on demand by app.js only for a supported game. -->
   <script src="/phone-camera-control.js"></script>
+  <script src="/media-recovery.js"></script>
   <script src="/phone-camera.js"></script>
   <script src="/app.js"></script>
   <script src="/report-mail-ui.js"></script>
