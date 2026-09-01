@@ -262,6 +262,26 @@ async function request(pathname, { method = 'GET', token = null, cookie = null, 
       videoTrack: null, audioTrack: { kind: 'audio', readyState: 'live' }, source: 'webcam', generation: 5
     }).catch(error => error);
     assert(/video track not live/.test(missingVideoError.message), 'recovery accepted a missing webcam sender track');
+    const recoveryRace = { ownReady: true, opponentReady: true, readyRequestPending: false, gameEntering: false, gameActive: false, recoveryBootstrapPending: true };
+    assert(!mediaRecovery.shouldAutoEnterGame(recoveryRace), 'SSE room-state entered the game before recovery media bootstrap');
+    recoveryRace.recoveryBootstrapPending = false;
+    assert(mediaRecovery.shouldAutoEnterGame(recoveryRace), 'explicit recovery enter remained blocked after media bootstrap');
+    const healthyVideo = { kind: 'video', readyState: 'live' };
+    const healthyAudio = { kind: 'audio', readyState: 'live' };
+    const healthInput = {
+      pc: { connectionState: 'new', iceConnectionState: 'new' },
+      remoteStream: { getTracks: () => [{ readyState: 'live' }] },
+      videoSender: { track: healthyVideo }, audioSender: { track: healthyAudio },
+      videoTrack: healthyVideo, audioTrack: healthyAudio
+    };
+    assert(!mediaRecovery.mainRtcRecoveryHealthy(healthInput), 'watchdog accepted live tracks without a connected PeerConnection');
+    healthInput.pc.connectionState = 'connected';
+    healthInput.pc.iceConnectionState = 'connected';
+    assert(mediaRecovery.mainRtcRecoveryHealthy(healthInput), 'watchdog rejected a fully connected RTC recovery');
+    let failedPcClosed = false;
+    const failedPc = { ontrack() {}, onicecandidate() {}, onconnectionstatechange() {}, oniceconnectionstatechange() {}, onsignalingstatechange() {}, close() { failedPcClosed = true; } };
+    mediaRecovery.disposePeerConnection(failedPc);
+    assert(failedPcClosed && failedPc.ontrack === null && failedPc.onicecandidate === null, 'failed PeerConnection was not disposed transactionally');
     assert(mediaRecovery.videoSourceOptions(true).map(option => option.value).join('|') === 'phone|webcam', 'phone/webcam source types are not separated');
     assert(mediaRecovery.videoSourceOptions(false).map(option => option.value).join('|') === 'webcam', 'unavailable phone source is offered');
     let webcamConstraints = null;
@@ -295,6 +315,16 @@ async function request(pathname, { method = 'GET', token = null, cookie = null, 
     assert(/changeGameVideoSource/.test(appSource) && /replaceMediaKind\('video', cameraId/.test(appSource), 'in-game phone/webcam source switching is missing');
     assert(/phoneCameraMicro/.test(appSource) && /gameMicroSelect/.test(appSource), 'PC microphone selectors are not synchronized');
     assert((appSource.match(/prepareMainRtcRecovery\('/g) || []).length >= 2, 'main RTC generation is not reset by both recovery paths');
+    assert((appSource.match(/recoveryBootstrapPending = wasInGame/g) || []).length === 2, 'both recovery paths do not arm the bootstrap gate before SSE');
+    assert(/shouldAutoEnterGame\(state\)/.test(appSource), 'room-state auto-enter does not honor the recovery bootstrap gate');
+    const peerCreation = appSource.slice(appSource.indexOf('async function ensurePeerConnection'), appSource.indexOf('async function bindAnswererTracks'));
+    assert(/rtc-create-rollback/.test(peerCreation) && /state\.pc = null/.test(peerCreation) && /state\.pendingIce = \[\]/.test(peerCreation), 'failed PeerConnection initialization is not rolled back');
+    assert(/disposePeerConnection\(pc\)/.test(peerCreation) && /state\.rtcCreateEpoch \+= 1/.test(peerCreation) && /\+\+state\.rtcPeerGeneration/.test(peerCreation), 'failed PeerConnection generation is not closed and invalidated before a fresh generation');
+    const gameEnter = appSource.slice(appSource.indexOf('async function enterNetworkGame'), appSource.indexOf('async function applyVideoSenderEncoding'));
+    assert(gameEnter.indexOf('ensureRecoveryLocalTracksReady()') < gameEnter.indexOf('ensurePeerConnection()'), 'recovery creates RTC before local media is live');
+    assert(peerCreation.indexOf("bindRtcLocalTracks({ strict: state.mainRtcRecoveryActive, source: 'host-create' })") < peerCreation.indexOf("logEvent('rtc-created'"), 'host RTC is declared created before strict local binding');
+    assert((appSource.match(/mainRtcRecoveryHealthy\(\)/g) || []).length >= 3, 'watchdog paths do not share the connected RTC health predicate');
+    assert(/async function snapshotRtcMetrics\(pc = state\.pc\)/.test(appSource) && /snapshotRtcMetrics\(pc\)/.test(appSource), 'RTC stats still races against state.pc cleanup');
     assert(/rtc-restart-request-pending/.test(appSource) && /pendingRtcRestartRequest/.test(appSource), 'early guest restart request can still be discarded');
     for (const eventName of ['remote-recovery-start', 'remote-recovery-success', 'remote-recovery-retry', 'remote-recovery-failed']) {
       assert(appSource.includes(eventName), `remote recovery watchdog event missing: ${eventName}`);

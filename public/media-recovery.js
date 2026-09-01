@@ -38,6 +38,29 @@
     return role === 'host' ? 'offer' : 'restart-request';
   }
 
+  function shouldAutoEnterGame({ ownReady, opponentReady, readyRequestPending, gameEntering, gameActive, recoveryBootstrapPending } = {}) {
+    return Boolean(ownReady && opponentReady && !readyRequestPending && !gameEntering && !gameActive && !recoveryBootstrapPending);
+  }
+
+  function mainRtcRecoveryHealthy({ pc, remoteStream, videoSender, audioSender, videoTrack, audioTrack } = {}) {
+    const remoteLive = Boolean(remoteStream?.getTracks?.().some(track => track.readyState === 'live'));
+    return Boolean(
+      pc &&
+      pc.connectionState === 'connected' &&
+      ['connected', 'completed'].includes(pc.iceConnectionState) &&
+      remoteLive &&
+      localSendersReady({ videoSender, audioSender, videoTrack, audioTrack })
+    );
+  }
+
+  function disposePeerConnection(pc) {
+    if (!pc) return;
+    for (const handler of ['ontrack', 'onicecandidate', 'onconnectionstatechange', 'oniceconnectionstatechange', 'onsignalingstatechange']) {
+      try { pc[handler] = null; } catch {}
+    }
+    try { pc.close?.(); } catch {}
+  }
+
   function videoSourceOptions(phoneAvailable) {
     return [...(phoneAvailable ? [{ value: 'phone', label: 'Téléphone' }] : []), { value: 'webcam', label: 'Webcam PC' }];
   }
@@ -47,7 +70,7 @@
     return mediaDevices.getUserMedia({ video: true, audio: false });
   }
 
-  const api = { isLiveTrack, bindSenderTrack, bindLocalTracks, localSendersReady, recoveryAction, videoSourceOptions, acquirePcWebcam };
+  const api = { isLiveTrack, bindSenderTrack, bindLocalTracks, localSendersReady, recoveryAction, shouldAutoEnterGame, mainRtcRecoveryHealthy, disposePeerConnection, videoSourceOptions, acquirePcWebcam };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof window !== 'undefined') window.TCGateMediaRecovery = api;
 })();

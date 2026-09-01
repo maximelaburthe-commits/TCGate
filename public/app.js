@@ -45,6 +45,7 @@ const state = {
   remoteRecoveryRetryUsed: false,
   pendingRtcRestartRequest: false,
   mainRtcRecoveryActive: false,
+  recoveryBootstrapPending: false,
   roomRecoveryInFlight: false,
   rtcPeerCreatePromise: null,
   rtcCreateEpoch: 0,
@@ -404,10 +405,11 @@ async function recoverPersistentSession() {
       resumed: true
     });
     hydrateSessionFromResult(result);
+    const wasInGame = (result.room?.phase || 'lobby') === 'game';
+    state.recoveryBootstrapPending = wasInGame;
     state.gameEntering = true;
     applyRoomState(result.room);
     state.gameEntering = false;
-    const wasInGame = (result.room?.phase || 'lobby') === 'game';
     if (wasInGame) prepareMainRtcRecovery('persistent-recovery');
     await connectEventStream().catch(() => {});
     await waitForEventStreamOpen().catch(() => false);
@@ -424,8 +426,10 @@ async function recoverPersistentSession() {
     if (wasInGame) {
       showScreen('game');
       await enterNetworkGame({ recovery: true, reason: 'persistent-recovery' });
+      state.recoveryBootstrapPending = false;
       toast('Partie reprise.');
     } else {
+      state.recoveryBootstrapPending = false;
       showScreen('lobby');
       toast('Salon repris.');
     }
@@ -436,6 +440,7 @@ async function recoverPersistentSession() {
     });
     return true;
   } catch (err) {
+    state.recoveryBootstrapPending = false;
     logEvent('persistent-recovery-error', { message: err?.message || String(err) });
     toast(err?.message || 'Impossible de reprendre la partie.');
     await checkPersistentRecovery();
@@ -2334,10 +2339,11 @@ async function tryResumeSavedSession() {
     });
 
     hydrateSessionFromResult(result);
+    const wasInGame = (result.room?.phase || 'lobby') === 'game';
+    state.recoveryBootstrapPending = wasInGame;
     state.gameEntering = true;
     applyRoomState(result.room);
     state.gameEntering = false;
-    const wasInGame = (result.room?.phase || 'lobby') === 'game';
     if (wasInGame) prepareMainRtcRecovery('session-resume');
     await connectEventStream().catch(() => {});
     await waitForEventStreamOpen().catch(() => false);
@@ -2354,8 +2360,10 @@ async function tryResumeSavedSession() {
     if (wasInGame) {
       showScreen('game');
       await enterNetworkGame({ recovery: true, reason: 'session-resume' });
+      state.recoveryBootstrapPending = false;
       toast('Partie reprise.');
     } else {
+      state.recoveryBootstrapPending = false;
       showScreen('lobby');
       toast('Salon repris.');
     }
@@ -2368,6 +2376,7 @@ async function tryResumeSavedSession() {
     });
     return true;
   } catch (err) {
+    state.recoveryBootstrapPending = false;
     logEvent('room-resume-failed', { message: err?.message || String(err) });
     clearSavedRoomSession();
     state.roomCode = null;
@@ -2684,13 +2693,7 @@ function applyRoomState(snapshot) {
     if (state.gameActive) requestGigState();
   }
 
-  if (
-    state.ownReady &&
-    state.opponentReady &&
-    !state.readyRequestPending &&
-    !state.gameEntering &&
-    !state.gameActive
-  ) {
+  if (window.TCGateMediaRecovery.shouldAutoEnterGame(state)) {
     enterNetworkGame();
   }
 }
@@ -3354,9 +3357,20 @@ function localRtcSendersReady() {
   }));
 }
 
+function mainRtcRecoveryHealthy() {
+  return Boolean(window.TCGateMediaRecovery?.mainRtcRecoveryHealthy?.({
+    pc: state.pc,
+    remoteStream: state.remoteStream,
+    videoSender: state.videoTransceiver?.sender,
+    audioSender: state.audioTransceiver?.sender,
+    videoTrack: currentVideoTrack(),
+    audioTrack: currentAudioTrack()
+  }));
+}
+
 function markRemoteRecoverySuccess(source = 'remote-track') {
   if (!state.remoteRecoveryWatchdogTimer && !state.remoteRecoveryRetryUsed) return;
-  if (!hasLiveRemoteMedia() || !localRtcSendersReady()) return;
+  if (!mainRtcRecoveryHealthy()) return;
   clearRemoteRecoveryWatchdog();
   logEvent('remote-recovery-success', { source, role: state.role });
   state.remoteRecoveryRetryUsed = false;
@@ -3372,14 +3386,14 @@ function scheduleRemoteRecoveryWatchdog(reason = 'recovery') {
       state.remoteRecoveryWatchdogTimer = null;
       return;
     }
-    if (hasLiveRemoteMedia() && localRtcSendersReady()) return markRemoteRecoverySuccess('watchdog-check');
+    if (mainRtcRecoveryHealthy()) return markRemoteRecoverySuccess('watchdog-check');
     state.remoteRecoveryWatchdogTimer = null;
     state.remoteRecoveryRetryUsed = true;
     logEvent('remote-recovery-retry', { reason, role: state.role, connectionState: state.pc?.connectionState || null });
     await attemptRtcRecovery(`remote-watchdog:${reason}`);
     state.remoteRecoveryWatchdogTimer = setTimeout(() => {
       state.remoteRecoveryWatchdogTimer = null;
-      if (hasLiveRemoteMedia() && localRtcSendersReady()) return markRemoteRecoverySuccess('watchdog-retry');
+      if (mainRtcRecoveryHealthy()) return markRemoteRecoverySuccess('watchdog-retry');
       logEvent('remote-recovery-failed', { reason, role: state.role, connectionState: state.pc?.connectionState || null });
       state.remoteRecoveryRetryUsed = false;
     }, 7000);
@@ -3529,11 +3543,14 @@ async function ensurePeerConnection() {
     if (createEpoch !== state.rtcCreateEpoch) throw new Error('RTC creation superseded');
     if (state.pc) return state.pc;
 
-    const pc = new RTCPeerConnection(rtcConfig);
-    const generation = ++state.rtcPeerGeneration;
-    pc.__tcgateGeneration = generation;
-    state.pc = pc;
-    state.rtcStarted = true;
+    let pc = null;
+    let generation = null;
+    try {
+      pc = new RTCPeerConnection(rtcConfig);
+      generation = ++state.rtcPeerGeneration;
+      pc.__tcgateGeneration = generation;
+      state.pc = pc;
+      state.rtcStarted = true;
 
     // Only the deterministic offerer creates m-lines before the offer.
     // The answerer lets setRemoteDescription(offer) create matching
@@ -3607,6 +3624,7 @@ async function ensurePeerConnection() {
         setRtcStatus('WebRTC connecté', 'connected');
         configureVideoSenderPolicy(state.videoTransceiver?.sender, 'connected').catch(()=>{});
         sendCurrentMediaState('rtc-connected').catch(()=>{});
+        markRemoteRecoverySuccess('connection-state');
       } else if (cs === 'connecting' || cs === 'new') {
         setRtcStatus('Connexion WebRTC…', 'warning');
       } else if (cs === 'disconnected') {
@@ -3646,7 +3664,28 @@ async function ensurePeerConnection() {
       precreatedTransceivers: state.role === 'host' ? ['video', 'audio'] : []
     });
 
-    return pc;
+      return pc;
+    } catch (err) {
+      window.TCGateMediaRecovery.disposePeerConnection(pc);
+      if (pc && state.pc === pc) {
+        state.pc = null;
+        state.videoTransceiver = null;
+        state.audioTransceiver = null;
+        state.rtcStarted = false;
+        state.pendingIce = [];
+        state.offerInFlight = false;
+        state.offerSent = false;
+        clearInterval(state.rtcStatsTimer);
+        state.rtcStatsTimer = null;
+        state.rtcCreateEpoch += 1;
+      }
+      logEvent('rtc-create-rollback', {
+        generation,
+        name: err?.name || null,
+        message: err?.message || String(err)
+      });
+      throw err;
+    }
   })();
 
   state.rtcPeerCreatePromise = createPromise;
@@ -3906,15 +3945,11 @@ function closePeerConnection(reason = 'manual') {
   clearTimeout(state.remoteVideoPlaybackRetryTimer);
   state.remoteVideoPlaybackRetryTimer = null;
 
-  if (state.pc) {
-    snapshotRtcMetrics().catch(() => {});
+  const pc = state.pc;
+  if (pc) {
+    snapshotRtcMetrics(pc).catch(() => {});
     try {
-      state.pc.ontrack = null;
-      state.pc.onicecandidate = null;
-      state.pc.onconnectionstatechange = null;
-      state.pc.oniceconnectionstatechange = null;
-      state.pc.onsignalingstatechange = null;
-      state.pc.close();
+      window.TCGateMediaRecovery.disposePeerConnection(pc);
     } catch {}
   }
 
@@ -4056,20 +4091,20 @@ function openCardModal() {
 
 /* ---------- Complete alpha report ---------- */
 
-async function snapshotRtcMetrics() {
-  if (!state.pc) return state.lastRtcMetrics;
+async function snapshotRtcMetrics(pc = state.pc) {
+  if (!pc) return state.lastRtcMetrics;
 
   try {
-    const report = await state.pc.getStats();
+    const report = await pc.getStats();
     const statsById = new Map();
     report.forEach(stat => statsById.set(stat.id, stat));
 
     const data = {
       available: true,
       capturedAt: new Date().toISOString(),
-      connectionState: state.pc.connectionState,
-      iceConnectionState: state.pc.iceConnectionState,
-      signalingState: state.pc.signalingState,
+      connectionState: pc.connectionState,
+      iceConnectionState: pc.iceConnectionState,
+      signalingState: pc.signalingState,
       inbound: [],
       outbound: [],
       candidatePair: null,
