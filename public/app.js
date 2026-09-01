@@ -523,6 +523,7 @@ function setVisionStateStatus(snapshot=null) {
 }
 
 const VISION_ASSETS = [
+  '/vision-library-integrity.js',
   '/vision-core.js',
   '/vision-calibration.js',
   '/table-state-bridge.js',
@@ -1105,6 +1106,7 @@ async function prepareVision() {
 
     const detOk=detector.status==='fulfilled' && detector.value?.ready;
     const idOk=identifier.status==='fulfilled' && identifier.value?.ready;
+    const libraryIntegrity=identifier.status==='fulfilled' ? identifier.value?.integrity || null : null;
 
     let tableState=null;
     if(detOk && idOk && window.TCGTableStateEngine){
@@ -1121,6 +1123,15 @@ async function prepareVision() {
 
     state.visionPrepared=Boolean(detOk && idOk);
 
+    logEvent('vision-library-integrity',libraryIntegrity || {
+      sourceReferences:0,
+      loadedReferences:identifier.value?.cards||0,
+      failedReferences:0,
+      cacheStatus:'unknown',
+      degraded:true,
+      reason:'integrity-diagnostics-unavailable'
+    });
+
     if(state.visionPrepared){
       setVisionStatus(`Vision : prête · ${identifier.value?.cards || 0} cartes`,'good');
     }else{
@@ -1134,6 +1145,7 @@ async function prepareVision() {
       identification:identifier.status,
       identificationReady:Boolean(identifier.value?.ready),
       cards:identifier.value?.cards || 0,
+      libraryIntegrity,
       tableStateReady:Boolean(tableState?.workerReady),
       tableStateVersion:tableState?.version || null
     });
@@ -1232,6 +1244,7 @@ function startVisionMetricsSampler() {
       identification:identification?{
         libraryReady:identification.libraryReady,
         librarySize:identification.librarySize,
+        libraryIntegrity:identification.libraryIntegrity || null,
         matcherMs:identification.matcherMs,
         hoverCache:identification.hoverCache,
         identityStability:identification.identityStability || null
@@ -4351,6 +4364,7 @@ async function buildCompleteReport() {
       scope: 'opponent-stream-only',
       detector: visionEnabledForCurrentGame() ? (window.TCGVisionEngine?.getSnapshot?.() || null) : null,
       identification: visionEnabledForCurrentGame() ? (window.TCGIdentificationLab?.getSnapshot?.() || null) : null,
+      libraryIntegrity: visionEnabledForCurrentGame() ? (window.TCGIdentificationLab?.getSnapshot?.()?.libraryIntegrity || null) : null,
       tableState: visionEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getSnapshot?.() || null) : null,
       tableStateEvents: visionEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getEvents?.() || []) : [],
       testerFeedback: [...state.visionFeedback]

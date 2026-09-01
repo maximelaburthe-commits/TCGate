@@ -8,6 +8,9 @@
   const REMOTE_DB = 'https://raw.githubusercontent.com/maximelaburthe-commits/cyberpunk_cards/main/cards.json';
   const REMOTE_IMAGE_BASE = 'https://raw.githubusercontent.com/maximelaburthe-commits/cyberpunk_cards/main/images/';
   const FALLBACK_DB = '/cards-fallback.json';
+  // Temporary Alpha minimum: UZJMMX physically validated 141 references.
+  // It is intentionally a floor, so a future larger catalogue remains valid.
+  const VALIDATED_ALPHA_MINIMUM_REFERENCES = 141;
 
   // New cache key is intentional: alpha1/2 descriptors are incompatible.
   const CACHE_KEY = 'tcg-cyberpunk-ident-cache-template-v5-fast';
@@ -54,6 +57,7 @@
     ready: false,
     cards: [],
     refs: [],
+    libraryIntegrity: null,
     lastTrackUid: null,
     lastIdentifiedAt: 0,
     hoverTimer: null,
@@ -897,19 +901,17 @@
     return `v5-fast:${cards.length}:${cards[0]?.image||''}:${cards[cards.length-1]?.image||''}`;
   }
 
-  function loadCache(fp) {
+  function loadCache(fp, sourceCount) {
     try {
       const raw=localStorage.getItem(CACHE_KEY);
-      if (!raw) return null;
-      const data=JSON.parse(raw);
-      if (data?.fingerprint!==fp || !Array.isArray(data.refs)) return null;
-      return data.refs;
-    } catch { return null; }
+      const data=raw ? JSON.parse(raw) : null;
+      return window.TCGateVisionLibraryIntegrity.validateCache(data,{fingerprint:fp,sourceCount});
+    } catch { return {status:'invalid-json',refs:null,sourceCount:null,librarySize:null}; }
   }
 
-  function saveCache(fp, refs) {
+  function saveCache(fp, refs, sourceCount) {
     try {
-      localStorage.setItem(CACHE_KEY,JSON.stringify({fingerprint:fp,refs}));
+      localStorage.setItem(CACHE_KEY,JSON.stringify({fingerprint:fp,sourceCount,librarySize:refs.length,refs}));
     } catch {}
   }
 
@@ -919,11 +921,11 @@
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data=await r.json();
       if (!Array.isArray(data) || !data.length) throw new Error('Liste vide');
-      return {cards:data,source:'GitHub'};
+      return {cards:data,source:'GitHub mutable main',sourceUrl:REMOTE_DB,sourceError:null};
     } catch (err) {
       const r=await fetch(FALLBACK_DB,{cache:'no-cache'});
       if (!r.ok) throw err;
-      return {cards:await r.json(),source:'fallback local'};
+      return {cards:await r.json(),source:'fallback local',sourceUrl:FALLBACK_DB,sourceError:err?.message||String(err)};
     }
   }
 
@@ -935,17 +937,19 @@
     setLibraryStatus('Bibliothèque : construction des références visuelles…');
 
     try {
-      const {cards,source}=await loadCardList();
+      const {cards,source,sourceUrl,sourceError}=await loadCardList();
       state.cards=cards.filter(c=>c?.name&&c?.image);
       const fp=fingerprint(state.cards);
+      let cache={status:force?'bypassed':'miss',refs:null,sourceCount:null,librarySize:null};
 
       if (!force) {
-        const cached=loadCache(fp);
-        if (cached?.length===state.cards.length) {
-          state.refs=cached;
-          state.ready=true;
+        cache=loadCache(fp,state.cards.length);
+        if (cache.status==='hit') {
+          state.refs=cache.refs;
+          state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:0,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum:VALIDATED_ALPHA_MINIMUM_REFERENCES,source,sourceUrl,sourceError});
+          state.ready=window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
           state.loading=false;
-          setLibraryStatus(`Bibliothèque : ${cached.length} cartes · cache alpha15`);
+          setLibraryStatus(state.ready?`Bibliothèque : ${state.refs.length} cartes · cache alpha15`:`Vision indisponible : bibliothèque dégradée (${state.refs.length}/${state.cards.length})`);
           return;
         }
       }
@@ -981,10 +985,14 @@
       if (generation!==state.generation) return;
 
       state.refs=refs.filter(Boolean);
-      saveCache(fp,state.refs);
-      state.ready=state.refs.length>0;
-      setLibraryStatus(`Bibliothèque : ${state.refs.length} cartes prêtes · moteur alpha15`);
+      const failed=state.cards.filter((_,index)=>!refs[index]).map(card=>({name:card.name,image:card.image}));
+      saveCache(fp,state.refs,state.cards.length);
+      state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:failed.length,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum:VALIDATED_ALPHA_MINIMUM_REFERENCES,source,sourceUrl,sourceError,failed});
+      state.ready=window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
+      setLibraryStatus(state.ready?`Bibliothèque : ${state.refs.length} cartes prêtes · moteur alpha15`:`Vision indisponible : bibliothèque dégradée (${state.refs.length}/${state.cards.length})`);
     } catch (err) {
+      state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:Math.max(0,state.cards.length-state.refs.length),cacheStatus:'error',baselineMinimum:VALIDATED_ALPHA_MINIMUM_REFERENCES,sourceError:err?.message||String(err)});
+      state.ready=false;
       setLibraryStatus(`Bibliothèque indisponible : ${err?.message||err}`);
     } finally {
       if (generation===state.generation) state.loading=false;
@@ -2314,7 +2322,7 @@ function applyQualityGuard(result,quality) {
 
   async function startProductIdentification() {
     if (state.ready && state.matcherWorkerReady) {
-      return {ready:true,cards:state.refs.length,workerReady:true};
+      return {ready:true,cards:state.refs.length,workerReady:true,integrity:state.libraryIntegrity};
     }
     if (productStartPromise) return productStartPromise;
 
@@ -2326,7 +2334,8 @@ function applyQualityGuard(result,quality) {
         ready:Boolean(state.ready),
         cards:state.refs.length,
         workerReady:Boolean(state.matcherWorkerReady),
-        error:state.matcherWorkerError || null
+        error:state.matcherWorkerError || null,
+        integrity:state.libraryIntegrity
       };
       window.dispatchEvent(new CustomEvent('tcg-identification-library',{detail}));
       return detail;
@@ -2373,6 +2382,7 @@ function applyQualityGuard(result,quality) {
         enabled: Boolean(ui.toggle?.checked),
         libraryReady: state.ready,
         librarySize: state.refs.length,
+        libraryIntegrity: state.libraryIntegrity,
         matcherMs: Number(state.lastMatcherMs || 0),
         matcherTiming: state.lastMatcherTiming ? { ...state.lastMatcherTiming } : null,
         matcherWorker: {
