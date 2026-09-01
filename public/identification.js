@@ -8,6 +8,8 @@
   const REMOTE_DB = 'https://raw.githubusercontent.com/maximelaburthe-commits/cyberpunk_cards/main/cards.json';
   const REMOTE_IMAGE_BASE = 'https://raw.githubusercontent.com/maximelaburthe-commits/cyberpunk_cards/main/images/';
   const FALLBACK_DB = '/cards-fallback.json';
+  const STABLE_SOURCE_BASE = '/assets/card-db/cyberpunk/0.7.0-6d3a296';
+  const STABLE_SOURCE_MANIFEST = `${STABLE_SOURCE_BASE}/vision-source-manifest.json`;
   // Temporary Alpha minimum: UZJMMX physically validated 141 references.
   // It is intentionally a floor, so a future larger catalogue remains valid.
   const VALIDATED_ALPHA_MINIMUM_REFERENCES = 141;
@@ -58,6 +60,8 @@
     cards: [],
     refs: [],
     libraryIntegrity: null,
+    sourceRef: null,
+    sourceAssetBase: null,
     lastTrackUid: null,
     lastIdentifiedAt: 0,
     hoverTimer: null,
@@ -127,10 +131,13 @@
   };
 
   function imageUrl(card) {
-    return REMOTE_IMAGE_BASE + encodeURIComponent(card.image).replace(/%2F/g, '/');
+    return card?.imageUrl || REMOTE_IMAGE_BASE + encodeURIComponent(card.image).replace(/%2F/g, '/');
   }
 
   function hdUrlFromImage(image) {
+    const card=state.cards.find(item=>item.image===image);
+    if(card?.imageUrl)return card.imageUrl;
+    if(state.sourceAssetBase&&String(image||'').startsWith('assets/'))return `${state.sourceAssetBase}/${String(image).replace(/^\/+/, '')}`;
     return REMOTE_IMAGE_BASE + encodeURIComponent(image || '').replace(/%2F/g, '/');
   }
 
@@ -896,36 +903,43 @@
     return createImageBitmap(blob);
   }
 
-  function fingerprint(cards) {
+  function fingerprint(cards,sourceRef) {
     if (!cards.length) return 'empty';
-    return `v5-fast:${cards.length}:${cards[0]?.image||''}:${cards[cards.length-1]?.image||''}`;
+    return `v5-fast:${sourceRef||'unknown'}:${cards.length}:${cards[0]?.image||''}:${cards[cards.length-1]?.image||''}`;
   }
 
-  function loadCache(fp, sourceCount) {
+  function loadCache(fp, sourceCount, sourceRef) {
     try {
       const raw=localStorage.getItem(CACHE_KEY);
       const data=raw ? JSON.parse(raw) : null;
-      return window.TCGateVisionLibraryIntegrity.validateCache(data,{fingerprint:fp,sourceCount});
+      return window.TCGateVisionLibraryIntegrity.validateCache(data,{fingerprint:fp,sourceCount,sourceRef});
     } catch { return {status:'invalid-json',refs:null,sourceCount:null,librarySize:null}; }
   }
 
-  function saveCache(fp, refs, sourceCount) {
+  function saveCache(fp, refs, sourceCount, sourceRef) {
     try {
-      localStorage.setItem(CACHE_KEY,JSON.stringify({fingerprint:fp,sourceCount,librarySize:refs.length,refs}));
+      localStorage.setItem(CACHE_KEY,JSON.stringify({fingerprint:fp,sourceRef,sourceCount,librarySize:refs.length,refs}));
     } catch {}
   }
 
   async function loadCardList() {
     try {
-      const r=await fetch(REMOTE_DB,{cache:'no-cache'});
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const data=await r.json();
-      if (!Array.isArray(data) || !data.length) throw new Error('Liste vide');
-      return {cards:data,source:'GitHub mutable main',sourceUrl:REMOTE_DB,sourceError:null};
-    } catch (err) {
-      const r=await fetch(FALLBACK_DB,{cache:'no-cache'});
-      if (!r.ok) throw err;
-      return {cards:await r.json(),source:'fallback local',sourceUrl:FALLBACK_DB,sourceError:err?.message||String(err)};
+      const manifestResponse=await fetch(STABLE_SOURCE_MANIFEST,{cache:'no-cache'});
+      if(!manifestResponse.ok)throw new Error(`Manifest HTTP ${manifestResponse.status}`);
+      const manifest=await manifestResponse.json();
+      if(!manifest.sourceImmutable||!/^[0-9a-f]{40}$/i.test(manifest.sourceRef||''))throw new Error('Source Alpha non immuable');
+      const indexUrl=`${STABLE_SOURCE_BASE}/${manifest.referenceIndex}`;
+      const indexResponse=await fetch(indexUrl,{cache:'no-cache'});
+      if(!indexResponse.ok)throw new Error(`Index HTTP ${indexResponse.status}`);
+      const index=await indexResponse.json(),references=Array.isArray(index.references)?index.references:[];
+      if(references.length!==Number(manifest.sourceReferences)||references.length<VALIDATED_ALPHA_MINIMUM_REFERENCES)throw new Error(`Cardinalité source invalide : ${references.length}/${manifest.sourceReferences}`);
+      const cards=references.map(ref=>({name:ref.name,type:ref.type||'',image:ref.visionAssetPath||ref.referenceImageUrl,imageUrl:`${STABLE_SOURCE_BASE}/${ref.visionAssetPath||ref.referenceImageUrl}`}));
+      return {cards,source:'TCGate same-origin versioned snapshot',sourceUrl:STABLE_SOURCE_MANIFEST,sourceRef:manifest.sourceRef,sourceImmutable:true,sourceAssetBase:STABLE_SOURCE_BASE,sourceError:null};
+    } catch (stableError) {
+      try{
+        const remote=await fetch(REMOTE_DB,{cache:'no-cache'});if(!remote.ok)throw new Error(`HTTP ${remote.status}`);const cards=await remote.json();if(!Array.isArray(cards)||!cards.length)throw new Error('Liste vide');
+        return {cards,source:'legacy GitHub mutable fallback',sourceUrl:REMOTE_DB,sourceRef:'main',sourceImmutable:false,sourceAssetBase:null,sourceError:stableError?.message||String(stableError)};
+      }catch(legacyError){const local=await fetch(FALLBACK_DB,{cache:'no-cache'});if(!local.ok)throw stableError;return {cards:await local.json(),source:'fallback local degraded',sourceUrl:FALLBACK_DB,sourceRef:'local-fallback',sourceImmutable:false,sourceAssetBase:null,sourceError:`${stableError?.message||stableError}; ${legacyError?.message||legacyError}`};}
     }
   }
 
@@ -937,16 +951,17 @@
     setLibraryStatus('Bibliothèque : construction des références visuelles…');
 
     try {
-      const {cards,source,sourceUrl,sourceError}=await loadCardList();
+      const {cards,source,sourceUrl,sourceRef,sourceImmutable,sourceAssetBase,sourceError}=await loadCardList();
+      state.sourceRef=sourceRef;state.sourceAssetBase=sourceAssetBase;
       state.cards=cards.filter(c=>c?.name&&c?.image);
-      const fp=fingerprint(state.cards);
+      const fp=fingerprint(state.cards,sourceRef);
       let cache={status:force?'bypassed':'miss',refs:null,sourceCount:null,librarySize:null};
 
       if (!force) {
-        cache=loadCache(fp,state.cards.length);
+        cache=loadCache(fp,state.cards.length,sourceRef);
         if (cache.status==='hit') {
           state.refs=cache.refs;
-          state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:0,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum:VALIDATED_ALPHA_MINIMUM_REFERENCES,source,sourceUrl,sourceError});
+          state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:0,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum:VALIDATED_ALPHA_MINIMUM_REFERENCES,source,sourceUrl,sourceRef,sourceImmutable,sourceError});
           state.ready=window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
           state.loading=false;
           setLibraryStatus(state.ready?`Bibliothèque : ${state.refs.length} cartes · cache alpha15`:`Vision indisponible : bibliothèque dégradée (${state.refs.length}/${state.cards.length})`);
@@ -986,8 +1001,8 @@
 
       state.refs=refs.filter(Boolean);
       const failed=state.cards.filter((_,index)=>!refs[index]).map(card=>({name:card.name,image:card.image}));
-      saveCache(fp,state.refs,state.cards.length);
-      state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:failed.length,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum:VALIDATED_ALPHA_MINIMUM_REFERENCES,source,sourceUrl,sourceError,failed});
+      saveCache(fp,state.refs,state.cards.length,sourceRef);
+      state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:failed.length,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum:VALIDATED_ALPHA_MINIMUM_REFERENCES,source,sourceUrl,sourceRef,sourceImmutable,sourceError,failed});
       state.ready=window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
       setLibraryStatus(state.ready?`Bibliothèque : ${state.refs.length} cartes prêtes · moteur alpha15`:`Vision indisponible : bibliothèque dégradée (${state.refs.length}/${state.cards.length})`);
     } catch (err) {

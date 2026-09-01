@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "gameId": "cyberpunk-tcg",
+  "databaseVersion": "0.7.0",
+  "sourceRepository": "maximelaburthe-commits/tcgate_db_cyberpunk",
+  "sourceRef": "6d3a296724838265a75008f2b64b37e945cd1351",
+  "sourceImmutable": true,
+  "distribution": "tcgate-same-origin-versioned-snapshot",
+  "referenceIndex": "canonical-vision-index.json",
+  "assetBase": "",
+  "sourceReferences": 147,
+  "recognitionProfileId": "cyberpunk-v5-fast-72x108"
+}
