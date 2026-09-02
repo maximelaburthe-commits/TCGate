@@ -523,6 +523,8 @@ function setVisionStateStatus(snapshot=null) {
 }
 
 const VISION_ASSETS = [
+  '/game-databases.js',
+  '/database-source.js',
   '/vision-library-integrity.js',
   '/vision-core.js',
   '/vision-calibration.js',
@@ -1346,6 +1348,10 @@ function syncIdentifiedCardUi(detail) {
   }
 
   const card={
+    cardId:detail.cardId||null,
+    printingId:detail.printingId||null,
+    refId:detail.refId||null,
+    variantKind:detail.variantKind||null,
     name:detail.name,
     type:detail.type,
     image:detail.image,
@@ -1376,6 +1382,10 @@ function syncMemoryVisibleCard() {
   const visible=snap?.visibleIdentity || null;
   if(!visible?.accepted || !visible?.imageUrl) return;
   presentIdentifiedCard({
+    cardId:visible.cardId||null,
+    printingId:visible.printingId||null,
+    refId:visible.refId||null,
+    variantKind:visible.variantKind||null,
     name:visible.name,
     type:visible.type,
     image:visible.image,
@@ -4632,6 +4642,8 @@ window.addEventListener('tcg-identification-visible',(event)=>{
   const visible=event.detail || null;
   if(!visible?.accepted || !visible?.imageUrl) return;
   presentIdentifiedCard({
+    cardId:visible.cardId||null, printingId:visible.printingId||null,
+    refId:visible.refId||null, variantKind:visible.variantKind||null,
     name:visible.name, type:visible.type, image:visible.image, imageUrl:visible.imageUrl,
     visualIndex:null, mode:visible.mode||'memory-hover', matcherMs:0
   });

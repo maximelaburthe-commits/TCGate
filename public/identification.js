@@ -15,7 +15,7 @@
   const VALIDATED_ALPHA_MINIMUM_REFERENCES = 141;
 
   // New cache key is intentional: alpha1/2 descriptors are incompatible.
-  const CACHE_KEY = 'tcg-cyberpunk-ident-cache-template-v5-fast';
+  const CACHE_KEY = 'tcg-cyberpunk-db-v1-ident-cache-template-v5-fast';
 
   // Reference resolution. Low enough for 120-card comparisons to remain immediate,
   // high enough to keep illustration structure and text/layout edges.
@@ -62,6 +62,7 @@
     libraryIntegrity: null,
     sourceRef: null,
     sourceAssetBase: null,
+    databaseInfo: null,
     lastTrackUid: null,
     lastIdentifiedAt: 0,
     hoverTimer: null,
@@ -132,6 +133,10 @@
 
   function imageUrl(card) {
     return card?.imageUrl || REMOTE_IMAGE_BASE + encodeURIComponent(card.image).replace(/%2F/g, '/');
+  }
+
+  function referenceImageUrl(card) {
+    return card?.referenceImageUrl || card?.image || imageUrl(card);
   }
 
   function hdUrlFromImage(image) {
@@ -922,7 +927,7 @@
     } catch {}
   }
 
-  async function loadCardList() {
+  async function loadFallbackSnapshotCardList() {
     try {
       const manifestResponse=await fetch(STABLE_SOURCE_MANIFEST,{cache:'no-cache'});
       if(!manifestResponse.ok)throw new Error(`Manifest HTTP ${manifestResponse.status}`);
@@ -943,6 +948,55 @@
     }
   }
 
+  async function loadCardList() {
+    try {
+      const database=await window.TCGateDatabaseSource.load('cyberpunk');
+      const manifest=database.manifest;
+      const cards=database.references.map(reference=>{
+        const canonical=database.cardsById.get(reference.cardId);
+        return {
+          ...canonical,
+          refId:reference.refId,
+          cardId:reference.cardId,
+          printingId:reference.printingId,
+          variantKind:reference.variantKind||reference.variant_kind||null,
+          recognition:reference.recognition,
+          candidatePrintingIds:Array.isArray(reference.candidatePrintingIds)?[...reference.candidatePrintingIds]:[],
+          name:canonical.name,
+          type:canonical.type||'',
+          image:reference.imageUrl,
+          referenceImageUrl:reference.imageUrl,
+          imageUrl:reference.displayImageUrl||reference.displayAssetPath
+        };
+      });
+      return {
+        cards,
+        source:'TCGate private DB gateway',
+        sourceUrl:'/api/db/cyberpunk/manifest',
+        sourceRef:manifest.sourceRef,
+        sourceImmutable:true,
+        sourceAssetBase:null,
+        sourceError:null,
+        databaseInfo:manifest
+      };
+    } catch (gatewayError) {
+      const fallback=await loadFallbackSnapshotCardList();
+      return {
+        ...fallback,
+        sourceError:null,
+        databaseInfo:{
+          game:'cyberpunk',
+          databaseVersion:null,
+          databaseStatus:null,
+          canonicalCount:0,
+          visionReferenceCount:Array.isArray(fallback.cards)?fallback.cards.length:0,
+          source:fallback.source,
+          fallbackActive:true
+        }
+      };
+    }
+  }
+
   async function buildLibrary(force=false) {
     if (state.loading) return;
     state.loading=true;
@@ -951,9 +1005,10 @@
     setLibraryStatus('Bibliothèque : construction des références visuelles…');
 
     try {
-      const {cards,source,sourceUrl,sourceRef,sourceImmutable,sourceAssetBase,sourceError}=await loadCardList();
-      state.sourceRef=sourceRef;state.sourceAssetBase=sourceAssetBase;
+      const {cards,source,sourceUrl,sourceRef,sourceImmutable,sourceAssetBase,sourceError,databaseInfo}=await loadCardList();
+      state.sourceRef=sourceRef;state.sourceAssetBase=sourceAssetBase;state.databaseInfo=databaseInfo||null;
       state.cards=cards.filter(c=>c?.name&&c?.image);
+      const baselineMinimum=VALIDATED_ALPHA_MINIMUM_REFERENCES;
       const fp=fingerprint(state.cards,sourceRef);
       let cache={status:force?'bypassed':'miss',refs:null,sourceCount:null,librarySize:null};
 
@@ -961,7 +1016,7 @@
         cache=loadCache(fp,state.cards.length,sourceRef);
         if (cache.status==='hit') {
           state.refs=cache.refs;
-          state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:0,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum:VALIDATED_ALPHA_MINIMUM_REFERENCES,source,sourceUrl,sourceRef,sourceImmutable,sourceError});
+          state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:0,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum,source,sourceUrl,sourceRef,sourceImmutable,sourceError});
           state.ready=window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
           state.loading=false;
           setLibraryStatus(state.ready?`Bibliothèque : ${state.refs.length} cartes · cache alpha15`:`Vision indisponible : bibliothèque dégradée (${state.refs.length}/${state.cards.length})`);
@@ -978,8 +1033,9 @@
           const i=cursor++;
           const card=state.cards[i];
           try {
-            const bitmap=await fetchBitmap(imageUrl(card));
+            const bitmap=await fetchBitmap(referenceImageUrl(card));
             refs[i]={
+              ...card,
               name:card.name,
               type:card.type||'',
               image:card.image,
@@ -1002,7 +1058,7 @@
       state.refs=refs.filter(Boolean);
       const failed=state.cards.filter((_,index)=>!refs[index]).map(card=>({name:card.name,image:card.image}));
       saveCache(fp,state.refs,state.cards.length,sourceRef);
-      state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:failed.length,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum:VALIDATED_ALPHA_MINIMUM_REFERENCES,source,sourceUrl,sourceRef,sourceImmutable,sourceError,failed});
+      state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:failed.length,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum,source,sourceUrl,sourceRef,sourceImmutable,sourceError,failed});
       state.ready=window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
       setLibraryStatus(state.ready?`Bibliothèque : ${state.refs.length} cartes prêtes · moteur alpha15`:`Vision indisponible : bibliothèque dégradée (${state.refs.length}/${state.cards.length})`);
     } catch (err) {
@@ -1586,6 +1642,10 @@
     setHdImageAtomic(hdUrl,result.best.ref.name);
     state.visibleIdentity={
       accepted:true,
+      cardId:result.best.ref.cardId||null,
+      printingId:result.best.ref.printingId||null,
+      refId:result.best.ref.refId||null,
+      variantKind:result.best.ref.variantKind||null,
       name:result.best.ref.name,
       type:result.best.ref.type||'Carte',
       image:result.best.ref.image,
@@ -1599,6 +1659,10 @@
     window.dispatchEvent(new CustomEvent('tcg-identification-result',{
       detail:{
         accepted:true,
+        cardId:result.best.ref.cardId||null,
+        printingId:result.best.ref.printingId||null,
+        refId:result.best.ref.refId||null,
+        variantKind:result.best.ref.variantKind||null,
         name:result.best.ref.name,
         type:result.best.ref.type || 'Carte',
         image:result.best.ref.image,
@@ -2398,6 +2462,15 @@ function applyQualityGuard(result,quality) {
         libraryReady: state.ready,
         librarySize: state.refs.length,
         libraryIntegrity: state.libraryIntegrity,
+        database: state.databaseInfo ? {
+          databaseGame: state.databaseInfo.game||null,
+          databaseVersion: state.databaseInfo.databaseVersion||null,
+          databaseStatus: state.databaseInfo.databaseStatus||null,
+          canonicalCount: Number(state.databaseInfo.canonicalCount||0),
+          visionReferenceCount: Number(state.databaseInfo.visionReferenceCount||0),
+          databaseSource: state.databaseInfo.source||null,
+          fallbackActive: Boolean(state.databaseInfo.fallbackActive)
+        } : null,
         matcherMs: Number(state.lastMatcherMs || 0),
         matcherTiming: state.lastMatcherTiming ? { ...state.lastMatcherTiming } : null,
         matcherWorker: {
@@ -2459,6 +2532,10 @@ function applyQualityGuard(result,quality) {
         identification: (result?.best && state.hoveredTrack && state.lastTrackUid === state.hoveredTrack.uid) ? {
           accepted: Boolean(result.accepted),
           best: {
+            cardId: result.best.ref?.cardId || null,
+            printingId: result.best.ref?.printingId || null,
+            refId: result.best.ref?.refId || null,
+            variantKind: result.best.ref?.variantKind || null,
             name: result.best.ref?.name || null,
             type: result.best.ref?.type || null,
             image: result.best.ref?.image || null,
