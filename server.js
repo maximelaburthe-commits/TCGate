@@ -7,7 +7,6 @@ const crypto = require('crypto');
 const os = require('os');
 const QRCode = require('./vendor/QRCode');
 const QRErrorCorrectLevel = require('./vendor/QRCode/QRErrorCorrectLevel');
-const { createDbGateway } = require('./db-gateway');
 
 const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -55,7 +54,6 @@ const TURN_CONFIGURED = Boolean(CLOUDFLARE_TURN_KEY_ID && CLOUDFLARE_TURN_API_TO
 const TURN_TTL_SECONDS = Math.max(3600, Math.min(86400, Number(process.env.TCGATE_TURN_TTL_SECONDS || 21600) || 21600));
 const ICE_TRANSPORT_POLICY = String(process.env.TCGATE_ICE_TRANSPORT_POLICY || 'all').toLowerCase() === 'relay' ? 'relay' : 'all';
 const turnCredentialCache = new Map();
-const dbGateway = createDbGateway();
 
 function securityHeaders(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -595,11 +593,6 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && pathname === '/api/health') {
       return sendJson(res, 200, { ok: true, version: VERSION });
-    }
-
-    if (pathname.startsWith('/api/db/')) {
-      await dbGateway.handle(req, res, pathname);
-      return;
     }
 
     if (req.method === 'GET' && pathname === '/phone') {

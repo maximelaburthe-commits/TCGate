@@ -7,74 +7,82 @@
   'use strict';
 
   const sessionCache = new Map();
+  const PUBLIC_RAW_ORIGIN = 'https://raw.githubusercontent.com';
 
-  async function fetchJson(fetchImpl, path) {
-    if (typeof path !== 'string' || !path.startsWith('/api/db/') || path.includes('..') || path.includes('\\')) throw new Error('Chemin DB non autorisé');
-    const response = await fetchImpl(path, { cache: 'no-cache', credentials: 'same-origin' });
-    if (!response.ok) throw new Error(`DB HTTP ${response.status}`);
-    return response.json();
+  function resolveUrl(manifestUrl, relativePath) {
+    const value=String(relativePath||'').trim();
+    if(!value||value.startsWith('/')||value.includes('\\')||value.split('/').some(part=>!part||part==='.'||part==='..'))throw new Error('Chemin DB non autorisé');
+    const base=new URL(manifestUrl),resolved=new URL(value,base);
+    const repositoryRoot=base.pathname.slice(0,base.pathname.lastIndexOf('/')+1);
+    if(resolved.origin!==PUBLIC_RAW_ORIGIN||resolved.origin!==base.origin||!resolved.pathname.startsWith(repositoryRoot))throw new Error('Origine DB non autorisée');
+    return resolved.href;
   }
 
-  function validate(config, manifest, cards, references) {
-    if (!manifest || manifest.game !== config.expectedGame) throw new Error('Manifest DB : jeu invalide');
-    if (manifest.databaseVersion !== config.expectedVersion) throw new Error('Manifest DB : version incompatible');
-    if (manifest.databaseStatus !== config.expectedStatus) throw new Error('Manifest DB : statut invalide');
-    if (!manifest.entrypoint || !manifest.visionIndex) throw new Error('Manifest DB : runtime absent');
-    if (!Array.isArray(cards) || cards.length !== config.expectedCanonicalCards) throw new Error('Runtime DB : cardinalité canonique invalide');
-    if (!Array.isArray(references) || references.length !== config.expectedVisionReferences) throw new Error('Runtime DB : cardinalité Vision invalide');
+  async function fetchJson(fetchImpl,url,metrics) {
+    const started=performance.now();
+    const response=await fetchImpl(url,{cache:'force-cache',credentials:'omit'});
+    if(!response.ok)throw new Error(`DB HTTP ${response.status} : ${url}`);
+    const text=await response.text();
+    metrics.requests+=1;metrics.bytes+=new TextEncoder().encode(text).length;metrics.resources[url]=performance.now()-started;
+    return JSON.parse(text);
+  }
 
-    const cardsById = new Map();
-    for (const card of cards) {
-      if (!card || typeof card.cardId !== 'string' || !card.cardId || cardsById.has(card.cardId)) throw new Error('Runtime DB : cardId invalide ou dupliqué');
-      cardsById.set(card.cardId, Object.freeze({ ...card }));
-    }
-    const printingIds = new Set();
-    const normalizedReferences = references.map(reference => {
-      if (!reference || typeof reference.refId !== 'string' || typeof reference.printingId !== 'string' || !cardsById.has(reference.cardId)) throw new Error('Runtime DB : référence Vision orpheline');
-      if (printingIds.has(reference.printingId)) throw new Error('Runtime DB : printingId dupliqué');
-      if (!String(reference.imageUrl || '').startsWith('/api/db/') || !String(reference.displayImageUrl || reference.displayAssetPath || '').startsWith('/api/db/')) throw new Error('Runtime DB : asset non same-origin');
-      printingIds.add(reference.printingId);
-      return Object.freeze({ ...reference });
+  function validate(config,manifest,databaseManifest,cards,printings,canonicalIndex,printingIndex,groupsIndex) {
+    const gameId=manifest.game_id||manifest.game;
+    const databaseVersion=manifest.database_version||manifest.databaseVersion;
+    const databaseStatus=manifest.database_status||databaseManifest?.database_status||databaseManifest?.status;
+    if(gameId!==config.expectedGame)throw new Error('Manifest DB : jeu invalide');
+    if(databaseVersion!==config.expectedVersion)throw new Error('Manifest DB : version incompatible');
+    if(databaseStatus!==config.expectedStatus)throw new Error('Manifest DB : statut invalide');
+    if(!Array.isArray(cards)||cards.length!==config.expectedCanonicalCards)throw new Error('Runtime DB : cardinalité canonique invalide');
+    if(!Array.isArray(printings)||printings.length!==config.expectedOfficialPrintings)throw new Error('Runtime DB : cardinalité impressions invalide');
+    const canonicalReferences=canonicalIndex?.references;
+    const recognitionGroups=groupsIndex?.recognitionGroups;
+    const printingCards=printingIndex?.cards;
+    if(!Array.isArray(canonicalReferences)||canonicalReferences.length!==cards.length)throw new Error('Runtime DB : index Vision canonique invalide');
+    if(!Array.isArray(recognitionGroups)||!recognitionGroups.length||!Array.isArray(printingCards))throw new Error('Runtime DB : groupes de reconnaissance invalides');
+
+    const cardsById=new Map(),printingsById=new Map(),richGroups=new Map();
+    for(const card of cards){if(!card?.cardId||cardsById.has(card.cardId))throw new Error('Runtime DB : cardId invalide ou dupliqué');cardsById.set(card.cardId,Object.freeze({...card}));}
+    for(const printing of printings){if(!printing?.printingId||printingsById.has(printing.printingId)||!cardsById.has(printing.cardId))throw new Error('Runtime DB : impression invalide ou orpheline');printingsById.set(printing.printingId,Object.freeze({...printing}));}
+    for(const cardEntry of printingCards)for(const group of cardEntry?.recognitionGroups||[]){if(group?.recognitionGroupId)richGroups.set(group.recognitionGroupId,group);}
+
+    const references=recognitionGroups.map(group=>{
+      const canonical=cardsById.get(group.cardId),rich=richGroups.get(group.recognitionGroupId);
+      const candidatePrintingIds=Array.isArray(group.candidatePrintingIds)?group.candidatePrintingIds:Array.isArray(group.printingIds)?group.printingIds:[];
+      if(!canonical||!rich||!candidatePrintingIds.length||candidatePrintingIds.some(id=>printingsById.get(id)?.cardId!==group.cardId))throw new Error('Runtime DB : groupe orphelin');
+      const sourceReference=(rich.references||[]).find(ref=>candidatePrintingIds.includes(ref.printingId)&&ref.visionAssetPath);
+      if(!sourceReference)throw new Error('Runtime DB : groupe sans asset Vision');
+      const exact=group.mode==='exact'&&candidatePrintingIds.length===1;
+      const printing=printingsById.get(exact?candidatePrintingIds[0]:canonical.primaryPrintingId)||printingsById.get(sourceReference.printingId);
+      const referenceImageUrl=resolveUrl(config.manifestUrl,sourceReference.visionAssetPath||sourceReference.referenceImageUrl);
+      const displayImageUrl=resolveUrl(config.manifestUrl,printing.displayAssetPath||printing.imageUrl);
+      return Object.freeze({refId:group.recognitionGroupId,recognitionGroupId:group.recognitionGroupId,cardId:group.cardId,printingId:exact?candidatePrintingIds[0]:null,candidatePrintingIds:Object.freeze([...candidatePrintingIds]),recognitionMode:group.mode,variantKind:exact?printing.variantKind:null,referenceImageUrl,imageUrl:referenceImageUrl,displayImageUrl,displayAssetPath:displayImageUrl,recognition:Object.freeze({eligible:true,mode:group.mode,recognitionGroupId:group.recognitionGroupId})});
     });
-    return Object.freeze({
-      manifest: Object.freeze({ ...manifest }),
-      cards: Object.freeze([...cardsById.values()]),
-      cardsById,
-      references: Object.freeze(normalizedReferences),
-      printingIds
-    });
+    const coveredCards=new Set(references.map(reference=>reference.cardId));
+    if(coveredCards.size!==cards.length)throw new Error('Runtime DB : couverture canonique incomplète');
+    return Object.freeze({manifest:Object.freeze({game:'cyberpunk',gameId,databaseVersion,databaseStatus,sourceRef:databaseVersion,canonicalCount:cards.length,printingCount:printings.length,visionReferenceCount:references.length,recognitionGroupCount:recognitionGroups.length,source:'public-github-direct',fallbackActive:false}),cards:Object.freeze([...cardsById.values()]),printings:Object.freeze([...printingsById.values()]),cardsById,printingsById,references:Object.freeze(references),recognitionGroups:Object.freeze(recognitionGroups.map(group=>Object.freeze({...group})))});
   }
 
-  async function loadUncached(game, fetchImpl) {
-    const config = configApi?.get?.(game);
-    if (!config) throw new Error(`DB inconnue : ${game}`);
-    const manifest = await fetchJson(fetchImpl, config.manifestUrl);
-    const [cards, references] = await Promise.all([
-      fetchJson(fetchImpl, manifest.entrypoint),
-      fetchJson(fetchImpl, manifest.visionIndex)
-    ]);
-    return validate(config, manifest, cards, references);
+  async function loadUncached(game,fetchImpl) {
+    const config=configApi?.get?.(game);if(!config)throw new Error(`DB inconnue : ${game}`);
+    const metrics={requests:0,bytes:0,resources:{},startedAt:performance.now()};
+    const manifest=await fetchJson(fetchImpl,config.manifestUrl,metrics);
+    const paths={databaseManifest:manifest.database_manifest,cards:manifest.entrypoint||manifest.runtime_cards,printings:manifest.runtime_printings,canonical:manifest.canonical_vision_index,printingRecognition:manifest.printing_recognition_index,groups:manifest.recognition_groups};
+    if(Object.values(paths).some(path=>!path))throw new Error('Manifest DB : runtime absent');
+    const urls=Object.fromEntries(Object.entries(paths).map(([key,path])=>[key,resolveUrl(config.manifestUrl,path)]));
+    const [databaseManifest,cards,printings,canonicalIndex,printingIndex,groupsIndex]=await Promise.all([fetchJson(fetchImpl,urls.databaseManifest,metrics),fetchJson(fetchImpl,urls.cards,metrics),fetchJson(fetchImpl,urls.printings,metrics),fetchJson(fetchImpl,urls.canonical,metrics),fetchJson(fetchImpl,urls.printingRecognition,metrics),fetchJson(fetchImpl,urls.groups,metrics)]);
+    const database=validate(config,manifest,databaseManifest,cards,printings,canonicalIndex,printingIndex,groupsIndex);
+    return Object.freeze({...database,metrics:Object.freeze({...metrics,resources:Object.freeze({...metrics.resources}),totalMs:performance.now()-metrics.startedAt})});
   }
 
-  function load(game, options = {}) {
-    const key = String(game || '');
-    const fetchImpl = options.fetchImpl || globalThis.fetch;
-    if (typeof fetchImpl !== 'function') return Promise.reject(new Error('Fetch indisponible'));
-    if (options.force) sessionCache.delete(key);
-    if (!sessionCache.has(key)) {
-      const promise = loadUncached(key, fetchImpl).catch(error => {
-        sessionCache.delete(key);
-        throw error;
-      });
-      sessionCache.set(key, promise);
-    }
+  function load(game,options={}) {
+    const key=String(game||''),fetchImpl=options.fetchImpl||globalThis.fetch;
+    if(typeof fetchImpl!=='function')return Promise.reject(new Error('Fetch indisponible'));
+    if(options.force)sessionCache.delete(key);
+    if(!sessionCache.has(key)){const promise=loadUncached(key,fetchImpl).catch(error=>{sessionCache.delete(key);throw error;});sessionCache.set(key,promise);}
     return sessionCache.get(key);
   }
-
-  function clear(game) {
-    if (game == null) sessionCache.clear();
-    else sessionCache.delete(String(game));
-  }
-
-  return Object.freeze({ load, clear, validate, fetchJson });
+  function clear(game){if(game==null)sessionCache.clear();else sessionCache.delete(String(game));}
+  return Object.freeze({load,clear,validate,resolveUrl});
 });

@@ -7,12 +7,12 @@
 
   const databases = Object.freeze({
     cyberpunk: Object.freeze({
-      manifestUrl: '/api/db/cyberpunk/manifest',
-      expectedGame: 'cyberpunk',
+      manifestUrl: 'https://raw.githubusercontent.com/maximelaburthe-commits/tcgate_db_cyberpunk/main/manifest.json',
+      expectedGame: 'cyberpunk-tcg',
       expectedVersion: '1.0.0',
       expectedStatus: 'production-reviewed',
       expectedCanonicalCards: 150,
-      expectedVisionReferences: 444
+      expectedOfficialPrintings: 444
     })
   });
 

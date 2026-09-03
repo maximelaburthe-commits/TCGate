@@ -5,8 +5,6 @@
   const lab = window.TCGDetectionLab;
   if (!lab) return;
 
-  const REMOTE_DB = 'https://raw.githubusercontent.com/maximelaburthe-commits/cyberpunk_cards/main/cards.json';
-  const REMOTE_IMAGE_BASE = 'https://raw.githubusercontent.com/maximelaburthe-commits/cyberpunk_cards/main/images/';
   const FALLBACK_DB = '/cards-fallback.json';
   const STABLE_SOURCE_BASE = '/assets/card-db/cyberpunk/0.7.0-6d3a296';
   const STABLE_SOURCE_MANIFEST = `${STABLE_SOURCE_BASE}/vision-source-manifest.json`;
@@ -63,6 +61,7 @@
     sourceRef: null,
     sourceAssetBase: null,
     databaseInfo: null,
+    libraryPerformance: null,
     lastTrackUid: null,
     lastIdentifiedAt: 0,
     hoverTimer: null,
@@ -132,7 +131,9 @@
   };
 
   function imageUrl(card) {
-    return card?.imageUrl || REMOTE_IMAGE_BASE + encodeURIComponent(card.image).replace(/%2F/g, '/');
+    if(card?.imageUrl)return card.imageUrl;
+    if(state.sourceAssetBase&&String(card?.image||'').startsWith('assets/'))return `${state.sourceAssetBase}/${String(card.image).replace(/^\/+/, '')}`;
+    return '';
   }
 
   function referenceImageUrl(card) {
@@ -143,7 +144,7 @@
     const card=state.cards.find(item=>item.image===image);
     if(card?.imageUrl)return card.imageUrl;
     if(state.sourceAssetBase&&String(image||'').startsWith('assets/'))return `${state.sourceAssetBase}/${String(image).replace(/^\/+/, '')}`;
-    return REMOTE_IMAGE_BASE + encodeURIComponent(image || '').replace(/%2F/g, '/');
+    return '';
   }
 
   function preloadHdUrl(url) {
@@ -193,10 +194,12 @@
       state.handoffTelemetry.lastCommitAt = new Date().toISOString();
       return;
     }
-    ui.image.style.visibility='hidden';
+    const keepCurrentVisible=ui.image.complete&&ui.image.naturalWidth>0&&ui.image.style.visibility!=='hidden';
+    if(!keepCurrentVisible)ui.image.style.visibility='hidden';
     ui.image.dataset.swapPending='1';
-    preloadHdUrl(url).then(()=>{
+    preloadHdUrl(url).then(loaded=>{
       if (seq!==state.imageSwapSeq) return;
+      if(!loaded){ui.image.dataset.swapPending='0';return;}
       ui.image.src=url;
       ui.image.dataset.cardUrl=url;
       ui.image.alt=alt;
@@ -941,10 +944,8 @@
       const cards=references.map(ref=>({name:ref.name,type:ref.type||'',image:ref.visionAssetPath||ref.referenceImageUrl,imageUrl:`${STABLE_SOURCE_BASE}/${ref.visionAssetPath||ref.referenceImageUrl}`}));
       return {cards,source:'TCGate same-origin versioned snapshot',sourceUrl:STABLE_SOURCE_MANIFEST,sourceRef:manifest.sourceRef,sourceImmutable:true,sourceAssetBase:STABLE_SOURCE_BASE,sourceError:null};
     } catch (stableError) {
-      try{
-        const remote=await fetch(REMOTE_DB,{cache:'no-cache'});if(!remote.ok)throw new Error(`HTTP ${remote.status}`);const cards=await remote.json();if(!Array.isArray(cards)||!cards.length)throw new Error('Liste vide');
-        return {cards,source:'legacy GitHub mutable fallback',sourceUrl:REMOTE_DB,sourceRef:'main',sourceImmutable:false,sourceAssetBase:null,sourceError:stableError?.message||String(stableError)};
-      }catch(legacyError){const local=await fetch(FALLBACK_DB,{cache:'no-cache'});if(!local.ok)throw stableError;return {cards:await local.json(),source:'fallback local degraded',sourceUrl:FALLBACK_DB,sourceRef:'local-fallback',sourceImmutable:false,sourceAssetBase:null,sourceError:`${stableError?.message||stableError}; ${legacyError?.message||legacyError}`};}
+      const local=await fetch(FALLBACK_DB,{cache:'no-cache'});if(!local.ok)throw stableError;
+      return {cards:await local.json(),source:'fallback local degraded',sourceUrl:FALLBACK_DB,sourceRef:'local-fallback',sourceImmutable:false,sourceAssetBase:null,sourceError:stableError?.message||String(stableError)};
     }
   }
 
@@ -964,22 +965,22 @@
           candidatePrintingIds:Array.isArray(reference.candidatePrintingIds)?[...reference.candidatePrintingIds]:[],
           name:canonical.name,
           type:canonical.type||'',
-          image:reference.imageUrl,
-          referenceImageUrl:reference.imageUrl,
+          image:reference.refId,
+          referenceImageUrl:reference.referenceImageUrl,
           imageUrl:reference.displayImageUrl||reference.displayAssetPath
         };
       });
       return {
         cards,
-        source:'TCGate private DB gateway',
-        sourceUrl:'/api/db/cyberpunk/manifest',
+        source:'TCGate public DB direct',
+        sourceUrl:window.TCGateGameDatabases.get('cyberpunk').manifestUrl,
         sourceRef:manifest.sourceRef,
         sourceImmutable:true,
         sourceAssetBase:null,
         sourceError:null,
-        databaseInfo:manifest
+        databaseInfo:{...manifest,loadMetrics:database.metrics||null}
       };
-    } catch (gatewayError) {
+    } catch (databaseError) {
       const fallback=await loadFallbackSnapshotCardList();
       return {
         ...fallback,
@@ -991,6 +992,7 @@
           canonicalCount:0,
           visionReferenceCount:Array.isArray(fallback.cards)?fallback.cards.length:0,
           source:fallback.source,
+          remoteError:databaseError?.message||String(databaseError),
           fallbackActive:true
         }
       };
@@ -1002,6 +1004,7 @@
     state.loading=true;
     state.ready=false;
     const generation=++state.generation;
+    const readyStartedAt=performance.now();
     setLibraryStatus('Bibliothèque : construction des références visuelles…');
 
     try {
@@ -1018,6 +1021,7 @@
           state.refs=cache.refs;
           state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:0,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum,source,sourceUrl,sourceRef,sourceImmutable,sourceError});
           state.ready=window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
+          state.libraryPerformance={source,cacheStatus:'hit',databaseLoadMs:Number(databaseInfo?.loadMetrics?.totalMs||0),descriptorBuildMs:0,totalReadyMs:performance.now()-readyStartedAt,referenceCount:state.refs.length,networkRequests:Number(databaseInfo?.loadMetrics?.requests||0),networkBytes:Number(databaseInfo?.loadMetrics?.bytes||0)};
           state.loading=false;
           setLibraryStatus(state.ready?`Bibliothèque : ${state.refs.length} cartes · cache alpha15`:`Vision indisponible : bibliothèque dégradée (${state.refs.length}/${state.cards.length})`);
           return;
@@ -1025,6 +1029,7 @@
       }
 
       const refs=new Array(state.cards.length);
+      const descriptorStartedAt=performance.now();
       let cursor=0,done=0;
       const workers=Math.min(6,state.cards.length);
 
@@ -1060,6 +1065,7 @@
       saveCache(fp,state.refs,state.cards.length,sourceRef);
       state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:failed.length,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum,source,sourceUrl,sourceRef,sourceImmutable,sourceError,failed});
       state.ready=window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
+      state.libraryPerformance={source,cacheStatus:cache.status,databaseLoadMs:Number(databaseInfo?.loadMetrics?.totalMs||0),descriptorBuildMs:performance.now()-descriptorStartedAt,totalReadyMs:performance.now()-readyStartedAt,referenceCount:state.refs.length,networkRequests:Number(databaseInfo?.loadMetrics?.requests||0)+state.cards.length,networkBytes:Number(databaseInfo?.loadMetrics?.bytes||0)};
       setLibraryStatus(state.ready?`Bibliothèque : ${state.refs.length} cartes prêtes · moteur alpha15`:`Vision indisponible : bibliothèque dégradée (${state.refs.length}/${state.cards.length})`);
     } catch (err) {
       state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:Math.max(0,state.cards.length-state.refs.length),cacheStatus:'error',baselineMinimum:VALIDATED_ALPHA_MINIMUM_REFERENCES,sourceError:err?.message||String(err)});
@@ -1244,6 +1250,16 @@
     }));
   }
 
+  function rehydrateWorkerResult(result) {
+    if(!result)return result;
+    const refsByImage=new Map(state.refs.map(ref=>[ref.image,ref]));
+    const hydrate=item=>{if(item?.ref){const full=refsByImage.get(item.ref.image);if(full)item.ref=full;}return item;};
+    hydrate(result.best);hydrate(result.second);
+    for(const item of result.ranked||[])hydrate(item);
+    for(const item of result.normalCandidates||[])hydrate(item);
+    return result;
+  }
+
   function closeQueuedBitmap(task) {
     try { task?.bitmap?.close?.(); } catch {}
   }
@@ -1368,7 +1384,7 @@
             if (msg.type==='match-error') {
               task.reject(new Error(msg.error||'Erreur matcher worker'));
             } else {
-              const result=msg.result||null;
+              const result=rehydrateWorkerResult(msg.result||null);
               if (result?.timing) {
                 result.timing.roundTripMs=roundTripMs;
                 result.timing.queueMs=queueMs;
@@ -1604,16 +1620,12 @@
     }).join('<br>');
 
     if (!result.accepted) {
-      state.visibleIdentity=null;
-      hideHdImageForHandoff();
-      ui.result?.classList.add('hidden');
-      ui.empty?.classList.remove('hidden');
+      const retained=Boolean(state.visibleIdentity?.accepted&&ui.image?.dataset.cardUrl);
+      if(!retained){state.visibleIdentity=null;hideHdImageForHandoff();ui.result?.classList.add('hidden');ui.empty?.classList.remove('hidden');}
       const glare=result.rejectionReason?.startsWith('glare')
         ? ' · reflet détecté'
         : '';
-      ui.empty.textContent=`Identification incertaine${glare} · meilleur indice ${bestIndex}/100`;
-      ui.candidates.innerHTML=ranked;
-      ui.candidates.classList.remove('hidden');
+      if(!retained){ui.empty.textContent=`Identification incertaine${glare} · meilleur indice ${bestIndex}/100`;ui.candidates.innerHTML=ranked;ui.candidates.classList.remove('hidden');}
 
       window.dispatchEvent(new CustomEvent('tcg-identification-result',{
         detail:{
@@ -1645,6 +1657,9 @@
       cardId:result.best.ref.cardId||null,
       printingId:result.best.ref.printingId||null,
       refId:result.best.ref.refId||null,
+      recognitionGroupId:result.best.ref.recognitionGroupId||null,
+      candidatePrintingIds:Array.isArray(result.best.ref.candidatePrintingIds)?[...result.best.ref.candidatePrintingIds]:[],
+      recognitionMode:result.best.ref.recognitionMode||null,
       variantKind:result.best.ref.variantKind||null,
       name:result.best.ref.name,
       type:result.best.ref.type||'Carte',
@@ -1662,6 +1677,9 @@
         cardId:result.best.ref.cardId||null,
         printingId:result.best.ref.printingId||null,
         refId:result.best.ref.refId||null,
+        recognitionGroupId:result.best.ref.recognitionGroupId||null,
+        candidatePrintingIds:Array.isArray(result.best.ref.candidatePrintingIds)?[...result.best.ref.candidatePrintingIds]:[],
+        recognitionMode:result.best.ref.recognitionMode||null,
         variantKind:result.best.ref.variantKind||null,
         name:result.best.ref.name,
         type:result.best.ref.type || 'Carte',
@@ -2467,10 +2485,13 @@ function applyQualityGuard(result,quality) {
           databaseVersion: state.databaseInfo.databaseVersion||null,
           databaseStatus: state.databaseInfo.databaseStatus||null,
           canonicalCount: Number(state.databaseInfo.canonicalCount||0),
+          printingCount: Number(state.databaseInfo.printingCount||0),
           visionReferenceCount: Number(state.databaseInfo.visionReferenceCount||0),
+          recognitionGroupCount: Number(state.databaseInfo.recognitionGroupCount||0),
           databaseSource: state.databaseInfo.source||null,
           fallbackActive: Boolean(state.databaseInfo.fallbackActive)
         } : null,
+        libraryPerformance: state.libraryPerformance ? { ...state.libraryPerformance } : null,
         matcherMs: Number(state.lastMatcherMs || 0),
         matcherTiming: state.lastMatcherTiming ? { ...state.lastMatcherTiming } : null,
         matcherWorker: {

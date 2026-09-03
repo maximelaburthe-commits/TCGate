@@ -21,8 +21,7 @@ Après déploiement :
 
 Laisser `TCGATE_ICE_TRANSPORT_POLICY=all` en utilisation normale.
 
-# Cyberpunk DB privée
+# Cyberpunk DB publique
 
-Définir `TCGATE_DB_GITHUB_TOKEN` dans les variables du service Railway. Utiliser
-un token GitHub en lecture seule limité au dépôt privé `tcgate_db_cyberpunk`.
-Sa valeur ne doit jamais être ajoutée au dépôt ni exposée au navigateur.
+Le navigateur charge directement le manifest public de `tcgate_db_cyberpunk`.
+Aucun token GitHub ni proxy d'assets Railway n'est requis.

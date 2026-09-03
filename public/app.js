@@ -1351,6 +1351,9 @@ function syncIdentifiedCardUi(detail) {
     cardId:detail.cardId||null,
     printingId:detail.printingId||null,
     refId:detail.refId||null,
+    recognitionGroupId:detail.recognitionGroupId||null,
+    candidatePrintingIds:Array.isArray(detail.candidatePrintingIds)?[...detail.candidatePrintingIds]:[],
+    recognitionMode:detail.recognitionMode||null,
     variantKind:detail.variantKind||null,
     name:detail.name,
     type:detail.type,
@@ -1385,6 +1388,9 @@ function syncMemoryVisibleCard() {
     cardId:visible.cardId||null,
     printingId:visible.printingId||null,
     refId:visible.refId||null,
+    recognitionGroupId:visible.recognitionGroupId||null,
+    candidatePrintingIds:Array.isArray(visible.candidatePrintingIds)?[...visible.candidatePrintingIds]:[],
+    recognitionMode:visible.recognitionMode||null,
     variantKind:visible.variantKind||null,
     name:visible.name,
     type:visible.type,
@@ -4644,6 +4650,8 @@ window.addEventListener('tcg-identification-visible',(event)=>{
   presentIdentifiedCard({
     cardId:visible.cardId||null, printingId:visible.printingId||null,
     refId:visible.refId||null, variantKind:visible.variantKind||null,
+    recognitionGroupId:visible.recognitionGroupId||null,
+    candidatePrintingIds:Array.isArray(visible.candidatePrintingIds)?[...visible.candidatePrintingIds]:[], recognitionMode:visible.recognitionMode||null,
     name:visible.name, type:visible.type, image:visible.image, imageUrl:visible.imageUrl,
     visualIndex:null, mode:visible.mode||'memory-hover', matcherMs:0
   });
