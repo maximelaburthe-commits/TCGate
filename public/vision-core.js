@@ -3,6 +3,8 @@
 
 const MAX_CAPTURES = 40;
 const {LatestFrameGate,percentile}=window.TCGVisionFrameGate;
+const {dimensions:analysisDimensions,projectDetections}=window.TCGVisionAnalysisFrame;
+const ANALYSIS_MAX_WIDTH=640;
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -65,6 +67,15 @@ const state = {
   videoFramesPresented: 0,
   videoFrameRequests: 0,
   longTasks: { count: 0, totalMs: 0, maxMs: 0, samples: [] },
+  steadyStateLongTasks: { count: 0, totalMs: 0, maxMs: 0, samples: [] },
+  warmupLongTasks: { count: 0, totalMs: 0, maxMs: 0 },
+  performanceTimings: {
+    sourceCapture: [], bitmapCreation: [], detectorPost: [],
+    resultProcessing: [], appearanceProcessing: [], tracking: [], overlay: []
+  },
+  videoCallbackGaps: [],
+  videoExpectedDisplayLead: [],
+  videoProcessingDurations: [],
   lastResultAt: 0,
   lastRunFinishedAt: 0,
   externalMode: true,
@@ -72,6 +83,7 @@ const state = {
   debugOverlay: false,
   modelReadyAt: null,
   startedAt: null,
+  steadyStateStartedAt: null,
   externalResizeHandler: null,
   videoGeometry: { width: 0, height: 0, changes: 0, lastChangedAt: null },
   spatialStats: {
@@ -211,8 +223,14 @@ function startVideoFpsMeter() {
   const generation=++state.videoFrameMeterGeneration;
   let count = 0;
   let started = performance.now();
-  const tick = () => {
+  let previousCallbackAt=null;
+  const tick = (callbackAt,metadata) => {
     if (!state.stream || generation!==state.videoFrameMeterGeneration) return;
+    const callbackNow=Number(callbackAt)||performance.now();
+    if(previousCallbackAt!=null) recordSample(state.videoCallbackGaps,callbackNow-previousCallbackAt);
+    previousCallbackAt=callbackNow;
+    if(Number.isFinite(metadata?.expectedDisplayTime)) recordSample(state.videoExpectedDisplayLead,metadata.expectedDisplayTime-performance.now());
+    if(Number.isFinite(metadata?.processingDuration)) recordSample(state.videoProcessingDurations,metadata.processingDuration*1000);
     count += 1;
     state.videoFramesPresented += 1;
     const now = performance.now();
@@ -238,10 +256,26 @@ if(typeof PerformanceObserver==='function'){
         state.longTasks.maxMs=Math.max(state.longTasks.maxMs,duration);
         state.longTasks.samples.push(duration);
         if(state.longTasks.samples.length>240) state.longTasks.samples.shift();
+        const steady=state.steadyStateStartedAt!=null && performance.now()>=state.steadyStateStartedAt;
+        const bucket=steady?state.steadyStateLongTasks:state.warmupLongTasks;
+        bucket.count+=1;
+        bucket.totalMs+=duration;
+        bucket.maxMs=Math.max(bucket.maxMs,duration);
+        if(bucket.samples){bucket.samples.push(duration);if(bucket.samples.length>240) bucket.samples.shift();}
       }
     });
     observer.observe({entryTypes:['longtask']});
   }catch{}
+}
+
+function recordSample(target,value){
+  if(!Number.isFinite(value)) return;
+  target.push(value);
+  if(target.length>240) target.shift();
+}
+
+function timingSnapshot(values){
+  return {p50:percentile(values,.50),p95:percentile(values,.95),max:values.length?Math.max(...values):0,samples:values.length};
 }
 
 function ensureWorker() {
@@ -287,24 +321,30 @@ function ensureWorker() {
         state.analysisFrames.delete(msg.requestId);
         return;
       }
+      const resultStarted=performance.now();
       state.inferenceBusy = false;
-      const incoming = Array.isArray(msg.detections) ? msg.detections : [];
       const appearanceFrame = state.analysisFrames.get(msg.requestId) || null;
       state.analysisFrames.delete(msg.requestId);
+      const incoming = projectDetections(msg.detections,appearanceFrame);
       const filtered = filterTableDetections(incoming);
+      const appearanceStarted=performance.now();
       state.rawDetections = attachAppearance(filtered, appearanceFrame);
+      recordSample(state.performanceTimings.appearanceProcessing,performance.now()-appearanceStarted);
       state.lastPreprocessMs = Number(msg.preprocessMs || 0);
       state.lastInferenceMs = Number(msg.inferenceMs || 0);
       state.lastTotalMs = Number(msg.totalMs || 0);
       state.outputShape = msg.outputShape || '—';
       state.provider = msg.provider || state.provider;
       state.analysisSeq += 1;
+      const trackingStarted=performance.now();
       updateTracks(state.rawDetections);
+      recordSample(state.performanceTimings.tracking,performance.now()-trackingStarted);
       recordSpatialDetections(incoming,state.rawDetections);
       window.dispatchEvent(new CustomEvent('tcg-tracks-updated', {
         detail: { analysisSeq: state.analysisSeq }
       }));
       state.lastRunFinishedAt = performance.now();
+      recordSample(state.performanceTimings.resultProcessing,performance.now()-resultStarted);
       if(state.activeFrameToken?.requestId===msg.requestId){
         const elapsed=performance.now()-state.activeFrameToken.startedAt;
         state.totalVisionSamples.push(elapsed);
@@ -382,20 +422,23 @@ const appearanceCanvas = document.createElement('canvas');
 appearanceCanvas.width = APPEAR_W;
 appearanceCanvas.height = APPEAR_H;
 const appearanceCtx = appearanceCanvas.getContext('2d', { willReadFrequently: true });
+const analysisCanvas = document.createElement('canvas');
+const analysisCtx = analysisCanvas.getContext('2d', { alpha: false });
 
-function captureAppearanceFrame() {
+function captureAnalysisFrame() {
+  const started=performance.now();
   const sourceW = els.video.videoWidth || 1280;
   const sourceH = els.video.videoHeight || 720;
-  const width = Math.min(640, sourceW);
-  const height = Math.max(1, Math.round(sourceH * width / sourceW));
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d', { alpha: false });
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'medium';
-  ctx.drawImage(els.video, 0, 0, width, height);
-  return { canvas, sourceW, sourceH };
+  const {width,height}=analysisDimensions(sourceW,sourceH,ANALYSIS_MAX_WIDTH);
+  if(analysisCanvas.width!==width || analysisCanvas.height!==height){
+    analysisCanvas.width=width;
+    analysisCanvas.height=height;
+    analysisCtx.imageSmoothingEnabled=true;
+    analysisCtx.imageSmoothingQuality='medium';
+  }
+  analysisCtx.drawImage(els.video,0,0,width,height);
+  recordSample(state.performanceTimings.sourceCapture,performance.now()-started);
+  return {canvas:analysisCanvas,sourceW,sourceH,analysisW:width,analysisH:height};
 }
 
 function appearanceDescriptor(det, frame) {
@@ -1067,6 +1110,7 @@ function activeTracks() {
 }
 
 function drawOverlay() {
+  const started=performance.now();
   const ctx = els.overlay.getContext('2d');
   ctx.clearRect(0, 0, els.overlay.width, els.overlay.height);
   const active = activeTracks();
@@ -1078,6 +1122,7 @@ function drawOverlay() {
   }
 
   els.metricCards.textContent = String(active.length);
+  recordSample(state.performanceTimings.overlay,performance.now()-started);
 }
 
 let inferenceTimer = null;
@@ -1118,28 +1163,30 @@ async function runInference() {
   try {
     const requestId = ++state.requestSeq;
     frameToken.requestId=requestId;
-    // Copie légère de la frame exacte analysée : l'empreinte visuelle est calculée
-    // sur le même instant que les coordonnées YOLO, pas ~500 ms plus tard.
-    if (els.visualLockToggle?.checked) {
-      state.analysisFrames.set(requestId, captureAppearanceFrame());
-      // Une seule inférence est active, mais garde-fou si une ancienne réponse est perdue.
-      for (const key of [...state.analysisFrames.keys()]) {
-        if (key < requestId - 2) state.analysisFrames.delete(key);
-      }
+    const analysisFrame=captureAnalysisFrame();
+    state.analysisFrames.set(requestId,analysisFrame);
+    // A single reduced snapshot feeds both YOLO and the visual-lock descriptor.
+    // Keep only bounded request metadata if a worker response is ever lost.
+    for (const key of [...state.analysisFrames.keys()]) {
+      if (key < requestId - 2) state.analysisFrames.delete(key);
     }
-    const bitmap = await createImageBitmap(els.video);
+    const bitmapStarted=performance.now();
+    const bitmap = await createImageBitmap(analysisFrame.canvas);
+    recordSample(state.performanceTimings.bitmapCreation,performance.now()-bitmapStarted);
     // Le modèle peut proposer des candidats légèrement sous le seuil UI.
     // Le navigateur ne les sauve que si leur taille est cohérente avec les cartes de la table.
     const workerConfidenceFloor = els.shapeFilterToggle?.checked
       ? Math.max(0.35, state.confidence - 0.12)
       : state.confidence;
     state.lastWorkerConfidenceFloor = workerConfidenceFloor;
+    const postStarted=performance.now();
     state.worker.postMessage({
       type: 'infer',
       requestId,
       confidence: workerConfidenceFloor,
       bitmap
     }, [bitmap]);
+    recordSample(state.performanceTimings.detectorPost,performance.now()-postStarted);
   } catch (err) {
     state.inferenceBusy = false;
     state.frameGate.cancel(frameToken);
@@ -1521,6 +1568,7 @@ async function attachExternalStream(stream) {
   state.stream=stream;
   state.externalAttached=true;
   state.startedAt=state.startedAt || performance.now();
+  state.steadyStateStartedAt=performance.now()+5000;
   resetSpatialStats();
 
   if (els.video.srcObject !== stream) els.video.srcObject=stream;
@@ -1588,6 +1636,9 @@ function detachExternalStream() {
 function getProductSnapshot() {
   const gate=state.frameGate.snapshot();
   const playbackQuality=els.video.getVideoPlaybackQuality?.() || null;
+  const sourceWidth=Number(els.video.videoWidth||0);
+  const sourceHeight=Number(els.video.videoHeight||0);
+  const analysisSize=analysisDimensions(sourceWidth||1,sourceHeight||1,ANALYSIS_MAX_WIDTH);
   return {
     version:'0.2.0-alpha15-v53-512-persistent-hover-cache',
     active:Boolean(state.detecting && state.externalAttached),
@@ -1621,14 +1672,39 @@ function getProductSnapshot() {
       callbackRequests:Number(state.videoFrameRequests||0),
       framesPresented:Number(state.videoFramesPresented||0),
       droppedVideoFrames:Number(playbackQuality?.droppedVideoFrames||0),
-      totalVideoFrames:Number(playbackQuality?.totalVideoFrames||0)
+      totalVideoFrames:Number(playbackQuality?.totalVideoFrames||0),
+      callbackGap:timingSnapshot(state.videoCallbackGaps),
+      expectedDisplayLead:timingSnapshot(state.videoExpectedDisplayLead),
+      processingDuration:timingSnapshot(state.videoProcessingDurations)
+    },
+    analysisResolution:{
+      visionSourceWidth:sourceWidth,
+      visionSourceHeight:sourceHeight,
+      visionAnalysisWidth:sourceWidth?analysisSize.width:0,
+      visionAnalysisHeight:sourceHeight?analysisSize.height:0
+    },
+    pipelineTiming:{
+      sourceCapture:timingSnapshot(state.performanceTimings.sourceCapture),
+      bitmapCreation:timingSnapshot(state.performanceTimings.bitmapCreation),
+      detectorPost:timingSnapshot(state.performanceTimings.detectorPost),
+      resultProcessing:timingSnapshot(state.performanceTimings.resultProcessing),
+      appearanceProcessing:timingSnapshot(state.performanceTimings.appearanceProcessing),
+      tracking:timingSnapshot(state.performanceTimings.tracking),
+      overlay:timingSnapshot(state.performanceTimings.overlay)
     },
     mainThread:{
       longTaskCount:state.longTasks.count,
       longTaskTotalMs:state.longTasks.totalMs,
       longTaskMaxMs:state.longTasks.maxMs,
       longTaskP50:percentile(state.longTasks.samples,.50),
-      longTaskP95:percentile(state.longTasks.samples,.95)
+      longTaskP95:percentile(state.longTasks.samples,.95),
+      warmupLongTaskCount:state.warmupLongTasks.count,
+      warmupLongTaskTotalMs:state.warmupLongTasks.totalMs,
+      warmupLongTaskMaxMs:state.warmupLongTasks.maxMs,
+      steadyStateLongTaskCount:state.steadyStateLongTasks.count,
+      steadyStateLongTaskTotalMs:state.steadyStateLongTasks.totalMs,
+      steadyStateLongTaskP95:percentile(state.steadyStateLongTasks.samples,.95),
+      steadyStateLongTaskMax:state.steadyStateLongTasks.maxMs
     },
     performanceBudget:{
       uiIntervalMs:Number(state.intervalMs || 0),

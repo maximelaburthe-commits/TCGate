@@ -9,6 +9,15 @@
     if(!sorted.length) return 0;
     return sorted[Math.min(sorted.length-1,Math.max(0,Math.ceil(sorted.length*p)-1))];
   });
+  const timingSnapshot=values=>({
+    p50:percentile(values,.50),p95:percentile(values,.95),
+    max:values.length?Math.max(...values):0,samples:values.length
+  });
+  const recordTiming=(values,value)=>{
+    if(!Number.isFinite(value)) return;
+    values.push(value);
+    if(values.length>240) values.shift();
+  };
 
   const FALLBACK_DB = '/cards-fallback.json';
   const STABLE_SOURCE_BASE = '/assets/card-db/cyberpunk/0.7.0-6d3a296';
@@ -93,6 +102,8 @@
     matcherFramesDropped: 0,
     matcherMaxQueueDepth: 0,
     matcherDurationSamples: [],
+    cropCaptureSamples: [],
+    cropBitmapSamples: [],
     hoverCache: new Map(),
     hoverCacheHits: 0,
     hoverCacheMisses: 0,
@@ -2140,7 +2151,9 @@ function applyQualityGuard(result,quality) {
 
     if (generation !== state.hoverGeneration) return;
 
+    const cropStarted=performance.now();
     const canvas=lab.captureCanonicalTrackCanvas(track,216,312);
+    recordTiming(state.cropCaptureSamples,performance.now()-cropStarted);
     if (!canvas) return clearCurrentIdentification('Capture de carte impossible.');
     const cropQuality=analyzeCropQuality(canvas);
 
@@ -2175,7 +2188,9 @@ function applyQualityGuard(result,quality) {
 
     if (state.matcherWorkerReady) {
       try {
+        const bitmapStarted=performance.now();
         const bitmap=await createImageBitmap(canvas);
+        recordTiming(state.cropBitmapSamples,performance.now()-bitmapStarted);
 
         // Pointer may already have moved while createImageBitmap yielded.
         if (generation !== state.hoverGeneration ||
@@ -2533,6 +2548,10 @@ function applyQualityGuard(result,quality) {
           visionInFlight: state.matcherWorkerBusy ? 1 : 0,
           visionIdentificationP50: percentile(state.matcherDurationSamples,.50),
           visionIdentificationP95: percentile(state.matcherDurationSamples,.95)
+        },
+        pipelineTiming: {
+          captureCanonicalTrackCanvas: timingSnapshot(state.cropCaptureSamples),
+          cropBitmapCreation: timingSnapshot(state.cropBitmapSamples)
         },
         hoverCache: {
           size: state.hoverCache.size,

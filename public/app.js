@@ -527,6 +527,7 @@ const VISION_ASSETS = [
   '/database-source.js',
   '/vision-library-integrity.js',
   '/vision-frame-gate.js',
+  '/vision-analysis-frame.js',
   '/vision-core.js',
   '/vision-calibration.js',
   '/table-state-bridge.js',
@@ -1245,6 +1246,8 @@ function startVisionMetricsSampler() {
         scheduling:detection.scheduling,
         playback:detection.playback,
         mainThread:detection.mainThread,
+        analysisResolution:detection.analysisResolution,
+        pipelineTiming:detection.pipelineTiming,
         filters:detection.filters
       }:null,
       identification:identification?{
@@ -1253,6 +1256,7 @@ function startVisionMetricsSampler() {
         libraryIntegrity:identification.libraryIntegrity || null,
         matcherMs:identification.matcherMs,
         scheduling:identification.scheduling,
+        pipelineTiming:identification.pipelineTiming,
         hoverCache:identification.hoverCache,
         identityStability:identification.identityStability || null
       }:null,
