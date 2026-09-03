@@ -526,6 +526,7 @@ const VISION_ASSETS = [
   '/game-databases.js',
   '/database-source.js',
   '/vision-library-integrity.js',
+  '/vision-frame-gate.js',
   '/vision-core.js',
   '/vision-calibration.js',
   '/table-state-bridge.js',
@@ -1241,6 +1242,9 @@ function startVisionMetricsSampler() {
         provider:detection.provider,
         activeCards:detection.activeCards,
         inference:detection.inference,
+        scheduling:detection.scheduling,
+        playback:detection.playback,
+        mainThread:detection.mainThread,
         filters:detection.filters
       }:null,
       identification:identification?{
@@ -1248,6 +1252,7 @@ function startVisionMetricsSampler() {
         librarySize:identification.librarySize,
         libraryIntegrity:identification.libraryIntegrity || null,
         matcherMs:identification.matcherMs,
+        scheduling:identification.scheduling,
         hoverCache:identification.hoverCache,
         identityStability:identification.identityStability || null
       }:null,
@@ -4158,6 +4163,9 @@ async function snapshotRtcMetrics(pc = state.pc) {
           jitterBufferTargetDelay: stat.jitterBufferTargetDelay ?? null,
           jitterBufferMinimumDelay: stat.jitterBufferMinimumDelay ?? null,
           jitterBufferEmittedCount: stat.jitterBufferEmittedCount ?? null,
+          jitterBufferDelayPerFrame: Number(stat.jitterBufferEmittedCount) > 0
+            ? Number(stat.jitterBufferDelay || 0) / Number(stat.jitterBufferEmittedCount)
+            : null,
           totalDecodeTime: stat.totalDecodeTime ?? null,
           totalProcessingDelay: stat.totalProcessingDelay ?? null,
           estimatedPlayoutTimestamp: stat.estimatedPlayoutTimestamp ?? null

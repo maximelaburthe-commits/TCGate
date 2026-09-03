@@ -2,6 +2,7 @@
 'use strict';
 
 const MAX_CAPTURES = 40;
+const {LatestFrameGate,percentile}=window.TCGVisionFrameGate;
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -56,6 +57,14 @@ const state = {
   analysisSeq: 0,
   requestSeq: 0,
   analysisFrames: new Map(),
+  frameGate: new LatestFrameGate(),
+  activeFrameToken: null,
+  inferenceSamples: [],
+  totalVisionSamples: [],
+  videoFrameMeterGeneration: 0,
+  videoFramesPresented: 0,
+  videoFrameRequests: 0,
+  longTasks: { count: 0, totalMs: 0, maxMs: 0, samples: [] },
   lastResultAt: 0,
   lastRunFinishedAt: 0,
   externalMode: true,
@@ -199,11 +208,13 @@ function syncStageSize() {
 }
 
 function startVideoFpsMeter() {
+  const generation=++state.videoFrameMeterGeneration;
   let count = 0;
   let started = performance.now();
   const tick = () => {
-    if (!state.stream) return;
+    if (!state.stream || generation!==state.videoFrameMeterGeneration) return;
     count += 1;
+    state.videoFramesPresented += 1;
     const now = performance.now();
     if (now - started >= 1000) {
       state.videoFps = Math.round((count * 1000) / (now - started));
@@ -215,6 +226,22 @@ function startVideoFpsMeter() {
   };
   if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) els.video.requestVideoFrameCallback(tick);
   else requestAnimationFrame(tick);
+}
+
+if(typeof PerformanceObserver==='function'){
+  try{
+    const observer=new PerformanceObserver(list=>{
+      for(const entry of list.getEntries()){
+        const duration=Number(entry.duration||0);
+        state.longTasks.count+=1;
+        state.longTasks.totalMs+=duration;
+        state.longTasks.maxMs=Math.max(state.longTasks.maxMs,duration);
+        state.longTasks.samples.push(duration);
+        if(state.longTasks.samples.length>240) state.longTasks.samples.shift();
+      }
+    });
+    observer.observe({entryTypes:['longtask']});
+  }catch{}
 }
 
 function ensureWorker() {
@@ -254,6 +281,12 @@ function ensureWorker() {
       return;
     }
     if (msg.type === 'inference-result') {
+      // A detached/replaced stream may still produce one late worker reply.
+      // Never let that stale frame release or overwrite the current stream.
+      if(msg.requestId!==state.activeFrameToken?.requestId){
+        state.analysisFrames.delete(msg.requestId);
+        return;
+      }
       state.inferenceBusy = false;
       const incoming = Array.isArray(msg.detections) ? msg.detections : [];
       const appearanceFrame = state.analysisFrames.get(msg.requestId) || null;
@@ -272,6 +305,15 @@ function ensureWorker() {
         detail: { analysisSeq: state.analysisSeq }
       }));
       state.lastRunFinishedAt = performance.now();
+      if(state.activeFrameToken?.requestId===msg.requestId){
+        const elapsed=performance.now()-state.activeFrameToken.startedAt;
+        state.totalVisionSamples.push(elapsed);
+        if(state.totalVisionSamples.length>240) state.totalVisionSamples.shift();
+        state.frameGate.complete(state.activeFrameToken);
+        state.activeFrameToken=null;
+      }
+      state.inferenceSamples.push(Number(msg.inferenceMs||0));
+      if(state.inferenceSamples.length>240) state.inferenceSamples.shift();
       const now = performance.now();
       state.detectTimestamps.push(now);
       state.detectTimestamps = state.detectTimestamps.filter((t) => now - t <= 1000);
@@ -280,6 +322,8 @@ function ensureWorker() {
     }
     if (msg.type === 'error') {
       state.inferenceBusy = false;
+      state.frameGate.cancel(state.activeFrameToken);
+      state.activeFrameToken=null;
       state.modelLoading = false;
       state.detecting = false;
       els.detectButton.textContent = 'Activer la détection';
@@ -291,6 +335,8 @@ function ensureWorker() {
 
   worker.onerror = (err) => {
     state.inferenceBusy = false;
+    state.frameGate.cancel(state.activeFrameToken);
+    state.activeFrameToken=null;
     state.detecting = false;
     setStatus('Erreur worker', 'error');
     showWarning(`Worker de détection : ${err.message || 'erreur inconnue'}`);
@@ -1051,9 +1097,10 @@ function scheduleNextInference(delay = state.intervalMs) {
 }
 
 async function runInference() {
+  state.videoFrameRequests+=1;
   syncExternalVideoGeometry('inference');
   if (state.inputPaused) return;
-  if (!state.detecting || !state.workerReady || !state.stream || state.inferenceBusy) {
+  if (!state.detecting || !state.workerReady || !state.stream) {
     if (state.detecting) scheduleNextInference(100);
     return;
   }
@@ -1061,9 +1108,16 @@ async function runInference() {
     scheduleNextInference(100);
     return;
   }
+  const frameToken=state.frameGate.tryAcquire({videoTime:Number(els.video.currentTime||0)});
+  if(!frameToken){
+    if(state.detecting) scheduleNextInference(20);
+    return;
+  }
+  state.activeFrameToken=frameToken;
   state.inferenceBusy = true;
   try {
     const requestId = ++state.requestSeq;
+    frameToken.requestId=requestId;
     // Copie légère de la frame exacte analysée : l'empreinte visuelle est calculée
     // sur le même instant que les coordonnées YOLO, pas ~500 ms plus tard.
     if (els.visualLockToggle?.checked) {
@@ -1088,6 +1142,8 @@ async function runInference() {
     }, [bitmap]);
   } catch (err) {
     state.inferenceBusy = false;
+    state.frameGate.cancel(frameToken);
+    state.activeFrameToken=null;
     state.detecting = false;
     els.detectButton.textContent = 'Activer la détection';
     setStatus('Erreur capture vidéo', 'error');
@@ -1515,7 +1571,10 @@ function detachExternalStream() {
     state.externalResizeHandler=null;
   }
   state.detecting=false;
+  state.videoFrameMeterGeneration+=1;
   clearInferenceTimer();
+  state.frameGate.cancel(state.activeFrameToken);
+  state.activeFrameToken=null;
   state.inferenceBusy=false;
   state.stream=null;
   state.externalAttached=false;
@@ -1527,6 +1586,8 @@ function detachExternalStream() {
 }
 
 function getProductSnapshot() {
+  const gate=state.frameGate.snapshot();
+  const playbackQuality=els.video.getVideoPlaybackQuality?.() || null;
   return {
     version:'0.2.0-alpha15-v53-512-persistent-hover-cache',
     active:Boolean(state.detecting && state.externalAttached),
@@ -1544,6 +1605,30 @@ function getProductSnapshot() {
       detectionFps:state.detectTimestamps.length,
       videoFps:Number(state.videoFps || 0),
       outputShape:state.outputShape
+    },
+    scheduling:{
+      visionFramesRequested:gate.requested,
+      visionFramesProcessed:gate.processed,
+      visionFramesDropped:gate.dropped,
+      visionMaxQueueDepth:gate.maxQueueDepth,
+      visionInFlight:gate.inFlight,
+      visionDetectorP50:percentile(state.inferenceSamples,.50),
+      visionDetectorP95:percentile(state.inferenceSamples,.95),
+      visionTotalP50:percentile(state.totalVisionSamples,.50),
+      visionTotalP95:percentile(state.totalVisionSamples,.95)
+    },
+    playback:{
+      callbackRequests:Number(state.videoFrameRequests||0),
+      framesPresented:Number(state.videoFramesPresented||0),
+      droppedVideoFrames:Number(playbackQuality?.droppedVideoFrames||0),
+      totalVideoFrames:Number(playbackQuality?.totalVideoFrames||0)
+    },
+    mainThread:{
+      longTaskCount:state.longTasks.count,
+      longTaskTotalMs:state.longTasks.totalMs,
+      longTaskMaxMs:state.longTasks.maxMs,
+      longTaskP50:percentile(state.longTasks.samples,.50),
+      longTaskP95:percentile(state.longTasks.samples,.95)
     },
     performanceBudget:{
       uiIntervalMs:Number(state.intervalMs || 0),

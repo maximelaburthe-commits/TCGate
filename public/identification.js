@@ -4,6 +4,11 @@
 (() => {
   const lab = window.TCGDetectionLab;
   if (!lab) return;
+  const percentile=window.TCGVisionFrameGate?.percentile || ((values,p)=>{
+    const sorted=values.filter(Number.isFinite).slice().sort((a,b)=>a-b);
+    if(!sorted.length) return 0;
+    return sorted[Math.min(sorted.length-1,Math.max(0,Math.ceil(sorted.length*p)-1))];
+  });
 
   const FALLBACK_DB = '/cards-fallback.json';
   const STABLE_SOURCE_BASE = '/assets/card-db/cyberpunk/0.7.0-6d3a296';
@@ -83,6 +88,11 @@
     matcherWorkerCurrent: null,
     matcherWorkerQueued: null,
     matcherWorkerSeq: 0,
+    matcherFramesRequested: 0,
+    matcherFramesProcessed: 0,
+    matcherFramesDropped: 0,
+    matcherMaxQueueDepth: 0,
+    matcherDurationSamples: [],
     hoverCache: new Map(),
     hoverCacheHits: 0,
     hoverCacheMisses: 0,
@@ -1309,6 +1319,7 @@
 
   function queueWorkerTask(bitmap,context,generation,trackUid) {
     return new Promise((resolve,reject)=>{
+      state.matcherFramesRequested+=1;
       const task={
         requestId:++state.matcherWorkerSeq,
         bitmap,context,generation,trackUid,resolve,reject,
@@ -1326,10 +1337,12 @@
         // Keep only the latest hover request. An older queued card can never become
         // useful again once the pointer has already moved elsewhere.
         if (state.matcherWorkerQueued) {
+          state.matcherFramesDropped+=1;
           closeQueuedBitmap(state.matcherWorkerQueued);
           state.matcherWorkerQueued.resolve({cancelled:true,reason:'replaced-by-newer-hover'});
         }
         state.matcherWorkerQueued=task;
+        state.matcherMaxQueueDepth=Math.max(state.matcherMaxQueueDepth,1);
         return;
       }
 
@@ -1384,6 +1397,9 @@
             if (msg.type==='match-error') {
               task.reject(new Error(msg.error||'Erreur matcher worker'));
             } else {
+              state.matcherFramesProcessed+=1;
+              state.matcherDurationSamples.push(roundTripMs);
+              if(state.matcherDurationSamples.length>240) state.matcherDurationSamples.shift();
               const result=rehydrateWorkerResult(msg.result||null);
               if (result?.timing) {
                 result.timing.roundTripMs=roundTripMs;
@@ -2137,12 +2153,20 @@ function applyQualityGuard(result,quality) {
       maskInfo
     };
 
-    // Capture the exact source immediately for diagnostics. This is intentionally
-    // done before transferring the bitmap to the worker.
-    try {
-      state.lastAnalyzedCropDataUrl=canvas.toDataURL('image/jpeg',.94);
-      state.lastAnalyzedTrackUid=track.uid;
-    } catch {
+    // Diagnostic serialization must never stall remote playback. toBlob lets the
+    // browser encode outside this latency-sensitive call stack.
+    if(typeof canvas.toBlob==='function'){
+      canvas.toBlob(blob=>{
+        if(!blob || generation!==state.hoverGeneration || state.hoveredTrack?.uid!==track.uid) return;
+        const reader=new FileReader();
+        reader.onload=()=>{
+          if(generation!==state.hoverGeneration || state.hoveredTrack?.uid!==track.uid) return;
+          state.lastAnalyzedCropDataUrl=String(reader.result||'') || null;
+          state.lastAnalyzedTrackUid=track.uid;
+        };
+        reader.readAsDataURL(blob);
+      },'image/jpeg',.94);
+    }else{
       state.lastAnalyzedCropDataUrl=null;
       state.lastAnalyzedTrackUid=null;
     }
@@ -2500,6 +2524,15 @@ function applyQualityGuard(result,quality) {
           queued: Boolean(state.matcherWorkerQueued),
           initPostMs: Number(state.matcherWorkerInitMs || 0),
           error: state.matcherWorkerError || null
+        },
+        scheduling: {
+          visionFramesRequested: state.matcherFramesRequested,
+          visionFramesProcessed: state.matcherFramesProcessed,
+          visionFramesDropped: state.matcherFramesDropped,
+          visionMaxQueueDepth: state.matcherMaxQueueDepth,
+          visionInFlight: state.matcherWorkerBusy ? 1 : 0,
+          visionIdentificationP50: percentile(state.matcherDurationSamples,.50),
+          visionIdentificationP95: percentile(state.matcherDurationSamples,.95)
         },
         hoverCache: {
           size: state.hoverCache.size,
