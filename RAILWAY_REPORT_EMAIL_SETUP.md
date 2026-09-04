@@ -20,8 +20,13 @@ Ajouter dans le service TCGate :
 - `RESEND_API_KEY` = clé API Resend, commence typiquement par `re_...`
 - `TCGATE_REPORT_TO_EMAIL` = votre adresse qui recevra les rapports
 - `TCGATE_REPORT_FROM_EMAIL` = expéditeur autorisé par Resend, par exemple `TCGate Reports <reports@votredomaine.fr>`
+- `CONTROL_CENTER_URL` = origine HTTPS publique exacte du TCGate Control Center, sans slash final
+- `CONTROL_CENTER_INGEST_KEY` = même secret d'ingestion que celui configuré sur le service Control Center
 
-Ne jamais écrire la clé API dans GitHub ou dans le JavaScript navigateur.
+Ne jamais écrire les clés API ou d'ingestion dans GitHub ou dans le JavaScript navigateur.
+
+Le forwarding Control Center est facultatif et tolérant aux pannes : s'il est absent,
+indisponible ou refuse le rapport, l'envoi historique par e-mail continue normalement.
 
 ## Resend
 

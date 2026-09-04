@@ -24,6 +24,7 @@ const http = require('http');
 const crypto = require('crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { createControlCenterForwarder, deliverReport } = require('./control-center-forwarder');
 
 const originalCreateServer = http.createServer.bind(http);
 const RESEND_API_KEY = String(process.env.RESEND_API_KEY || '').trim();
@@ -31,6 +32,12 @@ const REPORT_TO = String(process.env.TCGATE_REPORT_TO_EMAIL || '').trim();
 const REPORT_FROM = String(process.env.TCGATE_REPORT_FROM_EMAIL || '').trim();
 const INBOX_DIR = String(process.env.TCGATE_REPORT_INBOX_DIR || '').trim();
 const SYNC_TOKEN = String(process.env.TCGATE_CC_SYNC_TOKEN || '').trim();
+const CONTROL_CENTER_URL = String(process.env.CONTROL_CENTER_URL || '').trim();
+const CONTROL_CENTER_INGEST_KEY = String(process.env.CONTROL_CENTER_INGEST_KEY || '').trim();
+const controlCenterForwarder = createControlCenterForwarder({
+  url: CONTROL_CENTER_URL,
+  ingestKey: CONTROL_CENTER_INGEST_KEY
+});
 
 const REPORT_BODY_LIMIT = 8 * 1024 * 1024;
 const REPORT_ATTACHMENT_LIMIT = 5 * 1024 * 1024;
@@ -443,7 +450,8 @@ async function handleReportMail(req, res, pathname) {
     return sendJson(res, 200, {
       ok: true,
       configured: configured(),
-      inboxConfigured: inboxConfigured()
+      inboxConfigured: inboxConfigured(),
+      controlCenterConfigured: controlCenterForwarder.configured()
     });
   }
 
@@ -542,18 +550,26 @@ async function handleReportMail(req, res, pathname) {
     );
   }
 
-  const result = await sendViaResend({
-    attachment,
-    filename,
-    note,
-    roomCode,
-    context
+  const delivery = await deliverReport({
+    report: {
+      attachment,
+      filename,
+      note,
+      roomCode,
+      context
+    },
+    sendEmail: sendViaResend,
+    forwarder: controlCenterForwarder,
+    logger: console
   });
+
+  const result = delivery.email;
 
   sendJson(res, 200, {
     ok: true,
     messageId: result?.id || null,
-    inboxStored: Boolean(inbox.stored)
+    inboxStored: Boolean(inbox.stored),
+    controlCenterForwarded: Boolean(delivery.controlCenter.forwarded)
   });
 
   return true;
