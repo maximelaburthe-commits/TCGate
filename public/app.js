@@ -123,6 +123,7 @@ const state = {
   gameActive: false,
   offerInFlight: false,
   offerSent: false,
+  offerDeliveryRebuilds: 0,
   lastRemoteOfferSdp: null,
   lastRemoteAnswerSdp: null,
   remotePlayPending: false,
@@ -3788,6 +3789,59 @@ async function sendSignal(type, payload) {
   }
 }
 
+const offerDeliveryRetry = window.TCGateOfferDeliveryRetry.createController({
+  maxAttempts: 3,
+  retryDelaysMs: [300, 900]
+});
+
+function cancelOfferDeliveryRetry(reason = 'cancelled') {
+  if (offerDeliveryRetry.isActive()) logEvent('rtc-offer-retry-cancelled', { reason });
+  offerDeliveryRetry.cancel();
+}
+
+async function rebuildRtcAfterOfferDeliveryFailure(pc, generation) {
+  if (pc !== state.pc || generation !== state.rtcPeerGeneration) return;
+  if (state.offerDeliveryRebuilds >= 1) {
+    logEvent('rtc-offer-delivery-failed', { generation, rebuilds: state.offerDeliveryRebuilds });
+    setRtcStatus('Signal WebRTC indisponible', 'error');
+    return;
+  }
+  state.offerDeliveryRebuilds += 1;
+  logEvent('rtc-offer-generation-rebuild', { generation, rebuilds: state.offerDeliveryRebuilds });
+  closePeerConnection('offer-delivery-exhausted');
+  await ensurePeerConnection();
+  await createAndSendOffer();
+}
+
+async function deliverLocalOffer(pc) {
+  const generation = pc.__tcgateGeneration;
+  const createEpoch = state.rtcCreateEpoch;
+  const description = pc.localDescription;
+  state.offerSent = false;
+  await offerDeliveryRetry.start({
+    description,
+    isActive: () => pc === state.pc && generation === state.rtcPeerGeneration && createEpoch === state.rtcCreateEpoch &&
+      pc.localDescription?.type === description?.type && pc.localDescription?.sdp === description?.sdp,
+    send: current => sendSignal('offer', current),
+    onDelivered: (result, attempts) => {
+      state.offerSent = true;
+      state.offerDeliveryRebuilds = 0;
+      logEvent('rtc-offer-delivered', { generation, attempts, delivered: result.delivered });
+    },
+    onFailed: (result, attempts) => {
+      state.offerSent = false;
+      logEvent('rtc-offer-delivery-retry', { generation, attempts, delivered: result?.delivered ?? null });
+    },
+    onExhausted: attempts => {
+      state.offerSent = false;
+      rebuildRtcAfterOfferDeliveryFailure(pc, generation).catch(err => {
+        logEvent('rtc-offer-rebuild-error', { generation, attempts, message: err?.message || String(err) });
+      });
+    },
+    onError: err => logEvent('rtc-offer-retry-error', { generation, message: err?.message || String(err) })
+  });
+}
+
 async function createAndSendOffer(options = {}) {
   if (state.role !== 'host') return;
   if (state.offerInFlight || state.offerSent) return;
@@ -3802,11 +3856,8 @@ async function createAndSendOffer(options = {}) {
   try {
     const offer = await pc.createOffer(options);
     await pc.setLocalDescription(offer);
-    const result = await sendSignal('offer', pc.localDescription);
-    state.offerSent = true;
-    logEvent('rtc-offer-created', {
-      delivered: result?.delivered ?? null
-    });
+    logEvent('rtc-offer-created', { generation: pc.__tcgateGeneration || null });
+    await deliverLocalOffer(pc);
   } catch (err) {
     logEvent('rtc-offer-error', {
       name: err?.name || null,
@@ -3944,6 +3995,9 @@ async function handleSignal(signal) {
       }
 
       await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+      cancelOfferDeliveryRetry('answer-applied');
+      state.offerSent = true;
+      state.offerDeliveryRebuilds = 0;
       state.lastRemoteAnswerSdp = sdp;
       await flushPendingIce(pc);
       logEvent('rtc-answer-applied');
@@ -3978,6 +4032,7 @@ async function flushPendingIce(pc = state.pc) {
 }
 
 function closePeerConnection(reason = 'manual') {
+  cancelOfferDeliveryRetry(`peer-close:${reason}`);
   state.rtcCreateEpoch += 1;
   state.rtcPeerCreatePromise = null;
   clearRemoteRecoveryWatchdog();
