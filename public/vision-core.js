@@ -4,6 +4,7 @@
 const MAX_CAPTURES = 40;
 const {LatestFrameGate,percentile}=window.TCGVisionFrameGate;
 const {dimensions:analysisDimensions,projectDetections}=window.TCGVisionAnalysisFrame;
+const {batch:batchAppearanceDescriptors}=window.TCGVisionAppearanceSampler;
 const ANALYSIS_MAX_WIDTH=640;
 
 const $ = (id) => document.getElementById(id);
@@ -73,6 +74,8 @@ const state = {
     sourceCapture: [], bitmapCreation: [], detectorPost: [],
     resultProcessing: [], appearanceProcessing: [], tracking: [], overlay: []
   },
+  appearanceTimings: { pixelReadback: [], descriptorCompute: [] },
+  appearanceDescriptorCount: 0,
   videoCallbackGaps: [],
   videoExpectedDisplayLead: [],
   videoProcessingDurations: [],
@@ -416,14 +419,8 @@ async function ensureModel() {
 }
 
 
-const APPEAR_W = 12;
-const APPEAR_H = 18;
-const appearanceCanvas = document.createElement('canvas');
-appearanceCanvas.width = APPEAR_W;
-appearanceCanvas.height = APPEAR_H;
-const appearanceCtx = appearanceCanvas.getContext('2d', { willReadFrequently: true });
 const analysisCanvas = document.createElement('canvas');
-const analysisCtx = analysisCanvas.getContext('2d', { alpha: false });
+const analysisCtx = analysisCanvas.getContext('2d', { alpha: false, willReadFrequently: true });
 
 function captureAnalysisFrame() {
   const started=performance.now();
@@ -439,67 +436,6 @@ function captureAnalysisFrame() {
   analysisCtx.drawImage(els.video,0,0,width,height);
   recordSample(state.performanceTimings.sourceCapture,performance.now()-started);
   return {canvas:analysisCanvas,sourceW,sourceH,analysisW:width,analysisH:height};
-}
-
-function appearanceDescriptor(det, frame) {
-  if (!frame?.canvas || !appearanceCtx) return null;
-  const sx = frame.canvas.width / Math.max(1, frame.sourceW);
-  const sy = frame.canvas.height / Math.max(1, frame.sourceH);
-  const cx = det.cx * sx;
-  const cy = det.cy * sy;
-  const w = Math.max(2, det.w * sx);
-  const h = Math.max(2, det.h * sy);
-  const shortSide = Math.max(2, Math.min(w, h));
-  const longSide = Math.max(2, Math.max(w, h));
-
-  // OBB = rectangle tourné : un simple transform affine suffit pour le redresser.
-  let theta = det.angle || 0;
-  if (w > h) theta += Math.PI / 2;
-
-  const ctx = appearanceCtx;
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, APPEAR_W, APPEAR_H);
-  ctx.fillStyle = '#777';
-  ctx.fillRect(0, 0, APPEAR_W, APPEAR_H);
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'medium';
-
-  ctx.translate(APPEAR_W / 2, APPEAR_H / 2);
-  ctx.scale(APPEAR_W / shortSide, APPEAR_H / longSide);
-  ctx.rotate(-theta);
-  ctx.translate(-cx, -cy);
-  ctx.drawImage(frame.canvas, 0, 0);
-
-  const px = ctx.getImageData(0, 0, APPEAR_W, APPEAR_H).data;
-  const raw = [];
-  const lumas = [];
-
-  // Ignore un pixel de bord : moins sensible aux sleeves et aux imprécisions de bbox.
-  for (let y = 1; y < APPEAR_H - 1; y += 1) {
-    for (let x = 1; x < APPEAR_W - 1; x += 1) {
-      const i = (y * APPEAR_W + x) * 4;
-      const r = px[i] / 255;
-      const g = px[i + 1] / 255;
-      const b = px[i + 2] / 255;
-      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-      lumas.push(lum);
-      raw.push([r, g, b, lum]);
-    }
-  }
-
-  if (!raw.length) return null;
-  const mean = lumas.reduce((a, b) => a + b, 0) / lumas.length;
-  const variance = lumas.reduce((a, v) => a + (v - mean) ** 2, 0) / lumas.length;
-  const std = Math.max(0.06, Math.sqrt(variance));
-
-  const values = new Float32Array(raw.length * 3);
-  raw.forEach(([r, g, b, lum], p) => {
-    const sum = r + g + b + 0.12;
-    values[p * 3] = Math.max(-2.5, Math.min(2.5, (lum - mean) / std));
-    values[p * 3 + 1] = (r - g) / sum;
-    values[p * 3 + 2] = (b - g) / sum;
-  });
-  return values;
 }
 
 function cosineAppearance(a, b, flip180 = false) {
@@ -539,11 +475,21 @@ function trackAppearanceScore(det, track) {
 }
 
 function attachAppearance(detections, frame) {
-  if (!els.visualLockToggle?.checked || !frame) return detections;
-  return detections.map((det) => ({
-    ...det,
-    appearance: appearanceDescriptor(det, frame)
-  }));
+  if (!els.visualLockToggle?.checked || !frame || !detections.length) return detections;
+  const readbackStarted=performance.now();
+  const pixels=analysisCtx.getImageData(0,0,frame.analysisW,frame.analysisH);
+  recordSample(state.appearanceTimings.pixelReadback,performance.now()-readbackStarted);
+  const computeStarted=performance.now();
+  const descriptors=batchAppearanceDescriptors(detections,{
+    data:pixels.data,
+    width:frame.analysisW,
+    height:frame.analysisH,
+    sourceW:frame.sourceW,
+    sourceH:frame.sourceH
+  });
+  recordSample(state.appearanceTimings.descriptorCompute,performance.now()-computeStarted);
+  state.appearanceDescriptorCount+=descriptors.length;
+  return detections.map((det,index)=>({...det,appearance:descriptors[index]}));
 }
 
 function stripAppearance(obj) {
@@ -1689,6 +1635,9 @@ function getProductSnapshot() {
       detectorPost:timingSnapshot(state.performanceTimings.detectorPost),
       resultProcessing:timingSnapshot(state.performanceTimings.resultProcessing),
       appearanceProcessing:timingSnapshot(state.performanceTimings.appearanceProcessing),
+      appearancePixelReadback:timingSnapshot(state.appearanceTimings.pixelReadback),
+      appearanceDescriptorCompute:timingSnapshot(state.appearanceTimings.descriptorCompute),
+      appearanceDescriptorCount:state.appearanceDescriptorCount,
       tracking:timingSnapshot(state.performanceTimings.tracking),
       overlay:timingSnapshot(state.performanceTimings.overlay)
     },

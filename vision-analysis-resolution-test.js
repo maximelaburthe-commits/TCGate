@@ -33,7 +33,7 @@ validate(1920,1080);
 validate(1280,720);
 
 const core=fs.readFileSync(require.resolve('./public/vision-core.js'),'utf8');
-const capture=core.slice(core.indexOf('function captureAnalysisFrame()'),core.indexOf('function appearanceDescriptor'));
+const capture=core.slice(core.indexOf('function captureAnalysisFrame()'),core.indexOf('function cosineAppearance'));
 const run=core.slice(core.indexOf('async function runInference()'),core.indexOf('async function toggleDetection()'));
 assert(capture,'captureAnalysisFrame must exist');
 assert.strictEqual((capture.match(/drawImage\(els\.video/g)||[]).length,1,'analysis snapshot must copy the source once');

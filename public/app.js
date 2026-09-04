@@ -528,6 +528,7 @@ const VISION_ASSETS = [
   '/vision-library-integrity.js',
   '/vision-frame-gate.js',
   '/vision-analysis-frame.js',
+  '/vision-appearance-sampler.js',
   '/vision-core.js',
   '/vision-calibration.js',
   '/table-state-bridge.js',
