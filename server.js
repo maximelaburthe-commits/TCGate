@@ -546,7 +546,7 @@ function validateSignal(type, payload) {
       (die.origin === 'host' || die.origin === 'guest') &&
       (die.owner === 'host' || die.owner === 'guest') &&
       [4,6,8,10,12,20].includes(Number(die.sides)) &&
-      Number.isInteger(Number(die.value)) && Number(die.value) >= 1 && Number(die.value) <= Number(die.sides));
+      Number.isInteger(Number(die.value)) && Number(die.value) >= 0 && Number(die.value) <= Number(die.sides));
   }
   if (type === 'candidate') {
     return payload && typeof payload === 'object' &&

@@ -1,6 +1,7 @@
 'use strict';
 
 const { spawn } = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
 const PORT = 4322;
@@ -50,6 +51,24 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
 
 (async () => {
   try {
+    const appSource = fs.readFileSync(path.join(__dirname, 'public', 'app.js'), 'utf8');
+    const readyOptimisticAt = appSource.indexOf('state.readyRequestPending = true;');
+    const readyRenderAt = appSource.indexOf('if (state.roomSnapshot) applyRoomState(state.roomSnapshot);', readyOptimisticAt);
+    const readyPostAt = appSource.indexOf("const result = await api('/api/ready'", readyOptimisticAt);
+    assert(readyOptimisticAt >= 0 && readyRenderAt > readyOptimisticAt && readyPostAt > readyRenderAt,
+      'Ready UI is not updated locally before the network request');
+    assert(appSource.includes("'Attente de l’adversaire…'"), 'Ready waiting label is missing');
+    const gigFactoryStart = appSource.indexOf('function createGigDiceState()');
+    const gigFactoryEnd = appSource.indexOf('function validGigDiceState', gigFactoryStart);
+    const createTestGigDiceState = new Function(`${appSource.slice(gigFactoryStart, gigFactoryEnd)}; return createGigDiceState;`)();
+    const freshGigDice = createTestGigDiceState();
+    assert(freshGigDice.length === 12 && freshGigDice.every(die => die.value === 0),
+      'A fresh Cyberpunk Gig state does not start with all dice at zero');
+    assert(appSource.includes("saved.gigDice.map(die => ({ ...die }))"), 'F5 recovery no longer restores saved Gig state');
+    assert(appSource.includes("state.gigDice = ensureGigDiceState().map(die => ({ ...die, value: 0 }))"),
+      'Gig reset does not preserve dice properties while zeroing values');
+    assert(appSource.includes("sendGigState('manual-reset')"), 'Gig reset is not synchronized through gig-state');
+
     const health = await waitForHealth();
     assert(health.version === 'tcgate-alpha-0.1-candidate-11', 'Wrong health version');
 
@@ -75,6 +94,10 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
 
     let r = await post('/api/ready', { room: host.code, peerId: host.peerId, ready: true }, { token: host.sessionToken });
     assert(r.ok, 'Host ready failed');
+    const hostReadyState = await r.json();
+    assert(hostReadyState.room.phase === 'lobby', 'Game started before both players were ready');
+    assert(hostReadyState.room.peers.find(p => p.id === host.peerId)?.ready === true, 'Host ready state was not recorded');
+    assert(hostReadyState.room.peers.find(p => p.id === guest.peerId)?.ready === false, 'Guest became ready without action');
     r = await post('/api/ready', { room: guest.code, peerId: guest.peerId, ready: true }, { token: guest.sessionToken });
     const gameState = await r.json();
     assert(gameState.room.phase === 'game', 'Room did not enter game phase');
@@ -116,6 +139,25 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
 
     const missingCookieRecover = await post('/api/recover');
     assert(missingCookieRecover.status === 401, 'Recover without cookie should fail');
+
+    const gigHostCreate = await post('/api/rooms', { name: 'Gig Host', game: 'cyberpunk' });
+    assert(gigHostCreate.status === 201, 'Cyberpunk Gig host create failed');
+    const gigHost = await gigHostCreate.json();
+    const gigGuestCreate = await post(`/api/rooms/${gigHost.code}/join`, { name: 'Gig Guest' });
+    assert(gigGuestCreate.ok, 'Cyberpunk Gig guest join failed');
+    const gigGuest = await gigGuestCreate.json();
+    const gigDice = [4, 6, 8, 10, 12, 20].flatMap(sides => [
+      { id: `host-d${sides}`, origin: 'host', owner: 'host', sides, value: 0 },
+      { id: `guest-d${sides}`, origin: 'guest', owner: 'guest', sides, value: 0 }
+    ]);
+    const zeroGigSignal = await post('/api/signal', {
+      room: gigHost.code,
+      from: gigHost.peerId,
+      to: gigGuest.peerId,
+      type: 'gig-state',
+      payload: { dice: gigDice, source: 'manual-reset' }
+    }, { token: gigHost.sessionToken });
+    assert(zeroGigSignal.ok, 'Server rejected synchronized zero Gig state');
 
     console.log('INTEGRATION_OK_TCGATE_ALPHA_0.1_CANDIDATE_11');
   } catch (err) {

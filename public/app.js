@@ -560,11 +560,9 @@ function opponentGigRole() {
 
 function createGigDiceState() {
   const sides = [4, 6, 8, 10, 12, 20];
-  const hostValues = [3, 4, 5, 6, 7, 10];
-  const guestValues = [2, 3, 4, 5, 6, 9];
   return [
-    ...sides.map((side, index) => ({ id: `host-d${side}`, origin: 'host', owner: 'host', sides: side, value: hostValues[index] })),
-    ...sides.map((side, index) => ({ id: `guest-d${side}`, origin: 'guest', owner: 'guest', sides: side, value: guestValues[index] }))
+    ...sides.map(side => ({ id: `host-d${side}`, origin: 'host', owner: 'host', sides: side, value: 0 })),
+    ...sides.map(side => ({ id: `guest-d${side}`, origin: 'guest', owner: 'guest', sides: side, value: 0 }))
   ];
 }
 
@@ -579,7 +577,7 @@ function validGigDiceState(dice) {
     if (!['host', 'guest'].includes(die.origin) || !['host', 'guest'].includes(die.owner)) return false;
     const sides = Number(die.sides);
     const value = Number(die.value);
-    if (!allowedSides.has(sides) || !Number.isInteger(value) || value < 1 || value > sides) return false;
+    if (!allowedSides.has(sides) || !Number.isInteger(value) || value < 0 || value > sides) return false;
   }
   return true;
 }
@@ -710,10 +708,20 @@ function applyRemoteGigState(payload = {}) {
 function changeDieValue(dieId, delta) {
   const die = ensureGigDiceState().find(item => item.id === dieId);
   if (!die) return;
-  die.value = Math.min(die.sides, Math.max(1, Number(die.value) + delta));
+  die.value = Math.min(die.sides, Math.max(0, Number(die.value) + delta));
   renderGigDicePanel();
   persistGigState();
   sendGigState('value-change').catch(()=>{});
+}
+
+function resetGigDice() {
+  if (!gigDiceEnabledForCurrentGame()) return;
+  if (!window.confirm('Réinitialiser les dés ?')) return;
+  state.gigDice = ensureGigDiceState().map(die => ({ ...die, value: 0 }));
+  state.lastMovedDieId = null;
+  renderGigDicePanel();
+  persistGigState();
+  sendGigState('manual-reset').catch(()=>{});
 }
 
 function transferDie(dieId, targetUiOwner) {
@@ -4679,7 +4687,7 @@ window.addEventListener('tcg-identification-visible-cleared',(event)=>{
 /* ---------- Bindings ---------- */
 
 $('gigDicePanel')?.addEventListener('pointerdown', event => {
-  if (event.target.closest('.tcgate-die-adjust') || event.target.closest('#gigDiceDragHandle')) return;
+  if (event.target.closest('.tcgate-die-adjust') || event.target.closest('#gigDiceDragHandle') || event.target.closest('#gigDiceReset')) return;
   const dieWrap = event.target.closest('.tcgate-die-wrap');
   if (dieWrap) beginDieDrag(event, dieWrap);
 });
@@ -4687,6 +4695,11 @@ window.addEventListener('pointermove', updateDieDrag, { passive: false });
 window.addEventListener('pointerup', finishDieDrag);
 window.addEventListener('pointercancel', finishDieDrag);
 $('gigDicePanel')?.addEventListener('click', event => {
+  if (event.target.closest('#gigDiceReset')) {
+    event.stopPropagation();
+    resetGigDice();
+    return;
+  }
   const dieWrap = event.target.closest('.tcgate-die-wrap');
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (!dieWrap || !action) return;
