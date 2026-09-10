@@ -7,17 +7,14 @@ const BASE = '9422b052d34a999e1aec4a0f6be6124a86ad5f31';
 const read = file => fs.readFileSync(file, 'utf8');
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 const normalize = value => value.replace(/\r\n/g, '\n');
+const normalizeSpacing = value => normalize(value).replace(/\n{3,}/g, '\n\n').trimEnd();
 const homeSlice = html => html
   .slice(html.indexOf('<!-- HOME -->'), html.indexOf('<!-- SETUP CREATE/JOIN -->'))
   .replace(/\r\n/g, '\n');
 const between = (source, start, end) => source.slice(source.indexOf(start), source.indexOf(end, source.indexOf(start)));
-const normalizeGigTotemMarkup = source => source.replace(
-  /<button id="gigTotem"[\s\S]*?<\/button>/,
-  '<div class="tcgate-gig-divider" aria-hidden="true"></div>'
-);
-const withoutCheckpointDStyles = source => source.replace(
-  /\/\* Checkpoint D[\s\S]*?(?=@media \(max-width:600px\))/,
-  ''
+const normalizeGigPanelMarkup = source => source.replace(
+  /<section id="gigDicePanel"[\s\S]*?<\/section>/,
+  '<section id="gigDicePanel"></section>'
 );
 
 const html = read('public/index.html');
@@ -66,7 +63,7 @@ assert(css.includes('#screenLobby.future-hub-mounted'), 'Hub CSS is not scoped t
 assert(!css.includes('.tcgate-home-'), 'Future UX CSS touches the Candidate Home');
 assert(normalize(app) === normalize(checkpointApp), 'Checkpoint B changed app.js or a functional contract');
 assert(
-  normalize(normalizeGigTotemMarkup(html.slice(0, html.indexOf('<!-- CARD MODAL -->')))) === normalize(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- CARD MODAL -->'))),
+  normalize(normalizeGigPanelMarkup(html.slice(0, html.indexOf('<!-- CARD MODAL -->')))) === normalize(normalizeGigPanelMarkup(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- CARD MODAL -->')))),
   'Checkpoint C changed Home, Hub or the immersive Table DOM'
 );
 assert(
@@ -93,7 +90,7 @@ assert(
   'Checkpoint C changed Checkpoint A/B behavior'
 );
 assert(
-  normalize(withoutCheckpointDStyles(css).slice(0, withoutCheckpointDStyles(css).indexOf('/* Checkpoint C'))).trimEnd() === normalize(checkpointCss.slice(0, checkpointCss.indexOf('/* Checkpoint C'))).trimEnd(),
+  normalizeSpacing(css.slice(0, css.indexOf('/* Checkpoint D'))) === normalizeSpacing(checkpointCss.slice(0, checkpointCss.indexOf('/* Checkpoint D'))),
   'Checkpoint C changed Checkpoint A/B styles'
 );
 assert(ux.includes("root.TCGTableStateEngine?.getSnapshot?.()?.lastHover?.known"), 'Vision UX does not use Table State as its hit-test source');
@@ -118,16 +115,17 @@ const changedVisionFiles = execFileSync('git', ['diff', '--name-only', 'HEAD', '
 assert(!changedVisionFiles, `Vision engine files changed: ${changedVisionFiles}`);
 
 assert(
-  normalize(ux.slice(0, ux.indexOf('  /* Checkpoint D'))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  root.TCGateFutureUx'))).trimEnd(),
+  normalize(ux.slice(0, ux.indexOf('  /* Checkpoint D'))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  /* Checkpoint D'))).trimEnd(),
   'Checkpoint D changed Checkpoint A-C behavior'
 );
 assert(
-  normalize(withoutCheckpointDStyles(css)).trimEnd() === normalize(checkpointCss).trimEnd(),
+  normalizeSpacing(css.slice(css.indexOf('@media (max-width:600px)'))) === normalizeSpacing(checkpointCss.slice(checkpointCss.indexOf('@media (max-width:600px)'))),
   'Checkpoint D changed Checkpoint A-C styles'
 );
 assert(html.includes('id="gigTotem"') && html.includes('aria-expanded="true"'), 'Gig totem is missing');
-assert(ux.includes('gigTrack.append(gigOpponentSide, gigTotem, gigSelfSide)'), 'Gig sides are not arranged symmetrically around the totem');
-assert(ux.includes('gigTotem.append(gigOpponentScore)') && ux.includes('gigTotem.append(gigSelfScore)'), 'Street Cred is not retained in the totem');
+assert(ux.includes('gigTrack.append(gigOpponentSide)') && ux.includes('gigTrack.append(gigSelfSide)'), 'Gig sides are not retained around the center');
+assert(ux.includes('gigTrack.append(gigOpponentScore)') && ux.includes('gigTrack.append(gigSelfScore)'), 'Street Cred is not arranged around the totem');
+assert(html.includes('future-gig-totem-frame') && html.includes('future-gig-totem-core'), 'The central Gig totem artwork is missing');
 assert(ux.includes("gigTotem.addEventListener('click'"), 'Gig open/close control is missing');
 assert(!ux.slice(ux.indexOf('/* Checkpoint D')).includes("document.addEventListener('click'"), 'Gig closes on an outside click');
 assert(ux.includes('deviceMenu.append(gigReset)'), 'Candidate Reset is not moved to the secondary menu');

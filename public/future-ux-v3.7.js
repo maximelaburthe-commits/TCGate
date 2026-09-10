@@ -206,9 +206,11 @@
 
   function mountFutureGigDice() {
     if (!gigPanel || !gigTrack || !gigSelfSide || !gigOpponentSide || !gigTotem) return false;
-    gigTrack.append(gigOpponentSide, gigTotem, gigSelfSide);
-    if (gigOpponentScore) gigTotem.append(gigOpponentScore);
-    if (gigSelfScore) gigTotem.append(gigSelfScore);
+    gigTrack.append(gigOpponentSide);
+    if (gigOpponentScore) gigTrack.append(gigOpponentScore);
+    gigTrack.append(gigTotem);
+    if (gigSelfScore) gigTrack.append(gigSelfScore);
+    gigTrack.append(gigSelfSide);
     if (gigReset && deviceMenu) {
       gigReset.classList.add('future-gig-reset-menu');
       deviceMenu.append(gigReset);

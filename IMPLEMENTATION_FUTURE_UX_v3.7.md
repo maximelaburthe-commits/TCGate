@@ -126,15 +126,15 @@ La modale Candidate `cardModal` et son image `modalCardImage` sont conservées. 
 ### Éléments Candidate réutilisés
 
 - `gigDicePanel`, `gigDiceTrack`, `gigSelfDice` et `gigOpponentDice` restent les conteneurs rendus par `app.js`.
-- Les vrais compteurs `gigSelfCred` et `gigOpponentCred` sont déplacés dans le totem central sans duplication.
+- Les vrais compteurs `gigSelfCred` et `gigOpponentCred` encadrent le totem central sans duplication.
 - Le vrai bouton `gigDiceReset` est déplacé dans `gameDeviceMenu` et conserve son handler Candidate.
 - Les boutons contextuels `increment`/`decrement` et les hitboxes de drag existants sont conservés.
 
 ### Disposition et interaction
 
-Les dés adverses, le totem et les dés locaux forment une ligne bas-centre symétrique. Le côté adverse inverse visuellement l'ordre afin que les types homologues se répondent autour du centre. La valeur reste affichée dans chaque dé ; le type `d4` à `d20` est exposé uniquement en tooltip.
+Les dés adverses, leur Street Cred, le totem, le Street Cred local et les dés locaux forment une ligne bas-centre symétrique à cinq zones. Le côté adverse inverse visuellement l'ordre afin que les types homologues se répondent autour du centre. La valeur reste affichée dans chaque dé ; le type `d4` à `d20` est exposé uniquement en tooltip.
 
-Le totem ouvre ou replie les deux lignes sur clic. Aucun listener de clic extérieur n'est ajouté. Les deux Street Cred restent visibles dans le totem replié. Sur mobile, le composant démarre replié tout en restant accessible.
+Le totem graphique central ouvre ou replie les deux lignes sur clic. Aucun listener de clic extérieur n'est ajouté. Les deux Street Cred autonomes restent visibles de part et d'autre du totem replié. Sur mobile, le composant démarre replié tout en restant accessible.
 
 ### Mécanique inchangée
 
