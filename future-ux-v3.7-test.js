@@ -57,13 +57,16 @@ assert(
 assert(css.includes('#screenLobby.future-hub-mounted'), 'Hub CSS is not scoped to the Lobby');
 assert(!css.includes('.tcgate-home-'), 'Future UX CSS touches the Candidate Home');
 assert(normalize(app) === normalize(checkpointApp), 'Checkpoint B changed app.js or a functional contract');
-assert(normalize(html) === normalize(checkpointHtml), 'Checkpoint B changed the Candidate HTML');
 assert(
-  normalize(ux.slice(0, ux.indexOf('  const game ='))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  root.TCGateFutureUx'))).trimEnd(),
+  normalize(html.slice(0, html.indexOf('<!-- CARD MODAL -->'))) === normalize(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- CARD MODAL -->'))),
+  'Checkpoint C changed Home, Hub or the immersive Table DOM'
+);
+assert(
+  normalize(ux.slice(0, ux.indexOf('  const game ='))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  const game ='))).trimEnd(),
   'Checkpoint B changed the Checkpoint A Hub behavior'
 );
 assert(
-  normalize(css.slice(0, css.indexOf('/* Checkpoint B'))).trimEnd() === normalize(checkpointCss).trimEnd(),
+  normalize(css.slice(0, css.indexOf('/* Checkpoint B'))).trimEnd() === normalize(checkpointCss.slice(0, checkpointCss.indexOf('/* Checkpoint B'))).trimEnd(),
   'Checkpoint B changed the Checkpoint A Hub styles'
 );
 assert(ux.includes('function mountFutureTable()'), 'Future Table mount is missing');
@@ -76,5 +79,34 @@ assert(css.includes('#screenGame.future-table-v37 .tcgate-game-layout'), 'Immers
 assert(css.includes('#screenGame.future-table-v37 .tcgate-card-rail'), 'Candidate card preview is not retained as a contextual element');
 assert(css.includes('#screenGame.future-table-v37 .tcgate-game-actions'), 'Candidate media actions are not presented as a dock');
 assert(!css.includes('.tcgate-gig-'), 'Checkpoint B changes Gig Dice presentation');
+
+assert(
+  normalize(ux.slice(0, ux.indexOf('  /* Checkpoint C'))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  root.TCGateFutureUx'))).trimEnd(),
+  'Checkpoint C changed Checkpoint A/B behavior'
+);
+assert(
+  normalize(css.slice(0, css.indexOf('/* Checkpoint C'))).trimEnd() === normalize(checkpointCss).trimEnd(),
+  'Checkpoint C changed Checkpoint A/B styles'
+);
+assert(ux.includes("root.TCGTableStateEngine?.getSnapshot?.()?.lastHover?.known"), 'Vision UX does not use Table State as its hit-test source');
+assert(ux.includes("visionStage.addEventListener('pointermove', updatePhysicalCardHover)"), 'Physical-card hover is not wired');
+assert(ux.includes("visionStage.addEventListener('pointerleave', clearPhysicalCardHover)"), 'Physical-card leave is not wired');
+assert(ux.includes("visionStage.addEventListener('click', openPhysicalCardZoom)"), 'Physical-card click is not wired');
+assert(ux.includes('visionPreviewButton.click()'), 'Physical-card click does not reuse the Candidate zoom action');
+assert(ux.includes('left + previewWidth > root.innerWidth') && ux.includes('top + previewHeight > root.innerHeight'), 'Preview viewport-edge handling is missing');
+assert(css.includes('pointer-events:none;') && css.includes('#opponentFeed.future-vision-hit'), 'Informational preview or recognized-card cursor is missing');
+assert(css.includes('#cardModal .modal-close') && css.includes('#cardModal .modal-card-name'), 'Card-only zoom presentation is incomplete');
+assert(app.includes("$('closeCardModal').addEventListener('click'"), 'Candidate close-button behavior is missing');
+assert(app.includes("if (e.target === $('cardModal'))"), 'Candidate outside-click close behavior is missing');
+assert(app.includes("if (e.key === 'Escape')"), 'Candidate Escape close behavior is missing');
+
+const visionFiles = [
+  'public/detection-worker.js',
+  'public/vision-engine.js',
+  'public/identification.js',
+  'public/table-state-engine.js'
+];
+const changedVisionFiles = execFileSync('git', ['diff', '--name-only', 'HEAD', '--', ...visionFiles], { encoding: 'utf8' }).trim();
+assert(!changedVisionFiles, `Vision engine files changed: ${changedVisionFiles}`);
 
 console.log('FUTURE_UX_V3_7_HUB_OK');

@@ -117,5 +117,74 @@
   }
 
   mountFutureTable();
-  root.TCGateFutureUx = Object.freeze({ version: '3.7-table', mountUnifiedHub, mountFutureTable, showMediaDock });
+
+  /* Checkpoint C — presentation only; Table State remains the hit-test source. */
+  const visionStage = document.getElementById('opponentFeed');
+  const visionPreview = document.getElementById('displayCardPanel');
+  const visionPreviewButton = document.getElementById('displayCardButton');
+
+  function hasRecognizedPhysicalHover() {
+    return Boolean(root.TCGTableStateEngine?.getSnapshot?.()?.lastHover?.known);
+  }
+
+  function syncVisionPreviewVisibility() {
+    const visible = hasRecognizedPhysicalHover() && !visionPreviewButton?.classList.contains('hidden');
+    game?.classList.toggle('future-vision-preview-visible', Boolean(visible));
+  }
+
+  function placeVisionPreview(event) {
+    if (!visionPreview) return;
+    const previewWidth = Math.min(190, Math.max(132, root.innerWidth * .14));
+    const previewHeight = previewWidth * 1.4;
+    const gap = 18;
+    let left = event.clientX + gap;
+    let top = event.clientY + gap;
+    if (left + previewWidth > root.innerWidth - 10) left = event.clientX - previewWidth - gap;
+    if (top + previewHeight > root.innerHeight - 10) top = event.clientY - previewHeight - gap;
+    visionPreview.style.setProperty('--future-card-x', `${Math.max(10, left)}px`);
+    visionPreview.style.setProperty('--future-card-y', `${Math.max(10, top)}px`);
+  }
+
+  function updatePhysicalCardHover(event) {
+    const hit = hasRecognizedPhysicalHover();
+    visionStage?.classList.toggle('future-vision-hit', hit);
+    if (hit) placeVisionPreview(event);
+    syncVisionPreviewVisibility();
+  }
+
+  function clearPhysicalCardHover() {
+    visionStage?.classList.remove('future-vision-hit');
+    game?.classList.remove('future-vision-preview-visible');
+  }
+
+  function openPhysicalCardZoom(event) {
+    if (!hasRecognizedPhysicalHover() || visionPreviewButton?.classList.contains('hidden')) return;
+    if (event.target?.closest?.('button,select,input,#localFeed,.tcgate-fullscreen-card')) return;
+    visionPreviewButton.click();
+  }
+
+  function mountFutureVisionUx() {
+    if (!visionStage || !visionPreview || !visionPreviewButton) return false;
+    visionPreviewButton.tabIndex = -1;
+    visionPreviewButton.setAttribute('aria-hidden', 'true');
+    visionStage.addEventListener('pointermove', updatePhysicalCardHover);
+    visionStage.addEventListener('pointerleave', clearPhysicalCardHover);
+    visionStage.addEventListener('click', openPhysicalCardZoom);
+    root.addEventListener('tcg-table-hover-hit', syncVisionPreviewVisibility);
+    root.addEventListener('tcg-identification-result', syncVisionPreviewVisibility);
+    new MutationObserver(syncVisionPreviewVisibility).observe(visionPreviewButton, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    return true;
+  }
+
+  mountFutureVisionUx();
+  root.TCGateFutureUx = Object.freeze({
+    version: '3.7-vision',
+    mountUnifiedHub,
+    mountFutureTable,
+    mountFutureVisionUx,
+    showMediaDock
+  });
 })(window);

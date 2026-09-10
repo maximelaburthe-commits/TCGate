@@ -88,3 +88,35 @@ Le Checkpoint B ne modifie aucun HTML Candidate ni `app.js`. Les flux, handlers 
 - Gig Dice : interaction, synchronisation et reset inchangés.
 - F5 Host/Guest et recovery réseau.
 - Desktop 1920×1080, tablette et mobile.
+
+## Checkpoint C — Vision UX
+
+### Interaction
+
+- Le survol physique utilise exclusivement `TCGTableStateEngine.getSnapshot().lastHover` pour savoir si le pointeur se trouve sur une carte reconnue.
+- L'image Candidate `displayCardImage` est présentée seule près du pointeur. Sa position bascule automatiquement à gauche ou au-dessus près des bords du viewport.
+- L'aperçu est informatif, sans interaction et sans bouton d'agrandissement visible.
+- La zone physique reconnue utilise un curseur `cell`, visuellement assimilable à un petit signe plus.
+- Le clic sur cette zone déclenche programmatiquement le bouton Candidate `displayCardButton`, qui ouvre la carte déjà identifiée. Aucune nouvelle reconnaissance n'est lancée.
+
+### Zoom
+
+La modale Candidate `cardModal` et son image `modalCardImage` sont conservées. La présentation masque le nom et tous les panneaux pour ne montrer que la carte, avec la croix placée dans son coin supérieur droit. Les handlers Candidate ferment toujours par croix, Escape ou clic sur l'overlay extérieur.
+
+### Contrats inchangés
+
+- Aucun changement dans `app.js`.
+- Aucun changement dans `vision-engine.js`, `detection-worker.js`, `identification.js` ou `table-state-engine.js`.
+- Aucun changement de détection, tracking, identification, candidats, seuil, cadence, ONNX ou DB.
+- Home, Hub et composition Table B sont protégés par comparaison avec le checkpoint précédent.
+- Aucun sélecteur Gig Dice n'est ajouté ou modifié.
+
+### Validation Railway du Checkpoint C
+
+- Hover de cartes physiques au centre et près des quatre bords.
+- Aperçu image seul, suffisamment lisible, non interactif et sans sortie du viewport.
+- Curseur plus uniquement sur une hitbox reconnue.
+- Clic sur la carte physique ouvrant immédiatement le bon zoom.
+- Fermeture par croix, Escape et clic hors carte.
+- Retour immédiat à la Table et maintien des flux audio/vidéo.
+- Validation desktop 1920×1080, tablette et mobile.
