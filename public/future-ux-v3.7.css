@@ -398,6 +398,239 @@
   }
 }
 
+/* Checkpoint D — horizontal Gig Dice; Candidate state and handlers are reused. */
+
+#screenGame.future-table-v37 .tcgate-gig-panel,
+.opponent-feed-card:fullscreen .tcgate-gig-panel.is-fullscreen {
+  position:absolute !important;
+  left:50% !important;
+  right:auto !important;
+  top:auto !important;
+  bottom:12px !important;
+  z-index:92;
+  width:min(1040px,calc(100% - 190px)) !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  transform:translateX(-50%) !important;
+  overflow:visible;
+}
+
+#screenGame.future-table-v37 .tcgate-gig-drag-handle {
+  display:none !important;
+}
+
+#screenGame.future-table-v37 .tcgate-gig-track {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) !important;
+  align-items:end;
+  gap:10px;
+  width:100%;
+}
+
+#screenGame.future-table-v37 .tcgate-gig-side {
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  min-width:0;
+  min-height:70px;
+  padding:5px 8px;
+  border:0;
+  border-radius:12px;
+  background:linear-gradient(180deg,transparent,rgba(4,8,14,.7));
+}
+
+#screenGame.future-table-v37 .tcgate-gig-side-opp {
+  grid-column:1;
+}
+
+#screenGame.future-table-v37 .tcgate-gig-side-self {
+  grid-column:3;
+}
+
+#screenGame.future-table-v37 .tcgate-gig-side-opp .tcgate-gig-dice-lane {
+  flex-direction:row-reverse;
+}
+
+#screenGame.future-table-v37 .tcgate-gig-dice-lane {
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  gap:clamp(3px,.55vw,7px);
+  min-width:0;
+}
+
+#screenGame.future-table-v37 .tcgate-die-wrap {
+  width:clamp(38px,3.2vw,50px);
+  height:72px;
+  flex:0 0 clamp(38px,3.2vw,50px);
+  overflow:visible;
+  transition:transform .15s ease;
+}
+
+#screenGame.future-table-v37 .tcgate-die-wrap:hover {
+  z-index:4;
+  transform:scale(1.08);
+}
+
+#screenGame.future-table-v37 .tcgate-die-rail {
+  width:100%;
+  height:72px;
+  display:grid;
+  grid-template-rows:16px minmax(0,1fr) 16px;
+  place-items:center;
+}
+
+#screenGame.future-table-v37 .tcgate-die {
+  width:clamp(38px,3.2vw,50px);
+  height:clamp(38px,3.2vw,50px);
+}
+
+#screenGame.future-table-v37 .tcgate-die-adjust {
+  width:22px;
+  height:16px;
+  min-width:22px;
+  min-height:16px;
+  padding:0;
+  border:0;
+  background:rgba(5,9,15,.86);
+  color:#eef2fb;
+  font-size:13px;
+  line-height:1;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .12s ease;
+}
+
+#screenGame.future-table-v37 .tcgate-die-wrap:hover .tcgate-die-adjust,
+#screenGame.future-table-v37 .tcgate-die-wrap:focus-within .tcgate-die-adjust {
+  opacity:1;
+  pointer-events:auto;
+}
+
+#screenGame.future-table-v37 .future-gig-totem {
+  grid-column:2;
+  display:grid;
+  grid-template-columns:auto auto;
+  grid-template-areas:
+    'mark mark'
+    'opponent self';
+  align-items:center;
+  gap:3px 8px;
+  min-width:86px;
+  min-height:64px;
+  padding:7px 10px;
+  border:1px solid rgba(139,120,255,.3);
+  border-radius:18px;
+  background:rgba(6,10,18,.9);
+  box-shadow:0 12px 32px rgba(0,0,0,.38);
+  color:#f3f5fb;
+  cursor:pointer;
+}
+
+#screenGame.future-table-v37 .future-gig-mark {
+  grid-area:mark;
+  color:#aa99ff;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.14em;
+}
+
+#screenGame.future-table-v37 .future-gig-totem .tcgate-gig-score {
+  display:flex;
+  align-items:center;
+  gap:3px;
+  min-width:0;
+  padding:0;
+  border:0;
+  background:transparent;
+}
+
+#screenGame.future-table-v37 .future-gig-totem .tcgate-gig-score-opp {
+  grid-area:opponent;
+}
+
+#screenGame.future-table-v37 .future-gig-totem .tcgate-gig-score-self {
+  grid-area:self;
+}
+
+#screenGame.future-table-v37 .future-gig-totem .tcgate-gig-score span {
+  font-size:8px;
+  opacity:.66;
+}
+
+#screenGame.future-table-v37 .future-gig-totem .tcgate-gig-score strong {
+  font-size:14px;
+}
+
+#screenGame.future-table-v37 .future-gig-collapsed {
+  width:auto !important;
+}
+
+#screenGame.future-table-v37 .future-gig-collapsed .tcgate-gig-track {
+  grid-template-columns:0 auto 0 !important;
+}
+
+#screenGame.future-table-v37 .future-gig-collapsed .tcgate-gig-side {
+  width:0;
+  min-width:0;
+  height:0;
+  min-height:0;
+  padding:0;
+  overflow:hidden;
+  opacity:0;
+  pointer-events:none;
+}
+
+#screenGame.future-table-v37 #gameDeviceMenu .future-gig-reset-menu {
+  grid-column:1 / -1;
+  position:static;
+  width:auto;
+  height:34px;
+  margin:2px 0 0;
+  justify-self:stretch;
+}
+
+@media (max-width:900px) {
+  #screenGame.future-table-v37 .tcgate-gig-panel,
+  .opponent-feed-card:fullscreen .tcgate-gig-panel.is-fullscreen {
+    width:calc(100% - 92px) !important;
+    bottom:8px !important;
+  }
+
+  #screenGame.future-table-v37 .tcgate-gig-track {
+    gap:5px;
+  }
+
+  #screenGame.future-table-v37 .tcgate-gig-side {
+    padding-inline:3px;
+  }
+}
+
+@media (max-width:640px) {
+  #screenGame.future-table-v37 .tcgate-gig-panel,
+  .opponent-feed-card:fullscreen .tcgate-gig-panel.is-fullscreen {
+    width:auto !important;
+  }
+
+  #screenGame.future-table-v37 .tcgate-gig-panel:not(.future-gig-collapsed) {
+    width:calc(100% - 76px) !important;
+  }
+
+  #screenGame.future-table-v37 .tcgate-die-wrap {
+    width:34px;
+    flex-basis:34px;
+  }
+
+  #screenGame.future-table-v37 .tcgate-die {
+    width:34px;
+    height:34px;
+  }
+}
+
 @media (max-width:600px) {
   #screenGame.future-table-v37 .tcgate-feed-head {
     min-height:40px;

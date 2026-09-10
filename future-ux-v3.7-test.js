@@ -11,6 +11,14 @@ const homeSlice = html => html
   .slice(html.indexOf('<!-- HOME -->'), html.indexOf('<!-- SETUP CREATE/JOIN -->'))
   .replace(/\r\n/g, '\n');
 const between = (source, start, end) => source.slice(source.indexOf(start), source.indexOf(end, source.indexOf(start)));
+const normalizeGigTotemMarkup = source => source.replace(
+  /<button id="gigTotem"[\s\S]*?<\/button>/,
+  '<div class="tcgate-gig-divider" aria-hidden="true"></div>'
+);
+const withoutCheckpointDStyles = source => source.replace(
+  /\/\* Checkpoint D[\s\S]*?(?=@media \(max-width:600px\))/,
+  ''
+);
 
 const html = read('public/index.html');
 const app = read('public/app.js');
@@ -58,7 +66,7 @@ assert(css.includes('#screenLobby.future-hub-mounted'), 'Hub CSS is not scoped t
 assert(!css.includes('.tcgate-home-'), 'Future UX CSS touches the Candidate Home');
 assert(normalize(app) === normalize(checkpointApp), 'Checkpoint B changed app.js or a functional contract');
 assert(
-  normalize(html.slice(0, html.indexOf('<!-- CARD MODAL -->'))) === normalize(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- CARD MODAL -->'))),
+  normalize(normalizeGigTotemMarkup(html.slice(0, html.indexOf('<!-- CARD MODAL -->')))) === normalize(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- CARD MODAL -->'))),
   'Checkpoint C changed Home, Hub or the immersive Table DOM'
 );
 assert(
@@ -78,14 +86,14 @@ assert(!/cloneNode|replaceWith|insertAdjacentHTML|\.innerHTML\s*=/.test(ux), 'Fu
 assert(css.includes('#screenGame.future-table-v37 .tcgate-game-layout'), 'Immersive Table layout is missing');
 assert(css.includes('#screenGame.future-table-v37 .tcgate-card-rail'), 'Candidate card preview is not retained as a contextual element');
 assert(css.includes('#screenGame.future-table-v37 .tcgate-game-actions'), 'Candidate media actions are not presented as a dock');
-assert(!css.includes('.tcgate-gig-'), 'Checkpoint B changes Gig Dice presentation');
+assert(!css.slice(0, css.indexOf('/* Checkpoint D')).includes('.future-gig-'), 'Checkpoint A-C unexpectedly contain the horizontal Gig UI');
 
 assert(
-  normalize(ux.slice(0, ux.indexOf('  /* Checkpoint C'))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  root.TCGateFutureUx'))).trimEnd(),
+  normalize(ux.slice(0, ux.indexOf('  /* Checkpoint C'))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  /* Checkpoint C'))).trimEnd(),
   'Checkpoint C changed Checkpoint A/B behavior'
 );
 assert(
-  normalize(css.slice(0, css.indexOf('/* Checkpoint C'))).trimEnd() === normalize(checkpointCss).trimEnd(),
+  normalize(withoutCheckpointDStyles(css).slice(0, withoutCheckpointDStyles(css).indexOf('/* Checkpoint C'))).trimEnd() === normalize(checkpointCss.slice(0, checkpointCss.indexOf('/* Checkpoint C'))).trimEnd(),
   'Checkpoint C changed Checkpoint A/B styles'
 );
 assert(ux.includes("root.TCGTableStateEngine?.getSnapshot?.()?.lastHover?.known"), 'Vision UX does not use Table State as its hit-test source');
@@ -108,5 +116,29 @@ const visionFiles = [
 ];
 const changedVisionFiles = execFileSync('git', ['diff', '--name-only', 'HEAD', '--', ...visionFiles], { encoding: 'utf8' }).trim();
 assert(!changedVisionFiles, `Vision engine files changed: ${changedVisionFiles}`);
+
+assert(
+  normalize(ux.slice(0, ux.indexOf('  /* Checkpoint D'))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  root.TCGateFutureUx'))).trimEnd(),
+  'Checkpoint D changed Checkpoint A-C behavior'
+);
+assert(
+  normalize(withoutCheckpointDStyles(css)).trimEnd() === normalize(checkpointCss).trimEnd(),
+  'Checkpoint D changed Checkpoint A-C styles'
+);
+assert(html.includes('id="gigTotem"') && html.includes('aria-expanded="true"'), 'Gig totem is missing');
+assert(ux.includes('gigTrack.append(gigOpponentSide, gigTotem, gigSelfSide)'), 'Gig sides are not arranged symmetrically around the totem');
+assert(ux.includes('gigTotem.append(gigOpponentScore)') && ux.includes('gigTotem.append(gigSelfScore)'), 'Street Cred is not retained in the totem');
+assert(ux.includes("gigTotem.addEventListener('click'"), 'Gig open/close control is missing');
+assert(!ux.slice(ux.indexOf('/* Checkpoint D')).includes("document.addEventListener('click'"), 'Gig closes on an outside click');
+assert(ux.includes('deviceMenu.append(gigReset)'), 'Candidate Reset is not moved to the secondary menu');
+assert(ux.includes('wrap.title = `d${match[1]}`'), 'Die type tooltip is missing');
+assert(css.includes('.tcgate-die-wrap:hover .tcgate-die-adjust'), 'Contextual +/- controls are missing');
+assert(css.includes('.tcgate-gig-side-opp .tcgate-gig-dice-lane') && css.includes('flex-direction:row-reverse'), 'Mirrored die order is missing');
+assert(css.includes('.future-gig-collapsed .tcgate-gig-side'), 'Collapsed Gig sides are not hidden');
+
+const gigLogic = between(app, 'function createGigDiceState()', 'const GIG_PANEL_POSITION_KEY');
+for (const token of ['value: 0', "origin: 'host'", "origin: 'guest'", 'die.owner = targetOwner', "sendGigState('die-transfer')", "sendGigState('manual-reset')"]) {
+  assert(gigLogic.includes(token), `Candidate Gig invariant missing: ${token}`);
+}
 
 console.log('FUTURE_UX_V3_7_HUB_OK');
