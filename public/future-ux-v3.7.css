@@ -201,3 +201,232 @@
     margin-bottom:8px;
   }
 }
+
+/* Checkpoint B — immersive Table. Existing Candidate controls and handlers. */
+
+#screenGame.future-table-v37 {
+  position:relative;
+  min-height:100dvh;
+  height:100dvh;
+  overflow:hidden;
+  background:#03070d;
+}
+
+#screenGame.future-table-v37 .tcgate-game-topbar {
+  position:absolute;
+  inset:0 0 auto;
+  z-index:70;
+  height:0;
+  min-height:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  pointer-events:none;
+}
+
+#screenGame.future-table-v37 .tcgate-game-branding {
+  display:none;
+}
+
+#screenGame.future-table-v37 .tcgate-game-session {
+  position:fixed;
+  top:14px;
+  left:14px;
+  justify-self:auto;
+  pointer-events:auto;
+}
+
+#screenGame.future-table-v37 .tcgate-game-layout {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  width:100%;
+  height:100dvh;
+  min-height:0;
+  padding:0;
+  gap:0;
+  overflow:hidden;
+}
+
+#screenGame.future-table-v37 .tcgate-opponent-column {
+  position:relative;
+  width:100%;
+  height:100%;
+  min-height:0;
+  gap:0;
+}
+
+#screenGame.future-table-v37 .tcgate-opponent-card {
+  width:100%;
+  height:100%;
+  min-height:0;
+  grid-template-rows:44px minmax(0,1fr);
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+}
+
+#screenGame.future-table-v37 .tcgate-feed-head {
+  min-height:44px;
+  height:44px;
+  padding:0 12px;
+  border-color:rgba(113,126,158,.12);
+  background:rgba(5,9,15,.88);
+}
+
+#screenGame.future-table-v37 .tcgate-opponent-video {
+  width:100%;
+  height:100% !important;
+  min-height:0 !important;
+  aspect-ratio:auto !important;
+}
+
+#screenGame.future-table-v37 .tcgate-card-rail {
+  position:absolute;
+  top:58px;
+  right:76px;
+  z-index:45;
+  width:190px;
+  min-width:0;
+  pointer-events:none;
+}
+
+#screenGame.future-table-v37 .tcgate-card-inspector {
+  height:auto !important;
+  min-height:0 !important;
+  padding:9px;
+  opacity:.92;
+  pointer-events:auto;
+  box-shadow:0 18px 46px rgba(0,0,0,.34);
+}
+
+#screenGame.future-table-v37 .tcgate-card-slot {
+  min-height:0 !important;
+  aspect-ratio:5 / 7;
+}
+
+#screenGame.future-table-v37 .tcgate-alpha-diagnostics {
+  position:absolute;
+  top:12px;
+  left:128px;
+  bottom:auto;
+  z-index:72;
+  width:auto;
+  opacity:.42;
+}
+
+#screenGame.future-table-v37 .tcgate-game-actions {
+  position:fixed;
+  right:14px;
+  bottom:14px;
+  z-index:104;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:7px;
+  padding:8px;
+  border:1px solid rgba(137,151,184,.2);
+  border-radius:15px;
+  background:rgba(6,10,18,.88);
+  box-shadow:0 18px 46px rgba(0,0,0,.4);
+  opacity:.18;
+  transform:translateX(44px);
+  transition:opacity .18s ease,transform .18s ease;
+  pointer-events:auto;
+  backdrop-filter:blur(14px);
+}
+
+#screenGame.future-table-v37.future-media-dock-visible .tcgate-game-actions,
+#screenGame.future-table-v37 .tcgate-game-actions:hover,
+#screenGame.future-table-v37 .tcgate-game-actions:focus-within {
+  opacity:1;
+  transform:translateX(0);
+}
+
+#screenGame.future-table-v37 .tcgate-game-actions > button {
+  width:38px;
+  min-width:38px;
+  height:38px;
+  min-height:38px;
+  padding:0;
+  overflow:hidden;
+}
+
+#screenGame.future-table-v37 .tcgate-game-actions .tcgate-report-button,
+#screenGame.future-table-v37 .tcgate-game-actions #leaveGame {
+  width:38px;
+  color:transparent;
+  font-size:0;
+}
+
+#screenGame.future-table-v37 .tcgate-game-actions .tcgate-report-button::before {
+  content:'R';
+  color:#b9c1d2;
+  font-size:11px;
+  font-weight:800;
+}
+
+#screenGame.future-table-v37 .tcgate-game-actions #leaveGame::before {
+  content:'×';
+  color:#f1a0aa;
+  font-size:20px;
+  line-height:1;
+}
+
+#screenGame.future-table-v37 #gameDeviceMenu {
+  position:fixed;
+  right:68px;
+  bottom:14px;
+  top:auto;
+  z-index:106;
+  max-height:calc(100dvh - 28px);
+  overflow:auto;
+}
+
+@media (max-width:900px) {
+  #screenGame.future-table-v37 .tcgate-card-rail {
+    display:none;
+  }
+
+  #screenGame.future-table-v37 .tcgate-alpha-diagnostics {
+    display:none;
+  }
+
+  #screenGame.future-table-v37 .tcgate-local-pip {
+    width:min(34vw,210px);
+    height:auto;
+    aspect-ratio:16 / 9;
+  }
+}
+
+@media (max-width:600px) {
+  #screenGame.future-table-v37 .tcgate-feed-head {
+    min-height:40px;
+    height:40px;
+  }
+
+  #screenGame.future-table-v37 .tcgate-opponent-card {
+    grid-template-rows:40px minmax(0,1fr);
+  }
+
+  #screenGame.future-table-v37 .tcgate-game-session {
+    top:8px;
+    left:8px;
+  }
+
+  #screenGame.future-table-v37 .tcgate-game-actions {
+    right:8px;
+    bottom:8px;
+  }
+
+  #screenGame.future-table-v37 #gameDeviceMenu {
+    right:58px;
+    bottom:8px;
+    max-width:calc(100vw - 74px);
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  #screenGame.future-table-v37 .tcgate-game-actions {
+    transition:none;
+  }
+}

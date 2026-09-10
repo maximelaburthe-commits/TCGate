@@ -65,5 +65,57 @@
   }
 
   mountUnifiedHub();
-  root.TCGateFutureUx = Object.freeze({ version: '3.7-hub', mountUnifiedHub });
+
+  const game = document.getElementById('screenGame');
+  const gameActions = game?.querySelector('.tcgate-game-actions');
+  const deviceMenu = document.getElementById('gameDeviceMenu');
+  let dockTimer = null;
+
+  function dockMustStayVisible() {
+    return Boolean(
+      gameActions?.matches(':hover') ||
+      gameActions?.contains(document.activeElement) ||
+      (deviceMenu && !deviceMenu.classList.contains('hidden'))
+    );
+  }
+
+  function scheduleDockHide() {
+    clearTimeout(dockTimer);
+    dockTimer = root.setTimeout(() => {
+      if (dockMustStayVisible()) return scheduleDockHide();
+      game?.classList.remove('future-media-dock-visible');
+    }, 2600);
+  }
+
+  function showMediaDock() {
+    if (!game) return;
+    game.classList.add('future-media-dock-visible');
+    scheduleDockHide();
+  }
+
+  function mountFutureTable() {
+    if (!game || !gameActions) return false;
+    game.classList.add('future-table-v37');
+    document.getElementById('generateReportGame')?.setAttribute('aria-label', 'Générer un rapport complet');
+    document.getElementById('leaveGame')?.setAttribute('aria-label', 'Quitter la partie');
+    document.getElementById('leaveGame')?.setAttribute('title', 'Quitter la partie');
+    gameActions.addEventListener('pointerenter', showMediaDock);
+    gameActions.addEventListener('pointerleave', scheduleDockHide);
+    gameActions.addEventListener('focusin', showMediaDock);
+    gameActions.addEventListener('focusout', scheduleDockHide);
+    gameActions.addEventListener('click', showMediaDock);
+    game.addEventListener('pointermove', event => {
+      if (event.clientX >= root.innerWidth - 120 || event.clientY >= root.innerHeight - 120) showMediaDock();
+    }, { passive: true });
+    if (deviceMenu) {
+      new MutationObserver(() => {
+        if (!deviceMenu.classList.contains('hidden')) showMediaDock();
+        else scheduleDockHide();
+      }).observe(deviceMenu, { attributes: true, attributeFilter: ['class'] });
+    }
+    return true;
+  }
+
+  mountFutureTable();
+  root.TCGateFutureUx = Object.freeze({ version: '3.7-table', mountUnifiedHub, mountFutureTable, showMediaDock });
 })(window);

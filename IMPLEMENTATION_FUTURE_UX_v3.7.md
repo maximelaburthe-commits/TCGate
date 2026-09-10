@@ -50,3 +50,41 @@ La création immédiate hydrate exactement les informations de session Candidate
 - Ready Candidate avec ses conditions média inchangées, puis passage en Table.
 - F5 Host/Guest et reprise persistante.
 - Responsive desktop 1920×1080, tablette et mobile.
+
+## Checkpoint B — Table immersive
+
+### Fichiers modifiés
+
+- `public/future-ux-v3.7.css` : composition immersive et responsive de la Table.
+- `public/future-ux-v3.7.js` : visibilité contextuelle du dock média existant.
+- `future-ux-v3.7-test.js` : gardes Checkpoint A et contrats fonctionnels, plus structure du Checkpoint B.
+- `IMPLEMENTATION_FUTURE_UX_v3.7.md` : présent chapitre.
+
+### Éléments Candidate réutilisés
+
+- `screenGame`, `opponentFeed`, `remoteVideo`, `localFeed` et `localVideo` pour les flux existants.
+- `toggleCam`, `toggleMic` et `deviceMenuToggle` dans un dock vertical contextuel.
+- `gameDeviceMenu` inchangé, maintenu visible pendant l'interaction.
+- `generateReportGame` et `leaveGame` conservent leurs handlers Candidate dans le même dock discret.
+- `displayCardPanel` reste disponible comme aperçu compact ; aucune logique Vision n'est modifiée.
+- `gigDiceMount` et `gigDicePanel` restent fonctionnellement et visuellement sous leur contrat Candidate.
+
+### Comportement
+
+La vidéo adverse occupe la surface utile de la fenêtre. Le rail droit ne consomme plus une colonne fixe : l'aperçu de carte existant devient un élément compact superposé. Le dock apparaît au survol, au focus, au clic ou à l'approche des bords droit/bas, reste ouvert avec le menu de périphériques et se replie après 2,6 secondes d'inactivité.
+
+### Contrats non modifiés
+
+Le Checkpoint B ne modifie aucun HTML Candidate ni `app.js`. Les flux, handlers média, Ready, WebRTC, signaling, TURN/ICE, recovery, Phone Camera, Vision, Gig Dice et rapports utilisent donc strictement leurs fonctions existantes. Aucun Timer, Host Launch, deck, langue ou nouvelle action n'est ajouté.
+
+### Validation Railway du Checkpoint B
+
+- Passage Hub vers Table avec Host et Guest.
+- Audio/vidéo dans les deux sens ; PiP local.
+- Apparition et repli du dock après 2–3 secondes.
+- Caméra, micro et menu de périphériques depuis le dock.
+- Rapport et sortie de partie via leurs handlers existants.
+- Vision : hover, aperçu et zoom inchangés fonctionnellement.
+- Gig Dice : interaction, synchronisation et reset inchangés.
+- F5 Host/Guest et recovery réseau.
+- Desktop 1920×1080, tablette et mobile.
