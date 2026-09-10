@@ -12,6 +12,7 @@
     "test:cyberpunk-db": "node cyberpunk-db-integration-test.js",
     "test:control-center-forwarder": "node control-center-forwarder-test.js",
     "test:phone-diagnostics": "node phone-camera-diagnostics-test.js",
+    "test:future-ux": "node future-ux-v3.7-test.js && node future-ux-room-metadata-test.js",
     "test:vision-backpressure": "node vision-backpressure-test.js",
     "test:vision-resolution": "node vision-analysis-resolution-test.js",
     "test:vision-appearance": "node vision-appearance-batch-test.js",

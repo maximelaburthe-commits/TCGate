@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/tcgate-alpha.css">
   <link rel="stylesheet" href="/tcgate-alpha-ui-1.0.5.css">
+  <link rel="stylesheet" href="/future-ux-v3.7.css">
   <link rel="stylesheet" href="/report-mail.css">
 </head>
 <body>
@@ -103,6 +104,11 @@
             </select>
             <small id="gameModeHelp" class="field-help">Vision est activé uniquement pour les jeux pris en charge.</small>
           </label>
+
+          <div id="hubGameReadonly" class="future-hub-readonly hidden">
+            <span>Jeu</span>
+            <strong id="hubGameReadonlyValue">—</strong>
+          </div>
 
           <button id="setupContinue" class="primary full">Continuer</button>
         </div>
@@ -495,6 +501,7 @@
   <script src="/media-recovery.js"></script>
   <script src="/offer-delivery-retry.js"></script>
   <script src="/phone-camera.js"></script>
+  <script src="/future-ux-v3.7.js"></script>
   <script src="/app.js"></script>
   <script src="/report-mail-ui.js"></script>
 </body>

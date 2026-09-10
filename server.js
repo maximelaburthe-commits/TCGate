@@ -837,6 +837,41 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    const roomUpdateMatch = pathname.match(/^\/api\/rooms\/([A-Z0-9]+)$/i);
+    if (req.method === 'PATCH' && roomUpdateMatch) {
+      const room = getRoom(roomUpdateMatch[1]);
+      const body = await readJson(req);
+      const peer = authenticatedPeer(req, room, body.peerId);
+      if (!room || !peer) return sendJson(res, 401, { ok: false, error: 'Session inconnue' });
+      if (!sessionRateLimit(res, peer, 'room-update', 60, 60 * 1000)) return;
+      if ((room.phase || 'lobby') !== 'lobby') {
+        return sendJson(res, 409, { ok: false, error: 'La partie a d\u00e9j\u00e0 commenc\u00e9' });
+      }
+
+      const updatesName = Object.prototype.hasOwnProperty.call(body, 'name');
+      const updatesGame = Object.prototype.hasOwnProperty.call(body, 'game');
+      if (!updatesName && !updatesGame) {
+        return sendJson(res, 400, { ok: false, error: 'Aucune modification valide' });
+      }
+      if (updatesName) {
+        if (typeof body.name !== 'string' || !body.name.trim() || body.name.length > 64) {
+          return sendJson(res, 400, { ok: false, error: 'Pseudo invalide' });
+        }
+        peer.name = sanitizeName(body.name);
+      }
+      if (updatesGame) {
+        if (peer.role !== 'host') return sendJson(res, 403, { ok: false, error: 'Seul l\u2019h\u00f4te peut modifier le jeu' });
+        if (!ALLOWED_GAMES.has(String(body.game || ''))) {
+          return sendJson(res, 400, { ok: false, error: 'Jeu invalide' });
+        }
+        room.game = String(body.game);
+      }
+      peer.lastSeen = Date.now();
+      const snapshot = roomSnapshot(room);
+      broadcastRoomState(room);
+      return sendJson(res, 200, { ok: true, room: snapshot });
+    }
+
 
     if (req.method === 'GET' && pathname === '/api/recovery-state') {
       if (!rateLimit(req, res, 'recovery-state', 60, 60 * 1000)) return;

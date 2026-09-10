@@ -33,6 +33,7 @@ const state = {
   readyStatePollTimer: null,
   readyStatePollInFlight: false,
   readyStatePollCount: 0,
+  hubMetadataTimer: null,
   rtcPrewarmPending: false,
   rtcPrewarmReady: false,
   rtcPrewarmError: null,
@@ -392,6 +393,57 @@ function hydrateSessionFromResult(result) {
   history.replaceState({}, '', `${location.pathname}?room=${state.roomCode}`);
   saveRoomSession();
   hidePersistentRecoveryCard();
+  syncHubSessionControls();
+}
+
+function syncHubSessionControls() {
+  const connected = Boolean(state.roomCode && state.peerId && state.authToken);
+  const host = state.role === 'host' || (!connected && state.mode === 'create');
+  screens.lobby?.classList.toggle('hub-preconnect', !connected);
+  $('setupContinue')?.classList.toggle('hidden', connected);
+  $('roomCodeField')?.classList.toggle('hidden', connected || state.mode === 'create');
+  $('gameField')?.classList.toggle('hidden', connected ? !host : state.mode !== 'create');
+  $('hubGameReadonly')?.classList.toggle('hidden', !connected || host);
+  if ($('hubGameReadonlyValue')) $('hubGameReadonlyValue').textContent = gameLabel(state.game);
+  if ($('gameSelect') && host) $('gameSelect').value = state.game;
+  if ($('copyCode')) $('copyCode').disabled = !connected;
+  if ($('copyLink')) $('copyLink').disabled = !connected;
+}
+
+async function updateHubMetadata(patch) {
+  if (!state.roomCode || !state.peerId || !state.authToken || state.gameActive) return;
+  try {
+    const result = await api(`/api/rooms/${encodeURIComponent(state.roomCode)}`, {
+      method: 'PATCH',
+      body: { peerId: state.peerId, ...patch }
+    });
+    if (patch.name && result?.room) {
+      const me = result.room.peers.find(peer => peer.id === state.peerId);
+      if (me?.name) {
+        state.playerName = me.name;
+        $('lobbyPlayerName').textContent = me.name;
+        $('localPlayerLabel').textContent = me.name;
+        if (document.activeElement !== $('playerName')) $('playerName').value = me.name;
+      }
+    }
+    if (patch.game && result?.room?.game) {
+      state.game = result.room.game;
+      applyGameModeUi();
+    }
+    if (result?.room) state.roomSnapshot = result.room;
+    saveRoomSession();
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+function scheduleHubNameUpdate() {
+  if (!state.roomCode) return;
+  clearTimeout(state.hubMetadataTimer);
+  state.hubMetadataTimer = setTimeout(() => {
+    const name = $('playerName').value.trim();
+    if (name) updateHubMetadata({ name });
+  }, 350);
 }
 
 async function recoverPersistentSession() {
@@ -1457,10 +1509,33 @@ function configureSetup(mode) {
     : 'Entre le code reçu et choisis ton pseudo. Le jeu est défini par le salon.';
   $('roomCodeField').classList.toggle('hidden', create);
   $('gameField').classList.toggle('hidden', !create);
-  $('setupContinue').textContent = create ? 'Créer le salon' : 'Rejoindre le salon';
+  $('setupContinue').textContent = create ? 'Ouvrir la table' : 'Rejoindre la table';
   if (!create && !new URLSearchParams(location.search).get('room')) $('roomCodeInput').value = '';
-  showScreen('setup');
+  state.roomCode = null;
+  state.peerId = null;
+  state.authToken = null;
+  state.role = null;
+  state.roomSnapshot = null;
+  state.opponentPresent = false;
+  state.opponentReady = false;
+  screens.lobby?.classList.add('hub-preconnect');
+  $('lobbyCode').textContent = '—';
+  $('lobbyPlayerName').textContent = create ? 'Hôte' : 'Invité';
+  $('lobbyOwnStatus').textContent = 'Configuration';
+  $('lobbyOpponentName').textContent = create ? 'Invité' : 'Hôte';
+  $('opponentWaitingText').textContent = 'En attente…';
+  syncHubSessionControls();
+  showScreen('lobby');
   setTimeout(() => (create ? $('playerName') : $('roomCodeInput')).focus(), 0);
+}
+
+async function openCreateHub() {
+  configureSetup('create');
+  $('playerName').value = 'Joueur';
+  $('gameSelect').value = 'cyberpunk';
+  state.game = 'cyberpunk';
+  $('setupContinue').classList.add('hidden');
+  await enterLobby({ provisional: true });
 }
 
 function currentVideoTrack() {
@@ -2435,7 +2510,7 @@ async function tryResumeSavedSession() {
   }
 }
 
-async function enterLobby() {
+async function enterLobby({ provisional = false } = {}) {
   const name = $('playerName').value.trim() || 'Joueur';
   state.playerName = name;
   if (state.mode === 'create') state.game = $('gameSelect').value;
@@ -2496,10 +2571,12 @@ async function enterLobby() {
 
     connectEventStream().catch(() => {});
     applyRoomState(result.room);
+    syncHubSessionControls();
     showScreen('lobby');
   } catch (err) {
     toast(err.message);
     logEvent('room-error', { message: err.message });
+    if (provisional) $('setupContinue').classList.remove('hidden');
   } finally {
     $('setupContinue').disabled = false;
   }
@@ -4779,9 +4856,12 @@ $('gameSelect').addEventListener('change', () => {
   $('gameModeHelp').textContent = noGame
     ? 'Mode webcam pur : aucun modèle, aucune base de cartes et aucun traitement Vision ne seront chargés.'
     : 'Vision analyse uniquement le flux adverse pour ce jeu pris en charge.';
+  if (state.roomCode && state.role === 'host') updateHubMetadata({ game: $('gameSelect').value });
 });
 
-$('goCreate').addEventListener('click', () => configureSetup('create'));
+$('playerName').addEventListener('input', scheduleHubNameUpdate);
+
+$('goCreate').addEventListener('click', openCreateHub);
 $('goJoin').addEventListener('click', () => configureSetup('join'));
 $('resumeSessionButton').addEventListener('click', recoverPersistentSession);
 $('setupBack').addEventListener('click', () => showScreen('home'));
