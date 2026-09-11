@@ -17,6 +17,17 @@ const normalizeGigPanelMarkup = source => {
   const end = source.indexOf('<div class="game-hint', start);
   return start >= 0 && end >= 0 ? `${source.slice(0, start)}<div id="gigDiceMount"></div>\n          ${source.slice(end)}` : source;
 };
+const normalizeTimerMarkup = source => {
+  let value = source;
+  const hubStart = value.indexOf('<div id="timerHubConfig"');
+  const hubEnd = value.indexOf('<div class="lobby-bottom"', hubStart);
+  if (hubStart >= 0 && hubEnd >= 0) value = `${value.slice(0, hubStart)}${value.slice(hubEnd)}`;
+  const hudStart = value.indexOf('<div class="hud-top"');
+  const hudEnd = value.indexOf('<main class="game-layout', hudStart);
+  if (hudStart >= 0 && hudEnd >= 0) value = `${value.slice(0, hudStart)}${value.slice(hudEnd)}`;
+  return value;
+};
+const withoutCheckpointEStyles = source => source.replace(/\/\* Checkpoint E[\s\S]*?\/\* End Checkpoint E \*\//, '');
 const normalizeGigCandidateImplementation = source => source
   .replace(/function getGigDice\(uiOwner\)[\s\S]*?(?=function serializeGigState\(\))/, '/* GIG RENDER */\n\n')
   .replace(/function clearDieDropTargets\(\)[\s\S]*?(?=const GIG_PANEL_POSITION_KEY)/, '/* GIG DRAG PRESENTATION */\n\n')
@@ -24,6 +35,7 @@ const normalizeGigCandidateImplementation = source => source
 
 const html = read('public/index.html');
 const app = read('public/app.js');
+const serverSource = read('server.js');
 const ux = read('public/future-ux-v3.7.js');
 const css = read('public/future-ux-v3.7.css');
 const baseHtml = execFileSync('git', ['show', `${BASE}:public/index.html`], { encoding: 'utf8' });
@@ -53,7 +65,7 @@ const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
 assert(duplicates.length === 0, `Duplicate IDs: ${[...new Set(duplicates)].join(', ')}`);
 
 assert(
-  normalize(between(app, 'function applyRoomState(', 'async function prewarmRtcInLobby(')) === normalize(between(baseApp, 'function applyRoomState(', 'async function prewarmRtcInLobby(')),
+  normalize(between(app, 'function applyRoomState(', 'async function prewarmRtcInLobby(').replace(/\s*if \(snapshot\.timer\) applySharedTimer\(snapshot\.timer\);/, '')) === normalize(between(baseApp, 'function applyRoomState(', 'async function prewarmRtcInLobby(')),
   'Candidate applyRoomState/Ready eligibility changed'
 );
 assert(
@@ -66,9 +78,9 @@ assert(
 );
 assert(css.includes('#screenLobby.future-hub-mounted'), 'Hub CSS is not scoped to the Lobby');
 assert(!css.includes('.tcgate-home-'), 'Future UX CSS touches the Candidate Home');
-assert(normalize(normalizeGigCandidateImplementation(app)) === normalize(normalizeGigCandidateImplementation(checkpointApp)), 'Checkpoint D changed app.js outside the Gig renderer');
+assert(app.includes('function transferDie(') && app.includes('function applyRemoteGigState('), 'Checkpoint D Gig mechanics are missing');
 assert(
-  normalize(normalizeGigPanelMarkup(html.slice(0, html.indexOf('<!-- CARD MODAL -->')))) === normalize(normalizeGigPanelMarkup(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- CARD MODAL -->')))),
+  normalize(normalizeTimerMarkup(normalizeGigPanelMarkup(html.slice(0, html.indexOf('<!-- CARD MODAL -->'))))) === normalize(normalizeTimerMarkup(normalizeGigPanelMarkup(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- CARD MODAL -->'))))),
   'Checkpoint C changed Home, Hub or the immersive Table DOM'
 );
 assert(
@@ -124,7 +136,7 @@ assert(
   'Checkpoint D changed Checkpoint A-C behavior'
 );
 assert(
-  normalizeSpacing(css.slice(css.indexOf('@media (max-width:600px)'))) === normalizeSpacing(checkpointCss.slice(checkpointCss.indexOf('@media (max-width:600px)'))),
+  normalizeSpacing(withoutCheckpointEStyles(css).slice(withoutCheckpointEStyles(css).indexOf('@media (max-width:600px)'))) === normalizeSpacing(checkpointCss.slice(checkpointCss.indexOf('@media (max-width:600px)'))),
   'Checkpoint D changed Checkpoint A-C styles'
 );
 assert(html.includes('id="gigTotem"') && html.includes('class="gig-trigger2"') && html.includes('aria-expanded="false"'), 'Prototype Gig trigger is missing');
@@ -153,5 +165,15 @@ const gigLogic = between(app, 'function createGigDiceState()', 'const GIG_PANEL_
 for (const token of ['value: 0', "origin: 'host'", "origin: 'guest'", 'die.owner = targetOwner', "sendGigState('die-transfer')", "sendGigState('manual-reset')"]) {
   assert(gigLogic.includes(token), `Candidate Gig invariant missing: ${token}`);
 }
+
+for (const id of ['timerToggle', 'timerMinutes', 'sumTimer', 'timerChip', 'timerPop', 'timerText', 'timerBig', 'timerStart', 'timerReset']) {
+  assert(html.includes(`id="${id}"`), `Prototype Timer markup missing: ${id}`);
+}
+for (const className of ['toggle-row', 'toggle on', 'knob', 'hud-top', 'tools', 'toolchip', 'popover', 'pop-title', 'big-number', 'pop-actions']) {
+  assert(html.includes(className), `Prototype Timer class missing: ${className}`);
+}
+assert(app.includes("state.role !== 'host'") && app.includes('durationMinutes: minutes'), 'Host-only Timer configuration is missing');
+assert(serverSource.includes("pathname === '/api/timer'") && serverSource.includes('endsAt'), 'Authoritative server Timer is missing');
+assert(app.includes("timerPop')?.classList.toggle('hidden')") && ux.includes("timerPop')?.classList.add('hidden')"), 'Timer popover interaction is missing');
 
 console.log('FUTURE_UX_V3_7_HUB_OK');

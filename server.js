@@ -462,6 +462,23 @@ function publicPeer(peer) {
   };
 }
 
+function createRoomTimer() {
+  return { enabled: true, durationSeconds: 3000, running: false, remainingSeconds: 3000, endsAt: null, revision: 0 };
+}
+
+function materializeRoomTimer(room, now = Date.now()) {
+  if (!room.timer) room.timer = createRoomTimer();
+  if (room.timer.running && room.timer.endsAt != null) {
+    room.timer.remainingSeconds = Math.max(0, Math.ceil((room.timer.endsAt - now) / 1000));
+    if (room.timer.remainingSeconds === 0) {
+      room.timer.running = false;
+      room.timer.endsAt = null;
+      room.timer.revision += 1;
+    }
+  }
+  return { ...room.timer };
+}
+
 function roomSnapshot(room) {
   return {
     code: room.code,
@@ -469,6 +486,7 @@ function roomSnapshot(room) {
     createdAt: room.createdAt,
     recoveryEpoch: room.recoveryEpoch || 0,
     phase: room.phase || 'lobby',
+    timer: materializeRoomTimer(room),
     peers: [...room.peers.values()].map(publicPeer)
   };
 }
@@ -776,6 +794,7 @@ const server = http.createServer(async (req, res) => {
         createdAt: Date.now(),
         recoveryEpoch: 0,
         phase: 'lobby',
+        timer: createRoomTimer(),
         peers: new Map()
       };
       room.peers.set(id, {
@@ -850,7 +869,8 @@ const server = http.createServer(async (req, res) => {
 
       const updatesName = Object.prototype.hasOwnProperty.call(body, 'name');
       const updatesGame = Object.prototype.hasOwnProperty.call(body, 'game');
-      if (!updatesName && !updatesGame) {
+      const updatesTimer = Object.prototype.hasOwnProperty.call(body, 'timer');
+      if (!updatesName && !updatesGame && !updatesTimer) {
         return sendJson(res, 400, { ok: false, error: 'Aucune modification valide' });
       }
       if (updatesName) {
@@ -865,6 +885,15 @@ const server = http.createServer(async (req, res) => {
           return sendJson(res, 400, { ok: false, error: 'Jeu invalide' });
         }
         room.game = String(body.game);
+      }
+      if (updatesTimer) {
+        if (peer.role !== 'host') return sendJson(res, 403, { ok: false, error: 'Seul l\u2019h\u00f4te peut modifier le minuteur' });
+        const enabled = body.timer?.enabled;
+        const minutes = Number(body.timer?.durationMinutes);
+        if (typeof enabled !== 'boolean' || !Number.isInteger(minutes) || minutes < 1 || minutes > 180) {
+          return sendJson(res, 400, { ok: false, error: 'Configuration minuteur invalide' });
+        }
+        room.timer = { enabled, durationSeconds: minutes * 60, running: false, remainingSeconds: minutes * 60, endsAt: null, revision: (room.timer?.revision || 0) + 1 };
       }
       peer.lastSeen = Date.now();
       const snapshot = roomSnapshot(room);
@@ -1044,6 +1073,35 @@ const server = http.createServer(async (req, res) => {
       }
       broadcastRoomState(room);
       return sendJson(res, 200, { ok: true, room: roomSnapshot(room) });
+    }
+
+    if (req.method === 'POST' && pathname === '/api/timer') {
+      const body = await readJson(req);
+      const room = getRoom(body.room);
+      const peer = authenticatedPeer(req, room, body.peerId);
+      if (!room || !peer) return sendJson(res, 401, { ok: false, error: 'Session inconnue' });
+      if (!sessionRateLimit(res, peer, 'timer', 120, 60 * 1000)) return;
+      if ((room.phase || 'lobby') !== 'game') return sendJson(res, 409, { ok: false, error: 'Partie non démarrée' });
+      const timer = materializeRoomTimer(room);
+      if (!timer.enabled || !['start', 'pause', 'reset'].includes(body.action)) {
+        return sendJson(res, 400, { ok: false, error: 'Action minuteur invalide' });
+      }
+      if (body.action === 'start' && timer.remainingSeconds > 0) {
+        timer.running = true;
+        timer.endsAt = Date.now() + timer.remainingSeconds * 1000;
+      } else if (body.action === 'pause') {
+        timer.running = false;
+        timer.endsAt = null;
+      } else if (body.action === 'reset') {
+        timer.running = false;
+        timer.remainingSeconds = timer.durationSeconds;
+        timer.endsAt = null;
+      }
+      timer.revision += 1;
+      room.timer = timer;
+      const snapshot = roomSnapshot(room);
+      broadcastRoomState(room);
+      return sendJson(res, 200, { ok: true, room: snapshot });
     }
 
     if (req.method === 'POST' && pathname === '/api/signal') {

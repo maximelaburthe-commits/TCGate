@@ -198,6 +198,7 @@
       deviceMenu.append(gigReset);
     }
     gigTotem.addEventListener('click', () => {
+      document.getElementById('timerPop')?.classList.add('hidden');
       setGigExpanded(!gigTotem.matches('[aria-expanded="true"]'));
     });
     setGigExpanded(false);

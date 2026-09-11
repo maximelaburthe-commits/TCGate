@@ -89,6 +89,14 @@ Le Checkpoint B ne modifie aucun HTML Candidate ni `app.js`. Les flux, handlers 
 - F5 Host/Guest et recovery réseau.
 - Desktop 1920×1080, tablette et mobile.
 
+## Checkpoint E — Timer partagé
+
+Le Hub et la Table reprennent directement les classes et le markup Timer du prototype v3.7 (`toggle-row`, `toggle`, `knob`, `hud-top`, `toolchip`, `popover`, `big-number`, `pop-actions`). Le Host configure l'activation et une durée de 1 à 180 minutes ; le Guest reçoit cette configuration en lecture seule.
+
+La room serveur porte l'état autoritatif `timer` dans chaque snapshot. Start calcule `endsAt`, Pause matérialise `remainingSeconds` et Reset restaure `durationSeconds`. Les deux rôles peuvent agir en partie. Les clients calculent l'affichage depuis `endsAt` sans événement réseau par seconde ; un snapshot suffit au recovery/F5.
+
+Checklist Railway : Timer ON/OFF Host, Guest readonly, chip fermé, popover ouvert, Start/Pause/Reset, passage à `00:00`, ouverture successive Timer/Gig, recovery des deux rôles, 1920×1080 et écran réduit.
+
 ## Checkpoint C — Vision UX
 
 ### Interaction

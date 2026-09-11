@@ -72,6 +72,8 @@ const state = {
   gigDice: [],
   dieDrag: null,
   lastMovedDieId: null,
+  timer: { enabled: true, durationSeconds: 3000, running: false, remainingSeconds: 3000, endsAt: null, revision: 0 },
+  timerTick: null,
 
   lostCameraId: null,
   lostMicrophoneId: null,
@@ -408,6 +410,56 @@ function syncHubSessionControls() {
   if ($('gameSelect') && host) $('gameSelect').value = state.game;
   if ($('copyCode')) $('copyCode').disabled = !connected;
   if ($('copyLink')) $('copyLink').disabled = !connected;
+  if ($('timerToggle')) $('timerToggle').disabled = !host;
+  if ($('timerMinutes')) $('timerMinutes').disabled = !host;
+}
+
+function timerRemainingSeconds() {
+  return state.timer.running && state.timer.endsAt != null
+    ? Math.max(0, Math.ceil((state.timer.endsAt - Date.now()) / 1000))
+    : Math.max(0, Number(state.timer.remainingSeconds || 0));
+}
+
+function formatTimer(seconds) {
+  const value = Math.max(0, Math.floor(Number(seconds) || 0));
+  return `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
+}
+
+function renderSharedTimer() {
+  const remaining = timerRemainingSeconds();
+  if (remaining === 0 && state.timer.running) {
+    state.timer.running = false;
+    state.timer.remainingSeconds = 0;
+    state.timer.endsAt = null;
+    clearInterval(state.timerTick);
+    state.timerTick = null;
+    logEvent('timer-zero', { remainingSeconds: 0 });
+  }
+  const text = formatTimer(remaining);
+  $('timerToggle')?.classList.toggle('on', state.timer.enabled);
+  $('timerToggle')?.setAttribute('aria-pressed', state.timer.enabled ? 'true' : 'false');
+  $('timerCfg')?.classList.toggle('hidden', !state.timer.enabled);
+  if ($('timerMinutes') && document.activeElement !== $('timerMinutes')) $('timerMinutes').value = String(state.timer.durationSeconds / 60);
+  if ($('sumTimer')) $('sumTimer').textContent = state.timer.enabled ? `${state.timer.durationSeconds / 60} min` : 'Désactivé';
+  $('timerChip')?.classList.toggle('hidden', !state.timer.enabled || !state.gameActive);
+  if ($('timerText')) $('timerText').textContent = text;
+  if ($('timerBig')) $('timerBig').textContent = text;
+  if ($('timerStart')) $('timerStart').textContent = state.timer.running ? '⏸ Pause' : '▶ Démarrer';
+}
+
+function applySharedTimer(timer, source = 'room-state') {
+  if (!timer) return;
+  state.timer = { ...state.timer, ...timer };
+  clearInterval(state.timerTick);
+  state.timerTick = state.timer.running ? setInterval(renderSharedTimer, 250) : null;
+  renderSharedTimer();
+  logEvent('timer-state-received', { source, enabled: state.timer.enabled, durationSeconds: state.timer.durationSeconds, running: state.timer.running, remainingSeconds: timerRemainingSeconds() });
+}
+
+async function sendTimerAction(action) {
+  const result = await api('/api/timer', { method: 'POST', body: { room: state.roomCode, peerId: state.peerId, action } });
+  logEvent(`timer-${action}`, { remainingSeconds: result?.room?.timer?.remainingSeconds ?? null });
+  if (result?.room) applyRoomState(result.room);
 }
 
 async function updateHubMetadata(patch) {
@@ -430,7 +482,7 @@ async function updateHubMetadata(patch) {
       state.game = result.room.game;
       applyGameModeUi();
     }
-    if (result?.room) state.roomSnapshot = result.room;
+    if (result?.room) applyRoomState(result.room);
     saveRoomSession();
   } catch (err) {
     toast(err.message);
@@ -2768,6 +2820,7 @@ function applyRoomState(snapshot) {
   }
   state.recoveryEpoch = incomingRecoveryEpoch;
   state.roomSnapshot = snapshot;
+  if (snapshot.timer) applySharedTimer(snapshot.timer);
   if (snapshot.game && snapshot.game !== state.game) {
     state.game = snapshot.game;
     applyGameModeUi();
@@ -4457,7 +4510,13 @@ async function buildCompleteReport() {
       game: state.game,
       opponentPresent: state.opponentPresent,
       ownReady: state.ownReady,
-      opponentReady: state.opponentReady
+      opponentReady: state.opponentReady,
+      timer: {
+        enabled: state.timer.enabled,
+        durationSeconds: state.timer.durationSeconds,
+        running: state.timer.running,
+        remainingSeconds: timerRemainingSeconds()
+      }
     },
     privacy: {
       videoIncluded: false,
@@ -4837,6 +4896,22 @@ window.addEventListener('tcg-identification-visible-cleared',(event)=>{
 });
 
 /* ---------- Bindings ---------- */
+
+$('timerToggle')?.addEventListener('click', () => {
+  if (state.role !== 'host') return;
+  const minutes = Math.max(1, Math.min(180, Number($('timerMinutes')?.value || 50)));
+  const enabled = !state.timer.enabled;
+  updateHubMetadata({ timer: { enabled, durationMinutes: minutes } }).then(() => logEvent('timer-config', { enabled, durationSeconds: minutes * 60 }));
+});
+$('timerMinutes')?.addEventListener('change', () => {
+  if (state.role !== 'host') return;
+  const minutes = Math.max(1, Math.min(180, Math.round(Number($('timerMinutes').value || 50))));
+  $('timerMinutes').value = String(minutes);
+  updateHubMetadata({ timer: { enabled: state.timer.enabled, durationMinutes: minutes } }).then(() => logEvent('timer-config', { enabled: state.timer.enabled, durationSeconds: minutes * 60 }));
+});
+$('timerChip')?.addEventListener('click', () => $('timerPop')?.classList.toggle('hidden'));
+$('timerStart')?.addEventListener('click', () => sendTimerAction(state.timer.running ? 'pause' : 'start').catch(err => toast(err.message)));
+$('timerReset')?.addEventListener('click', () => sendTimerAction('reset').catch(err => toast(err.message)));
 
 $('gigDicePanel')?.addEventListener('pointerdown', event => {
   if (event.target.closest('.die-control2') || event.target.closest('#gigDiceReset')) return;

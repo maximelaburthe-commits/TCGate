@@ -94,6 +94,32 @@ async function waitForRoomState(reader, predicate, controller) {
       name: 'Guest Renomme'
     }, guest.sessionToken);
     assert(guestName.ok, 'Guest could not modify their own name');
+
+    const timerConfig = await request(`/api/rooms/${host.code}`, 'PATCH', {
+      peerId: host.peerId,
+      timer: { enabled: true, durationMinutes: 1 }
+    }, host.sessionToken);
+    assert(timerConfig.ok && (await timerConfig.json()).room.timer.durationSeconds === 60, 'Host Timer configuration failed');
+    const forbiddenTimer = await request(`/api/rooms/${host.code}`, 'PATCH', {
+      peerId: guest.peerId,
+      timer: { enabled: true, durationMinutes: 2 }
+    }, guest.sessionToken);
+    assert(forbiddenTimer.status === 403, 'Guest was allowed to configure the Timer');
+    const invalidTimer = await request(`/api/rooms/${host.code}`, 'PATCH', {
+      peerId: host.peerId,
+      timer: { enabled: true, durationMinutes: 181 }
+    }, host.sessionToken);
+    assert(invalidTimer.status === 400, 'Timer accepted a duration above 180 minutes');
+    await request('/api/ready', 'POST', { room: host.code, peerId: host.peerId, ready: true }, host.sessionToken);
+    await request('/api/ready', 'POST', { room: host.code, peerId: guest.peerId, ready: true }, guest.sessionToken);
+    const started = await request('/api/timer', 'POST', { room: host.code, peerId: guest.peerId, action: 'start' }, guest.sessionToken);
+    const startedRoom = await started.json();
+    assert(started.ok && startedRoom.room.timer.running && startedRoom.room.timer.endsAt, 'Guest could not start the shared Timer');
+    const paused = await request('/api/timer', 'POST', { room: host.code, peerId: host.peerId, action: 'pause' }, host.sessionToken);
+    assert(paused.ok && !(await paused.json()).room.timer.running, 'Host could not pause the shared Timer');
+    const reset = await request('/api/timer', 'POST', { room: host.code, peerId: guest.peerId, action: 'reset' }, guest.sessionToken);
+    const resetRoom = await reset.json();
+    assert(reset.ok && resetRoom.room.timer.remainingSeconds === 60 && !resetRoom.room.timer.running, 'Shared Timer reset failed');
     reader.cancel().catch(() => {});
     console.log('FUTURE_UX_ROOM_METADATA_SSE_OK');
   } catch (error) {

@@ -454,6 +454,26 @@
 @media(max-width:640px){.gig-totem.open .gig-side2{max-width:152px;overflow-x:auto}.gig-totem.open .gig-shell{transform:scale(.68)}}
 /* End Checkpoint D */
 
+/* Checkpoint E — direct Timer port from prototype v3.7. */
+#timerHubConfig,.hud-top,.popover{--panel2:#1e242c;--text:#eef2f6;--muted:#98a6b4;--line:#303843;--accent:#62d4ff}
+#timerHubConfig .sub{font-size:13px;color:var(--muted);margin-top:6px}
+#timerHubConfig label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+#timerHubConfig input[type=number]{width:100%;background:#0f1318;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px}
+#timerHubConfig .summary-line{display:flex;justify-content:space-between;gap:10px;padding:7px 0}
+#timerHubConfig button:disabled,#timerHubConfig input:disabled{opacity:.55}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0}.toggle-row+.toggle-row{border-top:1px dashed #2a313a}
+.toggle{width:46px;height:26px;border:0;border-radius:999px;background:#303843;padding:3px}.toggle .knob{width:20px;height:20px;border-radius:50%;background:white;transition:.2s}.toggle.on{background:var(--accent)}.toggle.on .knob{transform:translateX(20px)}
+.hud-top{position:absolute;left:0;right:0;top:0;padding:14px 16px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;z-index:20}
+.hud-top>*{pointer-events:auto}
+.tools{display:flex;gap:8px}
+.toolchip{border:1px solid #3a444f;background:rgba(7,9,12,.74);color:white;padding:8px 11px;border-radius:999px;font-weight:800}
+.popover{position:absolute;right:16px;top:58px;width:205px;background:#11161c;border:1px solid var(--line);border-radius:14px;padding:12px;z-index:40;box-shadow:0 18px 35px rgba(0,0,0,.48)}
+.pop-title{font-weight:900;margin-bottom:10px}
+.big-number{text-align:center;font-size:34px;font-weight:900;margin:8px 0 14px}
+.pop-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.popover .btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:10px 14px;border-radius:10px}
+/* End Checkpoint E */
+
 @media (max-width:600px) {
   #screenGame.future-table-v37 .tcgate-feed-head {
     min-height:40px;
