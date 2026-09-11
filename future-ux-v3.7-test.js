@@ -12,10 +12,14 @@ const homeSlice = html => html
   .slice(html.indexOf('<!-- HOME -->'), html.indexOf('<!-- SETUP CREATE/JOIN -->'))
   .replace(/\r\n/g, '\n');
 const between = (source, start, end) => source.slice(source.indexOf(start), source.indexOf(end, source.indexOf(start)));
-const normalizeGigPanelMarkup = source => source.replace(
-  /<section id="gigDicePanel"[\s\S]*?<\/section>/,
-  '<section id="gigDicePanel"></section>'
-);
+const normalizeGigPanelMarkup = source => {
+  const start = source.indexOf('<div id="gigDiceMount"');
+  const end = source.indexOf('<div class="game-hint', start);
+  return start >= 0 && end >= 0 ? `${source.slice(0, start)}<div id="gigDiceMount"></div>\n          ${source.slice(end)}` : source;
+};
+const normalizeGigCandidateImplementation = source => source
+  .replace(/function getGigDice\(uiOwner\)[\s\S]*?(?=function serializeGigState\(\))/, '/* GIG RENDER */\n\n')
+  .replace(/function updateDieDrag\(event\)[\s\S]*?(?=const GIG_PANEL_POSITION_KEY)/, '/* GIG DRAG PRESENTATION */\n\n');
 
 const html = read('public/index.html');
 const app = read('public/app.js');
@@ -61,7 +65,7 @@ assert(
 );
 assert(css.includes('#screenLobby.future-hub-mounted'), 'Hub CSS is not scoped to the Lobby');
 assert(!css.includes('.tcgate-home-'), 'Future UX CSS touches the Candidate Home');
-assert(normalize(app) === normalize(checkpointApp), 'Checkpoint B changed app.js or a functional contract');
+assert(normalize(normalizeGigCandidateImplementation(app)) === normalize(normalizeGigCandidateImplementation(checkpointApp)), 'Checkpoint D changed app.js outside the Gig renderer');
 assert(
   normalize(normalizeGigPanelMarkup(html.slice(0, html.indexOf('<!-- CARD MODAL -->')))) === normalize(normalizeGigPanelMarkup(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- CARD MODAL -->')))),
   'Checkpoint C changed Home, Hub or the immersive Table DOM'
@@ -122,17 +126,22 @@ assert(
   normalizeSpacing(css.slice(css.indexOf('@media (max-width:600px)'))) === normalizeSpacing(checkpointCss.slice(checkpointCss.indexOf('@media (max-width:600px)'))),
   'Checkpoint D changed Checkpoint A-C styles'
 );
-assert(html.includes('id="gigTotem"') && html.includes('aria-expanded="true"'), 'Gig totem is missing');
-assert(ux.includes('gigTrack.append(gigOpponentSide)') && ux.includes('gigTrack.append(gigSelfSide)'), 'Gig sides are not retained around the center');
-assert(ux.includes('gigTrack.append(gigOpponentScore)') && ux.includes('gigTrack.append(gigSelfScore)'), 'Street Cred is not arranged around the totem');
-assert(html.includes('future-gig-totem-frame') && html.includes('future-gig-totem-core'), 'The central Gig totem artwork is missing');
+assert(html.includes('id="gigTotem"') && html.includes('class="gig-trigger2"') && html.includes('aria-expanded="false"'), 'Prototype Gig trigger is missing');
+for (const className of ['gig-totem', 'gig-shell', 'gig-scrim', 'gig-side2', 'dice-line2', 'gig-core', 'street-core', 'gig-trigger2']) {
+  assert(html.includes(className), `Prototype Gig structure missing: ${className}`);
+}
+assert(!html.includes('future-gig-totem') && !html.includes('future-gig-mark'), 'Rejected D.1 totem remains in the DOM');
 assert(ux.includes("gigTotem.addEventListener('click'"), 'Gig open/close control is missing');
 assert(!ux.slice(ux.indexOf('/* Checkpoint D')).includes("document.addEventListener('click'"), 'Gig closes on an outside click');
 assert(ux.includes('deviceMenu.append(gigReset)'), 'Candidate Reset is not moved to the secondary menu');
-assert(ux.includes('wrap.title = `d${match[1]}`'), 'Die type tooltip is missing');
-assert(css.includes('.tcgate-die-wrap:hover .tcgate-die-adjust'), 'Contextual +/- controls are missing');
-assert(css.includes('.tcgate-gig-side-opp .tcgate-gig-dice-lane') && css.includes('flex-direction:row-reverse'), 'Mirrored die order is missing');
-assert(css.includes('.future-gig-collapsed .tcgate-gig-side'), 'Collapsed Gig sides are not hidden');
+assert(!ux.includes('gigTrack.append') && !ux.includes('MutationObserver(labelGigDiceTooltips)'), 'Rejected D.1 DOM reconstruction remains');
+assert(css.includes('.die-slot2:hover .die-control2') && css.includes('.plus2{grid-row:1}') && css.includes('.minus2{grid-row:3}'), 'Prototype contextual controls are missing');
+assert(css.includes('.gig-totem.open .gig-side2') && css.includes('max-width:760px'), 'Prototype open/closed behavior is missing');
+assert(css.includes("mask:url('/assets/dice/self/D20.svg')"), 'Exact Candidate D20 SVG is not used by the trigger');
+assert(app.includes('opponent: [20, 12, 10, 8, 6, 4]') && app.includes('self: [4, 6, 8, 10, 12, 20]'), 'Prototype die order is missing');
+assert(app.includes('ordered.push(...stolen)') && app.includes("die.origin === canonicalOwner"), 'Prototype homologous/stolen die ordering is missing');
+assert(app.includes('die-slot2 tcgate-die-wrap') && app.includes('die-token2 tcgate-die'), 'Prototype die markup is not rendered by Candidate');
+assert(app.includes('ghost-slot') && app.includes("drag.ghost.classList.add('tcgate-die-drag-ghost', 'drag-proxy2')"), 'Prototype drag presentation is missing');
 
 const gigLogic = between(app, 'function createGigDiceState()', 'const GIG_PANEL_POSITION_KEY');
 for (const token of ['value: 0', "origin: 'host'", "origin: 'guest'", 'die.owner = targetOwner', "sendGigState('die-transfer')", "sendGigState('manual-reset')"]) {

@@ -398,267 +398,57 @@
   }
 }
 
-/* Checkpoint D — horizontal Gig Dice; Candidate state and handlers are reused. */
-
-#screenGame.future-table-v37 .tcgate-gig-panel,
-.opponent-feed-card:fullscreen .tcgate-gig-panel.is-fullscreen {
-  position:absolute !important;
-  left:50% !important;
-  right:auto !important;
-  top:auto !important;
-  bottom:12px !important;
-  z-index:92;
-  width:min(1040px,calc(100% - 190px)) !important;
-  padding:0 !important;
-  border:0 !important;
-  border-radius:0 !important;
-  background:transparent !important;
-  box-shadow:none !important;
-  backdrop-filter:none !important;
-  transform:translateX(-50%) !important;
-  overflow:visible;
-}
-
-#screenGame.future-table-v37 .tcgate-gig-drag-handle {
-  display:none !important;
-}
-
-#screenGame.future-table-v37 .tcgate-gig-track {
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 58px 54px 58px minmax(0,1fr) !important;
-  align-items:center;
-  gap:clamp(8px,1vw,16px);
-  width:100%;
-}
-
-#screenGame.future-table-v37 .tcgate-gig-side {
-  display:flex;
-  align-items:flex-end;
-  justify-content:center;
-  min-width:0;
-  min-height:70px;
-  padding:5px 8px;
-  border:0;
-  border-radius:12px;
-  background:linear-gradient(180deg,transparent,rgba(4,8,14,.7));
-}
-
-#screenGame.future-table-v37 .tcgate-gig-side-opp {
-  grid-column:1;
-}
-
-#screenGame.future-table-v37 .tcgate-gig-side-self {
-  grid-column:5;
-}
-
-#screenGame.future-table-v37 .tcgate-gig-side-opp .tcgate-gig-dice-lane {
-  flex-direction:row-reverse;
-}
-
-#screenGame.future-table-v37 .tcgate-gig-dice-lane {
-  display:flex;
-  align-items:flex-end;
-  justify-content:center;
-  gap:clamp(3px,.55vw,7px);
-  min-width:0;
-}
-
-#screenGame.future-table-v37 .tcgate-die-wrap {
-  width:clamp(38px,3.2vw,50px);
-  height:72px;
-  flex:0 0 clamp(38px,3.2vw,50px);
-  overflow:visible;
-  transition:transform .15s ease;
-}
-
-#screenGame.future-table-v37 .tcgate-die-wrap:hover {
-  z-index:4;
-  transform:scale(1.08);
-}
-
-#screenGame.future-table-v37 .tcgate-die-rail {
-  width:100%;
-  height:72px;
-  display:grid;
-  grid-template-rows:16px minmax(0,1fr) 16px;
-  place-items:center;
-}
-
-#screenGame.future-table-v37 .tcgate-die {
-  width:clamp(38px,3.2vw,50px);
-  height:clamp(38px,3.2vw,50px);
-}
-
-#screenGame.future-table-v37 .tcgate-die-adjust {
-  width:22px;
-  height:16px;
-  min-width:22px;
-  min-height:16px;
-  padding:0;
-  border:0;
-  background:rgba(5,9,15,.86);
-  color:#eef2fb;
-  font-size:13px;
-  line-height:1;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity .12s ease;
-}
-
-#screenGame.future-table-v37 .tcgate-die-wrap:hover .tcgate-die-adjust,
-#screenGame.future-table-v37 .tcgate-die-wrap:focus-within .tcgate-die-adjust {
-  opacity:1;
-  pointer-events:auto;
-}
-
-#screenGame.future-table-v37 .future-gig-totem {
-  grid-column:3;
-  display:grid;
-  place-items:center;
-  width:54px;
-  min-width:54px;
-  height:68px;
-  min-height:68px;
-  padding:5px;
-  border:0;
-  border-radius:22px;
-  background:radial-gradient(circle,rgba(122,91,255,.18),transparent 68%);
-  box-shadow:none;
-  color:#f3f5fb;
-  cursor:pointer;
-}
-
-#screenGame.future-table-v37 .future-gig-mark {
-  display:block;
-  width:40px;
-  height:54px;
-  filter:drop-shadow(0 0 8px rgba(128,91,255,.58));
-}
-
-#screenGame.future-table-v37 .future-gig-mark svg {
-  display:block;
-  width:100%;
-  height:100%;
-  overflow:visible;
-  fill:none;
-  stroke:#a792ff;
-  stroke-width:1.5;
-}
-
-#screenGame.future-table-v37 .future-gig-mark .future-gig-totem-frame {
-  fill:rgba(9,12,24,.92);
-  stroke:#8d74ff;
-}
-
-#screenGame.future-table-v37 .future-gig-mark .future-gig-totem-core {
-  fill:rgba(117,76,255,.2);
-  stroke:#d3c9ff;
-}
-
-#screenGame.future-table-v37 .future-gig-mark circle {
-  fill:#c9bcff;
-  stroke:#fff;
-  filter:drop-shadow(0 0 4px #7954ff);
-}
-
-#screenGame.future-table-v37 .tcgate-gig-track > .tcgate-gig-score {
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:1px;
-  width:58px;
-  min-width:58px;
-  min-height:48px;
-  padding:5px 4px;
-  border:1px solid rgba(139,120,255,.18);
-  border-radius:14px;
-  background:rgba(5,9,17,.72);
-}
-
-#screenGame.future-table-v37 .tcgate-gig-track > .tcgate-gig-score-opp {
-  grid-column:2;
-}
-
-#screenGame.future-table-v37 .tcgate-gig-track > .tcgate-gig-score-self {
-  grid-column:4;
-}
-
-#screenGame.future-table-v37 .tcgate-gig-track > .tcgate-gig-score span {
-  font-size:8px;
-  opacity:.66;
-}
-
-#screenGame.future-table-v37 .tcgate-gig-track > .tcgate-gig-score strong {
-  font-size:16px;
-}
-
-#screenGame.future-table-v37 .future-gig-collapsed {
-  width:auto !important;
-}
-
-#screenGame.future-table-v37 .future-gig-collapsed .tcgate-gig-track {
-  grid-template-columns:0 58px 54px 58px 0 !important;
-  gap:8px;
-}
-
-#screenGame.future-table-v37 .future-gig-collapsed .tcgate-gig-side {
-  width:0;
-  min-width:0;
-  height:0;
-  min-height:0;
-  padding:0;
-  overflow:hidden;
-  opacity:0;
-  pointer-events:none;
-}
-
-#screenGame.future-table-v37 #gameDeviceMenu .future-gig-reset-menu {
-  grid-column:1 / -1;
-  position:static;
-  width:auto;
-  height:34px;
-  margin:2px 0 0;
-  justify-self:stretch;
-}
-
-@media (max-width:900px) {
-  #screenGame.future-table-v37 .tcgate-gig-panel,
-  .opponent-feed-card:fullscreen .tcgate-gig-panel.is-fullscreen {
-    width:calc(100% - 92px) !important;
-    bottom:8px !important;
-  }
-
-  #screenGame.future-table-v37 .tcgate-gig-track {
-    gap:5px;
-  }
-
-  #screenGame.future-table-v37 .tcgate-gig-side {
-    padding-inline:3px;
-  }
-}
-
-@media (max-width:640px) {
-  #screenGame.future-table-v37 .tcgate-gig-panel,
-  .opponent-feed-card:fullscreen .tcgate-gig-panel.is-fullscreen {
-    width:auto !important;
-  }
-
-  #screenGame.future-table-v37 .tcgate-gig-panel:not(.future-gig-collapsed) {
-    width:calc(100% - 76px) !important;
-  }
-
-  #screenGame.future-table-v37 .tcgate-die-wrap {
-    width:34px;
-    flex-basis:34px;
-  }
-
-  #screenGame.future-table-v37 .tcgate-die {
-    width:34px;
-    height:34px;
-  }
-}
-
+/* Checkpoint D — direct port of the validated v3.7 Gig Dice prototype. */
+.gig-totem{position:absolute!important;left:50%!important;right:auto!important;top:auto!important;bottom:18px!important;transform:translateX(-50%)!important;height:86px;z-index:42;pointer-events:none;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+.gig-totem.hidden{display:none}
+.gig-shell{position:relative;display:flex;align-items:center;gap:10px;pointer-events:none}
+.gig-scrim{position:absolute;left:-18px;right:-18px;top:-10px;bottom:-10px;border-radius:22px;background:linear-gradient(180deg,rgba(7,9,12,.10),rgba(7,9,12,.42));opacity:0;transition:.18s}
+.gig-totem.open .gig-scrim{opacity:1}
+.gig-side2{position:relative;display:flex;flex-direction:column;gap:5px;pointer-events:none;opacity:0;max-width:0;overflow:hidden;transition:max-width .24s ease,opacity .16s ease,transform .24s ease}
+.gig-side2.opponent{transform:translateX(22px)}
+.gig-side2.self{transform:translateX(-22px)}
+.gig-totem.open .gig-side2{opacity:1;pointer-events:auto;max-width:760px;transform:translateX(0)}
+.line-label2{font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.60);font-weight:900;line-height:1}
+.gig-side2.opponent .line-label2{text-align:right}
+.gig-side2.self .line-label2{text-align:left}
+.dice-line2{min-width:96px;display:flex;align-items:flex-start;gap:2px;min-height:82px;border-radius:14px;overflow:visible}
+.dice-line2.opponent{justify-content:flex-end}
+.dice-line2.self{justify-content:flex-start}
+.dice-line2.column-target,.gig-side2.die-drop-target .dice-line2{filter:drop-shadow(0 0 10px rgba(255,255,255,.14))}
+.dice-line2.is-empty::before{content:"";display:block;width:72px;height:2px;border-radius:999px;background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.22),rgba(255,255,255,.08));margin-top:26px}
+.dice-line2.opponent.is-empty::before{margin-left:auto}
+.dice-line2.self.is-empty::before{margin-right:auto}
+.gig-core{position:relative;display:flex;align-items:center;gap:10px;pointer-events:auto;z-index:2}
+.street-core{display:grid;justify-items:center;gap:2px;min-width:62px}
+.street-core .sc-label{font-size:9px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:850}
+.street-core .sc-num{font-size:21px;font-weight:1000;line-height:1}
+.street-core.opp .sc-num{color:#d07b55}
+.street-core.self .sc-num{color:#62d4ff}
+.gig-trigger2{width:54px;height:54px;padding:0;border-radius:50%;border:1px solid #52616f;background:radial-gradient(circle,#17202a,#0b1016 70%);color:#bdeeff;display:grid;place-items:center;box-shadow:0 0 0 5px rgba(98,212,255,.04),0 12px 28px rgba(0,0,0,.35);animation:gigGlow 1.8s ease-in-out infinite alternate;transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease,filter .14s ease}
+.gig-totem.open .gig-trigger2{animation:none}
+.gig-trigger2:hover{transform:scale(1.10);border-color:#9eeaff;filter:brightness(1.28);box-shadow:0 0 0 8px rgba(98,212,255,.14),0 14px 34px rgba(0,0,0,.42),0 0 34px rgba(98,212,255,.58)}
+@keyframes gigGlow{to{box-shadow:0 0 0 7px rgba(98,212,255,.08),0 14px 30px rgba(0,0,0,.38),0 0 22px rgba(98,212,255,.25)}}
+.gig-trigger2 .die-svg{width:25px;height:25px;background:currentColor;mask:url('/assets/dice/self/D20.svg') center/contain no-repeat;-webkit-mask:url('/assets/dice/self/D20.svg') center/contain no-repeat}
+.die-slot2{position:relative;width:50px;height:82px;display:grid;grid-template-rows:17px 48px 17px;justify-items:center;align-items:center;row-gap:0;overflow:visible;flex:0 0 auto}
+.die-control2{width:17px;height:17px;min-width:17px;min-height:17px;padding:0;border-radius:50%;border:1px solid rgba(125,140,154,.62);background:rgba(13,18,24,.90);color:white;font-size:12px;line-height:1;display:grid;place-items:center;opacity:0;transform:scale(.82);transition:opacity .12s ease,transform .12s ease,border-color .12s ease,background .12s ease,box-shadow .12s ease;z-index:5;pointer-events:none}
+.die-slot2:hover .die-control2,.die-slot2:focus-within .die-control2{opacity:1;transform:scale(1);pointer-events:auto}
+.die-control2:hover{border-color:#a2afbd;background:#1b2530;box-shadow:0 0 10px rgba(255,255,255,.08)}
+.plus2{grid-row:1}
+.minus2{grid-row:3}
+.die-token2{--owner:#62d4ff;grid-row:2;position:relative;width:48px;height:48px;display:grid;place-items:center;color:var(--owner);cursor:grab;user-select:none;transform-origin:center;transition:transform .14s cubic-bezier(.2,.8,.2,1),filter .14s ease;z-index:2}
+.die-token2.owner-rival{--owner:#d07b55}
+.die-slot2:hover .die-token2{transform:scale(1.16);filter:drop-shadow(0 0 14px rgba(255,255,255,.22));z-index:7}
+.die-token2 .tcgate-die-icon{width:48px;height:48px}
+.die-score2{position:absolute;inset:0;display:grid;place-items:center;color:white;font-size:15px;font-weight:1000;text-shadow:0 1px 2px #000,0 0 4px #000;pointer-events:none;transition:font-size .14s ease}
+.die-slot2:hover .die-score2{font-size:16px}
+.ghost-slot{width:48px;height:48px;border-radius:10px;border:1px dashed rgba(255,255,255,.22);background:rgba(255,255,255,.025);grid-row:2}
+.drag-proxy2{position:fixed!important;z-index:999;width:42px!important;height:42px!important;display:grid;place-items:center;pointer-events:none;transform:translate(-50%,-50%) scale(1.08)!important;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45))}
+.drag-proxy2 .tcgate-die-icon{width:42px;height:42px}
+.drag-proxy2 .die-score2{font-size:13px}
+#screenGame.future-table-v37 #gameDeviceMenu .future-gig-reset-menu{grid-column:1 / -1;position:static;width:auto;height:34px;margin:2px 0 0;justify-self:stretch}
+.opponent-feed-card:fullscreen .gig-totem.is-fullscreen{position:absolute!important;left:50%!important;bottom:18px!important;transform:translateX(-50%)!important}
+@media(max-width:900px){.gig-totem.open{max-width:calc(100vw - 24px)}.gig-totem.open .gig-shell{transform:scale(.82);transform-origin:center bottom}}
+@media(max-width:640px){.gig-totem.open .gig-side2{max-width:152px;overflow-x:auto}.gig-totem.open .gig-shell{transform:scale(.68)}}
 /* End Checkpoint D */
 
 @media (max-width:600px) {

@@ -358,37 +358,30 @@
           </div>
 
           <div id="gigDiceMount" class="tcgate-gig-mount game-specific-cyberpunk">
-            <section id="gigDicePanel" class="tcgate-gig-panel hidden" aria-label="Compteur de dés Cyberpunk">
-              <button id="gigDiceDragHandle" class="tcgate-gig-drag-handle" type="button" aria-label="Déplacer le panneau des dés" title="Déplacer le panneau">
-                <span></span><span></span><span></span><span></span><span></span><span></span>
-              </button>
-              <button id="gigDiceReset" class="tcgate-gig-reset" type="button">Réinitialiser</button>
-              <div class="tcgate-gig-track">
-                <div class="tcgate-gig-side tcgate-gig-side-self">
-                  <div class="tcgate-gig-score tcgate-gig-score-self" aria-label="Street Cred joueur">
-                    <span>SC</span><strong id="gigSelfCred">0</strong>
-                  </div>
-                  <div id="gigSelfDice" class="tcgate-gig-dice-lane" aria-label="Vos dés"></div>
+            <section id="gigDicePanel" class="gig-totem hidden" aria-label="Compteur de dés Cyberpunk">
+              <div class="gig-shell">
+                <div class="gig-scrim" aria-hidden="true"></div>
+                <div class="gig-side2 opponent tcgate-gig-side tcgate-gig-side-opp">
+                  <div id="gigOpponentDice" class="dice-line2 opponent tcgate-gig-dice-lane" aria-label="Dés adverses"></div>
                 </div>
-                <button id="gigTotem" class="tcgate-gig-divider future-gig-totem" type="button" aria-label="Replier les Gig Dice" aria-expanded="true">
-                  <span class="future-gig-mark" aria-hidden="true">
-                    <svg viewBox="0 0 44 58" focusable="false">
-                      <path class="future-gig-totem-frame" d="M22 2 40 13v32L22 56 4 45V13Z"/>
-                      <path class="future-gig-totem-core" d="m22 10 10 17-10 21-10-21Z"/>
-                      <circle cx="22" cy="27" r="4"/>
-                    </svg>
-                  </span>
-                </button>
-                <div class="tcgate-gig-side tcgate-gig-side-opp">
-                  <div id="gigOpponentDice" class="tcgate-gig-dice-lane" aria-label="Dés adverses"></div>
-                  <div class="tcgate-gig-score tcgate-gig-score-opp" aria-label="Street Cred adversaire">
-                    <span>SC</span><strong id="gigOpponentCred">0</strong>
+                <div class="gig-core">
+                  <div class="street-core opp tcgate-gig-score tcgate-gig-score-opp" aria-label="Street Cred adversaire">
+                    <strong class="sc-num" id="gigOpponentCred">0</strong><span class="sc-label">Street Cred</span>
                   </div>
+                  <button id="gigTotem" class="gig-trigger2" type="button" title="Ouvrir / fermer Gig Dice" aria-label="Ouvrir les Gig Dice" aria-expanded="false">
+                    <span class="die-svg" aria-hidden="true"></span>
+                  </button>
+                  <div class="street-core self tcgate-gig-score tcgate-gig-score-self" aria-label="Street Cred joueur">
+                    <span class="sc-label">Street Cred</span><strong class="sc-num" id="gigSelfCred">0</strong>
+                  </div>
+                </div>
+                <div class="gig-side2 self tcgate-gig-side tcgate-gig-side-self">
+                  <div id="gigSelfDice" class="dice-line2 self tcgate-gig-dice-lane" aria-label="Vos dés"></div>
                 </div>
               </div>
+              <button id="gigDiceReset" class="tcgate-gig-reset" type="button">Réinitialiser</button>
             </section>
           </div>
-
           <div class="game-hint vision-alpha-hint vision-only tcgate-alpha-diagnostics">
             <span class="hint-dot"></span>
             <span id="visionStatus" class="vision-status-pill">Vision : préparation</span>

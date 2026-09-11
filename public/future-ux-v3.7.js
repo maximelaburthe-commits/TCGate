@@ -183,34 +183,17 @@
 
   /* Checkpoint D — presentation only; app.js remains the single Gig state owner. */
   const gigPanel = document.getElementById('gigDicePanel');
-  const gigTrack = gigPanel?.querySelector('.tcgate-gig-track');
-  const gigSelfSide = gigPanel?.querySelector('.tcgate-gig-side-self');
-  const gigOpponentSide = gigPanel?.querySelector('.tcgate-gig-side-opp');
   const gigTotem = document.getElementById('gigTotem');
   const gigReset = document.getElementById('gigDiceReset');
-  const gigSelfScore = document.getElementById('gigSelfCred')?.closest('.tcgate-gig-score');
-  const gigOpponentScore = document.getElementById('gigOpponentCred')?.closest('.tcgate-gig-score');
-
-  function labelGigDiceTooltips() {
-    gigPanel?.querySelectorAll('.tcgate-die-wrap').forEach(wrap => {
-      const match = String(wrap.dataset.dieId || '').match(/-d(4|6|8|10|12|20)$/);
-      if (match) wrap.title = `d${match[1]}`;
-    });
-  }
 
   function setGigExpanded(expanded) {
-    gigPanel?.classList.toggle('future-gig-collapsed', !expanded);
+    gigPanel?.classList.toggle('open', expanded);
     gigTotem?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
     gigTotem?.setAttribute('aria-label', expanded ? 'Replier les Gig Dice' : 'Ouvrir les Gig Dice');
   }
 
   function mountFutureGigDice() {
-    if (!gigPanel || !gigTrack || !gigSelfSide || !gigOpponentSide || !gigTotem) return false;
-    gigTrack.append(gigOpponentSide);
-    if (gigOpponentScore) gigTrack.append(gigOpponentScore);
-    gigTrack.append(gigTotem);
-    if (gigSelfScore) gigTrack.append(gigSelfScore);
-    gigTrack.append(gigSelfSide);
+    if (!gigPanel || !gigTotem) return false;
     if (gigReset && deviceMenu) {
       gigReset.classList.add('future-gig-reset-menu');
       deviceMenu.append(gigReset);
@@ -218,9 +201,7 @@
     gigTotem.addEventListener('click', () => {
       setGigExpanded(!gigTotem.matches('[aria-expanded="true"]'));
     });
-    new MutationObserver(labelGigDiceTooltips).observe(gigTrack, { childList: true, subtree: true });
-    labelGigDiceTooltips();
-    setGigExpanded(root.innerWidth > 640);
+    setGigExpanded(false);
     return true;
   }
 

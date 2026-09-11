@@ -648,6 +648,30 @@ function getGigDice(uiOwner) {
     .sort((a, b) => a.sides - b.sides || a.origin.localeCompare(b.origin) || a.id.localeCompare(b.id));
 }
 
+const GIG_DICE_ORDER = Object.freeze({
+  opponent: [20, 12, 10, 8, 6, 4],
+  self: [4, 6, 8, 10, 12, 20]
+});
+
+function orderedGigDice(uiOwner) {
+  const canonicalOwner = uiOwner === 'self' ? localGigRole() : opponentGigRole();
+  const dice = getGigDice(uiOwner);
+  const ordered = [];
+  GIG_DICE_ORDER[uiOwner].forEach(sides => {
+    const homologues = dice.filter(die => die.sides === sides);
+    const native = homologues.find(die => die.origin === canonicalOwner);
+    const stolen = homologues.filter(die => die.origin !== canonicalOwner);
+    if (uiOwner === 'opponent') {
+      ordered.push(...stolen);
+      if (native) ordered.push(native);
+    } else {
+      if (native) ordered.push(native);
+      ordered.push(...stolen);
+    }
+  });
+  return ordered;
+}
+
 function streetCred(uiOwner) {
   return getGigDice(uiOwner).reduce((sum, die) => sum + Number(die.value || 0), 0);
 }
@@ -659,22 +683,38 @@ function dieUiOriginClass(die) {
 function renderGigLane(uiOwner, containerId) {
   const lane = $(containerId);
   if (!lane) return;
-  lane.innerHTML = getGigDice(uiOwner).map(die => {
+  const dice = orderedGigDice(uiOwner);
+  const drag = state.dieDrag;
+  const draggedDie = drag ? ensureGigDiceState().find(die => die.id === drag.dieId) : null;
+  const targetHasPlaceholder = Boolean(
+    draggedDie && drag.dragging && drag.targetUiOwner === uiOwner && drag.sourceUiOwner !== uiOwner
+  );
+  const dieMarkup = die => {
     const originClass = dieUiOriginClass(die);
     return `
-      <div class="tcgate-die-wrap ${state.lastMovedDieId === die.id ? 'just-moved' : ''}" data-die-id="${die.id}">
-        <div class="tcgate-die-rail ${originClass}">
-          <button class="tcgate-die-adjust tcgate-die-adjust-plus" type="button" data-action="increment" aria-label="Augmenter la valeur">+</button>
-          <div class="tcgate-die ${originClass}" aria-label="Dé à ${die.sides} faces, valeur ${die.value}">
-            <img class="tcgate-die-icon" src="/assets/dice/${originClass}/D${die.sides}.svg" alt="" aria-hidden="true">
-            <span class="tcgate-die-value">${die.value}</span>
-          </div>
-          <button class="tcgate-die-adjust tcgate-die-adjust-minus" type="button" data-action="decrement" aria-label="Diminuer la valeur">−</button>
+      <div class="die-slot2 tcgate-die-wrap ${state.lastMovedDieId === die.id ? 'just-moved' : ''}" data-die-id="${die.id}">
+        <button class="die-control2 minus2 tcgate-die-adjust tcgate-die-adjust-minus" type="button" data-action="decrement" aria-label="Diminuer la valeur">−</button>
+        <div class="die-token2 tcgate-die ${originClass === 'opponent' ? 'owner-rival' : ''}" title="d${die.sides}" aria-label="Dé à ${die.sides} faces, valeur ${die.value}">
+          <img class="tcgate-die-icon" src="/assets/dice/${originClass}/D${die.sides}.svg" alt="" aria-hidden="true">
+          <span class="die-score2 tcgate-die-value">${die.value}</span>
         </div>
+        <button class="die-control2 plus2 tcgate-die-adjust tcgate-die-adjust-plus" type="button" data-action="increment" aria-label="Augmenter la valeur">+</button>
       </div>`;
-  }).join('');
+  };
+  let markup = '';
+  GIG_DICE_ORDER[uiOwner].forEach(sides => {
+    const homologues = dice.filter(die => die.sides === sides);
+    if (uiOwner === 'opponent' && targetHasPlaceholder && draggedDie.sides === sides) {
+      markup += '<div class="die-slot2"><div class="ghost-slot"></div></div>';
+    }
+    homologues.forEach(die => { markup += dieMarkup(die); });
+    if (uiOwner === 'self' && targetHasPlaceholder && draggedDie.sides === sides) {
+      markup += '<div class="die-slot2"><div class="ghost-slot"></div></div>';
+    }
+  });
+  lane.innerHTML = markup;
+  lane.classList.toggle('is-empty', dice.length === 0);
 }
-
 function renderGigDicePanel() {
   const panel = $('gigDicePanel');
   const visible = gigDiceEnabledForCurrentGame();
@@ -685,41 +725,14 @@ function renderGigDicePanel() {
   const opponentDice = getGigDice('opponent');
   const selfSide = panel.querySelector('.tcgate-gig-side-self');
   const opponentSide = panel.querySelector('.tcgate-gig-side-opp');
-  const track = panel.querySelector('.tcgate-gig-track');
   selfSide?.setAttribute('data-dice-count', String(selfDice.length));
   opponentSide?.setAttribute('data-dice-count', String(opponentDice.length));
-
-  const SIDE_PADDING = 18;
-  const SCORE_WIDTH = 48;
-  const SCORE_LANE_GAP = 10;
-  const DIE_WIDTH = 52;
-  const DIE_GAP = 6;
-  const GRID_GAPS_AND_DIVIDER = 29;
-  const sideDemand = count => SIDE_PADDING + SCORE_WIDTH + SCORE_LANE_GAP +
-    (count ? count * DIE_WIDTH + Math.max(0, count - 1) * DIE_GAP : 0);
-  const selfDemand = sideDemand(selfDice.length);
-  const opponentDemand = sideDemand(opponentDice.length);
-
-  if (track) {
-    const usable = Math.max(0, track.clientWidth - GRID_GAPS_AND_DIVIDER);
-    const wanted = selfDemand + opponentDemand;
-    if (usable >= wanted || usable === 0) {
-      track.style.gridTemplateColumns = `${selfDemand}px 1px ${opponentDemand}px`;
-      track.classList.remove('is-tight');
-    } else {
-      const selfShare = selfDemand / Math.max(1, wanted);
-      track.style.gridTemplateColumns = `${selfShare}fr 1px ${1 - selfShare}fr`;
-      track.classList.add('is-tight');
-    }
-  }
 
   renderGigLane('self', 'gigSelfDice');
   renderGigLane('opponent', 'gigOpponentDice');
   $('gigSelfCred').textContent = streetCred('self');
   $('gigOpponentCred').textContent = streetCred('opponent');
-  scheduleGigPanelSafePlacement('render');
 }
-
 function serializeGigState() {
   ensureGigDiceState();
   return state.gigDice.map(die => ({
@@ -841,7 +854,7 @@ function updateDieDrag(event) {
     const dieEl = drag.sourceEl.querySelector('.tcgate-die');
     drag.ghost = dieEl?.cloneNode(true) || null;
     if (drag.ghost) {
-      drag.ghost.classList.add('tcgate-die-drag-ghost');
+      drag.ghost.classList.add('tcgate-die-drag-ghost', 'drag-proxy2');
       const fullscreenRoot = document.querySelector('.opponent-feed-card');
       const ghostHost = document.fullscreenElement === fullscreenRoot ? fullscreenRoot : document.body;
       ghostHost.appendChild(drag.ghost);
@@ -856,6 +869,10 @@ function updateDieDrag(event) {
     drag.ghost.style.top = `${event.clientY}px`;
   }
   const targetUiOwner = dieDropOwnerAtPoint(event.clientX, event.clientY, drag.sourceUiOwner);
+  if (drag.targetUiOwner !== targetUiOwner) {
+    drag.targetUiOwner = targetUiOwner;
+    renderGigDicePanel();
+  }
   const targetSide = document.querySelector(drag.sourceUiOwner === 'self' ? '.tcgate-gig-side-opp' : '.tcgate-gig-side-self');
   targetSide?.classList.toggle('die-drop-active', Boolean(targetUiOwner));
   event.preventDefault();
@@ -869,6 +886,7 @@ function finishDieDrag(event) {
   drag.sourceEl?.classList.remove('is-dragging-die');
   clearDieDropTargets();
   state.dieDrag = null;
+  renderGigDicePanel();
   if (targetUiOwner && transferDie(drag.dieId, targetUiOwner)) toast('Dé transféré.');
 }
 

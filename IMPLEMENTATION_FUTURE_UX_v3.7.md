@@ -125,20 +125,20 @@ La modale Candidate `cardModal` et son image `modalCardImage` sont conservées. 
 
 ### Éléments Candidate réutilisés
 
-- `gigDicePanel`, `gigDiceTrack`, `gigSelfDice` et `gigOpponentDice` restent les conteneurs rendus par `app.js`.
-- Les vrais compteurs `gigSelfCred` et `gigOpponentCred` encadrent le totem central sans duplication.
+- `gigDicePanel`, `gigSelfDice` et `gigOpponentDice` restent reliés directement au rendu de `app.js`.
+- Les vrais compteurs `gigSelfCred` et `gigOpponentCred` sont placés dans le `gig-core` du prototype sans duplication.
 - Le vrai bouton `gigDiceReset` est déplacé dans `gameDeviceMenu` et conserve son handler Candidate.
 - Les boutons contextuels `increment`/`decrement` et les hitboxes de drag existants sont conservés.
 
 ### Disposition et interaction
 
-Les dés adverses, leur Street Cred, le totem, le Street Cred local et les dés locaux forment une ligne bas-centre symétrique à cinq zones. Le côté adverse inverse visuellement l'ordre afin que les types homologues se répondent autour du centre. La valeur reste affichée dans chaque dé ; le type `d4` à `d20` est exposé uniquement en tooltip.
+Le module porte directement la structure du prototype v3.7 : `gig-totem`, `gig-shell`, `gig-side2`, `dice-line2`, `gig-core`, `street-core` et `gig-trigger2`. L'ordre adverse est `d20` à `d4`; l'ordre local est `d4` à `d20`. L'algorithme `orderedGigDice()` reprend le placement native/volé de `orderedDice()` du prototype.
 
-Le totem graphique central ouvre ou replie les deux lignes sur clic. Aucun listener de clic extérieur n'est ajouté. Les deux Street Cred autonomes restent visibles de part et d'autre du totem replié. Sur mobile, le composant démarre replié tout en restant accessible.
+Le D20 circulaire central ouvre ou replie les deux lignes via la classe `open`. Aucun listener de clic extérieur n'est ajouté. Les deux Street Cred restent visibles de part et d'autre du D20 replié.
 
 ### Mécanique inchangée
 
-`app.js` reste byte-equivalent au Checkpoint C. Il demeure l'unique propriétaire de l'état Gig : création des 12 dés, valeurs, `origin`, `owner`, tri, Street Cred, transfert, persistance, recovery et synchronisation `gig-state`. Le transfert change seulement `owner`; la valeur et `origin` ne sont pas réécrits, ce qui conserve la couleur d'origine.
+`app.js` demeure l'unique propriétaire de l'état Gig : création des 12 dés, valeurs, `origin`, `owner`, Street Cred, transfert, persistance, recovery et synchronisation `gig-state`. Seuls le tri visuel et le markup de `renderGigLane()` portent le prototype. Le transfert change toujours seulement `owner`; la valeur et `origin` ne sont pas réécrits, ce qui conserve la couleur d'origine.
 
 ### Validation Railway du Checkpoint D
 
