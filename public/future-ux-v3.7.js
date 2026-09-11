@@ -195,7 +195,6 @@
   function mountFutureGigDice() {
     if (!gigPanel || !gigTotem) return false;
     if (gigReset && deviceMenu) {
-      gigReset.classList.add('future-gig-reset-menu');
       deviceMenu.append(gigReset);
     }
     gigTotem.addEventListener('click', () => {

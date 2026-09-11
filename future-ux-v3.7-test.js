@@ -19,7 +19,8 @@ const normalizeGigPanelMarkup = source => {
 };
 const normalizeGigCandidateImplementation = source => source
   .replace(/function getGigDice\(uiOwner\)[\s\S]*?(?=function serializeGigState\(\))/, '/* GIG RENDER */\n\n')
-  .replace(/function updateDieDrag\(event\)[\s\S]*?(?=const GIG_PANEL_POSITION_KEY)/, '/* GIG DRAG PRESENTATION */\n\n');
+  .replace(/function clearDieDropTargets\(\)[\s\S]*?(?=const GIG_PANEL_POSITION_KEY)/, '/* GIG DRAG PRESENTATION */\n\n')
+  .replace(/\$\('gigDicePanel'\)\?\.addEventListener\('pointerdown'[\s\S]*?(?=\$\('toggleLocalPreview'\))/, '/* GIG BINDINGS */\n');
 
 const html = read('public/index.html');
 const app = read('public/app.js');
@@ -137,11 +138,16 @@ assert(ux.includes('deviceMenu.append(gigReset)'), 'Candidate Reset is not moved
 assert(!ux.includes('gigTrack.append') && !ux.includes('MutationObserver(labelGigDiceTooltips)'), 'Rejected D.1 DOM reconstruction remains');
 assert(css.includes('.die-slot2:hover .die-control2') && css.includes('.plus2{grid-row:1}') && css.includes('.minus2{grid-row:3}'), 'Prototype contextual controls are missing');
 assert(css.includes('.gig-totem.open .gig-side2') && css.includes('max-width:760px'), 'Prototype open/closed behavior is missing');
-assert(css.includes("mask:url('/assets/dice/self/D20.svg')"), 'Exact Candidate D20 SVG is not used by the trigger');
+assert(html.includes('viewBox="0 0 1000 1000" class="die-svg"') && html.includes('id="XMLID_29_"'), 'Prototype D20 SVG is not embedded in the trigger');
 assert(app.includes('opponent: [20, 12, 10, 8, 6, 4]') && app.includes('self: [4, 6, 8, 10, 12, 20]'), 'Prototype die order is missing');
 assert(app.includes('ordered.push(...stolen)') && app.includes("die.origin === canonicalOwner"), 'Prototype homologous/stolen die ordering is missing');
-assert(app.includes('die-slot2 tcgate-die-wrap') && app.includes('die-token2 tcgate-die'), 'Prototype die markup is not rendered by Candidate');
-assert(app.includes('ghost-slot') && app.includes("drag.ghost.classList.add('tcgate-die-drag-ghost', 'drag-proxy2')"), 'Prototype drag presentation is missing');
+assert(app.includes('class="die-slot2') && app.includes('class="die-token2') && app.includes('GIG_DICE_ICONS[`D${die.sides}`]'), 'Prototype die markup is not rendered by Candidate');
+assert(app.includes('ghost-slot') && app.includes("drag.ghost.classList.add('drag-proxy2')"), 'Prototype drag presentation is missing');
+const gigMarkup = between(html, '<section id="gigDicePanel"', '</section>');
+assert(!/tcgate-gig-(?:side|dice-lane|score)/.test(gigMarkup), 'Legacy Candidate Gig classes contaminate the prototype markup');
+for (const selector of ['.tcgate-gig-side-self', '.tcgate-gig-side-opp', "querySelectorAll('.tcgate-gig-side')", '.tcgate-die-wrap', '.tcgate-die-adjust', "querySelector('.tcgate-die')"]) {
+  assert(!app.includes(selector), `Legacy Candidate Gig selector remains: ${selector}`);
+}
 
 const gigLogic = between(app, 'function createGigDiceState()', 'const GIG_PANEL_POSITION_KEY');
 for (const token of ['value: 0', "origin: 'host'", "origin: 'guest'", 'die.owner = targetOwner', "sendGigState('die-transfer')", "sendGigState('manual-reset')"]) {

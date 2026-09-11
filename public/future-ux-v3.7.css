@@ -428,7 +428,8 @@
 .gig-totem.open .gig-trigger2{animation:none}
 .gig-trigger2:hover{transform:scale(1.10);border-color:#9eeaff;filter:brightness(1.28);box-shadow:0 0 0 8px rgba(98,212,255,.14),0 14px 34px rgba(0,0,0,.42),0 0 34px rgba(98,212,255,.58)}
 @keyframes gigGlow{to{box-shadow:0 0 0 7px rgba(98,212,255,.08),0 14px 30px rgba(0,0,0,.38),0 0 22px rgba(98,212,255,.25)}}
-.gig-trigger2 .die-svg{width:25px;height:25px;background:currentColor;mask:url('/assets/dice/self/D20.svg') center/contain no-repeat;-webkit-mask:url('/assets/dice/self/D20.svg') center/contain no-repeat}
+.gig-trigger2 .die-svg{width:25px;height:25px}
+.gig-trigger2 .die-svg *{fill:currentColor}
 .die-slot2{position:relative;width:50px;height:82px;display:grid;grid-template-rows:17px 48px 17px;justify-items:center;align-items:center;row-gap:0;overflow:visible;flex:0 0 auto}
 .die-control2{width:17px;height:17px;min-width:17px;min-height:17px;padding:0;border-radius:50%;border:1px solid rgba(125,140,154,.62);background:rgba(13,18,24,.90);color:white;font-size:12px;line-height:1;display:grid;place-items:center;opacity:0;transform:scale(.82);transition:opacity .12s ease,transform .12s ease,border-color .12s ease,background .12s ease,box-shadow .12s ease;z-index:5;pointer-events:none}
 .die-slot2:hover .die-control2,.die-slot2:focus-within .die-control2{opacity:1;transform:scale(1);pointer-events:auto}
@@ -438,12 +439,14 @@
 .die-token2{--owner:#62d4ff;grid-row:2;position:relative;width:48px;height:48px;display:grid;place-items:center;color:var(--owner);cursor:grab;user-select:none;transform-origin:center;transition:transform .14s cubic-bezier(.2,.8,.2,1),filter .14s ease;z-index:2}
 .die-token2.owner-rival{--owner:#d07b55}
 .die-slot2:hover .die-token2{transform:scale(1.16);filter:drop-shadow(0 0 14px rgba(255,255,255,.22));z-index:7}
-.die-token2 .tcgate-die-icon{width:48px;height:48px}
+.die-token2 .die-svg{width:48px;height:48px}
+.die-token2 .die-svg *{fill:currentColor}
 .die-score2{position:absolute;inset:0;display:grid;place-items:center;color:white;font-size:15px;font-weight:1000;text-shadow:0 1px 2px #000,0 0 4px #000;pointer-events:none;transition:font-size .14s ease}
 .die-slot2:hover .die-score2{font-size:16px}
 .ghost-slot{width:48px;height:48px;border-radius:10px;border:1px dashed rgba(255,255,255,.22);background:rgba(255,255,255,.025);grid-row:2}
 .drag-proxy2{position:fixed!important;z-index:999;width:42px!important;height:42px!important;display:grid;place-items:center;pointer-events:none;transform:translate(-50%,-50%) scale(1.08)!important;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45))}
-.drag-proxy2 .tcgate-die-icon{width:42px;height:42px}
+.drag-proxy2 .die-svg{width:42px;height:42px}
+.drag-proxy2 .die-svg *{fill:currentColor}
 .drag-proxy2 .die-score2{font-size:13px}
 #screenGame.future-table-v37 #gameDeviceMenu .future-gig-reset-menu{grid-column:1 / -1;position:static;width:auto;height:34px;margin:2px 0 0;justify-self:stretch}
 .opponent-feed-card:fullscreen .gig-totem.is-fullscreen{position:absolute!important;left:50%!important;bottom:18px!important;transform:translateX(-50%)!important}
