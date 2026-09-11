@@ -97,9 +97,13 @@ async function waitForRoomState(reader, predicate, controller) {
 
     const timerConfig = await request(`/api/rooms/${host.code}`, 'PATCH', {
       peerId: host.peerId,
-      timer: { enabled: true, durationMinutes: 1 }
+      timer: { enabled: true, durationMinutes: 50 }
     }, host.sessionToken);
-    assert(timerConfig.ok && (await timerConfig.json()).room.timer.durationSeconds === 60, 'Host Timer configuration failed');
+    assert(timerConfig.ok && (await timerConfig.json()).room.timer.durationSeconds === 3000, 'Host Timer configuration failed');
+    const guestTimerBeforeStart = await waitForRoomState(reader, snapshot =>
+      snapshot.timer?.enabled && snapshot.timer.durationSeconds === 3000, controller);
+    assert(!guestTimerBeforeStart.timer.running, 'Guest Timer started before an explicit Start action');
+    assert(guestTimerBeforeStart.timer.remainingSeconds === 3000, 'Guest did not receive the initial 50:00 Timer state');
     const forbiddenTimer = await request(`/api/rooms/${host.code}`, 'PATCH', {
       peerId: guest.peerId,
       timer: { enabled: true, durationMinutes: 2 }
@@ -119,7 +123,7 @@ async function waitForRoomState(reader, predicate, controller) {
     assert(paused.ok && !(await paused.json()).room.timer.running, 'Host could not pause the shared Timer');
     const reset = await request('/api/timer', 'POST', { room: host.code, peerId: guest.peerId, action: 'reset' }, guest.sessionToken);
     const resetRoom = await reset.json();
-    assert(reset.ok && resetRoom.room.timer.remainingSeconds === 60 && !resetRoom.room.timer.running, 'Shared Timer reset failed');
+    assert(reset.ok && resetRoom.room.timer.remainingSeconds === 3000 && !resetRoom.room.timer.running, 'Shared Timer reset failed');
     reader.cancel().catch(() => {});
     console.log('FUTURE_UX_ROOM_METADATA_SSE_OK');
   } catch (error) {

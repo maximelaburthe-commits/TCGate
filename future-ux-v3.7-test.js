@@ -176,4 +176,14 @@ assert(app.includes("state.role !== 'host'") && app.includes('durationMinutes: m
 assert(serverSource.includes("pathname === '/api/timer'") && serverSource.includes('endsAt'), 'Authoritative server Timer is missing');
 assert(app.includes("timerPop')?.classList.toggle('hidden')") && ux.includes("timerPop')?.classList.add('hidden')"), 'Timer popover interaction is missing');
 
+const timerRender = between(app, 'function renderSharedTimer()', 'function applySharedTimer(');
+assert(timerRender.includes("!state.timer.enabled || !state.gameActive"), 'Disabled or pre-game Timer visibility guard changed');
+const gameEntry = between(app, 'async function enterNetworkGame(', 'async function applyVideoSenderEncoding(');
+assert(
+  /state\.gameActive = true;\s*renderSharedTimer\(\);/.test(gameEntry),
+  'Shared Timer is not rendered immediately when Host or Guest enters the Table'
+);
+assert(!gameEntry.includes("state.role === 'host' ? renderSharedTimer"), 'Guest Timer rendering is incorrectly role-gated');
+assert(!gameEntry.includes('state.timer.running && renderSharedTimer'), 'Stopped Timer rendering incorrectly requires Start');
+
 console.log('FUTURE_UX_V3_7_HUB_OK');

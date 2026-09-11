@@ -2999,6 +2999,7 @@ async function enterNetworkGame({ recovery = false, reason = 'game-enter' } = {}
     }
 
     state.gameActive = true;
+    renderSharedTimer();
     const recoveryAction = recovery ? window.TCGateMediaRecovery.recoveryAction(state.role) : null;
     if (recoveryAction === 'restart-request') {
       await sendSignal('restart-request', { reason });
