@@ -31,37 +31,45 @@
     const gameId=manifest.game_id||manifest.game;
     const databaseVersion=manifest.database_version||manifest.databaseVersion;
     const databaseStatus=manifest.database_status||databaseManifest?.database_status||databaseManifest?.status;
+    const runtimeScope=manifest.runtime_scope||databaseManifest?.runtimeScope;
+    const runtimeReady=manifest.runtime_ready??databaseManifest?.runtimeReady;
     if(gameId!==config.expectedGame)throw new Error('Manifest DB : jeu invalide');
     if(databaseVersion!==config.expectedVersion)throw new Error('Manifest DB : version incompatible');
     if(databaseStatus!==config.expectedStatus)throw new Error('Manifest DB : statut invalide');
+    if(runtimeScope!==config.expectedRuntimeScope)throw new Error('Manifest DB : scope runtime invalide');
+    if(runtimeReady!==config.expectedRuntimeReady)throw new Error('Manifest DB : runtime non qualifie');
     if(!Array.isArray(cards)||cards.length!==config.expectedCanonicalCards)throw new Error('Runtime DB : cardinalité canonique invalide');
-    if(!Array.isArray(printings)||printings.length!==config.expectedOfficialPrintings)throw new Error('Runtime DB : cardinalité impressions invalide');
+    if(!Array.isArray(printings)||printings.length!==config.expectedRuntimePrintings)throw new Error('Runtime DB : cardinalité impressions invalide');
     const canonicalReferences=canonicalIndex?.references;
     const recognitionGroups=groupsIndex?.recognitionGroups;
     const printingCards=printingIndex?.cards;
     if(!Array.isArray(canonicalReferences)||canonicalReferences.length!==cards.length)throw new Error('Runtime DB : index Vision canonique invalide');
-    if(!Array.isArray(recognitionGroups)||!recognitionGroups.length||!Array.isArray(printingCards))throw new Error('Runtime DB : groupes de reconnaissance invalides');
+    if(!Array.isArray(recognitionGroups)||recognitionGroups.length!==config.expectedRecognitionGroups||!Array.isArray(printingCards))throw new Error('Runtime DB : groupes de reconnaissance invalides');
 
     const cardsById=new Map(),printingsById=new Map(),richGroups=new Map();
     for(const card of cards){if(!card?.cardId||cardsById.has(card.cardId))throw new Error('Runtime DB : cardId invalide ou dupliqué');cardsById.set(card.cardId,Object.freeze({...card}));}
     for(const printing of printings){if(!printing?.printingId||printingsById.has(printing.printingId)||!cardsById.has(printing.cardId))throw new Error('Runtime DB : impression invalide ou orpheline');printingsById.set(printing.printingId,Object.freeze({...printing}));}
     for(const cardEntry of printingCards)for(const group of cardEntry?.recognitionGroups||[]){if(group?.recognitionGroupId)richGroups.set(group.recognitionGroupId,group);}
 
-    const references=recognitionGroups.map(group=>{
+    const references=recognitionGroups.flatMap(group=>{
       const canonical=cardsById.get(group.cardId),rich=richGroups.get(group.recognitionGroupId);
       const candidatePrintingIds=Array.isArray(group.candidatePrintingIds)?group.candidatePrintingIds:Array.isArray(group.printingIds)?group.printingIds:[];
       if(!canonical||!rich||!candidatePrintingIds.length||candidatePrintingIds.some(id=>printingsById.get(id)?.cardId!==group.cardId))throw new Error('Runtime DB : groupe orphelin');
-      const sourceReference=(rich.references||[]).find(ref=>candidatePrintingIds.includes(ref.printingId)&&ref.visionAssetPath);
-      if(!sourceReference)throw new Error('Runtime DB : groupe sans asset Vision');
+      const sourceReferences=(rich.references||[]).filter(ref=>candidatePrintingIds.includes(ref.printingId)&&ref.visionAssetPath);
+      if(sourceReferences.length!==candidatePrintingIds.length||new Set(sourceReferences.map(ref=>ref.printingId)).size!==candidatePrintingIds.length)throw new Error('Runtime DB : groupe sans couverture Vision complete');
       const exact=group.mode==='exact'&&candidatePrintingIds.length===1;
-      const printing=printingsById.get(exact?candidatePrintingIds[0]:canonical.primaryPrintingId)||printingsById.get(sourceReference.printingId);
-      const referenceImageUrl=resolveUrl(config.manifestUrl,sourceReference.visionAssetPath||sourceReference.referenceImageUrl);
-      const displayImageUrl=resolveUrl(config.manifestUrl,printing.displayAssetPath||printing.imageUrl);
-      return Object.freeze({refId:group.recognitionGroupId,recognitionGroupId:group.recognitionGroupId,cardId:group.cardId,printingId:exact?candidatePrintingIds[0]:null,candidatePrintingIds:Object.freeze([...candidatePrintingIds]),recognitionMode:group.mode,variantKind:exact?printing.variantKind:null,referenceImageUrl,imageUrl:referenceImageUrl,displayImageUrl,displayAssetPath:displayImageUrl,recognition:Object.freeze({eligible:true,mode:group.mode,recognitionGroupId:group.recognitionGroupId})});
+      return sourceReferences.map(sourceReference=>{
+        const artworkPrinting=printingsById.get(sourceReference.printingId);
+        if(!artworkPrinting||artworkPrinting.cardId!==group.cardId)throw new Error('Runtime DB : reference Vision orpheline');
+        const referenceImageUrl=resolveUrl(config.manifestUrl,sourceReference.visionAssetPath||sourceReference.referenceImageUrl);
+        const displayImageUrl=resolveUrl(config.manifestUrl,artworkPrinting.displayAssetPath||artworkPrinting.imageUrl);
+        return Object.freeze({refId:`${group.recognitionGroupId}:${sourceReference.printingId}`,recognitionGroupId:group.recognitionGroupId,cardId:group.cardId,printingId:exact?sourceReference.printingId:null,candidatePrintingIds:Object.freeze([...candidatePrintingIds]),recognitionMode:group.mode,variantKind:artworkPrinting.variantKind,referencePrintingId:sourceReference.printingId,referenceImageUrl,imageUrl:referenceImageUrl,displayImageUrl,displayAssetPath:displayImageUrl,recognition:Object.freeze({eligible:true,mode:group.mode,recognitionGroupId:group.recognitionGroupId})});
+      });
     });
+    if(references.length!==config.expectedMatcherReferences||new Set(references.map(reference=>reference.refId)).size!==references.length)throw new Error('Runtime DB : corpus matcher incomplet');
     const coveredCards=new Set(references.map(reference=>reference.cardId));
     if(coveredCards.size!==cards.length)throw new Error('Runtime DB : couverture canonique incomplète');
-    return Object.freeze({manifest:Object.freeze({game:'cyberpunk',gameId,databaseVersion,databaseStatus,sourceRef:databaseVersion,canonicalCount:cards.length,printingCount:printings.length,visionReferenceCount:references.length,recognitionGroupCount:recognitionGroups.length,source:'public-github-direct',fallbackActive:false}),cards:Object.freeze([...cardsById.values()]),printings:Object.freeze([...printingsById.values()]),cardsById,printingsById,references:Object.freeze(references),recognitionGroups:Object.freeze(recognitionGroups.map(group=>Object.freeze({...group})))});
+    return Object.freeze({manifest:Object.freeze({game:'cyberpunk',gameId,databaseVersion,databaseStatus,runtimeScope,runtimeReady,sourceRef:databaseVersion,sourceCommit:config.manifestUrl.split('/').slice(-2,-1)[0],canonicalCount:cards.length,printingCount:printings.length,visionReferenceCount:references.length,recognitionGroupCount:recognitionGroups.length,knownCanonicalCount:config.knownCanonicalCards,knownPrintingCount:config.knownOfficialPrintings,source:'public-github-direct',fallbackActive:false}),cards:Object.freeze([...cardsById.values()]),printings:Object.freeze([...printingsById.values()]),cardsById,printingsById,references:Object.freeze(references),recognitionGroups:Object.freeze(recognitionGroups.map(group=>Object.freeze({...group})))});
   }
 
   async function loadUncached(game,fetchImpl) {

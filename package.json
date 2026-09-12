@@ -10,6 +10,7 @@
     "test:vision-integrity": "node vision-integrity-test.js",
     "test:vision-source": "node vision-source-provenance-test.js",
     "test:cyberpunk-db": "node cyberpunk-db-integration-test.js",
+    "test:cyberpunk-db-performance": "node --expose-gc cyberpunk-db-performance-test.js",
     "test:control-center-forwarder": "node control-center-forwarder-test.js",
     "test:phone-diagnostics": "node phone-camera-diagnostics-test.js",
     "test:vision-backpressure": "node vision-backpressure-test.js",

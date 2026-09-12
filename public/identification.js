@@ -981,6 +981,9 @@
           refId:reference.refId,
           cardId:reference.cardId,
           printingId:reference.printingId,
+          referencePrintingId:reference.referencePrintingId||null,
+          recognitionGroupId:reference.recognitionGroupId||null,
+          recognitionMode:reference.recognitionMode||null,
           variantKind:reference.variantKind||reference.variant_kind||null,
           recognition:reference.recognition,
           candidatePrintingIds:Array.isArray(reference.candidatePrintingIds)?[...reference.candidatePrintingIds]:[],
@@ -1014,7 +1017,11 @@
           visionReferenceCount:Array.isArray(fallback.cards)?fallback.cards.length:0,
           source:fallback.source,
           remoteError:databaseError?.message||String(databaseError),
-          fallbackActive:true
+          fallbackActive:true,
+          degradedCoverage:true,
+          fallbackCoverage:'legacy-cyberpunk-0.7-147-references',
+          expectedRuntimeScope:'cyberpunk-beta-2026',
+          expectedVisionReferenceCount:229
         }
       };
     }
