@@ -182,6 +182,19 @@ assert(!/tcgate-gig-(?:side|dice-lane|score)/.test(gigMarkup), 'Legacy Candidate
 for (const selector of ['.tcgate-gig-side-self', '.tcgate-gig-side-opp', "querySelectorAll('.tcgate-gig-side')", '.tcgate-die-wrap', '.tcgate-die-adjust', "querySelector('.tcgate-die')"]) {
   assert(!app.includes(selector), `Legacy Candidate Gig selector remains: ${selector}`);
 }
+const futureGigPlacementGuard = between(app, 'function futureUxOwnsGigPlacement', 'function placeGigPanelSafely');
+assert(futureGigPlacementGuard.includes("$('screenGame')?.classList.contains('future-table-v37')") && futureGigPlacementGuard.includes("panel.classList.contains('gig-totem')"), 'Future UX Gig placement ownership guard is incomplete');
+const safeGigPlacement = between(app, 'function placeGigPanelSafely', 'let gigPlacementFrame');
+assert(safeGigPlacement.includes('if (futureUxOwnsGigPlacement(panel))') && safeGigPlacement.includes('resetGigPanelPosition(panel);') && safeGigPlacement.includes('return true;'), 'Candidate safe placement is not defensively disabled for Future UX');
+const scheduledGigPlacement = between(app, 'function scheduleGigPanelSafePlacement', 'function moveGigPanelForFullscreen');
+assert(scheduledGigPlacement.includes('cancelAnimationFrame(gigPlacementFrame)') && scheduledGigPlacement.includes('clearTimeout(gigPlacementTimer)'), 'Pending Candidate Gig placement work is not cancelled');
+assert(scheduledGigPlacement.includes('if (futureUxOwnsGigPlacement(panel))') && scheduledGigPlacement.includes('resetGigPanelPosition(panel);') && scheduledGigPlacement.includes('return;'), 'Resize placement is not a no-op for Future UX');
+const fullscreenGigPlacement = between(app, 'function moveGigPanelForFullscreen', 'function setupDraggableGigPanel');
+assert(fullscreenGigPlacement.includes('fullscreenRoot.appendChild(panel)') && fullscreenGigPlacement.includes('mount.appendChild(panel)'), 'Fullscreen Gig reparenting changed');
+assert(fullscreenGigPlacement.includes("panel.classList.add('is-fullscreen')") && fullscreenGigPlacement.includes("panel.classList.remove('is-fullscreen')"), 'Fullscreen Gig state class changed');
+assert(fullscreenGigPlacement.includes('resetGigPanelPosition();') && fullscreenGigPlacement.includes("scheduleGigPanelSafePlacement('fullscreen-change')"), 'Fullscreen Gig does not restore CSS-owned placement');
+assert(app.includes("scheduleGigPanelSafePlacement('window-resize')") && app.includes("scheduleGigPanelSafePlacement('visual-viewport-resize')"), 'Resize paths no longer use the guarded Gig placement scheduler');
+assert(safeGigPlacement.indexOf('futureUxOwnsGigPlacement(panel)') < safeGigPlacement.indexOf('applySavedGigPanelPosition(panel)'), 'A saved Candidate Gig position can affect Future UX');
 
 const gigLogic = between(app, 'function createGigDiceState()', 'const GIG_PANEL_POSITION_KEY');
 for (const token of ['value: 0', "origin: 'host'", "origin: 'guest'", 'die.owner = targetOwner', "sendGigState('die-transfer')", "sendGigState('manual-reset')"]) {

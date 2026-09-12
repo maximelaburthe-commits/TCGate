@@ -1092,8 +1092,7 @@ function applySavedGigPanelPosition(panel = $('gigDicePanel')) {
   setGigPanelCoordinates(panel, left, top);
   return true;
 }
-function resetGigPanelPosition() {
-  const panel = $('gigDicePanel');
+function resetGigPanelPosition(panel = $('gigDicePanel')) {
   if (!panel) return;
   panel.style.left = '';
   panel.style.top = '';
@@ -1101,7 +1100,18 @@ function resetGigPanelPosition() {
   panel.style.bottom = '';
   panel.style.transform = '';
 }
+function futureUxOwnsGigPlacement(panel = $('gigDicePanel')) {
+  return Boolean(
+    panel &&
+    $('screenGame')?.classList.contains('future-table-v37') &&
+    panel.classList.contains('gig-totem')
+  );
+}
 function placeGigPanelSafely(panel = $('gigDicePanel'), reason = 'layout') {
+  if (futureUxOwnsGigPlacement(panel)) {
+    resetGigPanelPosition(panel);
+    return true;
+  }
   if (!gigPanelHasLayout(panel) || panel.dataset.dragging === 'true') return false;
   if (applySavedGigPanelPosition(panel)) return true;
   const safe = defaultSafeGigPanelPosition(panel);
@@ -1114,9 +1124,15 @@ let gigPlacementFrame = 0;
 let gigPlacementTimer = 0;
 function scheduleGigPanelSafePlacement(reason = 'layout') {
   const panel = $('gigDicePanel');
-  if (!panel || panel.classList.contains('hidden')) return;
   if (gigPlacementFrame) cancelAnimationFrame(gigPlacementFrame);
   if (gigPlacementTimer) clearTimeout(gigPlacementTimer);
+  gigPlacementFrame = 0;
+  gigPlacementTimer = 0;
+  if (futureUxOwnsGigPlacement(panel)) {
+    resetGigPanelPosition(panel);
+    return;
+  }
+  if (!panel || panel.classList.contains('hidden')) return;
   let attempt = 0;
   const tryPlace = () => {
     gigPlacementFrame = requestAnimationFrame(() => {
