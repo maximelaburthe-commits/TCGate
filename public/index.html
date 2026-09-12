@@ -110,6 +110,18 @@
             <strong id="hubGameReadonlyValue">—</strong>
           </div>
 
+          <div id="timerHubConfig">
+            <div class="toggle-row">
+              <div><strong>Minuteur</strong><div class="sub">Partagé pendant la partie</div></div>
+              <button class="toggle on" id="timerToggle" type="button" aria-pressed="true"><div class="knob"></div></button>
+            </div>
+            <div id="timerCfg">
+              <label>Durée initiale (minutes)</label>
+              <input type="number" id="timerMinutes" min="1" max="180" value="50" />
+            </div>
+            <div class="summary-line"><span>Minuteur</span><strong id="sumTimer">50 min</strong></div>
+          </div>
+
           <button id="setupContinue" class="primary full">Continuer</button>
         </div>
       </div>
@@ -231,18 +243,6 @@
               <button id="lobbyToggleMic" class="toggle-chip" disabled>Micro</button>
             </div>
           </div>
-        </div>
-
-        <div id="timerHubConfig">
-          <div class="toggle-row">
-            <div><strong>Minuteur</strong><div class="sub">Partagé pendant la partie</div></div>
-            <button class="toggle on" id="timerToggle" type="button" aria-pressed="true"><div class="knob"></div></button>
-          </div>
-          <div id="timerCfg">
-            <label>Durée initiale (minutes)</label>
-            <input type="number" id="timerMinutes" min="1" max="180" value="50" />
-          </div>
-          <div class="summary-line"><span>Minuteur</span><strong id="sumTimer">50 min</strong></div>
         </div>
 
         <div class="lobby-bottom">
@@ -520,6 +520,7 @@
           </section>
         </aside>
       </main>
+      <div class="center-state hidden" id="centerState" role="status" aria-live="polite"></div>
     </section>
 
   </div>

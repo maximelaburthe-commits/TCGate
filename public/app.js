@@ -59,6 +59,8 @@ const state = {
   remoteMediaState: {
     cameraEnabled: null,
     microphoneEnabled: null,
+    cameraAvailable: null,
+    microphoneAvailable: null,
     receivedAt: null
   },
   cameraEnabled: false,
@@ -178,7 +180,7 @@ function resetReportSession(meta = {}) {
   state.reportSeq = 0;
   state.visionFeedback = [];
   state.lastRtcMetrics = null;
-  state.remoteMediaState = { cameraEnabled: null, microphoneEnabled: null, receivedAt: null };
+  state.remoteMediaState = { cameraEnabled: null, microphoneEnabled: null, cameraAvailable: null, microphoneAvailable: null, receivedAt: null };
 
   const q = state.rtcQualityControl;
   q.cpuEpisode = null;
@@ -278,6 +280,26 @@ function setRtcStatus(text, mode = '') {
   $('rtcStatus').textContent = text;
   $('rtcStatus').className = `rtc-status ${mode}`.trim();
   $('remoteVideoStatus').textContent = text;
+  renderTechnicalTableState();
+}
+
+function renderTechnicalTableState() {
+  const panel = $('centerState');
+  if (!panel || !state.gameActive) {
+    panel?.classList.add('hidden');
+    return;
+  }
+  const rtcText = $('rtcStatus')?.textContent || '';
+  let markup = '';
+  if (/reconnexion|interrompue/i.test(rtcText)) {
+    markup = '<h3>Reconnexion en cours…</h3><p class="sub">Restauration automatique de la session.</p>';
+  } else if (!currentVideoTrack() && (state.lostCameraId || state.lostCameraLabel)) {
+    markup = '<h3>Caméra locale indisponible</h3><p class="sub">La session et l’audio restent actifs.</p>';
+  } else if (!currentAudioTrack() && (state.lostMicrophoneId || state.lostMicrophoneLabel)) {
+    markup = '<h3>Micro indisponible</h3><p class="sub">La session et la vidéo restent actives.</p>';
+  }
+  panel.innerHTML = markup;
+  panel.classList.toggle('hidden', !markup);
 }
 
 const SESSION_STORAGE_KEY = 'tcgate-alpha-room-session-v1';
@@ -2160,6 +2182,7 @@ function updateMediaUi() {
   }
 
   updateGameDeviceStatus();
+  renderTechnicalTableState();
 
   if (state.roomSnapshot && screens.lobby.classList.contains('active')) {
     applyRoomState(state.roomSnapshot);
@@ -3001,6 +3024,7 @@ async function enterNetworkGame({ recovery = false, reason = 'game-enter' } = {}
 
     state.gameActive = true;
     renderSharedTimer();
+    renderTechnicalTableState();
     const recoveryAction = recovery ? window.TCGateMediaRecovery.recoveryAction(state.role) : null;
     if (recoveryAction === 'restart-request') {
       await sendSignal('restart-request', { reason });
@@ -3390,7 +3414,9 @@ function localMediaStatePayload() {
   const audioTrack = currentAudioTrack();
   return {
     cameraEnabled: Boolean(videoTrack && videoTrack.enabled),
-    microphoneEnabled: Boolean(audioTrack && audioTrack.enabled)
+    microphoneEnabled: Boolean(audioTrack && audioTrack.enabled),
+    cameraAvailable: Boolean(videoTrack),
+    microphoneAvailable: Boolean(audioTrack)
   };
 }
 
@@ -3510,6 +3536,8 @@ function applyRemoteMediaState(payload = {}) {
   const next = {
     cameraEnabled: typeof payload.cameraEnabled === 'boolean' ? payload.cameraEnabled : previous.cameraEnabled,
     microphoneEnabled: typeof payload.microphoneEnabled === 'boolean' ? payload.microphoneEnabled : previous.microphoneEnabled,
+    cameraAvailable: typeof payload.cameraAvailable === 'boolean' ? payload.cameraAvailable : previous.cameraAvailable,
+    microphoneAvailable: typeof payload.microphoneAvailable === 'boolean' ? payload.microphoneAvailable : previous.microphoneAvailable,
     receivedAt: new Date().toISOString()
   };
   state.remoteMediaState = next;
@@ -3530,8 +3558,22 @@ function applyRemoteMediaState(payload = {}) {
   logEvent('remote-media-state', {
     cameraEnabled: next.cameraEnabled,
     microphoneEnabled: next.microphoneEnabled,
+    cameraAvailable: next.cameraAvailable,
+    microphoneAvailable: next.microphoneAvailable,
     cameraChanged
   });
+
+  const remotePlaceholder = $('remoteVideoPlaceholder');
+  const remoteStatus = $('remoteVideoStatus');
+  if (next.cameraAvailable === false) {
+    remotePlaceholder?.classList.remove('hidden');
+    if (remoteStatus) remoteStatus.textContent = 'Caméra adverse indisponible';
+  } else if (next.cameraEnabled === false) {
+    remotePlaceholder?.classList.remove('hidden');
+    if (remoteStatus) remoteStatus.textContent = 'Caméra adverse coupée';
+  } else if (next.cameraAvailable === true && state.remoteVideoStarted) {
+    remotePlaceholder?.classList.add('hidden');
+  }
 }
 
 function clearRtcRecoveryTimer() {
@@ -4567,6 +4609,13 @@ async function buildCompleteReport() {
     media: {
       cameraEnabled: state.cameraEnabled,
       microphoneEnabled: state.micEnabled,
+      cameraAvailable: Boolean(currentVideoTrack()),
+      microphoneAvailable: Boolean(currentAudioTrack()),
+      cameraVoluntarilyDisabled: Boolean(currentVideoTrack() && !state.cameraEnabled),
+      microphoneVoluntarilyDisabled: Boolean(currentAudioTrack() && !state.micEnabled),
+      cameraUnavailable: Boolean(!currentVideoTrack() && (state.lostCameraId || state.lostCameraLabel)),
+      microphoneUnavailable: Boolean(!currentAudioTrack() && (state.lostMicrophoneId || state.lostMicrophoneLabel)),
+      recoveryInFlight: state.deviceRecoveryInFlight,
       localVideo: safeTrackSettings(currentVideoTrack()),
       localAudio: safeTrackSettings(currentAudioTrack()),
       remoteTracks: state.remoteStream?.getTracks?.().map(safeTrackSettings) || [],
@@ -4575,7 +4624,8 @@ async function buildCompleteReport() {
     phoneCamera,
     network: {
       signaling: {
-        eventSourceReadyState: state.eventSource?.readyState ?? null
+        eventSourceReadyState: state.eventSource?.readyState ?? null,
+        reconnecting: /reconnexion|interrompue/i.test($('rtcStatus')?.textContent || '')
       },
       negotiation: {
         role: state.role,

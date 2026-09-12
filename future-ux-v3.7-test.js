@@ -18,10 +18,7 @@ const normalizeGigPanelMarkup = source => {
   return start >= 0 && end >= 0 ? `${source.slice(0, start)}<div id="gigDiceMount"></div>\n          ${source.slice(end)}` : source;
 };
 const normalizeTimerMarkup = source => {
-  let value = source;
-  const hubStart = value.indexOf('<div id="timerHubConfig"');
-  const hubEnd = value.indexOf('<div class="lobby-bottom"', hubStart);
-  if (hubStart >= 0 && hubEnd >= 0) value = `${value.slice(0, hubStart)}${value.slice(hubEnd)}`;
+  let value = source.replace(/\s*<div id="timerHubConfig">[\s\S]*?<div class="summary-line"><span>Minuteur<\/span><strong id="sumTimer">[\s\S]*?<\/strong><\/div>\s*<\/div>/, '');
   const hudStart = value.indexOf('<div class="hud-top"');
   const hudEnd = value.indexOf('<main class="game-layout', hudStart);
   if (hudStart >= 0 && hudEnd >= 0) value = `${value.slice(0, hudStart)}${value.slice(hudEnd)}`;
@@ -91,8 +88,8 @@ assert(css.includes('#screenLobby.future-hub-mounted'), 'Hub CSS is not scoped t
 assert(!css.includes('.tcgate-home-'), 'Future UX CSS touches the Candidate Home');
 assert(app.includes('function transferDie(') && app.includes('function applyRemoteGigState('), 'Checkpoint D Gig mechanics are missing');
 assert(
-  normalize(html.slice(0, html.indexOf('<!-- GAME -->'))) === normalize(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- GAME -->'))),
-  'Post-F correction changed Candidate Home or Hub DOM'
+  normalize(normalizeTimerMarkup(html.slice(0, html.indexOf('<!-- GAME -->')))) === normalize(normalizeTimerMarkup(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- GAME -->')))),
+  'Checkpoint G changed Candidate Home or Hub DOM outside the Timer placement'
 );
 assert(
   normalize(ux.slice(0, ux.indexOf('  const game ='))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  const game ='))).trimEnd(),
@@ -208,5 +205,18 @@ assert(
 );
 assert(!gameEntry.includes("state.role === 'host' ? renderSharedTimer"), 'Guest Timer rendering is incorrectly role-gated');
 assert(!gameEntry.includes('state.timer.running && renderSharedTimer'), 'Stopped Timer rendering incorrectly requires Start');
+
+const setupFormMarkup = between(html, '<div class="form-card">', '<button id="setupContinue"');
+assert(setupFormMarkup.includes('id="timerHubConfig"'), 'Hub Timer is not inside the Session form');
+assert(setupFormMarkup.indexOf('id="timerHubConfig"') > setupFormMarkup.indexOf('id="gameField"'), 'Hub Timer is not positioned below the TCG choice');
+const lobbyMarkup = between(html, '<!-- LOBBY -->', '<!-- GAME -->');
+assert(!lobbyMarkup.includes('id="timerHubConfig"'), 'Legacy full-width Hub Timer placement remains');
+assert(html.includes('class="center-state hidden" id="centerState"'), 'Prototype technical-state surface is missing');
+assert(app.includes("markup = '<h3>Reconnexion en cours…</h3>"), 'Network recovery is not represented by the prototype state');
+assert(app.includes("markup = '<h3>Caméra locale indisponible</h3>") && app.includes("markup = '<h3>Micro indisponible</h3>"), 'Unavailable local media states are missing');
+assert(app.includes('cameraAvailable: Boolean(videoTrack)') && app.includes('microphoneAvailable: Boolean(audioTrack)'), 'Media availability is not independent from voluntary enabled state');
+assert(app.includes("remoteStatus.textContent = 'Caméra adverse coupée'") && app.includes("remoteStatus.textContent = 'Caméra adverse indisponible'"), 'Remote voluntary-off and unavailable states are not distinguished');
+const localTrackEnded = between(app, 'async function handleLocalTrackEnded(', 'async function replaceMediaKind(');
+assert(!localTrackEnded.includes("showScreen('lobby')"), 'A local media failure incorrectly returns the user to the Hub');
 
 console.log('FUTURE_UX_V3_7_HUB_OK');

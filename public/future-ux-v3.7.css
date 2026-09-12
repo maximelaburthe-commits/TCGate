@@ -321,6 +321,8 @@
 #screenGame.future-table-v37 .more-menu button:hover{background:#151b21}
 #screenGame.future-table-v37 .more-menu .danger-item{color:#ffc2c2}
 #screenGame.future-table-v37 .more-menu .sub{font-size:13px;color:var(--muted)}
+.center-state{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(9,12,16,.84);border:1px solid #3a444f;border-radius:16px;padding:20px;text-align:center;z-index:18;min-width:280px}
+.center-state .sub{font-size:13px;color:var(--muted);margin-top:8px}
 .flow-overlay{position:fixed;inset:0;z-index:180;background:rgba(2,4,7,.70);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center}
 .flow-overlay.show{display:flex}
 .flow-card{width:min(460px,90vw);background:#11161c;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 25px 65px rgba(0,0,0,.55)}
