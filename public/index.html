@@ -266,20 +266,28 @@
           <span id="rtcStatus" class="rtc-status"><i></i> Connexion…</span>
         </div>
 
-        <div class="game-actions tcgate-game-actions">
-          <button id="generateReportGame" class="ghost report-button compact-report tcgate-report-button" title="Générer un rapport complet">Rapport</button>
-          <button id="deviceMenuToggle" class="icon-button tcgate-media-button" title="Choisir caméra ou micro" aria-label="Périphériques" aria-expanded="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="M19 13.5v-3l-2.2-.6a7.7 7.7 0 0 0-.7-1.6l1.1-2-2.1-2.1-2 1.1a7.7 7.7 0 0 0-1.6-.7L10.5 2h-3l-.6 2.2a7.7 7.7 0 0 0-1.6.7l-2-1.1-2.1 2.1 1.1 2a7.7 7.7 0 0 0-.7 1.6L0 10.5v3l2.2.6a7.7 7.7 0 0 0 .7 1.6l-1.1 2 2.1 2.1 2-1.1a7.7 7.7 0 0 0 1.6.7L8.5 22h3l.6-2.2a7.7 7.7 0 0 0 1.6-.7l2 1.1 2.1-2.1-1.1-2a7.7 7.7 0 0 0 .7-1.6L19 13.5Z"/></svg>
-          </button>
-          <button id="toggleMic" class="icon-button active tcgate-media-button" title="Micro actif" aria-label="Micro actif">
+        <div class="controls hidden-ui" id="controls">
+          <button id="toggleMic" class="ctrl active" title="Micro actif" aria-label="Micro actif">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 1 0-7 0v5A3.5 3.5 0 0 0 12 15Z"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6"/></svg>
           </button>
-          <button id="toggleCam" class="icon-button active tcgate-media-button" title="Caméra active" aria-label="Caméra active">
+          <button id="toggleCam" class="ctrl active" title="Caméra active" aria-label="Caméra active">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h7A2.5 2.5 0 0 1 16 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 4 16.5v-9Z"/><path d="m16 10 4-2v8l-4-2"/></svg>
           </button>
-          <button id="leaveGame" class="danger-button">Quitter la partie</button>
+          <button id="deviceMenuToggle" class="ctrl" title="Choisir caméra ou micro" aria-label="Périphériques" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="M19 13.5v-3l-2.2-.6a7.7 7.7 0 0 0-.7-1.6l1.1-2-2.1-2.1-2 1.1a7.7 7.7 0 0 0-1.6-.7L10.5 2h-3l-.6 2.2a7.7 7.7 0 0 0-1.6.7l-2-1.1-2.1 2.1 1.1 2a7.7 7.7 0 0 0-.7 1.6L0 10.5v3l2.2.6a7.7 7.7 0 0 0 .7 1.6l-1.1 2 2.1 2.1 2-1.1a7.7 7.7 0 0 0 1.6.7L8.5 22h3l.6-2.2a7.7 7.7 0 0 0 1.6-.7l2 1.1 2.1-2.1-1.1-2a7.7 7.7 0 0 0 .7-1.6L19 13.5Z"/></svg>
+          </button>
+          <button id="moreMenuToggle" class="ctrl" type="button" title="Plus d’actions" aria-label="Plus d’actions" aria-expanded="false">•••</button>
+          <button id="leaveGame" class="ctrl danger" title="Quitter la partie" aria-label="Quitter la partie">×</button>
         </div>
       </header>
+
+      <div class="more-menu hidden" id="moreMenu">
+        <button id="generateReportGame">Rapport <span class="sub">· Alpha</span></button>
+        <button id="infoMenu" type="button">Informations session</button>
+        <button id="diagMenu" type="button">Diagnostics</button>
+        <button id="gigDiceReset" class="hidden" type="button">Réinitialiser Gig Dice</button>
+        <button class="danger-item" id="finishMenu" type="button">Terminer la session</button>
+      </div>
 
       <div id="gameDeviceMenu" class="game-device-menu hidden" aria-label="Choix des périphériques">
         <div>
@@ -485,7 +493,6 @@
                   <div id="gigSelfDice" class="dice-line2 self" aria-label="Vos dés"></div>
                 </div>
               </div>
-              <button id="gigDiceReset" class="future-gig-reset-menu" type="button">Réinitialiser</button>
             </section>
           </div>
           <div class="game-hint vision-alpha-hint vision-only tcgate-alpha-diagnostics">
@@ -522,6 +529,39 @@
       <img id="modalCardImage" class="modal-card-image" alt="Carte agrandie" />
       <button id="closeCardModal" class="modal-close" aria-label="Fermer">×</button>
       <strong id="modalCardName" class="modal-card-name"></strong>
+    </div>
+  </div>
+
+  <div class="flow-overlay" id="reportOverlay" role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+    <div class="flow-card">
+      <h3 id="reportTitle">Rapport de session</h3>
+      <p>Ajoutez si besoin un ressenti technique. Les informations de session seront jointes automatiquement.</p>
+      <textarea class="report-box" id="reportText" maxlength="2000" placeholder="Latence, coupure, comportement étrange…"></textarea>
+      <div class="flow-actions">
+        <button class="btn primary" id="sendReport" type="button">Envoyer le rapport</button>
+        <button class="btn" id="closeReport" type="button">Fermer</button>
+      </div>
+    </div>
+  </div>
+  <div class="flow-overlay" id="quitOverlay" role="dialog" aria-modal="true" aria-labelledby="quitTitle">
+    <div class="flow-card">
+      <h3 id="quitTitle">Quitter la partie ?</h3>
+      <p>Vous allez quitter la session en cours.</p>
+      <div class="flow-actions">
+        <button class="btn danger" id="confirmQuit" type="button">Quitter</button>
+        <button class="btn" id="cancelQuit" type="button">Annuler</button>
+      </div>
+    </div>
+  </div>
+  <div class="flow-overlay" id="endOverlay" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+    <div class="flow-card">
+      <h3 id="endTitle">Session terminée</h3>
+      <p>Pendant l'Alpha, vous pouvez envoyer un rapport avant de quitter. Il n'y a pas de fonction « Rejouer » : tant que vous restez en direct, vous pouvez simplement réinitialiser le minuteur et le Street Cred.</p>
+      <div class="flow-actions">
+        <button class="btn primary" id="endReport" type="button">Envoyer un rapport</button>
+        <button class="btn" id="endHub" type="button">Retour au Hub</button>
+        <button class="btn danger" id="endQuit" type="button">Quitter la session</button>
+      </div>
     </div>
   </div>
 

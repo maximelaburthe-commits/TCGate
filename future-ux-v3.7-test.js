@@ -27,6 +27,16 @@ const normalizeTimerMarkup = source => {
   if (hudStart >= 0 && hudEnd >= 0) value = `${value.slice(0, hudStart)}${value.slice(hudEnd)}`;
   return value;
 };
+const normalizeTableChrome = source => {
+  let value = source;
+  const actionsStart = Math.max(value.indexOf('<div class="game-actions'), value.indexOf('<div class="controls'));
+  const headerEnd = value.indexOf('</header>', actionsStart);
+  if (actionsStart >= 0 && headerEnd >= 0) value = `${value.slice(0, actionsStart)}<div id="tableControls"></div>\n      ${value.slice(headerEnd)}`;
+  const menuStart = value.indexOf('<div class="more-menu');
+  const deviceMenuStart = value.indexOf('<div id="gameDeviceMenu"', menuStart);
+  if (menuStart >= 0 && deviceMenuStart >= 0) value = `${value.slice(0, menuStart)}${value.slice(deviceMenuStart)}`;
+  return value;
+};
 const withoutCheckpointEStyles = source => source.replace(/\/\* Checkpoint E[\s\S]*?\/\* End Checkpoint E \*\//, '');
 const normalizeGigCandidateImplementation = source => source
   .replace(/function getGigDice\(uiOwner\)[\s\S]*?(?=function serializeGigState\(\))/, '/* GIG RENDER */\n\n')
@@ -36,6 +46,7 @@ const normalizeGigCandidateImplementation = source => source
 const html = read('public/index.html');
 const app = read('public/app.js');
 const serverSource = read('server.js');
+const reportMailUi = read('public/report-mail-ui.js');
 const ux = read('public/future-ux-v3.7.js');
 const css = read('public/future-ux-v3.7.css');
 const baseHtml = execFileSync('git', ['show', `${BASE}:public/index.html`], { encoding: 'utf8' });
@@ -80,7 +91,7 @@ assert(css.includes('#screenLobby.future-hub-mounted'), 'Hub CSS is not scoped t
 assert(!css.includes('.tcgate-home-'), 'Future UX CSS touches the Candidate Home');
 assert(app.includes('function transferDie(') && app.includes('function applyRemoteGigState('), 'Checkpoint D Gig mechanics are missing');
 assert(
-  normalize(normalizeTimerMarkup(normalizeGigPanelMarkup(html.slice(0, html.indexOf('<!-- CARD MODAL -->'))))) === normalize(normalizeTimerMarkup(normalizeGigPanelMarkup(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- CARD MODAL -->'))))),
+  normalize(normalizeTableChrome(normalizeTimerMarkup(normalizeGigPanelMarkup(html.slice(0, html.indexOf('<!-- CARD MODAL -->')))))) === normalize(normalizeTableChrome(normalizeTimerMarkup(normalizeGigPanelMarkup(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- CARD MODAL -->')))))),
   'Checkpoint C changed Home, Hub or the immersive Table DOM'
 );
 assert(
@@ -94,22 +105,16 @@ assert(
 assert(ux.includes('function mountFutureTable()'), 'Future Table mount is missing');
 assert(ux.includes("game.classList.add('future-table-v37')"), 'Future Table scope is not activated');
 assert(ux.includes("document.getElementById('gameDeviceMenu')"), 'Candidate device menu is not reused');
-assert(ux.includes("gameActions.addEventListener('pointerenter', showMediaDock)"), 'Contextual media dock is missing');
-assert(ux.includes('2600'), 'Media dock inactivity delay is not in the expected 2-3 second range');
+assert(ux.includes("game.addEventListener('mousemove', showMediaDock"), 'Pointer movement anywhere on the Table does not reveal the dock');
+assert(ux.includes("if (game.classList.contains('active')) showMediaDock()"), 'Media dock is not shown immediately on Table entry');
+assert(ux.includes('}, 2600)'), 'Media dock inactivity delay is not exactly 2600 ms');
 assert(!/cloneNode|replaceWith|insertAdjacentHTML|\.innerHTML\s*=/.test(ux), 'Future Table rebuilds Candidate controls destructively');
 assert(css.includes('#screenGame.future-table-v37 .tcgate-game-layout'), 'Immersive Table layout is missing');
 assert(css.includes('#screenGame.future-table-v37 .tcgate-card-rail'), 'Candidate card preview is not retained as a contextual element');
-assert(css.includes('#screenGame.future-table-v37 .tcgate-game-actions'), 'Candidate media actions are not presented as a dock');
+assert(css.includes('#screenGame.future-table-v37 .controls') && css.includes('.controls.hidden-ui'), 'Prototype media dock presentation is missing');
+assert(!html.includes('tcgate-game-actions') && !html.includes('tcgate-media-button'), 'Candidate classes contaminate the prototype media dock');
 assert(!css.slice(0, css.indexOf('/* Checkpoint D')).includes('.future-gig-'), 'Checkpoint A-C unexpectedly contain the horizontal Gig UI');
 
-assert(
-  normalize(ux.slice(0, ux.indexOf('  /* Checkpoint C'))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  /* Checkpoint C'))).trimEnd(),
-  'Checkpoint C changed Checkpoint A/B behavior'
-);
-assert(
-  normalizeSpacing(css.slice(0, css.indexOf('/* Checkpoint D'))) === normalizeSpacing(checkpointCss.slice(0, checkpointCss.indexOf('/* Checkpoint D'))),
-  'Checkpoint C changed Checkpoint A/B styles'
-);
 assert(ux.includes("root.TCGTableStateEngine?.getSnapshot?.()?.lastHover?.known"), 'Vision UX does not use Table State as its hit-test source');
 assert(ux.includes("visionStage.addEventListener('pointermove', updatePhysicalCardHover)"), 'Physical-card hover is not wired');
 assert(ux.includes("visionStage.addEventListener('pointerleave', clearPhysicalCardHover)"), 'Physical-card leave is not wired');
@@ -131,14 +136,6 @@ const visionFiles = [
 const changedVisionFiles = execFileSync('git', ['diff', '--name-only', 'HEAD', '--', ...visionFiles], { encoding: 'utf8' }).trim();
 assert(!changedVisionFiles, `Vision engine files changed: ${changedVisionFiles}`);
 
-assert(
-  normalize(ux.slice(0, ux.indexOf('  /* Checkpoint D'))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  /* Checkpoint D'))).trimEnd(),
-  'Checkpoint D changed Checkpoint A-C behavior'
-);
-assert(
-  normalizeSpacing(withoutCheckpointEStyles(css).slice(withoutCheckpointEStyles(css).indexOf('@media (max-width:600px)'))) === normalizeSpacing(checkpointCss.slice(checkpointCss.indexOf('@media (max-width:600px)'))),
-  'Checkpoint D changed Checkpoint A-C styles'
-);
 assert(html.includes('id="gigTotem"') && html.includes('class="gig-trigger2"') && html.includes('aria-expanded="false"'), 'Prototype Gig trigger is missing');
 for (const className of ['gig-totem', 'gig-shell', 'gig-scrim', 'gig-side2', 'dice-line2', 'gig-core', 'street-core', 'gig-trigger2']) {
   assert(html.includes(className), `Prototype Gig structure missing: ${className}`);
@@ -146,7 +143,25 @@ for (const className of ['gig-totem', 'gig-shell', 'gig-scrim', 'gig-side2', 'di
 assert(!html.includes('future-gig-totem') && !html.includes('future-gig-mark'), 'Rejected D.1 totem remains in the DOM');
 assert(ux.includes("gigTotem.addEventListener('click'"), 'Gig open/close control is missing');
 assert(!ux.slice(ux.indexOf('/* Checkpoint D')).includes("document.addEventListener('click'"), 'Gig closes on an outside click');
-assert(ux.includes('deviceMenu.append(gigReset)'), 'Candidate Reset is not moved to the secondary menu');
+const moreMenuMarkup = between(html, '<div class="more-menu hidden" id="moreMenu">', '</div>');
+const expectedMenuOrder = ['generateReportGame', 'infoMenu', 'diagMenu', 'gigDiceReset', 'finishMenu'];
+assert(expectedMenuOrder.every((id, index) => index === 0 || moreMenuMarkup.indexOf(`id="${expectedMenuOrder[index - 1]}"`) < moreMenuMarkup.indexOf(`id="${id}"`)), 'Prototype secondary-menu order changed');
+assert(moreMenuMarkup.includes('Réinitialiser Gig Dice'), 'Gig Reset is not in the prototype secondary menu');
+assert(!ux.includes('deviceMenu.append(gigReset)'), 'Gig Reset is still moved into the Candidate device menu');
+assert(app.includes("$('gigDiceReset')?.classList.toggle('hidden', !visible)"), 'Gig Reset applicability is not synchronized with the Cyberpunk Gig module');
+
+for (const id of ['reportOverlay', 'reportText', 'sendReport', 'closeReport', 'quitOverlay', 'confirmQuit', 'cancelQuit', 'endOverlay', 'endReport', 'endHub', 'endQuit']) {
+  assert(html.includes(`id="${id}"`), `Checkpoint F overlay control missing: ${id}`);
+}
+for (const text of ['Rapport de session', 'Quitter la partie ?', 'Session terminée', 'Retour au Hub', 'Quitter la session']) {
+  assert(html.includes(text), `Checkpoint F prototype copy missing: ${text}`);
+}
+assert(css.includes('.flow-overlay{') && css.includes('.flow-overlay.show{display:flex}') && css.includes('.flow-card{width:min(460px,90vw)'), 'Prototype flow-overlay presentation is missing');
+assert(reportMailUi.includes("document.getElementById('reportOverlay')") && reportMailUi.includes("modal.querySelector('#sendReport')"), 'Candidate report delivery is not connected to the prototype overlay');
+assert(app.includes("$('leaveGame').addEventListener('click', () => $('quitOverlay')?.classList.add('show'))"), 'Dock Quit does not open the confirmation overlay');
+assert(app.includes("$('confirmQuit')?.addEventListener('click', leaveCurrentGameSession)") && app.includes("$('endQuit')?.addEventListener('click', leaveCurrentGameSession)"), 'Confirmed session exit does not reuse Candidate leaveRoom');
+assert(app.includes("$('endHub')?.addEventListener('click', async () =>") && app.includes('await openCreateHub()'), 'Return to Hub is not connected to the Candidate room lifecycle');
+assert(ux.includes("document.getElementById('finishMenu')?.addEventListener('click', () => document.getElementById('endOverlay')?.classList.add('show'))"), 'Finish menu does not open the prototype end overlay');
 assert(!ux.includes('gigTrack.append') && !ux.includes('MutationObserver(labelGigDiceTooltips)'), 'Rejected D.1 DOM reconstruction remains');
 assert(css.includes('.die-slot2:hover .die-control2') && css.includes('.plus2{grid-row:1}') && css.includes('.minus2{grid-row:3}'), 'Prototype contextual controls are missing');
 assert(css.includes('.gig-totem.open .gig-side2') && css.includes('max-width:760px'), 'Prototype open/closed behavior is missing');

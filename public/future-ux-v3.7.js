@@ -67,15 +67,18 @@
   mountUnifiedHub();
 
   const game = document.getElementById('screenGame');
-  const gameActions = game?.querySelector('.tcgate-game-actions');
+  const gameActions = document.getElementById('controls');
   const deviceMenu = document.getElementById('gameDeviceMenu');
+  const moreMenu = document.getElementById('moreMenu');
+  const moreMenuToggle = document.getElementById('moreMenuToggle');
   let dockTimer = null;
 
   function dockMustStayVisible() {
     return Boolean(
       gameActions?.matches(':hover') ||
       gameActions?.contains(document.activeElement) ||
-      (deviceMenu && !deviceMenu.classList.contains('hidden'))
+      (deviceMenu && !deviceMenu.classList.contains('hidden')) ||
+      (moreMenu && !moreMenu.classList.contains('hidden'))
     );
   }
 
@@ -83,20 +86,19 @@
     clearTimeout(dockTimer);
     dockTimer = root.setTimeout(() => {
       if (dockMustStayVisible()) return scheduleDockHide();
-      game?.classList.remove('future-media-dock-visible');
+      gameActions?.classList.add('hidden-ui');
     }, 2600);
   }
 
   function showMediaDock() {
     if (!game) return;
-    game.classList.add('future-media-dock-visible');
+    gameActions?.classList.remove('hidden-ui');
     scheduleDockHide();
   }
 
   function mountFutureTable() {
     if (!game || !gameActions) return false;
     game.classList.add('future-table-v37');
-    document.getElementById('generateReportGame')?.setAttribute('aria-label', 'Générer un rapport complet');
     document.getElementById('leaveGame')?.setAttribute('aria-label', 'Quitter la partie');
     document.getElementById('leaveGame')?.setAttribute('title', 'Quitter la partie');
     gameActions.addEventListener('pointerenter', showMediaDock);
@@ -104,15 +106,34 @@
     gameActions.addEventListener('focusin', showMediaDock);
     gameActions.addEventListener('focusout', scheduleDockHide);
     gameActions.addEventListener('click', showMediaDock);
-    game.addEventListener('pointermove', event => {
-      if (event.clientX >= root.innerWidth - 120 || event.clientY >= root.innerHeight - 120) showMediaDock();
-    }, { passive: true });
+    game.addEventListener('mousemove', showMediaDock, { passive: true });
+    new MutationObserver(() => {
+      if (game.classList.contains('active')) showMediaDock();
+    }).observe(game, { attributes: true, attributeFilter: ['class'] });
     if (deviceMenu) {
       new MutationObserver(() => {
         if (!deviceMenu.classList.contains('hidden')) showMediaDock();
         else scheduleDockHide();
       }).observe(deviceMenu, { attributes: true, attributeFilter: ['class'] });
     }
+    moreMenuToggle?.addEventListener('click', event => {
+      event.stopPropagation();
+      document.getElementById('timerPop')?.classList.add('hidden');
+      moreMenu?.classList.toggle('hidden');
+      moreMenuToggle.setAttribute('aria-expanded', moreMenu?.classList.contains('hidden') ? 'false' : 'true');
+      showMediaDock();
+    });
+    document.getElementById('finishMenu')?.addEventListener('click', () => document.getElementById('endOverlay')?.classList.add('show'));
+    moreMenu?.addEventListener('click', event => {
+      if (!event.target.closest('button')) return;
+      moreMenu.classList.add('hidden');
+      moreMenuToggle?.setAttribute('aria-expanded', 'false');
+    });
+    document.addEventListener('click', event => {
+      if (event.target.closest('#moreMenu') || event.target.closest('#moreMenuToggle')) return;
+      moreMenu?.classList.add('hidden');
+      moreMenuToggle?.setAttribute('aria-expanded', 'false');
+    });
     return true;
   }
 
@@ -194,9 +215,6 @@
 
   function mountFutureGigDice() {
     if (!gigPanel || !gigTotem) return false;
-    if (gigReset && deviceMenu) {
-      deviceMenu.append(gigReset);
-    }
     gigTotem.addEventListener('click', () => {
       document.getElementById('timerPop')?.classList.add('hidden');
       setGigExpanded(!gigTotem.matches('[aria-expanded="true"]'));

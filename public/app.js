@@ -773,6 +773,7 @@ function renderGigDicePanel() {
   const panel = $('gigDicePanel');
   const visible = gigDiceEnabledForCurrentGame();
   panel?.classList.toggle('hidden', !visible);
+  $('gigDiceReset')?.classList.toggle('hidden', !visible);
   if (!visible || !panel) return;
 
   const selfDice = getGigDice('self');
@@ -5050,16 +5051,34 @@ $('leaveLobby').addEventListener('click', async () => {
   showScreen('home');
 });
 
-$('leaveGame').addEventListener('click', async () => {
+async function leaveCurrentGameSession() {
+  $('quitOverlay')?.classList.remove('show');
+  $('endOverlay')?.classList.remove('show');
   toggleDemoCard(false);
   clearVisibleCardNow('leave-game');
   await leaveRoom();
   stopLocalStream();
   showScreen('home');
+}
+$('leaveGame').addEventListener('click', () => $('quitOverlay')?.classList.add('show'));
+$('cancelQuit')?.addEventListener('click', () => $('quitOverlay')?.classList.remove('show'));
+$('confirmQuit')?.addEventListener('click', leaveCurrentGameSession);
+$('endQuit')?.addEventListener('click', leaveCurrentGameSession);
+$('endHub')?.addEventListener('click', async () => {
+  $('endOverlay')?.classList.remove('show');
+  await leaveRoom();
+  stopLocalStream();
+  await openCreateHub();
+});
+$('endReport')?.addEventListener('click', () => {
+  $('endOverlay')?.classList.remove('show');
+  $('generateReportGame')?.click();
 });
 
 $('generateReportLobby').addEventListener('click', generateCompleteReport);
 $('generateReportGame').addEventListener('click', generateCompleteReport);
+$('infoMenu')?.addEventListener('click', () => toast(`Session ${state.roomCode} · ${gameLabel(state.game)}`));
+$('diagMenu')?.addEventListener('click', () => toast(`Diagnostics : ${$('rtcStatus')?.textContent?.trim() || 'indisponibles'}`));
 $('feedbackMissedCard')?.addEventListener('click',()=>captureTesterVisionFeedback('missed-card'));
 $('feedbackWrongCard')?.addEventListener('click',()=>captureTesterVisionFeedback('wrong-card'));
 

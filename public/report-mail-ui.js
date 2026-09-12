@@ -12,57 +12,33 @@
   let activeReportButton = null;
   let busy = false;
 
-  const modal = document.createElement('div');
-  modal.id = 'reportMailModal';
-  modal.className = 'tcgate-report-mail-modal hidden';
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-modal', 'true');
-  modal.setAttribute('aria-labelledby', 'reportMailTitle');
-  modal.innerHTML = `
-    <div class="tcgate-report-mail-card">
-      <button type="button" class="tcgate-report-mail-close" aria-label="Fermer">×</button>
-      <span class="eyebrow">Alpha TCGate</span>
-      <h2 id="reportMailTitle">Envoyer un rapport</h2>
-      <p class="tcgate-report-mail-help">
-        Le diagnostic technique sera envoyé à l'équipe TCGate.
-        Aucune vidéo, aucun audio et aucune capture d'écran ne sont ajoutés automatiquement.
-      </p>
-      <label class="tcgate-report-mail-label" for="reportMailNote">Notes facultatives</label>
-      <textarea id="reportMailNote" maxlength="2000"
-        placeholder="Ex. : la carte HD a disparu après être passé en plein écran. J'étais sur Chrome, webcam active."></textarea>
-      <div id="reportMailStatus" class="tcgate-report-mail-status" aria-live="polite"></div>
-      <div class="tcgate-report-mail-actions">
-        <button type="button" class="secondary tcgate-report-mail-cancel">Annuler</button>
-        <button type="button" class="primary tcgate-report-mail-send">Envoyer le rapport</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-
-  const note = modal.querySelector('#reportMailNote');
-  const status = modal.querySelector('#reportMailStatus');
-  const sendButton = modal.querySelector('.tcgate-report-mail-send');
-  const closeButtons = [
-    modal.querySelector('.tcgate-report-mail-close'),
-    modal.querySelector('.tcgate-report-mail-cancel')
-  ];
+  const modal = document.getElementById('reportOverlay');
+  if (!modal) return;
+  const note = modal.querySelector('#reportText');
+  const sendButton = modal.querySelector('#sendReport');
+  const closeButtons = [modal.querySelector('#closeReport')];
+  const idleSendLabel = sendButton.textContent;
 
   function setStatus(message = '', kind = '') {
-    status.textContent = message;
-    status.className = `tcgate-report-mail-status ${kind}`.trim();
+    sendButton.title = message;
+    sendButton.dataset.status = kind;
+    if (kind === 'working') sendButton.textContent = message;
+    else if (!message || kind === 'error') sendButton.textContent = idleSendLabel;
   }
 
   function openModal(sourceButton) {
     activeReportButton = sourceButton;
     note.value = '';
     setStatus('');
-    modal.classList.remove('hidden');
+    document.getElementById('moreMenu')?.classList.add('hidden');
+    document.getElementById('moreMenuToggle')?.setAttribute('aria-expanded', 'false');
+    modal.classList.add('show');
     setTimeout(() => note.focus(), 0);
   }
 
   function closeModal() {
     if (busy) return;
-    modal.classList.add('hidden');
+    modal.classList.remove('show');
     activeReportButton = null;
   }
 
@@ -84,7 +60,7 @@
   });
 
   document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !modal.classList.contains('hidden') && !busy) {
+    if (event.key === 'Escape' && modal.classList.contains('show') && !busy) {
       closeModal();
     }
   });
@@ -208,7 +184,8 @@
         busy = false;
         sendButton.disabled = false;
         closeButtons.forEach(button => { if (button) button.disabled = false; });
-        modal.classList.add('hidden');
+        modal.classList.remove('show');
+        sendButton.textContent = idleSendLabel;
         activeReportButton = null;
       }, 1100);
     } catch (err) {
