@@ -155,7 +155,7 @@
 
   function placeVisionPreview(event) {
     if (!visionPreview) return;
-    const previewWidth = Math.min(190, Math.max(132, root.innerWidth * .14));
+    const previewWidth = Math.min(230, Math.max(170, root.innerWidth * .17));
     const previewHeight = previewWidth * 1.4;
     const gap = 18;
     let left = event.clientX + gap;

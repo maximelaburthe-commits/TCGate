@@ -481,7 +481,7 @@
   top:var(--future-card-y);
   left:var(--future-card-x);
   z-index:96;
-  width:clamp(132px,14vw,190px);
+  width:clamp(170px,17vw,230px);
   height:auto !important;
   padding:0;
   border:0;

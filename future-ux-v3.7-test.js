@@ -125,6 +125,8 @@ assert(ux.includes("visionStage.addEventListener('pointermove', updatePhysicalCa
 assert(ux.includes("visionStage.addEventListener('pointerleave', clearPhysicalCardHover)"), 'Physical-card leave is not wired');
 assert(ux.includes("visionStage.addEventListener('click', openPhysicalCardZoom)"), 'Physical-card click is not wired');
 assert(ux.includes('visionPreviewButton.click()'), 'Physical-card click does not reuse the Candidate zoom action');
+assert(ux.includes('Math.min(230, Math.max(170, root.innerWidth * .17))'), 'Vision hover preview does not exceed the former 190px maximum');
+assert(css.includes('width:clamp(170px,17vw,230px);'), 'Vision hover preview CSS is not aligned with its larger runtime width');
 assert(ux.includes('left + previewWidth > root.innerWidth') && ux.includes('top + previewHeight > root.innerHeight'), 'Preview viewport-edge handling is missing');
 assert(css.includes('pointer-events:none;') && css.includes('#opponentFeed.future-vision-hit'), 'Informational preview or recognized-card cursor is missing');
 assert(css.includes('#cardModal .modal-close') && css.includes('#cardModal .modal-card-name'), 'Card-only zoom presentation is incomplete');
