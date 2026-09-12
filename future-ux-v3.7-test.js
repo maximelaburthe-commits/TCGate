@@ -30,8 +30,8 @@ const normalizeTimerMarkup = source => {
 const normalizeTableChrome = source => {
   let value = source;
   const actionsStart = Math.max(value.indexOf('<div class="game-actions'), value.indexOf('<div class="controls'));
-  const headerEnd = value.indexOf('</header>', actionsStart);
-  if (actionsStart >= 0 && headerEnd >= 0) value = `${value.slice(0, actionsStart)}<div id="tableControls"></div>\n      ${value.slice(headerEnd)}`;
+  const actionsEnd = value.indexOf('</div>', actionsStart);
+  if (actionsStart >= 0 && actionsEnd >= 0) value = `${value.slice(0, actionsStart)}<div id="tableControls"></div>${value.slice(actionsEnd + 6)}`;
   const menuStart = value.indexOf('<div class="more-menu');
   const deviceMenuStart = value.indexOf('<div id="gameDeviceMenu"', menuStart);
   if (menuStart >= 0 && deviceMenuStart >= 0) value = `${value.slice(0, menuStart)}${value.slice(deviceMenuStart)}`;
@@ -91,8 +91,8 @@ assert(css.includes('#screenLobby.future-hub-mounted'), 'Hub CSS is not scoped t
 assert(!css.includes('.tcgate-home-'), 'Future UX CSS touches the Candidate Home');
 assert(app.includes('function transferDie(') && app.includes('function applyRemoteGigState('), 'Checkpoint D Gig mechanics are missing');
 assert(
-  normalize(normalizeTableChrome(normalizeTimerMarkup(normalizeGigPanelMarkup(html.slice(0, html.indexOf('<!-- CARD MODAL -->')))))) === normalize(normalizeTableChrome(normalizeTimerMarkup(normalizeGigPanelMarkup(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- CARD MODAL -->')))))),
-  'Checkpoint C changed Home, Hub or the immersive Table DOM'
+  normalize(html.slice(0, html.indexOf('<!-- GAME -->'))) === normalize(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- GAME -->'))),
+  'Post-F correction changed Candidate Home or Hub DOM'
 );
 assert(
   normalize(ux.slice(0, ux.indexOf('  const game ='))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  const game ='))).trimEnd(),
@@ -113,6 +113,14 @@ assert(css.includes('#screenGame.future-table-v37 .tcgate-game-layout'), 'Immers
 assert(css.includes('#screenGame.future-table-v37 .tcgate-card-rail'), 'Candidate card preview is not retained as a contextual element');
 assert(css.includes('#screenGame.future-table-v37 .controls') && css.includes('.controls.hidden-ui'), 'Prototype media dock presentation is missing');
 assert(!html.includes('tcgate-game-actions') && !html.includes('tcgate-media-button'), 'Candidate classes contaminate the prototype media dock');
+const gameMarkup = between(html, '<section id="screenGame"', '</section>');
+const topbarMarkup = between(gameMarkup, '<header class="game-topbar tcgate-game-topbar">', '</header>');
+assert(gameMarkup.includes('id="controls"'), 'Prototype controls are not inside screenGame');
+assert(!topbarMarkup.includes('id="controls"'), 'Prototype controls remain trapped inside the zero-height Candidate topbar');
+assert(/#screenGame\.future-table-v37 \.tcgate-feed-head\s*\{\s*display:none;\s*\}/.test(css), 'Candidate feed header is not hidden in Future Table');
+assert(css.includes('grid-template-rows:minmax(0,1fr);'), 'Opponent video still reserves a Candidate header row');
+const hudMarkup = between(gameMarkup, '<div class="hud-top">', '<div class="popover');
+assert(hudMarkup.includes('id="timerChip"'), 'Timer chip moved outside the prototype hud-top');
 assert(!css.slice(0, css.indexOf('/* Checkpoint D')).includes('.future-gig-'), 'Checkpoint A-C unexpectedly contain the horizontal Gig UI');
 
 assert(ux.includes("root.TCGTableStateEngine?.getSnapshot?.()?.lastHover?.known"), 'Vision UX does not use Table State as its hit-test source');
