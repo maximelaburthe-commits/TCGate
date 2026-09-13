@@ -873,10 +873,14 @@ function changeDieValue(dieId, delta) {
   sendGigState('value-change').catch(()=>{});
 }
 
+function resetGigDiceState(dice) {
+  return dice.map(die => ({ ...die, value: 0, owner: die.origin }));
+}
+
 function resetGigDice() {
   if (!gigDiceEnabledForCurrentGame()) return;
   if (!window.confirm('Réinitialiser les dés ?')) return;
-  state.gigDice = ensureGigDiceState().map(die => ({ ...die, value: 0 }));
+  state.gigDice = resetGigDiceState(ensureGigDiceState());
   state.lastMovedDieId = null;
   renderGigDicePanel();
   persistGigState();

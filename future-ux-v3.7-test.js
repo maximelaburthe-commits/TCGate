@@ -153,9 +153,10 @@ assert(!html.includes('future-gig-totem') && !html.includes('future-gig-mark'), 
 assert(ux.includes("gigTotem.addEventListener('click'"), 'Gig open/close control is missing');
 assert(!ux.slice(ux.indexOf('/* Checkpoint D')).includes("document.addEventListener('click'"), 'Gig closes on an outside click');
 const moreMenuMarkup = between(html, '<div class="more-menu hidden" id="moreMenu">', '</div>');
-const expectedMenuOrder = ['generateReportGame', 'infoMenu', 'diagMenu', 'gigDiceReset', 'finishMenu'];
+const expectedMenuOrder = ['generateReportGame', 'infoMenu', 'diagMenu', 'gigDiceReset'];
 assert(expectedMenuOrder.every((id, index) => index === 0 || moreMenuMarkup.indexOf(`id="${expectedMenuOrder[index - 1]}"`) < moreMenuMarkup.indexOf(`id="${id}"`)), 'Prototype secondary-menu order changed');
 assert(moreMenuMarkup.includes('Réinitialiser Gig Dice'), 'Gig Reset is not in the prototype secondary menu');
+assert(!moreMenuMarkup.includes('id="finishMenu"') && !moreMenuMarkup.includes('Terminer la session'), 'Redundant Finish session menu entry remains');
 assert(!ux.includes('deviceMenu.append(gigReset)'), 'Gig Reset is still moved into the Candidate device menu');
 assert(app.includes("$('gigDiceReset')?.classList.toggle('hidden', !visible)"), 'Gig Reset applicability is not synchronized with the Cyberpunk Gig module');
 assert(app.includes("$('gigDiceReset')?.addEventListener('click', event =>") && app.includes("sendGigState('manual-reset')"), 'Gig Reset is not directly bound to the existing synchronized reset path');
@@ -173,7 +174,7 @@ assert(reportMailUi.includes("document.getElementById('reportOverlay')") && repo
 assert(app.includes("$('leaveGame').addEventListener('click', () => $('quitOverlay')?.classList.add('show'))"), 'Dock Quit does not open the confirmation overlay');
 assert(app.includes("$('confirmQuit')?.addEventListener('click', leaveCurrentGameSession)") && app.includes("$('endQuit')?.addEventListener('click', leaveCurrentGameSession)"), 'Confirmed session exit does not reuse Candidate leaveRoom');
 assert(app.includes("$('endHub')?.addEventListener('click', async () =>") && app.includes('await openCreateHub()'), 'Return to Hub is not connected to the Candidate room lifecycle');
-assert(ux.includes("document.getElementById('finishMenu')?.addEventListener('click', () => document.getElementById('endOverlay')?.classList.add('show'))"), 'Finish menu does not open the prototype end overlay');
+assert(!ux.includes("document.getElementById('finishMenu')"), 'Obsolete Finish menu handler remains');
 assert(!ux.includes('gigTrack.append') && !ux.includes('MutationObserver(labelGigDiceTooltips)'), 'Rejected D.1 DOM reconstruction remains');
 assert(css.includes('.die-slot2:hover .die-control2') && css.includes('.plus2{grid-row:1}') && css.includes('.minus2{grid-row:3}'), 'Prototype contextual controls are missing');
 assert(css.includes('.gig-totem.open .gig-side2') && css.includes('max-width:760px'), 'Prototype open/closed behavior is missing');
@@ -202,7 +203,7 @@ assert(app.includes("scheduleGigPanelSafePlacement('window-resize')") && app.inc
 assert(safeGigPlacement.indexOf('futureUxOwnsGigPlacement(panel)') < safeGigPlacement.indexOf('applySavedGigPanelPosition(panel)'), 'A saved Candidate Gig position can affect Future UX');
 
 const gigLogic = between(app, 'function createGigDiceState()', 'const GIG_PANEL_POSITION_KEY');
-for (const token of ['value: 0', "origin: 'host'", "origin: 'guest'", 'die.owner = targetOwner', "sendGigState('die-transfer')", "sendGigState('manual-reset')"]) {
+for (const token of ['value: 0', 'owner: die.origin', "origin: 'host'", "origin: 'guest'", 'die.owner = targetOwner', "sendGigState('die-transfer')", "sendGigState('manual-reset')"]) {
   assert(gigLogic.includes(token), `Candidate Gig invariant missing: ${token}`);
 }
 

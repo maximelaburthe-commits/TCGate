@@ -123,7 +123,6 @@
       moreMenuToggle.setAttribute('aria-expanded', moreMenu?.classList.contains('hidden') ? 'false' : 'true');
       showMediaDock();
     });
-    document.getElementById('finishMenu')?.addEventListener('click', () => document.getElementById('endOverlay')?.classList.add('show'));
     moreMenu?.addEventListener('click', event => {
       if (!event.target.closest('button')) return;
       moreMenu.classList.add('hidden');
