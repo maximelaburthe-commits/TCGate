@@ -65,9 +65,19 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
     assert(freshGigDice.length === 12 && freshGigDice.every(die => die.value === 0),
       'A fresh Cyberpunk Gig state does not start with all dice at zero');
     assert(appSource.includes("saved.gigDice.map(die => ({ ...die }))"), 'F5 recovery no longer restores saved Gig state');
-    assert(appSource.includes("state.gigDice = ensureGigDiceState().map(die => ({ ...die, value: 0 }))"),
-      'Gig reset does not preserve dice properties while zeroing values');
+    const gigResetStart = appSource.indexOf('function resetGigDiceState(');
+    const gigResetEnd = appSource.indexOf('function resetGigDice()', gigResetStart);
+    const resetTestGigDiceState = new Function(`${appSource.slice(gigResetStart, gigResetEnd)}; return resetGigDiceState;`)();
+    const changedGigDice = freshGigDice.map((die, index) => ({ ...die, value: Math.min(die.sides, index + 1) }));
+    changedGigDice[0].owner = changedGigDice[1].origin;
+    changedGigDice[5].owner = changedGigDice[4].origin;
+    const resetGigDice = resetTestGigDiceState(changedGigDice);
+    assert(resetGigDice.every(die => die.value === 0 && die.owner === die.origin),
+      'Gig reset does not zero values and restore every original owner');
+    assert(resetGigDice.every((die, index) => die.id === changedGigDice[index].id && die.sides === changedGigDice[index].sides && die.origin === changedGigDice[index].origin),
+      'Gig reset changed structural dice properties');
     assert(appSource.includes("sendGigState('manual-reset')"), 'Gig reset is not synchronized through gig-state');
+    assert(appSource.includes("$('gigDiceReset')?.addEventListener('click', event =>"), 'Gig reset button is not directly bound outside the panel');
 
     const health = await waitForHealth();
     assert(health.version === 'tcgate-alpha-0.1-candidate-11', 'Wrong health version');
@@ -146,10 +156,12 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
     const gigGuestCreate = await post(`/api/rooms/${gigHost.code}/join`, { name: 'Gig Guest' });
     assert(gigGuestCreate.ok, 'Cyberpunk Gig guest join failed');
     const gigGuest = await gigGuestCreate.json();
-    const gigDice = [4, 6, 8, 10, 12, 20].flatMap(sides => [
-      { id: `host-d${sides}`, origin: 'host', owner: 'host', sides, value: 0 },
-      { id: `guest-d${sides}`, origin: 'guest', owner: 'guest', sides, value: 0 }
+    const gigDiceBeforeReset = [4, 6, 8, 10, 12, 20].flatMap((sides, index) => [
+      { id: `host-d${sides}`, origin: 'host', owner: index === 0 ? 'guest' : 'host', sides, value: Math.min(sides, index + 1) },
+      { id: `guest-d${sides}`, origin: 'guest', owner: index === 1 ? 'host' : 'guest', sides, value: Math.min(sides, index + 2) }
     ]);
+    const gigDice = resetTestGigDiceState(gigDiceBeforeReset);
+    assert(gigDice.every(die => die.value === 0 && die.owner === die.origin), 'Host reset payload is not a complete initial Gig state');
     const zeroGigSignal = await post('/api/signal', {
       room: gigHost.code,
       from: gigHost.peerId,
@@ -158,6 +170,14 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
       payload: { dice: gigDice, source: 'manual-reset' }
     }, { token: gigHost.sessionToken });
     assert(zeroGigSignal.ok, 'Server rejected synchronized zero Gig state');
+    const reverseZeroGigSignal = await post('/api/signal', {
+      room: gigHost.code,
+      from: gigGuest.peerId,
+      to: gigHost.peerId,
+      type: 'gig-state',
+      payload: { dice: gigDice, source: 'manual-reset' }
+    }, { token: gigGuest.sessionToken });
+    assert(reverseZeroGigSignal.ok, 'Server rejected Guest to Host synchronized zero Gig state');
 
     console.log('INTEGRATION_OK_TCGATE_ALPHA_0.1_CANDIDATE_11');
   } catch (err) {
