@@ -80,7 +80,7 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
     assert(appSource.includes("$('gigDiceReset')?.addEventListener('click', event =>"), 'Gig reset button is not directly bound outside the panel');
 
     const health = await waitForHealth();
-    assert(health.version === 'tcgate-alpha-0.1-candidate-11', 'Wrong health version');
+    assert(health.version === 'tcgate-alpha-0.1-candidate-12', 'Wrong health version');
 
     const noRecovery = await fetch(`${BASE}/api/recovery-state`);
     assert(noRecovery.ok && (await noRecovery.json()).available === false, 'Recovery should be absent without cookie');

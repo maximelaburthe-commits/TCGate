@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 11 · UI 1.0.4';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 12 · UI 1.1.0';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
