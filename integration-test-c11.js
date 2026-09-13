@@ -68,6 +68,7 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
     assert(appSource.includes("state.gigDice = ensureGigDiceState().map(die => ({ ...die, value: 0 }))"),
       'Gig reset does not preserve dice properties while zeroing values');
     assert(appSource.includes("sendGigState('manual-reset')"), 'Gig reset is not synchronized through gig-state');
+    assert(appSource.includes("$('gigDiceReset')?.addEventListener('click', event =>"), 'Gig reset button is not directly bound outside the panel');
 
     const health = await waitForHealth();
     assert(health.version === 'tcgate-alpha-0.1-candidate-11', 'Wrong health version');
@@ -158,6 +159,14 @@ async function post(pathname, body, { token = null, cookie = null, forwardedHttp
       payload: { dice: gigDice, source: 'manual-reset' }
     }, { token: gigHost.sessionToken });
     assert(zeroGigSignal.ok, 'Server rejected synchronized zero Gig state');
+    const reverseZeroGigSignal = await post('/api/signal', {
+      room: gigHost.code,
+      from: gigGuest.peerId,
+      to: gigHost.peerId,
+      type: 'gig-state',
+      payload: { dice: gigDice, source: 'manual-reset' }
+    }, { token: gigGuest.sessionToken });
+    assert(reverseZeroGigSignal.ok, 'Server rejected Guest to Host synchronized zero Gig state');
 
     console.log('INTEGRATION_OK_TCGATE_ALPHA_0.1_CANDIDATE_11');
   } catch (err) {

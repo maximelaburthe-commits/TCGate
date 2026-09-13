@@ -362,7 +362,7 @@
 .gig-totem.hidden{display:none}
 .gig-shell{position:relative;display:flex;align-items:center;gap:10px;pointer-events:none}
 .gig-scrim{position:absolute;left:-18px;right:-18px;top:-10px;bottom:-10px;border-radius:22px;background:linear-gradient(180deg,rgba(7,9,12,.10),rgba(7,9,12,.42));opacity:0;transition:.18s}
-.gig-totem.open .gig-scrim{opacity:1}
+.gig-totem.open .gig-scrim{opacity:1;background:linear-gradient(180deg,rgba(7,9,12,.18),rgba(7,9,12,.56))}
 .gig-side2{position:relative;display:flex;flex-direction:column;gap:5px;pointer-events:none;opacity:0;max-width:0;overflow:hidden;transition:max-width .24s ease,opacity .16s ease,transform .24s ease}
 .gig-side2.opponent{transform:translateX(22px)}
 .gig-side2.self{transform:translateX(-22px)}

@@ -73,7 +73,9 @@ const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
 assert(duplicates.length === 0, `Duplicate IDs: ${[...new Set(duplicates)].join(', ')}`);
 
 assert(
-  normalize(between(app, 'function applyRoomState(', 'async function prewarmRtcInLobby(').replace(/\s*if \(snapshot\.timer\) applySharedTimer\(snapshot\.timer\);/, '')) === normalize(between(baseApp, 'function applyRoomState(', 'async function prewarmRtcInLobby(')),
+  normalize(between(app, 'function applyRoomState(', 'async function prewarmRtcInLobby(')
+    .replace("function applyRoomState(snapshot, { source = 'room-state', clientReferenceMs = Date.now() } = {})", 'function applyRoomState(snapshot)')
+    .replace(/\s*if \(snapshot\.timer\) applySharedTimer\([^;]+;/, '')) === normalize(between(baseApp, 'function applyRoomState(', 'async function prewarmRtcInLobby(')),
   'Candidate applyRoomState/Ready eligibility changed'
 );
 assert(
@@ -156,6 +158,9 @@ assert(expectedMenuOrder.every((id, index) => index === 0 || moreMenuMarkup.inde
 assert(moreMenuMarkup.includes('Réinitialiser Gig Dice'), 'Gig Reset is not in the prototype secondary menu');
 assert(!ux.includes('deviceMenu.append(gigReset)'), 'Gig Reset is still moved into the Candidate device menu');
 assert(app.includes("$('gigDiceReset')?.classList.toggle('hidden', !visible)"), 'Gig Reset applicability is not synchronized with the Cyberpunk Gig module');
+assert(app.includes("$('gigDiceReset')?.addEventListener('click', event =>") && app.includes("sendGigState('manual-reset')"), 'Gig Reset is not directly bound to the existing synchronized reset path');
+const gigPanelClick = between(app, "$('gigDicePanel')?.addEventListener('click'", "$('toggleLocalPreview')?.addEventListener");
+assert(!gigPanelClick.includes("closest('#gigDiceReset')"), 'Obsolete delegated Gig Reset handler remains');
 
 for (const id of ['reportOverlay', 'reportText', 'sendReport', 'closeReport', 'quitOverlay', 'confirmQuit', 'cancelQuit', 'endOverlay', 'endReport', 'endHub', 'endQuit']) {
   assert(html.includes(`id="${id}"`), `Checkpoint F overlay control missing: ${id}`);
@@ -209,7 +214,14 @@ for (const className of ['toggle-row', 'toggle on', 'knob', 'hud-top', 'tools', 
 }
 assert(app.includes("state.role !== 'host'") && app.includes('durationMinutes: minutes'), 'Host-only Timer configuration is missing');
 assert(serverSource.includes("pathname === '/api/timer'") && serverSource.includes('endsAt'), 'Authoritative server Timer is missing');
+assert(serverSource.includes('const serverNowMs = Date.now();') && serverSource.includes('serverNowMs,'), 'Room snapshots do not expose authoritative server time');
 assert(app.includes("timerPop')?.classList.toggle('hidden')") && ux.includes("timerPop')?.classList.add('hidden')"), 'Timer popover interaction is missing');
+assert(app.includes('state.serverClockOffsetMs = serverTime - clientTime;') && app.includes('endsAt - serverNow()'), 'Timer does not compensate client clock skew');
+assert(app.includes("source: 'timer-http', clientReferenceMs: (requestStartedAt + responseReceivedAt) / 2"), 'Timer HTTP clock offset does not use request/response midpoint');
+assert(app.includes('snapshot.serverNowMs, clientReferenceMs'), 'Room-state and recovery snapshots do not refresh server clock offset');
+const skewedRemaining = (endsAt, serverNowMs, clientNowMs) => Math.ceil((endsAt - (clientNowMs + (serverNowMs - clientNowMs))) / 1000);
+assert(Math.abs(skewedRemaining(103000, 100000, 103000) - skewedRemaining(103000, 100000, 98000)) <= 1, 'Simulated +3s/-2s clients diverge despite server clock offset');
+assert(css.includes('.gig-totem.open .gig-scrim{opacity:1;background:linear-gradient(180deg,rgba(7,9,12,.18),rgba(7,9,12,.56))}'), 'Open Gig scrim contrast adjustment is missing or affects the closed state');
 
 const timerRender = between(app, 'function renderSharedTimer()', 'function applySharedTimer(');
 assert(timerRender.includes("!state.timer.enabled || !state.gameActive"), 'Disabled or pre-game Timer visibility guard changed');

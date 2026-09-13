@@ -76,6 +76,7 @@ const state = {
   lastMovedDieId: null,
   timer: { enabled: true, durationSeconds: 3000, running: false, remainingSeconds: 3000, endsAt: null, revision: 0 },
   timerTick: null,
+  serverClockOffsetMs: 0,
 
   lostCameraId: null,
   lostMicrophoneId: null,
@@ -436,9 +437,21 @@ function syncHubSessionControls() {
   if ($('timerMinutes')) $('timerMinutes').disabled = !host;
 }
 
+function updateServerClockOffset(serverNowMs, clientReferenceMs = Date.now()) {
+  const serverTime = Number(serverNowMs);
+  const clientTime = Number(clientReferenceMs);
+  if (!Number.isFinite(serverTime) || !Number.isFinite(clientTime)) return false;
+  state.serverClockOffsetMs = serverTime - clientTime;
+  return true;
+}
+
+function serverNow() {
+  return Date.now() + Number(state.serverClockOffsetMs || 0);
+}
+
 function timerRemainingSeconds() {
   return state.timer.running && state.timer.endsAt != null
-    ? Math.max(0, Math.ceil((state.timer.endsAt - Date.now()) / 1000))
+    ? Math.max(0, Math.ceil((state.timer.endsAt - serverNow()) / 1000))
     : Math.max(0, Number(state.timer.remainingSeconds || 0));
 }
 
@@ -469,8 +482,9 @@ function renderSharedTimer() {
   if ($('timerStart')) $('timerStart').textContent = state.timer.running ? '⏸ Pause' : '▶ Démarrer';
 }
 
-function applySharedTimer(timer, source = 'room-state') {
+function applySharedTimer(timer, source = 'room-state', serverNowMs = null, clientReferenceMs = Date.now()) {
   if (!timer) return;
+  updateServerClockOffset(serverNowMs, clientReferenceMs);
   state.timer = { ...state.timer, ...timer };
   clearInterval(state.timerTick);
   state.timerTick = state.timer.running ? setInterval(renderSharedTimer, 250) : null;
@@ -479,9 +493,11 @@ function applySharedTimer(timer, source = 'room-state') {
 }
 
 async function sendTimerAction(action) {
+  const requestStartedAt = Date.now();
   const result = await api('/api/timer', { method: 'POST', body: { room: state.roomCode, peerId: state.peerId, action } });
+  const responseReceivedAt = Date.now();
   logEvent(`timer-${action}`, { remainingSeconds: result?.room?.timer?.remainingSeconds ?? null });
-  if (result?.room) applyRoomState(result.room);
+  if (result?.room) applyRoomState(result.room, { source: 'timer-http', clientReferenceMs: (requestStartedAt + responseReceivedAt) / 2 });
 }
 
 async function updateHubMetadata(patch) {
@@ -2847,7 +2863,7 @@ async function recoverRtcInPlaceAfterRoomRecovery(previousEpoch, nextEpoch) {
   }
 }
 
-function applyRoomState(snapshot) {
+function applyRoomState(snapshot, { source = 'room-state', clientReferenceMs = Date.now() } = {}) {
   if (!snapshot) return;
   const incomingRecoveryEpoch = Number(snapshot.recoveryEpoch || 0);
   if (incomingRecoveryEpoch > state.recoveryEpoch && state.gameActive) {
@@ -2860,7 +2876,7 @@ function applyRoomState(snapshot) {
   }
   state.recoveryEpoch = incomingRecoveryEpoch;
   state.roomSnapshot = snapshot;
-  if (snapshot.timer) applySharedTimer(snapshot.timer);
+  if (snapshot.timer) applySharedTimer(snapshot.timer, source, snapshot.serverNowMs, clientReferenceMs);
   if (snapshot.game && snapshot.game !== state.game) {
     state.game = snapshot.game;
     applyGameModeUi();
@@ -4980,6 +4996,10 @@ $('timerMinutes')?.addEventListener('change', () => {
 $('timerChip')?.addEventListener('click', () => $('timerPop')?.classList.toggle('hidden'));
 $('timerStart')?.addEventListener('click', () => sendTimerAction(state.timer.running ? 'pause' : 'start').catch(err => toast(err.message)));
 $('timerReset')?.addEventListener('click', () => sendTimerAction('reset').catch(err => toast(err.message)));
+$('gigDiceReset')?.addEventListener('click', event => {
+  event.stopPropagation();
+  resetGigDice();
+});
 
 $('gigDicePanel')?.addEventListener('pointerdown', event => {
   if (event.target.closest('.die-control2') || event.target.closest('#gigDiceReset')) return;
@@ -4990,11 +5010,6 @@ window.addEventListener('pointermove', updateDieDrag, { passive: false });
 window.addEventListener('pointerup', finishDieDrag);
 window.addEventListener('pointercancel', finishDieDrag);
 $('gigDicePanel')?.addEventListener('click', event => {
-  if (event.target.closest('#gigDiceReset')) {
-    event.stopPropagation();
-    resetGigDice();
-    return;
-  }
   const dieWrap = event.target.closest('.die-slot2');
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (!dieWrap || !action) return;

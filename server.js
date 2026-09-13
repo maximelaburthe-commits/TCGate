@@ -480,13 +480,15 @@ function materializeRoomTimer(room, now = Date.now()) {
 }
 
 function roomSnapshot(room) {
+  const serverNowMs = Date.now();
   return {
     code: room.code,
     game: room.game,
     createdAt: room.createdAt,
     recoveryEpoch: room.recoveryEpoch || 0,
     phase: room.phase || 'lobby',
-    timer: materializeRoomTimer(room),
+    timer: materializeRoomTimer(room, serverNowMs),
+    serverNowMs,
     peers: [...room.peers.values()].map(publicPeer)
   };
 }

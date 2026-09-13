@@ -62,10 +62,12 @@ async function waitForRoomState(reader, predicate, controller) {
     assert(createdResponse.status === 201, 'Immediate Host room creation failed');
     const host = await createdResponse.json();
     assert(host.code && host.peerId && host.sessionToken && host.role === 'host', 'Host session is incomplete');
+    assert(Number.isFinite(host.room.serverNowMs), 'Host room snapshot has no authoritative server timestamp');
 
     const joinedResponse = await request(`/api/rooms/${host.code}/join`, 'POST', { name: 'Invite' });
     assert(joinedResponse.ok, 'Guest join failed');
     const guest = await joinedResponse.json();
+    assert(Number.isFinite(guest.room.serverNowMs), 'Guest room snapshot has no authoritative server timestamp');
 
     const ticketResponse = await request('/api/events-ticket', 'POST', { room: host.code, peerId: guest.peerId }, guest.sessionToken);
     const ticket = await ticketResponse.json();
@@ -119,6 +121,11 @@ async function waitForRoomState(reader, predicate, controller) {
     const started = await request('/api/timer', 'POST', { room: host.code, peerId: guest.peerId, action: 'start' }, guest.sessionToken);
     const startedRoom = await started.json();
     assert(started.ok && startedRoom.room.timer.running && startedRoom.room.timer.endsAt, 'Guest could not start the shared Timer');
+    assert(Number.isFinite(startedRoom.room.serverNowMs), 'Timer response has no authoritative server timestamp');
+    const remainingForClock = localNow => Math.ceil((startedRoom.room.timer.endsAt - (localNow + (startedRoom.room.serverNowMs - localNow))) / 1000);
+    const hostSkewedRemaining = remainingForClock(Date.now() + 3000);
+    const guestSkewedRemaining = remainingForClock(Date.now() - 2000);
+    assert(Math.abs(hostSkewedRemaining - guestSkewedRemaining) <= 1, 'Server clock offset does not eliminate Host/Guest clock skew');
     const paused = await request('/api/timer', 'POST', { room: host.code, peerId: host.peerId, action: 'pause' }, host.sessionToken);
     assert(paused.ok && !(await paused.json()).room.timer.running, 'Host could not pause the shared Timer');
     const reset = await request('/api/timer', 'POST', { room: host.code, peerId: guest.peerId, action: 'reset' }, guest.sessionToken);
