@@ -1,0 +1,24 @@
+{
+  "reportSchemaVersion": 2,
+  "envelope": {
+    "tcgateVersion": "TCGate Alpha 0.1 Candidate 12 · UI 1.1.0",
+    "buildSha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "environment": "qualification",
+    "reportSchemaVersion": 2,
+    "sessionId": "65f9d7d4c67ba34298381e1a",
+    "role": "host",
+    "browser": { "name": "Chrome", "version": "140.0" },
+    "operatingSystem": "Windows",
+    "capturedAt": "2026-09-17T10:00:00.000Z",
+    "timezone": "Europe/Paris",
+    "timezoneOffsetMinutes": -120,
+    "game": "cyberpunk",
+    "mode": "tcg"
+  },
+  "diagnostics": {
+    "network": { "status": "available", "summary": { "connectionState": "connected", "route": "direct", "currentRttSeconds": 0.02, "packetsLost": 2 }, "tracks": { "items": [], "totalItems": 0, "retainedItems": 0, "truncated": false }, "timeline": { "items": [], "totalItems": 0, "retainedItems": 0, "truncated": false } },
+    "vision": { "status": "active", "summary": { "version": "Vision FaceWebcam", "framesAnalyzed": 100, "framesDropped": 2 }, "errors": { "items": [], "totalItems": 0, "retainedItems": 0, "truncated": false } },
+    "database": { "status": "available", "summary": { "game": "cyberpunk", "version": "1.1.0", "sha": "56402636a77af9c8b5dc4e3b61c509a185f3c834", "cacheUsed": true }, "problems": { "items": [], "totalItems": 0, "retainedItems": 0, "truncated": false } }
+  },
+  "privacy": { "userJourneyCollected": false, "audiovisualContentIncluded": false, "fullIpAddressesIncluded": false, "sdpIncluded": false, "rawCandidatesIncluded": false, "secretsIncluded": false }
+}
