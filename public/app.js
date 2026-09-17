@@ -165,6 +165,7 @@ const DEFAULT_RTC_CONFIG = {
 };
 
 function logEvent(type, data = {}) {
+  try { window.TCGateReportDiagnosticsV2?.recordNetworkEvent?.(type, data); } catch {}
   state.reportEvents.push({
     seq: ++state.reportSeq,
     at: new Date().toISOString(),
@@ -176,6 +177,7 @@ function logEvent(type, data = {}) {
 }
 
 function resetReportSession(meta = {}) {
+  try { window.TCGateReportDiagnosticsV2?.reset?.(); } catch {}
   state.reportStartedAt = Date.now();
   state.reportEvents = [];
   state.reportSeq = 0;
@@ -4436,6 +4438,7 @@ async function snapshotRtcMetrics(pc = state.pc) {
       capturedAt: new Date().toISOString(),
       connectionState: pc.connectionState,
       iceConnectionState: pc.iceConnectionState,
+      iceGatheringState: pc.iceGatheringState,
       signalingState: pc.signalingState,
       inbound: [],
       outbound: [],
@@ -4577,8 +4580,9 @@ async function buildCompleteReport() {
   const rtc = await collectRtcMetrics();
   const nav = performance.getEntriesByType('navigation')[0];
   const phoneCamera = await window.TCGatePhoneCamera?.fetchDiagnostics?.().catch(() => window.TCGatePhoneCamera?.getSnapshot?.() || null) || null;
+  const health = await fetch('/api/health', { cache: 'no-store' }).then(response => response.ok ? response.json() : null).catch(() => null);
 
-  return {
+  const report = {
     format: 'tcgate-alpha-complete-report',
     version: PRODUCT_VERSION,
     generatedAt: new Date().toISOString(),
@@ -4707,6 +4711,35 @@ async function buildCompleteReport() {
     },
     events: state.reportEvents
   };
+  try {
+    const dbConfig = window.TCGateGameDatabases?.get?.(state.game) || {};
+    const sourceCommit = String(dbConfig.manifestUrl || '').split('/').slice(-2, -1)[0] || null;
+    Object.assign(report, await window.TCGateReportDiagnosticsV2.build(report, {
+      buildSha: health?.buildSha || null,
+      environment: health?.environment || report.environment?.page?.hostname || null,
+      sessionSeed: `${state.roomCode || 'no-room'}|${state.reportStartedAt}|${state.role || 'unknown'}`,
+      userAgent: navigator.userAgent,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+      timezoneOffsetMinutes: new Date().getTimezoneOffset(),
+      database: {
+        runtimeScope: dbConfig.expectedRuntimeScope || null,
+        sourceCommit,
+        sourceRef: dbConfig.manifestUrl || null
+      }
+    }));
+  } catch (error) {
+    report.reportSchemaVersion = 2;
+    report.envelope = { reportSchemaVersion: 2, tcgateVersion: PRODUCT_VERSION, buildSha: health?.buildSha || null, capturedAt: report.generatedAt, role: state.role, game: state.game, mode: state.game === 'none' ? 'no-game' : 'tcg' };
+    report.diagnostics = { network: { status: 'error' }, vision: { status: 'error' }, database: { status: 'error' }, collectorError: String(error?.message || error).slice(0, 240) };
+  }
+  const maxReportBytes = 768 * 1024;
+  const originalEventCount = report.events.length;
+  if (new TextEncoder().encode(JSON.stringify(report)).length > maxReportBytes) {
+    report.events = report.events.slice(-256);
+    report.eventsMeta = { totalItems: originalEventCount, retainedItems: report.events.length, truncated: originalEventCount > report.events.length };
+  }
+  report.reportLimits = { maxTotalBytes: maxReportBytes };
+  return report;
 }
 
 function reportText(report) {

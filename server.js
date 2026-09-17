@@ -612,7 +612,12 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && pathname === '/api/health') {
-      return sendJson(res, 200, { ok: true, version: VERSION });
+      return sendJson(res, 200, {
+        ok: true,
+        version: VERSION,
+        buildSha: process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || null,
+        environment: process.env.RAILWAY_ENVIRONMENT_NAME || process.env.NODE_ENV || 'local'
+      });
     }
 
     if (req.method === 'GET' && pathname === '/phone') {
