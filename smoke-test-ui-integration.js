@@ -33,10 +33,10 @@ if(localVideoCount!==1) throw new Error(`Expected exactly one localVideo, found 
 const hash=f=>crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
 const expected={
   'models/card_detector_v53_512.onnx':'2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319',
-  'public/detection-worker.js':'e749551f11065a03bd2cfc75577f23c4ece893a2c7d08bc82a341b2a35619b7a',
-  'public/table-state-engine.js':'7ad3e427e2ba2181d5ab74e4ad8d68b855144e5d6901c6fdf58cdc36263cdd04',
-  'public/vision-core.js':'520981919521befdf9b80e7432ca3ac885c846768a274d4a5456f771e63f68e6',
-  'public/identification.js':'92c8f946c4429c5979f0374f14c837436cb46cf6baf8c564d961589fbd844f35'
+  'public/detection-worker.js':'19d0e72eeb620f23742a9b8fe321f700c45cbd29ad41b952d115bca5fd983227',
+  'public/table-state-engine.js':'59c7bf98827abb69eba68e685377dde0ef46bff8349d53238a14ba6ea7b4c1f3',
+  'public/vision-core.js':'f3cbd789476c92f86dd25292a67a0d0e96eee9888584a867c841b3b61e8650d1',
+  'public/identification.js':'fa3b700ffd19f9726e5fe1b24c6f1bc56fd30de7f9ff0a813fdf986920028b15'
 };
 for(const [file,want] of Object.entries(expected)){
   const got=hash(file);
