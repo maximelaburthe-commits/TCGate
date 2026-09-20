@@ -1,6 +1,6 @@
-# TCGate — Alpha 0.1 · Candidate 13 · UI 1.1.0
+# TCGate — Alpha 0.1 · Candidate 14 · UI 1.1.0
 
-Cette Candidate coordonne l’émission du Report Schema V2 avec le Control Center 0.3.1-rc.1. Elle conserve intégralement les fonctions réseau, WebRTC, Vision, Phone Camera, Future UX et Cyberpunk DB déjà qualifiées.
+Cette Candidate corrective durcit la confidentialité du Report Schema V2 et borne le cache de credentials TURN. Elle conserve intégralement les fonctions réseau, WebRTC, Vision, Phone Camera, Future UX et Cyberpunk DB déjà qualifiées.
 
 ## Report Schema V2
 - enveloppe versionnée et compatible avec les rapports Legacy ;
@@ -16,7 +16,7 @@ Cette Candidate coordonne l’émission du Report Schema V2 avec le Control Cent
 - baseline Vision gelée inchangée.
 
 ## Identification
-- frontend : `TCGate Alpha 0.1 Candidate 13 · UI 1.1.0`
-- health : `tcgate-alpha-0.1-candidate-13`
+- frontend : `TCGate Alpha 0.1 Candidate 14 · UI 1.1.0`
+- health : `tcgate-alpha-0.1-candidate-14`
 
-Voir `RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_13.md` et `REPORT_SCHEMA_V2.md`.
+Voir `RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_14.md`, `REPORT_SCHEMA_V2.md` et `ALPHA_QUALIFICATION.md`.

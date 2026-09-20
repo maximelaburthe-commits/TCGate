@@ -1,6 +1,6 @@
 {
   "name": "tcgate-alpha",
-  "version": "0.1.0-candidate.13",
+  "version": "0.1.0-candidate.14",
   "private": true,
   "scripts": {
     "start": "node report-mail-server.js",
@@ -18,7 +18,9 @@
     "test:vision-resolution": "node vision-analysis-resolution-test.js",
     "test:vision-appearance": "node vision-appearance-batch-test.js",
     "test:report-schema-v2": "node report-schema-v2-test.js",
-    "smoke:ui": "node smoke-test-ui-integration.js && node future-ux-v3.7-test.js && node future-ux-room-metadata-test.js"
+    "test:turn-cache": "node turn-cache-test.js",
+    "smoke:ui": "node smoke-test-ui-integration.js && node future-ux-v3.7-test.js && node future-ux-room-metadata-test.js",
+    "qualify:alpha": "npm audit && npm run smoke && npm run test:c11 && npm run test:phone-camera && npm run test:vision-integrity && npm run test:vision-source && npm run test:cyberpunk-db && npm run test:cyberpunk-db-performance && npm run test:control-center-forwarder && npm run test:phone-diagnostics && npm run test:future-ux && npm run test:vision-backpressure && npm run test:vision-resolution && npm run test:vision-appearance && npm run test:report-schema-v2 && npm run test:turn-cache && node offer-delivery-retry-test.js && npm run smoke:ui"
   },
   "engines": {
     "node": ">=20"

@@ -13,7 +13,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = path.join(__dirname, 'public');
 const MODEL_FILE = path.join(__dirname, 'models', 'card_detector_v53_512.onnx');
 const MODEL_ROUTE = '/api/model/card-detector-v53-512-alpha9p1.onnx';
-const VERSION = 'tcgate-alpha-0.1-candidate-13';
+const VERSION = 'tcgate-alpha-0.1-candidate-14';
 
 const mime = {
   '.html': 'text/html; charset=utf-8',
@@ -54,6 +54,20 @@ const TURN_CONFIGURED = Boolean(CLOUDFLARE_TURN_KEY_ID && CLOUDFLARE_TURN_API_TO
 const TURN_TTL_SECONDS = Math.max(3600, Math.min(86400, Number(process.env.TCGATE_TURN_TTL_SECONDS || 21600) || 21600));
 const ICE_TRANSPORT_POLICY = String(process.env.TCGATE_ICE_TRANSPORT_POLICY || 'all').toLowerCase() === 'relay' ? 'relay' : 'all';
 const turnCredentialCache = new Map();
+
+function purgeTurnCredentialCache(cache, now = Date.now(), peerKeys = []) {
+  const removed = new Set();
+  for (const peerKey of peerKeys) {
+    if (cache.delete(peerKey)) removed.add(peerKey);
+  }
+  for (const [peerKey, record] of cache) {
+    if (!record || !Number.isFinite(record.expiresAtMs) || record.expiresAtMs <= now) {
+      cache.delete(peerKey);
+      removed.add(peerKey);
+    }
+  }
+  return removed.size;
+}
 
 function securityHeaders(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -1183,12 +1197,16 @@ setInterval(() => {
   for (const [key, bucket] of rateBuckets) {
     if (bucket.resetAt + 60 * 1000 < now) rateBuckets.delete(key);
   }
+  purgeTurnCredentialCache(turnCredentialCache, now);
   for (const room of [...rooms.values()]) {
     if (now - room.createdAt > ROOM_TTL_MS) {
+      const expiredPeerIds = [];
       for (const peer of room.peers.values()) {
         try { peer.sse?.end(); } catch {}
         if (peer.recoveryKey) recoveryIndex.delete(peer.recoveryKey);
+        expiredPeerIds.push(peer.id);
       }
+      purgeTurnCredentialCache(turnCredentialCache, now, expiredPeerIds);
       rooms.delete(room.code);
       continue;
     }
@@ -1220,7 +1238,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 server.listen(PORT, HOST, () => {
-  console.log(`TCGate Alpha 0.1 Candidate 13 -> http://127.0.0.1:${PORT}`);
+  console.log(`TCGate Alpha 0.1 Candidate 14 -> http://127.0.0.1:${PORT}`);
   const nets = os.networkInterfaces();
   for (const entries of Object.values(nets)) {
     for (const net of entries || []) {

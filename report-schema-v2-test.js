@@ -45,6 +45,64 @@ const legacy = overrides => ({
   const sanitized = diagnostics.sanitize({ token: 'abc', sdp: 'v=0', message: 'connect 192.168.1.4 Bearer xyz', nested: { cookie: 'x' } });
   assert.equal(sanitized.token, undefined);
   assert.doesNotMatch(JSON.stringify(sanitized), /192\.168\.1\.4|xyz|v=0/);
+
+  const adversarialCases = [
+    { input: 'Authorization: Bearer SUPERSECRET123', forbidden: ['SUPERSECRET123'] },
+    { input: 'cookie=session=abc123', forbidden: ['session=abc123'] },
+    { input: 'Set-Cookie: recovery=xyz789; HttpOnly', forbidden: ['recovery=xyz789', 'HttpOnly'] },
+    { input: 'token=mytoken', forbidden: ['mytoken'] },
+    { input: 'recoveryToken=something-secret', forbidden: ['something-secret'] },
+    { input: 'credential=turn-password', forbidden: ['turn-password'] },
+    { input: '192.168.1.42', forbidden: ['192.168.1.42'] },
+    { input: '8.8.8.8:3478', forbidden: ['8.8.8.8', '3478'] },
+    { input: '::1', forbidden: ['::1'] },
+    { input: '2001:db8::1', forbidden: ['2001:db8::1'] },
+    { input: 'fe80::abcd:1234', forbidden: ['fe80::abcd:1234'] },
+    {
+      input: 'v=0\no=- 123 456 IN IP4 192.168.1.42\ns=-\nt=0 0\nm=video 9 UDP/TLS/RTP/SAVPF 96\na=ice-ufrag:abcd\na=ice-pwd:secret-password\na=fingerprint:sha-256 00:11:22\na=candidate:1 1 UDP 2122260223 192.168.1.42 54321 typ host',
+      forbidden: ['v=0', '192.168.1.42', 'secret-password', 'a=candidate:', 'a=fingerprint:']
+    },
+    {
+      input: 'texte avant v=0\no=- 123 456 IN IP6 2001:db8::1\ns=-\nt=0 0\nm=video 9 UDP/TLS/RTP/SAVPF 96\na=ice-pwd:hidden puis texte après',
+      forbidden: ['v=0', '2001:db8::1', 'hidden', 'a=ice-pwd:']
+    },
+    { input: 'https://example.com/private/token/abcdef?secret=qwerty', forbidden: ['/private/token/abcdef', 'qwerty'] },
+    { input: 'https://user:password@example.com/private', forbidden: ['user:password', '/private'] },
+    { input: 'wss://example.com/events?token=abc', forbidden: ['/events', 'token=abc'] }
+  ];
+  for (const { input, forbidden } of adversarialCases) {
+    const output = String(diagnostics.sanitize(input));
+    for (const secret of forbidden) assert(!output.includes(secret), `adversarial value survived sanitation: ${secret}`);
+  }
+  const nestedAdversarial = diagnostics.sanitize({
+    token: 'nested-token',
+    nested: { cookie: 'nested-cookie', text: 'Bearer nested-bearer' },
+    values: ['recoveryToken=array-token', '10.0.0.2', 'a=ice-pwd:array-password']
+  });
+  const nestedJson = JSON.stringify(nestedAdversarial);
+  for (const secret of ['nested-token', 'nested-cookie', 'nested-bearer', 'array-token', '10.0.0.2', 'array-password']) {
+    assert(!nestedJson.includes(secret), `nested adversarial value survived sanitation: ${secret}`);
+  }
+  const readable = diagnostics.sanitize('Connexion rétablie après 2 tentatives, latence stable.');
+  assert.equal(readable, 'Connexion rétablie après 2 tentatives, latence stable.');
+
+  const privacyFixture = legacy({
+    events: [{ type: 'vision-error', data: { message: adversarialCases.map(item => item.input).join('\n') } }],
+    vision: { enabledForGame: true, assetsError: adversarialCases.map(item => item.input).join('\n'), identification: {} }
+  });
+  const privacyReport = await diagnostics.build(privacyFixture, { sessionSeed: 'privacy-fixture' });
+  const privacyJson = JSON.stringify(privacyReport);
+  for (const marker of ['SUPERSECRET123', 'abc123', 'xyz789', 'mytoken', 'something-secret', 'turn-password', '192.168.1.42', '8.8.8.8', '::1', '2001:db8::1', 'fe80::abcd:1234', 'secret-password', '/private/token/abcdef', 'user:password', '/events']) {
+    assert(!privacyJson.includes(marker), `report privacy guarantee failed: ${marker}`);
+  }
+  assert.deepEqual(privacyReport.privacy, {
+    userJourneyCollected: false,
+    audiovisualContentIncluded: false,
+    fullIpAddressesIncluded: false,
+    sdpIncluded: false,
+    rawCandidatesIncluded: false,
+    secretsIncluded: false
+  });
   const appSource = fs.readFileSync('public/app.js', 'utf8');
   const indexSource = fs.readFileSync('public/index.html', 'utf8');
   assert(indexSource.indexOf('/report-diagnostics-v2.js') < indexSource.indexOf('/app.js'));

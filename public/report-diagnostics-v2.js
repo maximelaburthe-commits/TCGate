@@ -8,12 +8,39 @@
   const LIMITS = Object.freeze({ networkEvents: 64, visionErrors: 24, databaseProblems: 32, messageChars: 240, sectionBytes: 96 * 1024, totalBytes: 384 * 1024 });
   const NETWORK_EVENTS = /^(rtc-(connection-state|ice-state|signaling-state|restart-request-received|offer-generation-rebuild|offer-delivery-failed|recovery|recovery-success|recovery-failed)|room-recover|sse-(open|error|reconnect))/;
   const SECRET_KEY = /(authorization|cookie|password|secret|token|credential|icecandidate|candidate(raw|string)|sdp|address|ip$|url$)/i;
-  const IPV4 = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
-  const IPV6 = /\b(?:[a-f0-9]{1,4}:){2,7}[a-f0-9]{0,4}\b/gi;
-  const SECRET_TEXT = /(bearer\s+|token\s*[:=]|password\s*[:=]|secret\s*[:=]|credential\s*[:=])\S+/gi;
+  const URL_TEXT = /\b(?:https?|wss?):\/\/[^\s"'<>]+/gi;
+  const IPV4 = /\b(?:\d{1,3}\.){3}\d{1,3}(?::\d{1,5})?\b/g;
+  const IPV6_CANDIDATE = /(^|[^a-f0-9:])([a-f0-9:]{2,})(?=$|[^a-f0-9:])/gi;
+  const SECRET_TEXT = /\b(?:authorization\s*:\s*bearer|bearer|set-cookie\s*:|cookie\s*[:=]|(?:session|recovery)?token\s*[:=]|password\s*[:=]|secrets?\s*[:=]|credentials?\s*[:=]|ice-(?:pwd|ufrag)\s*:)\s*[^\s,;]+(?:\s*;\s*[^\r\n]*)?/gi;
+  const SDP_LINE = /^\s*(?:v=0|o=-?\s|s=-?\s*$|i=\S|u=\S|e=\S|p=\S|c=IN\s+IP[46]\s|b=[A-Z]+:|t=\d+\s+\d+|r=\d|z=\d|k=\S|m=(?:audio|video|application)\s|a=(?:candidate:|ice-ufrag:|ice-pwd:|fingerprint:|setup:|mid:|rtpmap:|fmtp:|rtcp:|sendrecv|sendonly|recvonly|inactive))/i;
 
   const number = value => Number.isFinite(Number(value)) ? Number(value) : null;
-  const text = value => value == null ? null : String(value).replace(/https?:\/\/[^\s"']+/gi, url => url.split(/[?#]/)[0]).replace(IPV4, '[IP REDACTED]').replace(IPV6, '[IP REDACTED]').replace(SECRET_TEXT, '[SECRET REDACTED]').slice(0, LIMITS.messageChars);
+  function validIpv6(value) {
+    if (!value.includes(':') || !/^[a-f0-9:]+$/i.test(value) || (value.match(/::/g) || []).length > 1) return false;
+    const compressed = value.includes('::');
+    const groups = value.split(':').filter(Boolean);
+    return groups.every(group => group.length <= 4) && (compressed ? groups.length < 8 : groups.length === 8);
+  }
+  function redactIpv6(value) {
+    return value.replace(IPV6_CANDIDATE, (match, prefix, candidate) => validIpv6(candidate) ? `${prefix}[IP REDACTED]` : match);
+  }
+  function containsSdp(value) {
+    const lines = value.split(/\r?\n/);
+    const signatures = lines.filter(line => SDP_LINE.test(line)).length;
+    return signatures >= 2 || (/\bv=0(?:\s|$)/i.test(value) && /(?:\bo=-?\s|\bm=(?:audio|video|application)\s|\ba=(?:candidate:|ice-ufrag:|ice-pwd:|fingerprint:))/i.test(value));
+  }
+  function text(value) {
+    if (value == null) return null;
+    let clean = String(value);
+    if (containsSdp(clean)) return '[SDP REDACTED]';
+    clean = clean.split(/\r?\n/).map(line => SDP_LINE.test(line) ? '[SDP REDACTED]' : line).join('\n');
+    clean = clean.replace(URL_TEXT, '[URL REDACTED]');
+    clean = clean.replace(SECRET_TEXT, '[SECRET REDACTED]');
+    clean = clean.replace(/\ba=candidate:[^\r\n]*/gi, '[ICE CANDIDATE REDACTED]');
+    clean = clean.replace(IPV4, '[IP REDACTED]');
+    clean = redactIpv6(clean);
+    return clean.slice(0, LIMITS.messageChars);
+  }
   const sum = values => values.map(number).filter(value => value != null).reduce((total, value) => total + value, 0);
   const percentile = (values, ratio) => {
     const sorted = values.map(number).filter(value => value != null).sort((a, b) => a - b);
