@@ -86,6 +86,31 @@ const legacy = overrides => ({
   const readable = diagnostics.sanitize('Connexion rétablie après 2 tentatives, latence stable.');
   assert.equal(readable, 'Connexion rétablie après 2 tentatives, latence stable.');
 
+  assert.deepEqual(diagnostics.normalizeTesterFeedback([]), []);
+  const noFeedbackReport = { vision: { integrated: true } };
+  diagnostics.addTesterFeedback(noFeedbackReport, []);
+  assert.equal(Object.hasOwn(noFeedbackReport.vision, 'testerFeedback'), false);
+  assert.deepEqual(diagnostics.normalizeTesterFeedback([{ issueType: 'not_recognized', cardName: '  Panam  ' }]), [
+    { issueType: 'not_recognized', cardName: 'Panam', recognizedAs: null, note: '' }
+  ]);
+  assert.deepEqual(diagnostics.normalizeTesterFeedback([{ issueType: 'wrong_identification', cardName: 'Panam', recognizedAs: 'Jackie Wells' }]), [
+    { issueType: 'wrong_identification', cardName: 'Panam', recognizedAs: 'Jackie Wells', note: '' }
+  ]);
+  assert.deepEqual(diagnostics.normalizeTesterFeedback([{ issueType: 'unstable_identification', cardName: 'Rogue', recognizedAs: 'ignored' }]), [
+    { issueType: 'unstable_identification', cardName: 'Rogue', recognizedAs: null, note: '' }
+  ]);
+  assert.deepEqual(diagnostics.normalizeTesterFeedback([{ issueType: 'something_else', cardName: 'Panam' }, { issueType: 'not_recognized', cardName: '   ' }]), []);
+  assert.equal(diagnostics.normalizeTesterFeedback(Array.from({ length: 12 }, (_, index) => ({ issueType: 'not_recognized', cardName: `Card ${index}` }))).length, 10);
+  const boundedFeedback = diagnostics.normalizeTesterFeedback([{ issueType: 'wrong_identification', cardName: 'a'.repeat(121), recognizedAs: 'b'.repeat(121), note: 'c'.repeat(501) }])[0];
+  assert.equal(boundedFeedback.cardName.length, 120);
+  assert.equal(boundedFeedback.recognizedAs.length, 120);
+  assert.equal(boundedFeedback.note.length, 500);
+  const privateFeedback = diagnostics.normalizeTesterFeedback([{ issueType: 'wrong_identification', cardName: 'Panam 10.0.0.2', recognizedAs: 'https://example.test/card?token=secret', note: 'cookie=session-secret Bearer private-token' }])[0];
+  assert.doesNotMatch(JSON.stringify(privateFeedback), /10\.0\.0\.2|example\.test|session-secret|private-token/);
+  const feedbackReport = { vision: { integrated: true } };
+  diagnostics.addTesterFeedback(feedbackReport, [{ issueType: 'not_recognized', cardName: 'Panam' }]);
+  assert.equal(feedbackReport.vision.testerFeedback.length, 1);
+
   const privacyFixture = legacy({
     events: [{ type: 'vision-error', data: { message: adversarialCases.map(item => item.input).join('\n') } }],
     vision: { enabledForGame: true, assetsError: adversarialCases.map(item => item.input).join('\n'), identification: {} }
@@ -105,9 +130,18 @@ const legacy = overrides => ({
   });
   const appSource = fs.readFileSync('public/app.js', 'utf8');
   const indexSource = fs.readFileSync('public/index.html', 'utf8');
+  const reportUiSource = fs.readFileSync('public/report-mail-ui.js', 'utf8');
   assert(indexSource.indexOf('/report-diagnostics-v2.js') < indexSource.indexOf('/app.js'));
   assert.match(appSource, /try \{[\s\S]*TCGateReportDiagnosticsV2\.build/);
   assert.match(appSource, /maxReportBytes = 768 \* 1024/);
   assert.match(appSource, /report\.events = report\.events\.slice\(-256\)/);
+  assert.match(appSource, /TCGateReportDiagnosticsV2\?\.addTesterFeedback/);
+  assert.doesNotMatch(appSource, /testerFeedback:\s*\[\.\.\.state\.visionFeedback\]/);
+  assert.match(indexSource, /id="visionFeedbackSection"/);
+  assert.match(indexSource, /id="addVisionFeedback"/);
+  assert.match(reportUiSource, /feedbackEntries\.length >= 10/);
+  assert.match(reportUiSource, /type\.value === 'wrong_identification'/);
+  assert.match(reportUiSource, /maxlength="120"/);
+  assert.match(reportUiSource, /maxlength="500"/);
   console.log('Report Schema V2 tests: OK');
 })().catch(error => { console.error(error); process.exitCode = 1; });

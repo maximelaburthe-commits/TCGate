@@ -4706,11 +4706,14 @@ async function buildCompleteReport() {
       identification: visionEnabledForCurrentGame() ? (window.TCGIdentificationLab?.getSnapshot?.() || null) : null,
       libraryIntegrity: visionEnabledForCurrentGame() ? (window.TCGIdentificationLab?.getSnapshot?.()?.libraryIntegrity || null) : null,
       tableState: visionEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getSnapshot?.() || null) : null,
-      tableStateEvents: visionEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getEvents?.() || []) : [],
-      testerFeedback: [...state.visionFeedback]
+      tableStateEvents: visionEnabledForCurrentGame() ? (window.TCGTableStateEngine?.getEvents?.() || []) : []
     },
     events: state.reportEvents
   };
+  window.TCGateReportDiagnosticsV2?.addTesterFeedback?.(
+    report,
+    window.TCGateReportVisionFeedback?.getEntries?.() || []
+  );
   try {
     const dbConfig = window.TCGateGameDatabases?.get?.(state.game) || {};
     const sourceCommit = String(dbConfig.manifestUrl || '').split('/').slice(-2, -1)[0] || null;

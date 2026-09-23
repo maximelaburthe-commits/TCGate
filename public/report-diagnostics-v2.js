@@ -5,7 +5,8 @@
 })(typeof window !== 'undefined' ? window : globalThis, function createReportDiagnosticsV2() {
   'use strict';
 
-  const LIMITS = Object.freeze({ networkEvents: 64, visionErrors: 24, databaseProblems: 32, messageChars: 240, sectionBytes: 96 * 1024, totalBytes: 384 * 1024 });
+  const LIMITS = Object.freeze({ networkEvents: 64, visionErrors: 24, databaseProblems: 32, messageChars: 240, testerFeedbackEntries: 10, cardNameChars: 120, testerNoteChars: 500, sectionBytes: 96 * 1024, totalBytes: 384 * 1024 });
+  const TESTER_FEEDBACK_TYPES = new Set(['not_recognized', 'wrong_identification', 'unstable_identification']);
   const NETWORK_EVENTS = /^(rtc-(connection-state|ice-state|signaling-state|restart-request-received|offer-generation-rebuild|offer-delivery-failed|recovery|recovery-success|recovery-failed)|room-recover|sse-(open|error|reconnect))/;
   const SECRET_KEY = /(authorization|cookie|password|secret|token|credential|icecandidate|candidate(raw|string)|sdp|address|ip$|url$)/i;
   const URL_TEXT = /\b(?:https?|wss?):\/\/[^\s"'<>]+/gi;
@@ -29,7 +30,7 @@
     const signatures = lines.filter(line => SDP_LINE.test(line)).length;
     return signatures >= 2 || (/\bv=0(?:\s|$)/i.test(value) && /(?:\bo=-?\s|\bm=(?:audio|video|application)\s|\ba=(?:candidate:|ice-ufrag:|ice-pwd:|fingerprint:))/i.test(value));
   }
-  function text(value) {
+  function text(value, maxChars = LIMITS.messageChars) {
     if (value == null) return null;
     let clean = String(value);
     if (containsSdp(clean)) return '[SDP REDACTED]';
@@ -39,7 +40,29 @@
     clean = clean.replace(/\ba=candidate:[^\r\n]*/gi, '[ICE CANDIDATE REDACTED]');
     clean = clean.replace(IPV4, '[IP REDACTED]');
     clean = redactIpv6(clean);
-    return clean.slice(0, LIMITS.messageChars);
+    return clean.slice(0, maxChars);
+  }
+  function normalizeTesterFeedback(entries) {
+    if (!Array.isArray(entries)) return [];
+    const normalized = [];
+    for (const entry of entries) {
+      if (normalized.length >= LIMITS.testerFeedbackEntries) break;
+      if (!entry || !TESTER_FEEDBACK_TYPES.has(entry.issueType)) continue;
+      const cardName = text(entry.cardName, LIMITS.cardNameChars)?.trim();
+      if (!cardName) continue;
+      const recognizedAs = entry.issueType === 'wrong_identification'
+        ? (text(entry.recognizedAs, LIMITS.cardNameChars)?.trim() || null)
+        : null;
+      normalized.push({ issueType: entry.issueType, cardName, recognizedAs, note: text(entry.note, LIMITS.testerNoteChars)?.trim() || '' });
+    }
+    return normalized;
+  }
+  function addTesterFeedback(report, entries) {
+    if (!report?.vision || typeof report.vision !== 'object') return report;
+    delete report.vision.testerFeedback;
+    const feedback = normalizeTesterFeedback(entries);
+    if (feedback.length) report.vision.testerFeedback = feedback;
+    return report;
   }
   const sum = values => values.map(number).filter(value => value != null).reduce((total, value) => total + value, 0);
   const percentile = (values, ratio) => {
@@ -152,5 +175,5 @@
     return report;
   }
 
-  return Object.freeze({ LIMITS, sanitize, bounded, recordNetworkEvent, reset, collectNetwork, collectVision, collectDatabase, build });
+  return Object.freeze({ LIMITS, sanitize, normalizeTesterFeedback, addTesterFeedback, bounded, recordNetworkEvent, reset, collectNetwork, collectVision, collectDatabase, build });
 });

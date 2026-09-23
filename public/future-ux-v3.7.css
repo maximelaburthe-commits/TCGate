@@ -330,6 +330,15 @@
 .flow-card p{color:var(--muted);font-size:13px;line-height:1.45}
 .flow-actions{display:grid;gap:8px;margin-top:16px}
 .report-box{width:100%;min-height:110px;background:#0f1318;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;resize:vertical;margin-top:10px}
+.vision-report-feedback{margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#0f1318}
+.vision-report-feedback summary{cursor:pointer;font-size:13px;font-weight:700}
+.vision-report-feedback>p{margin:8px 0}
+.vision-feedback-entry{display:grid;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.vision-feedback-entry label{display:grid;gap:4px;color:var(--muted);font-size:12px}
+.vision-feedback-entry input,.vision-feedback-entry select,.vision-feedback-entry textarea{width:100%;background:#0b0f14;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px}
+.vision-feedback-entry textarea{min-height:58px;resize:vertical}
+.vision-feedback-entry .vision-feedback-remove{justify-self:end}
+.vision-feedback-entry [hidden]{display:none}
 
 #screenGame.future-table-v37 #gameDeviceMenu {
   position:fixed;

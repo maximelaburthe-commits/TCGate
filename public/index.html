@@ -538,6 +538,12 @@
       <h3 id="reportTitle">Rapport de session</h3>
       <p>Ajoutez si besoin un ressenti technique. Les informations de session seront jointes automatiquement.</p>
       <textarea class="report-box" id="reportText" maxlength="2000" placeholder="Latence, coupure, comportement étrange…"></textarea>
+      <details class="vision-report-feedback" id="visionFeedbackSection">
+        <summary>Problème de reconnaissance de carte ?</summary>
+        <p>Ajoutez uniquement les cartes que vous souhaitez signaler.</p>
+        <div id="visionFeedbackList"></div>
+        <button class="btn subtle" id="addVisionFeedback" type="button">+ Ajouter une carte</button>
+      </details>
       <div class="flow-actions">
         <button class="btn primary" id="sendReport" type="button">Envoyer le rapport</button>
         <button class="btn" id="closeReport" type="button">Fermer</button>
