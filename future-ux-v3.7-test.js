@@ -155,6 +155,15 @@ assert(!ux.slice(ux.indexOf('/* Checkpoint D')).includes("document.addEventListe
 const moreMenuMarkup = between(html, '<div class="more-menu hidden" id="moreMenu">', '</div>');
 const expectedMenuOrder = ['generateReportGame', 'infoMenu', 'diagMenu', 'gigDiceReset'];
 assert(expectedMenuOrder.every((id, index) => index === 0 || moreMenuMarkup.indexOf(`id="${expectedMenuOrder[index - 1]}"`) < moreMenuMarkup.indexOf(`id="${id}"`)), 'Prototype secondary-menu order changed');
+const reportLobbyMarkup = between(html, '<!-- LOBBY -->', '<!-- GAME -->');
+assert(reportLobbyMarkup.includes('id="generateReportLobby"'), 'Lobby report entry is missing');
+assert(!reportLobbyMarkup.includes('id="moreMenu"') && !reportLobbyMarkup.includes('id="generateReportGame"'), 'The in-game floating menu leaked into the Lobby');
+assert(moreMenuMarkup.includes('id="generateReportGame"') && moreMenuMarkup.includes('Rapport'), 'In-game report entry is missing from the floating menu');
+assert((html.match(/id="generateReportLobby"/g) || []).length === 1, 'Lobby report entry is duplicated');
+assert((html.match(/id="generateReportGame"/g) || []).length === 1, 'In-game report entry is duplicated');
+assert((html.match(/id="reportOverlay"/g) || []).length === 1, 'Report modal is duplicated');
+assert(reportMailUi.includes("document.getElementById('generateReportLobby')") && reportMailUi.includes("document.getElementById('generateReportGame')"), 'Lobby and in-game entries do not share the report controller');
+assert(reportMailUi.includes('openModal(button)') && reportMailUi.includes("document.getElementById('reportOverlay')"), 'Report entries do not reuse the existing modal');
 assert(moreMenuMarkup.includes('Réinitialiser Gig Dice'), 'Gig Reset is not in the prototype secondary menu');
 assert(!moreMenuMarkup.includes('id="finishMenu"') && !moreMenuMarkup.includes('Terminer la session'), 'Redundant Finish session menu entry remains');
 assert(!ux.includes('deviceMenu.append(gigReset)'), 'Gig Reset is still moved into the Candidate device menu');
