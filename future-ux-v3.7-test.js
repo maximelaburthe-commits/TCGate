@@ -177,6 +177,9 @@ assert(app.includes("$('endHub')?.addEventListener('click', async () =>") && app
 assert(!ux.includes("document.getElementById('finishMenu')"), 'Obsolete Finish menu handler remains');
 assert(!ux.includes('gigTrack.append') && !ux.includes('MutationObserver(labelGigDiceTooltips)'), 'Rejected D.1 DOM reconstruction remains');
 assert(css.includes('.die-slot2:hover .die-control2') && css.includes('.plus2{grid-row:1}') && css.includes('.minus2{grid-row:3}'), 'Prototype contextual controls are missing');
+assert(css.includes('stroke:#05070a') && css.includes('stroke-width:22'), 'Gig Dice faces must retain black edge separation');
+assert(css.includes('.die-control2:focus-visible') && css.includes('.die-slot2:hover .die-token2,.die-slot2:focus-within .die-token2'), 'Gig Dice keyboard focus treatment is missing');
+assert(css.includes('@media (prefers-reduced-motion:reduce)') && css.includes('.die-token2,') && css.includes('.die-score2 {'), 'Gig Dice reduced-motion treatment is missing');
 assert(css.includes('.gig-totem.open .gig-side2') && css.includes('max-width:760px'), 'Prototype open/closed behavior is missing');
 assert(html.includes('viewBox="0 0 1000 1000" class="die-svg"') && html.includes('id="XMLID_29_"'), 'Prototype D20 SVG is not embedded in the trigger');
 assert(app.includes('opponent: [20, 12, 10, 8, 6, 4]') && app.includes('self: [4, 6, 8, 10, 12, 20]'), 'Prototype die order is missing');
