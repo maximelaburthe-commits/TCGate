@@ -390,7 +390,7 @@
 .gig-trigger2 .die-svg{width:25px;height:25px}
 .gig-trigger2 .die-svg *{fill:currentColor}
 .die-slot2{position:relative;width:50px;height:82px;display:grid;grid-template-rows:17px 48px 17px;justify-items:center;align-items:center;row-gap:0;overflow:visible;flex:0 0 auto}
-.die-control2{width:32px;height:32px;min-width:32px;min-height:32px;padding:0;border-radius:50%;border:1px solid rgba(189,238,255,.82);background:rgba(9,13,18,.98);color:#fff;font-size:22px;font-weight:900;line-height:1;display:grid;place-items:center;opacity:0;transform:scale(.82);transition:opacity .12s ease,transform .12s ease,border-color .12s ease,background .12s ease,box-shadow .12s ease;z-index:12;pointer-events:none;cursor:pointer}
+.die-control2{width:32px;height:32px;min-width:32px;min-height:32px;padding:0;border-radius:50%;border:1px solid rgba(189,238,255,.82);background:rgba(9,13,18,.98);color:#fff;font-size:22px;font-weight:900;line-height:1;display:grid;place-items:center;opacity:0;transform:scale(.82);transition:opacity .12s ease,transform .12s ease,border-color .12s ease,background .12s ease,box-shadow .12s ease;z-index:30;pointer-events:none;cursor:pointer}
 .die-slot2:hover .die-control2,.die-slot2:focus-within .die-control2{opacity:1;transform:scale(1);pointer-events:auto}
 .die-control2:hover{border-color:#fff;background:#243240;box-shadow:0 0 12px rgba(189,238,255,.30)}
 .die-control2:focus-visible{outline:2px solid #fff;outline-offset:2px;border-color:#bdeeff;background:#243240;box-shadow:0 0 0 4px rgba(98,212,255,.22)}
@@ -399,7 +399,7 @@
 .die-token2{--owner:#62d4ff;grid-row:2;position:relative;width:48px;height:48px;display:grid;place-items:center;color:var(--owner);cursor:grab;user-select:none;transform-origin:center;transition:transform .14s cubic-bezier(.2,.8,.2,1),filter .14s ease;z-index:2}
 .die-token2.owner-rival{--owner:#d07b55}
 .die-slot2:hover,.die-slot2:focus-within{z-index:20}
-.die-slot2:hover .die-token2,.die-slot2:focus-within .die-token2{transform:scale(2.25);filter:drop-shadow(0 0 24px rgba(255,255,255,.42));z-index:20}
+.die-slot2:hover .die-token2,.die-slot2:focus-within .die-token2{transform:scale(2.6);filter:drop-shadow(0 0 26px rgba(255,255,255,.46));z-index:20}
 .die-token2 .die-svg{width:48px;height:48px}
 .die-token2 .die-svg .die-fill{fill:currentColor;stroke:none}
 .die-token2 .die-svg .die-edges{fill:none;stroke:#05070a;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}

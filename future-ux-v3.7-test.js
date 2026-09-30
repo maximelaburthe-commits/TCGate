@@ -179,7 +179,7 @@ assert(!ux.includes('gigTrack.append') && !ux.includes('MutationObserver(labelGi
 assert(css.includes('.die-slot2:hover .die-control2') && css.includes('.plus2{grid-row:1}') && css.includes('.minus2{grid-row:3}'), 'Prototype contextual controls are missing');
 assert(app.includes('FILLED_GIG_DICE_ICONS') && app.includes('class="die-fill"') && app.includes('class="die-edges"'), 'Filled Gig Dice SVG layers are missing');
 assert(css.includes('.die-fill{fill:currentColor;stroke:none}') && css.includes('.die-edges{fill:none;stroke:#05070a'), 'Gig Dice must use opaque silhouettes with internal black edges only');
-assert(css.includes('width:32px;height:32px;min-width:32px;min-height:32px') && css.includes('scale(2.25)'), 'Gig Dice controls or magnification do not meet the visual target');
+assert(css.includes('width:32px;height:32px;min-width:32px;min-height:32px') && css.includes('scale(2.6)'), 'Gig Dice controls or magnification do not meet the visual target');
 assert(css.includes('.die-control2:focus-visible') && css.includes('.die-slot2:hover .die-token2,.die-slot2:focus-within .die-token2'), 'Gig Dice keyboard focus treatment is missing');
 assert(css.includes('@media (prefers-reduced-motion:reduce)') && css.includes('.die-token2,') && css.includes('.die-score2 {'), 'Gig Dice reduced-motion treatment is missing');
 assert(css.includes('.gig-totem.open .gig-side2') && css.includes('max-width:760px'), 'Prototype open/closed behavior is missing');
