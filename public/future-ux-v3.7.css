@@ -361,8 +361,7 @@
 .gig-totem{position:absolute!important;left:50%!important;right:auto!important;top:auto!important;bottom:18px!important;transform:translateX(-50%)!important;height:86px;z-index:42;pointer-events:none;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
 .gig-totem.hidden{display:none}
 .gig-shell{position:relative;display:flex;align-items:center;gap:10px;pointer-events:none}
-.gig-scrim{position:absolute;left:-18px;right:-18px;top:-10px;bottom:-10px;border-radius:22px;background:linear-gradient(180deg,rgba(7,9,12,.10),rgba(7,9,12,.42));opacity:0;transition:.18s}
-.gig-totem.open .gig-scrim{opacity:1;background:linear-gradient(180deg,rgba(7,9,12,.18),rgba(7,9,12,.56))}
+.gig-scrim{display:none}
 .gig-side2{position:relative;display:flex;flex-direction:column;gap:5px;pointer-events:none;opacity:0;max-width:0;overflow:hidden;transition:max-width .24s ease,opacity .16s ease,transform .24s ease}
 .gig-side2.opponent{transform:translateX(22px)}
 .gig-side2.self{transform:translateX(-22px)}
@@ -401,15 +400,13 @@
 .die-slot2:hover,.die-slot2:focus-within{z-index:20}
 .die-slot2:hover .die-token2,.die-slot2:focus-within .die-token2{transform:scale(2.6);filter:drop-shadow(0 0 26px rgba(255,255,255,.46));z-index:20}
 .die-token2 .die-svg{width:48px;height:48px}
-.die-token2 .die-svg .die-fill{fill:currentColor;stroke:none}
-.die-token2 .die-svg .die-edges{fill:none;stroke:#05070a;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.die-token2 .die-svg *{fill:currentColor;stroke:currentColor;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}
 .die-score2{position:absolute;inset:0;display:grid;place-items:center;color:white;font-size:15px;font-weight:1000;text-shadow:0 1px 2px #000,0 0 4px #000;pointer-events:none;transition:font-size .14s ease}
 .die-slot2:hover .die-score2,.die-slot2:focus-within .die-score2{font-size:18px}
 .ghost-slot{width:48px;height:48px;border-radius:10px;border:1px dashed rgba(255,255,255,.22);background:rgba(255,255,255,.025);grid-row:2}
 .drag-proxy2{position:fixed!important;z-index:999;width:42px!important;height:42px!important;display:grid;place-items:center;pointer-events:none;transform:translate(-50%,-50%) scale(1.08)!important;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45))}
 .drag-proxy2 .die-svg{width:42px;height:42px}
-.drag-proxy2 .die-svg .die-fill{fill:currentColor;stroke:none}
-.drag-proxy2 .die-svg .die-edges{fill:none;stroke:#05070a;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.drag-proxy2 .die-svg *{fill:currentColor;stroke:currentColor;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}
 .drag-proxy2 .die-score2{font-size:13px}
 .opponent-feed-card:fullscreen .gig-totem.is-fullscreen{position:absolute!important;left:50%!important;bottom:18px!important;transform:translateX(-50%)!important}
 @media(max-width:900px){.gig-totem.open{max-width:calc(100vw - 24px)}.gig-totem.open .gig-shell{transform:scale(.82);transform-origin:center bottom}}

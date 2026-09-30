@@ -177,8 +177,9 @@ assert(app.includes("$('endHub')?.addEventListener('click', async () =>") && app
 assert(!ux.includes("document.getElementById('finishMenu')"), 'Obsolete Finish menu handler remains');
 assert(!ux.includes('gigTrack.append') && !ux.includes('MutationObserver(labelGigDiceTooltips)'), 'Rejected D.1 DOM reconstruction remains');
 assert(css.includes('.die-slot2:hover .die-control2') && css.includes('.plus2{grid-row:1}') && css.includes('.minus2{grid-row:3}'), 'Prototype contextual controls are missing');
-assert(app.includes('FILLED_GIG_DICE_ICONS') && app.includes('class="die-fill"') && app.includes('class="die-edges"'), 'Filled Gig Dice SVG layers are missing');
-assert(css.includes('.die-fill{fill:currentColor;stroke:none}') && css.includes('.die-edges{fill:none;stroke:#05070a'), 'Gig Dice must use opaque silhouettes with internal black edges only');
+assert(app.includes('${GIG_DICE_ICONS[`D${die.sides}`]}') && !app.includes('FILLED_GIG_DICE_ICONS'), 'Original Gig Dice SVG artwork is not rendered');
+assert(css.includes('.gig-scrim{display:none}') && !css.includes('.gig-totem.open .gig-scrim'), 'The open Gig Dice scrim must remain visually removed');
+assert(css.includes('.die-token2 .die-svg *{fill:currentColor;stroke:currentColor;stroke-width:18'), 'Original Gig Dice artwork readability treatment is missing');
 assert(css.includes('width:32px;height:32px;min-width:32px;min-height:32px') && css.includes('scale(2.6)'), 'Gig Dice controls or magnification do not meet the visual target');
 assert(css.includes('.die-control2:focus-visible') && css.includes('.die-slot2:hover .die-token2,.die-slot2:focus-within .die-token2'), 'Gig Dice keyboard focus treatment is missing');
 assert(css.includes('@media (prefers-reduced-motion:reduce)') && css.includes('.die-token2,') && css.includes('.die-score2 {'), 'Gig Dice reduced-motion treatment is missing');
@@ -227,7 +228,7 @@ assert(app.includes("source: 'timer-http', clientReferenceMs: (requestStartedAt 
 assert(app.includes('snapshot.serverNowMs, clientReferenceMs'), 'Room-state and recovery snapshots do not refresh server clock offset');
 const skewedRemaining = (endsAt, serverNowMs, clientNowMs) => Math.ceil((endsAt - (clientNowMs + (serverNowMs - clientNowMs))) / 1000);
 assert(Math.abs(skewedRemaining(103000, 100000, 103000) - skewedRemaining(103000, 100000, 98000)) <= 1, 'Simulated +3s/-2s clients diverge despite server clock offset');
-assert(css.includes('.gig-totem.open .gig-scrim{opacity:1;background:linear-gradient(180deg,rgba(7,9,12,.18),rgba(7,9,12,.56))}'), 'Open Gig scrim contrast adjustment is missing or affects the closed state');
+assert(css.includes('.gig-scrim{display:none}'), 'Open Gig scrim must not render a background behind the dice row');
 
 const timerRender = between(app, 'function renderSharedTimer()', 'function applySharedTimer(');
 assert(timerRender.includes("!state.timer.enabled || !state.gameActive"), 'Disabled or pre-game Timer visibility guard changed');
