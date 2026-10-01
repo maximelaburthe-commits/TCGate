@@ -772,35 +772,6 @@ function dieUiOriginClass(die) {
   return die.origin === localGigRole() ? 'self' : 'opponent';
 }
 
-function bindGigDiceZoomOrigins(container) {
-  container?.querySelectorAll('.die-token2').forEach(token => {
-    let pointerSession = 0;
-    let resetTimer = null;
-
-    token.addEventListener('pointerenter', event => {
-      if (event.pointerType && event.pointerType !== 'mouse') return;
-      pointerSession += 1;
-      window.clearTimeout(resetTimer);
-      const rect = token.getBoundingClientRect();
-      const originX = Math.min(rect.width, Math.max(0, event.clientX - rect.left));
-      const originY = Math.min(rect.height, Math.max(0, event.clientY - rect.top));
-      token.style.setProperty('--die-zoom-origin-x', `${originX}px`);
-      token.style.setProperty('--die-zoom-origin-y', `${originY}px`);
-      token.classList.add('is-pointer-zoomed');
-    });
-
-    token.addEventListener('pointerleave', () => {
-      const leavingSession = ++pointerSession;
-      token.classList.remove('is-pointer-zoomed');
-      resetTimer = window.setTimeout(() => {
-        if (pointerSession !== leavingSession || token.classList.contains('is-pointer-zoomed')) return;
-        token.style.removeProperty('--die-zoom-origin-x');
-        token.style.removeProperty('--die-zoom-origin-y');
-      }, 160);
-    });
-  });
-}
-
 function renderGigLane(uiOwner, containerId) {
   const lane = $(containerId);
   if (!lane) return;
@@ -834,7 +805,6 @@ function renderGigLane(uiOwner, containerId) {
     }
   });
   lane.innerHTML = markup;
-  bindGigDiceZoomOrigins(lane);
   lane.classList.toggle('is-empty', dice.length === 0);
 }
 function renderGigDicePanel() {

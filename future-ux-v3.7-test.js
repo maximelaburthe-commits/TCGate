@@ -181,9 +181,8 @@ assert(app.includes('${GIG_DICE_ICONS[`D${die.sides}`]}') && !app.includes('FILL
 assert(css.includes('.gig-scrim{display:none}') && !css.includes('.gig-totem.open .gig-scrim'), 'The open Gig Dice scrim must remain visually removed');
 assert(css.includes('.die-token2 .die-svg *{fill:currentColor;stroke:currentColor;stroke-width:18'), 'Original Gig Dice artwork readability treatment is missing');
 assert(css.includes('width:32px;height:32px;min-width:32px;min-height:32px') && css.includes('scale(2.6)'), 'Gig Dice controls or magnification do not meet the visual target');
-assert(css.includes('.die-control2:focus-visible') && css.includes('.die-token2.is-pointer-zoomed,.die-slot2:focus-within .die-token2') && css.includes('.die-slot2:focus-within .die-token2{transform-origin:center}'), 'Gig Dice pointer zoom and centered keyboard focus treatment are missing');
-assert(app.includes("token.addEventListener('pointerenter'") && app.includes('event.clientX - rect.left') && app.includes('event.clientY - rect.top'), 'Gig Dice pointer entry does not capture its untransformed local origin');
-assert(app.includes("token.addEventListener('pointerleave'") && app.includes("token.classList.remove('is-pointer-zoomed')") && !app.includes("token.addEventListener('pointermove'"), 'Gig Dice pointer origin must be captured once and reset on exit');
+assert(css.includes('.die-control2:focus-visible') && css.includes('.die-token2:hover,.die-slot2:focus-within .die-token2') && css.includes('transform-origin:50% 50%'), 'Gig Dice hover and keyboard zoom must remain centered on the die');
+assert(!app.includes('bindGigDiceZoomOrigins') && !css.includes('--die-zoom-origin-') && !css.includes('is-pointer-zoomed'), 'Dynamic pointer-origin zoom treatment remains');
 assert(css.includes('@media (prefers-reduced-motion:reduce)') && css.includes('.die-token2,') && css.includes('.die-score2 {'), 'Gig Dice reduced-motion treatment is missing');
 assert(css.includes('.gig-totem.open .gig-side2') && css.includes('max-width:760px'), 'Prototype open/closed behavior is missing');
 assert(html.includes('viewBox="0 0 1000 1000" class="die-svg"') && html.includes('id="XMLID_29_"'), 'Prototype D20 SVG is not embedded in the trigger');
