@@ -395,14 +395,15 @@
 .die-control2:focus-visible{outline:2px solid #fff;outline-offset:2px;border-color:#bdeeff;background:#243240;box-shadow:0 0 0 4px rgba(98,212,255,.22)}
 .plus2{grid-row:1}
 .minus2{grid-row:3}
-.die-token2{--owner:#62d4ff;grid-row:2;position:relative;width:48px;height:48px;display:grid;place-items:center;color:var(--owner);cursor:grab;user-select:none;transform-origin:center;transition:transform .14s cubic-bezier(.2,.8,.2,1),filter .14s ease;z-index:2}
+.die-token2{--owner:#62d4ff;grid-row:2;position:relative;width:48px;height:48px;display:grid;place-items:center;color:var(--owner);cursor:grab;user-select:none;transform-origin:var(--die-zoom-origin-x,50%) var(--die-zoom-origin-y,50%);transition:transform .14s cubic-bezier(.2,.8,.2,1),filter .14s ease;z-index:2}
 .die-token2.owner-rival{--owner:#d07b55}
-.die-slot2:has(.die-token2:hover),.die-slot2:focus-within{z-index:20}
-.die-token2:hover,.die-slot2:focus-within .die-token2{transform:scale(2.6);filter:drop-shadow(0 0 26px rgba(255,255,255,.46));z-index:20}
+.die-slot2:has(.die-token2.is-pointer-zoomed),.die-slot2:focus-within{z-index:20}
+.die-token2.is-pointer-zoomed,.die-slot2:focus-within .die-token2{transform:scale(2.6);filter:drop-shadow(0 0 26px rgba(255,255,255,.46));z-index:20}
+.die-slot2:focus-within .die-token2{transform-origin:center}
 .die-token2 .die-svg{width:48px;height:48px}
 .die-token2 .die-svg *{fill:currentColor;stroke:currentColor;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}
 .die-score2{position:absolute;inset:0;display:grid;place-items:center;color:white;font-size:15px;font-weight:1000;text-shadow:0 1px 2px #000,0 0 4px #000;pointer-events:none;transition:font-size .14s ease}
-.die-token2:hover .die-score2,.die-slot2:focus-within .die-score2{font-size:18px}
+.die-token2.is-pointer-zoomed .die-score2,.die-slot2:focus-within .die-score2{font-size:18px}
 .ghost-slot{width:48px;height:48px;border-radius:10px;border:1px dashed rgba(255,255,255,.22);background:rgba(255,255,255,.025);grid-row:2}
 .drag-proxy2{position:fixed!important;z-index:999;width:42px!important;height:42px!important;display:grid;place-items:center;pointer-events:none;transform:translate(-50%,-50%) scale(1.08)!important;filter:drop-shadow(0 10px 16px rgba(0,0,0,.45))}
 .drag-proxy2 .die-svg{width:42px;height:42px}
