@@ -180,9 +180,12 @@ assert(css.includes('.die-slot2:hover .die-control2') && css.includes('.plus2{gr
 assert(app.includes('${GIG_DICE_ICONS[`D${die.sides}`]}') && !app.includes('FILLED_GIG_DICE_ICONS'), 'Original Gig Dice SVG artwork is not rendered');
 assert(css.includes('.gig-scrim{display:none}') && !css.includes('.gig-totem.open .gig-scrim'), 'The open Gig Dice scrim must remain visually removed');
 assert(css.includes('.die-token2 .die-svg *{fill:currentColor;stroke:currentColor;stroke-width:18'), 'Original Gig Dice artwork readability treatment is missing');
-assert(css.includes('width:32px;height:32px;min-width:32px;min-height:32px') && css.includes('scale(2.6)'), 'Gig Dice controls or magnification do not meet the visual target');
-assert(css.includes('.die-control2:focus-visible') && css.includes('.die-token2:hover,.die-slot2:focus-within .die-token2') && css.includes('transform-origin:50% 50%'), 'Gig Dice hover and keyboard zoom must remain centered on the die');
-assert(!app.includes('bindGigDiceZoomOrigins') && !css.includes('--die-zoom-origin-') && !css.includes('is-pointer-zoomed'), 'Dynamic pointer-origin zoom treatment remains');
+assert(css.includes('width:32px;height:32px;min-width:32px;min-height:32px') && css.includes('.die-zoom-layer') && css.includes('scale(2.6)'), 'Gig Dice controls or zoom layer do not meet the visual target');
+assert(css.includes('.die-control2:focus-visible') && css.includes('pointer-events:none;z-index:20') && !css.includes('.die-token2:hover,.die-slot2:focus-within .die-token2'), 'Gig Dice zoom must use a non-interactive layer instead of transforming the source die');
+assert(app.includes('const layer = source.cloneNode(true)') && app.includes('source.getBoundingClientRect()') && app.includes("layer.classList.add('die-zoom-layer')"), 'Gig Dice zoom layer does not clone and center the original die');
+assert(app.includes('gigDieZoomVisualBounds') && app.includes('document.elementFromPoint(event.clientX, event.clientY)') && app.includes("showGigDieZoom(hovered, 'pointer')"), 'Gig Dice expanded hover zone or direct die switching is missing');
+assert(app.includes('restoreGigDieZoomAfterRender()') && app.includes('function beginDieDrag(event, dieWrap)') && app.includes('clearGigDieZoom();'), 'Gig Dice zoom is not restored after layout changes or cleared before drag');
+assert(app.includes("event.target.matches(':focus-visible')") && app.includes("showGigDieZoom(token, 'keyboard')"), 'Gig Dice keyboard zoom does not preserve focus-visible semantics');
 assert(css.includes('@media (prefers-reduced-motion:reduce)') && css.includes('.die-token2,') && css.includes('.die-score2 {'), 'Gig Dice reduced-motion treatment is missing');
 assert(css.includes('.gig-totem.open .gig-side2') && css.includes('max-width:760px'), 'Prototype open/closed behavior is missing');
 assert(html.includes('viewBox="0 0 1000 1000" class="die-svg"') && html.includes('id="XMLID_29_"'), 'Prototype D20 SVG is not embedded in the trigger');

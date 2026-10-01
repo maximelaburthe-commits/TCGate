@@ -772,6 +772,110 @@ function dieUiOriginClass(die) {
   return die.origin === localGigRole() ? 'self' : 'opponent';
 }
 
+const GIG_DIE_ZOOM_SCALE = 2.6;
+const gigDieZoom = {
+  dieId: null,
+  layer: null,
+  mode: null,
+  source: null,
+  pointerX: null,
+  pointerY: null
+};
+
+function clearGigDieZoom() {
+  gigDieZoom.layer?.remove();
+  gigDieZoom.dieId = null;
+  gigDieZoom.layer = null;
+  gigDieZoom.mode = null;
+  gigDieZoom.source = null;
+}
+
+function positionGigDieZoom() {
+  const source = gigDieZoom.source;
+  const layer = gigDieZoom.layer;
+  const shell = $('gigDicePanel')?.querySelector('.gig-shell');
+  if (!source?.isConnected || !layer?.isConnected || !shell) {
+    clearGigDieZoom();
+    return false;
+  }
+  const sourceRect = source.getBoundingClientRect();
+  const shellRect = shell.getBoundingClientRect();
+  const scaleX = shell.offsetWidth ? shellRect.width / shell.offsetWidth : 1;
+  const scaleY = shell.offsetHeight ? shellRect.height / shell.offsetHeight : 1;
+  layer.style.left = `${(sourceRect.left + sourceRect.width / 2 - shellRect.left) / (scaleX || 1)}px`;
+  layer.style.top = `${(sourceRect.top + sourceRect.height / 2 - shellRect.top) / (scaleY || 1)}px`;
+  return true;
+}
+
+function showGigDieZoom(source, mode = 'pointer') {
+  const slot = source?.closest('.die-slot2');
+  const shell = $('gigDicePanel')?.querySelector('.gig-shell');
+  if (!slot || !shell || state.dieDrag) return false;
+  const dieId = slot.dataset.dieId;
+  if (gigDieZoom.source === source && gigDieZoom.mode === mode && gigDieZoom.layer?.isConnected) {
+    return positionGigDieZoom();
+  }
+  clearGigDieZoom();
+  const layer = source.cloneNode(true);
+  layer.classList.remove('die-token2');
+  layer.classList.add('die-zoom-layer');
+  layer.removeAttribute('title');
+  layer.setAttribute('aria-hidden', 'true');
+  shell.append(layer);
+  gigDieZoom.dieId = dieId;
+  gigDieZoom.layer = layer;
+  gigDieZoom.mode = mode;
+  gigDieZoom.source = source;
+  return positionGigDieZoom();
+}
+
+function gigDieZoomVisualBounds(source) {
+  const rect = source.getBoundingClientRect();
+  const width = rect.width * GIG_DIE_ZOOM_SCALE;
+  const height = rect.height * GIG_DIE_ZOOM_SCALE;
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  return { left: centerX - width / 2, right: centerX + width / 2, top: centerY - height / 2, bottom: centerY + height / 2 };
+}
+
+function updateGigDieZoomFromPointer(event) {
+  if (event.pointerType && event.pointerType !== 'mouse') return;
+  gigDieZoom.pointerX = event.clientX;
+  gigDieZoom.pointerY = event.clientY;
+  const panel = $('gigDicePanel');
+  const hovered = document.elementFromPoint(event.clientX, event.clientY)?.closest?.('.die-token2');
+  if (hovered && panel?.contains(hovered)) {
+    showGigDieZoom(hovered, 'pointer');
+    return;
+  }
+  if (gigDieZoom.mode !== 'pointer' || !gigDieZoom.source?.isConnected) {
+    if (gigDieZoom.mode === 'pointer') clearGigDieZoom();
+    return;
+  }
+  const bounds = gigDieZoomVisualBounds(gigDieZoom.source);
+  if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) {
+    clearGigDieZoom();
+  }
+}
+
+function restoreGigDieZoomAfterRender() {
+  if (!gigDieZoom.dieId) return;
+  const mode = gigDieZoom.mode;
+  const dieId = gigDieZoom.dieId;
+  const source = [...document.querySelectorAll('.die-slot2')]
+    .find(slot => slot.dataset.dieId === dieId)
+    ?.querySelector('.die-token2');
+  if (!source) {
+    clearGigDieZoom();
+    return;
+  }
+  showGigDieZoom(source, mode);
+  if (mode === 'pointer' && Number.isFinite(gigDieZoom.pointerX) && Number.isFinite(gigDieZoom.pointerY)) {
+    const bounds = gigDieZoomVisualBounds(source);
+    if (gigDieZoom.pointerX < bounds.left || gigDieZoom.pointerX > bounds.right || gigDieZoom.pointerY < bounds.top || gigDieZoom.pointerY > bounds.bottom) clearGigDieZoom();
+  }
+}
+
 function renderGigLane(uiOwner, containerId) {
   const lane = $(containerId);
   if (!lane) return;
@@ -812,8 +916,14 @@ function renderGigDicePanel() {
   const visible = gigDiceEnabledForCurrentGame();
   panel?.classList.toggle('hidden', !visible);
   $('gigDiceReset')?.classList.toggle('hidden', !visible);
-  if (!visible || !panel) return;
+  if (!visible || !panel) {
+    clearGigDieZoom();
+    return;
+  }
 
+  const focusedControl = document.activeElement?.closest?.('.die-control2');
+  const focusedDieId = focusedControl?.closest('.die-slot2')?.dataset.dieId || null;
+  const focusedAction = focusedControl?.dataset.action || null;
   const selfDice = getGigDice('self');
   const opponentDice = getGigDice('opponent');
   const selfSide = panel.querySelector('.gig-side2.self');
@@ -825,6 +935,11 @@ function renderGigDicePanel() {
   renderGigLane('opponent', 'gigOpponentDice');
   $('gigSelfCred').textContent = streetCred('self');
   $('gigOpponentCred').textContent = streetCred('opponent');
+  restoreGigDieZoomAfterRender();
+  if (focusedDieId && focusedAction) {
+    const slot = [...panel.querySelectorAll('.die-slot2')].find(item => item.dataset.dieId === focusedDieId);
+    slot?.querySelector(`[data-action="${focusedAction}"]`)?.focus({ preventScroll: true });
+  }
 }
 function serializeGigState() {
   ensureGigDiceState();
@@ -923,6 +1038,7 @@ function uiOwnerForDie(die) {
 }
 
 function beginDieDrag(event, dieWrap) {
+  clearGigDieZoom();
   const dieId = dieWrap.dataset.dieId;
   const die = ensureGigDiceState().find(item => item.id === dieId);
   const dieEl = dieWrap.querySelector('.die-token2');
@@ -5010,6 +5126,19 @@ $('gigDicePanel')?.addEventListener('pointerdown', event => {
   const dieWrap = event.target.closest('.die-slot2');
   if (dieWrap) beginDieDrag(event, dieWrap);
 });
+window.addEventListener('pointermove', updateGigDieZoomFromPointer, { passive: true });
+$('gigDicePanel')?.addEventListener('focusin', event => {
+  const token = event.target.closest('.die-slot2')?.querySelector('.die-token2');
+  if (token && event.target.matches(':focus-visible')) showGigDieZoom(token, 'keyboard');
+});
+$('gigDicePanel')?.addEventListener('focusout', () => {
+  window.setTimeout(() => {
+    const activeElement = document.activeElement;
+    const token = activeElement?.closest?.('.die-slot2')?.querySelector('.die-token2');
+    if (token && activeElement.matches(':focus-visible')) showGigDieZoom(token, 'keyboard');
+    else if (gigDieZoom.mode === 'keyboard') clearGigDieZoom();
+  }, 0);
+});
 window.addEventListener('pointermove', updateDieDrag, { passive: false });
 window.addEventListener('pointerup', finishDieDrag);
 window.addEventListener('pointercancel', finishDieDrag);
@@ -5230,8 +5359,15 @@ document.addEventListener('fullscreenchange', () => {
   const opponentCard=document.querySelector('.opponent-feed-card');
   const button=$('fullscreenOpponent');
   const active=document.fullscreenElement===opponentCard;
+  const focusedGigControl=document.activeElement?.closest?.('.die-control2');
+  const focusedGigDieId=focusedGigControl?.closest('.die-slot2')?.dataset.dieId || null;
+  const focusedGigAction=focusedGigControl?.dataset.action || null;
   moveGigPanelForFullscreen();
   renderGigDicePanel();
+  if(focusedGigDieId && focusedGigAction){
+    const slot=[...document.querySelectorAll('.die-slot2')].find(item=>item.dataset.dieId===focusedGigDieId);
+    slot?.querySelector(`[data-action="${focusedGigAction}"]`)?.focus({preventScroll:true});
+  }
   if(button){
     button.title=active ? 'Quitter le plein écran' : 'Plein écran';
     button.setAttribute('aria-label',button.title);
