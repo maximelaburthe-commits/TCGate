@@ -186,6 +186,9 @@ assert(app.includes('const layer = source.cloneNode(true)') && app.includes('sou
 assert(app.includes('gigDieZoomVisualBounds') && app.includes('document.elementFromPoint(event.clientX, event.clientY)') && app.includes("showGigDieZoom(hovered, 'pointer')"), 'Gig Dice expanded hover zone or direct die switching is missing');
 assert(app.includes('restoreGigDieZoomAfterRender()') && app.includes('function beginDieDrag(event, dieWrap)') && app.includes('clearGigDieZoom();'), 'Gig Dice zoom is not restored after layout changes or cleared before drag');
 assert(app.includes("event.target.matches(':focus-visible')") && app.includes("showGigDieZoom(token, 'keyboard')"), 'Gig Dice keyboard zoom does not preserve focus-visible semantics');
+assert(app.includes("document.documentElement.addEventListener('pointerleave', clearGigDieZoom)") && app.includes("window.addEventListener('blur', clearGigDieZoom)"), 'Gig Dice zoom is not cleared when the pointer leaves the browser');
+assert(app.includes('new MutationObserver') && app.includes('gigDieZoom.source && !gigDieZoom.source.isConnected'), 'Gig Dice zoom does not clear when its source is removed from the DOM');
+assert(app.includes("scheduleGigPanelSafePlacement('visual-viewport-resize')") && app.includes('requestAnimationFrame(positionGigDieZoom)'), 'Gig Dice zoom is not repositioned after visual viewport resize');
 assert(css.includes('@media (prefers-reduced-motion:reduce)') && css.includes('.die-token2,') && css.includes('.die-score2 {'), 'Gig Dice reduced-motion treatment is missing');
 assert(css.includes('.gig-totem.open .gig-side2') && css.includes('max-width:760px'), 'Prototype open/closed behavior is missing');
 assert(html.includes('viewBox="0 0 1000 1000" class="die-svg"') && html.includes('id="XMLID_29_"'), 'Prototype D20 SVG is not embedded in the trigger');

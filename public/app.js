@@ -5127,6 +5127,8 @@ $('gigDicePanel')?.addEventListener('pointerdown', event => {
   if (dieWrap) beginDieDrag(event, dieWrap);
 });
 window.addEventListener('pointermove', updateGigDieZoomFromPointer, { passive: true });
+document.documentElement.addEventListener('pointerleave', clearGigDieZoom);
+window.addEventListener('blur', clearGigDieZoom);
 $('gigDicePanel')?.addEventListener('focusin', event => {
   const token = event.target.closest('.die-slot2')?.querySelector('.die-token2');
   if (token && event.target.matches(':focus-visible')) showGigDieZoom(token, 'keyboard');
@@ -5139,6 +5141,12 @@ $('gigDicePanel')?.addEventListener('focusout', () => {
     else if (gigDieZoom.mode === 'keyboard') clearGigDieZoom();
   }, 0);
 });
+const gigDiceZoomPanel = $('gigDicePanel');
+if (gigDiceZoomPanel) {
+  new MutationObserver(() => {
+    if (gigDieZoom.source && !gigDieZoom.source.isConnected) clearGigDieZoom();
+  }).observe(gigDiceZoomPanel, { childList: true, subtree: true });
+}
 window.addEventListener('pointermove', updateDieDrag, { passive: false });
 window.addEventListener('pointerup', finishDieDrag);
 window.addEventListener('pointercancel', finishDieDrag);
@@ -5394,6 +5402,7 @@ window.addEventListener('resize', () => {
 });
 window.visualViewport?.addEventListener?.('resize', () => {
   scheduleGigPanelSafePlacement('visual-viewport-resize');
+  window.requestAnimationFrame(() => window.requestAnimationFrame(positionGigDieZoom));
 });
 
 window.addEventListener('beforeunload', () => {
