@@ -1,0 +1,893 @@
+{
+  "meta": {
+    "workspaceVersion": "3.0",
+    "generatedAt": "2026-10-22",
+    "project": "TCGate",
+    "production": {
+      "label": "Alpha 0.1 Candidate 13 · UI 1.1.0",
+      "branch": "main",
+      "sha": "f5f2ba00e178f58c011c87f788c9c56064d8c32a"
+    },
+    "candidate": {
+      "label": "Alpha 0.1 Candidate 14 · UI 1.1.0",
+      "branch": "candidate/alpha-0.1-c14",
+      "sha": "c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3",
+      "note": "Candidate corrective disponible, non promue sur main."
+    },
+    "development": {
+      "branch": "update/next",
+      "sha": "07c4838defc8ee9946d00cd0ab0a18e39f35ceda",
+      "sync": "diverged",
+      "ahead": 10,
+      "behind": 7,
+      "note": "À réaligner avant le prochain cycle normal de développement."
+    },
+    "principle": "Un seul chat TCGate · workspace = source de vérité · main = stable · update/next = prochaine mise à jour · Test = update/next"
+  },
+  "categories": [
+    {
+      "id": "general",
+      "label": "Général",
+      "description": "Maturité globale, roadmap, releases et santé du mode de travail."
+    },
+    {
+      "id": "vision",
+      "label": "Vision",
+      "description": "Détection, identification, robustesse et performance."
+    },
+    {
+      "id": "bdd",
+      "label": "BDD",
+      "description": "Bases de cartes, runtime, intégrité et couverture."
+    },
+    {
+      "id": "uiux",
+      "label": "UI / UX",
+      "description": "Expérience de jeu, lobby, table et modules visuels."
+    },
+    {
+      "id": "annex",
+      "label": "Fonctions annexes",
+      "description": "Réseau, recovery, téléphone, rapports et fonctions transverses."
+    }
+  ],
+  "items": [
+    {
+      "id": "alpha-core",
+      "category": "general",
+      "name": "Socle Alpha 1v1",
+      "summary": "Créer/rejoindre une room, Host/Guest, Ready, lancement et session webcam 1v1.",
+      "status": "stable",
+      "progress": 95,
+      "maturity": "Qualifié Alpha",
+      "roadmap": true,
+      "weight": 10,
+      "track": "main",
+      "version": "C13",
+      "notes": "Base à préserver. Les nouvelles fonctions doivent rester des couches autour du moteur 1v1.",
+      "history": [
+        {
+          "date": "2026-09-06",
+          "text": "Baseline Alpha qualifiée : WebRTC, médias, Ready, F5/recovery, TURN et rapports."
+        },
+        {
+          "date": "2026-09-13",
+          "text": "Candidate 12 : Future UX v3.7 intégrée sans reconstruire le moteur de session."
+        },
+        {
+          "date": "2026-09-19",
+          "text": "Candidate 13 promue sur main."
+        }
+      ]
+    },
+    {
+      "id": "release",
+      "category": "general",
+      "name": "Cycle qualification / release",
+      "summary": "Qualification automatisée, smoke réel, promotion contrôlée et rollback.",
+      "status": "stable",
+      "progress": 90,
+      "maturity": "Opérationnel",
+      "roadmap": true,
+      "weight": 6,
+      "track": "main",
+      "version": "C13 / C14",
+      "notes": "Candidate 14 ajoute npm run qualify:alpha. Le processus doit maintenant se simplifier autour du workflow Update.",
+      "history": [
+        {
+          "date": "2026-09-13",
+          "text": "Adoption du principe main + update/next + un environnement Test."
+        },
+        {
+          "date": "2026-09-19",
+          "text": "Candidate 13 promue sur main avec rollback."
+        },
+        {
+          "date": "2026-09-20",
+          "text": "Candidate 14 préparée avec qualification courante documentée."
+        }
+      ]
+    },
+    {
+      "id": "sync",
+      "category": "general",
+      "name": "Synchronisation main ↔ update/next",
+      "summary": "Faire repartir chaque cycle Update de la baseline de production.",
+      "status": "attention",
+      "progress": 45,
+      "maturity": "À remettre en ordre",
+      "roadmap": true,
+      "weight": 5,
+      "track": "process",
+      "version": "10 ahead / 7 behind",
+      "notes": "update/next est actuellement divergente de main (10 commits devant / 7 derrière). C'est le premier point de workflow à traiter avant un nouveau cycle de développement.",
+      "history": [
+        {
+          "date": "2026-09-13",
+          "text": "Création du workflow simplifié main / update/next."
+        },
+        {
+          "date": "2026-09-19",
+          "text": "main avance avec Candidate 13."
+        },
+        {
+          "date": "2026-10-02",
+          "text": "update/next reçoit encore des correctifs Gig Dice sans réalignement préalable."
+        }
+      ]
+    },
+    {
+      "id": "roadmap",
+      "category": "general",
+      "name": "Pilotage roadmap produit",
+      "summary": "Suivi explicite des fonctions, maturité et poids dans l’avancement global.",
+      "status": "in-progress",
+      "progress": 82,
+      "maturity": "Workspace opérationnel",
+      "roadmap": true,
+      "weight": 5,
+      "track": "workspace",
+      "version": "Workspace v2",
+      "notes": "Le workspace devient la source de vérité du projet et le point de reprise d'un chat unique TCGate.",
+      "history": [
+        {
+          "date": "2026-10-22",
+          "text": "Décision : un seul chat TCGate, workspace HTML comme source de vérité et registre de reprise."
+        },
+        {
+          "date": "2026-10-22",
+          "text": "Décision d’abandonner le Control Center comme centre de pilotage principal."
+        },
+        {
+          "date": "2026-10-22",
+          "text": "Création du workspace HTML de pilotage fonctionnel."
+        }
+      ]
+    },
+    {
+      "id": "vision-lab",
+      "category": "vision",
+      "name": "Vision Lab",
+      "summary": "Laboratoire autonome pour améliorer Vision et qualifier les cartes d’une nouvelle BDD avant intégration.",
+      "status": "stable",
+      "progress": 82,
+      "maturity": "Outil de qualification opérationnel",
+      "roadmap": true,
+      "weight": 5,
+      "track": "standalone / laboratoire",
+      "version": "0.5.1-r14.1",
+      "efficiency": "Outil de mesure et de validation",
+      "notes": "Double rôle figé : 1) améliorer détection, identification, seuils, faux positifs, non-identifications et performance ; 2) tester les cartes/références d’une nouvelle BDD avant qu’elle ne soit déclarée compatible avec TCGate. Le Lab reste distinct du moteur de production et doit produire des résultats exploitables avant toute promotion.",
+      "history": [
+        {
+          "date": "2026-10-22",
+          "text": "Rôle élargi : Vision Lab devient aussi l’outil de qualification des cartes d’une nouvelle BDD."
+        },
+        {
+          "date": "2026-09",
+          "text": "Référence standalone : Vision Lab 0.5.1-r14.1 · qualification R14.1 ERA."
+        },
+        {
+          "date": "2026-09",
+          "text": "Feedback testeur Vision étendu pour distinguer notamment wrong_identification."
+        }
+      ]
+    },
+    {
+      "id": "vision-detect",
+      "category": "vision",
+      "name": "Détection de carte",
+      "summary": "Détection d’une carte physique dans le flux webcam avant identification.",
+      "status": "stable",
+      "progress": 86,
+      "maturity": "Opérationnel Alpha",
+      "roadmap": true,
+      "weight": 7,
+      "track": "main",
+      "version": "Detector v53",
+      "efficiency": "Bonne en conditions Alpha",
+      "notes": "Moteur et modèle intégrés. Le pourcentage exprime la maturité produit, pas un taux statistique de précision.",
+      "history": [
+        {
+          "date": "2026-08",
+          "text": "Pipeline de détection intégré au flux caméra."
+        },
+        {
+          "date": "2026-09",
+          "text": "Tests d’intégrité, résolution et backpressure ajoutés."
+        },
+        {
+          "date": "2026-09-13",
+          "text": "Parcours Vision qualifié dans Future UX v3.7."
+        }
+      ]
+    },
+    {
+      "id": "vision-id",
+      "category": "vision",
+      "name": "Identification / matching",
+      "summary": "Association d’une carte détectée à une référence canonique de la BDD.",
+      "status": "stable",
+      "progress": 78,
+      "maturity": "Opérationnel à consolider",
+      "roadmap": true,
+      "weight": 8,
+      "track": "main",
+      "version": "Cyberpunk DB 1.1",
+      "efficiency": "Bonne, non benchmarkée globalement",
+      "notes": "Une non-identification isolée a été observée en qualification v3.7. Besoin d’un benchmark reproductible.",
+      "history": [
+        {
+          "date": "2026-09-12",
+          "text": "Cyberpunk DB 1.1 : 150 cartes canoniques et 229 références runtime."
+        },
+        {
+          "date": "2026-09-13",
+          "text": "Qualification PASS avec une non-identification isolée classée follow-up."
+        }
+      ]
+    },
+    {
+      "id": "vision-integrity",
+      "category": "vision",
+      "name": "Intégrité & provenance Vision",
+      "summary": "Validation des assets, provenance et cohérence des références.",
+      "status": "stable",
+      "progress": 92,
+      "maturity": "Qualifié",
+      "roadmap": true,
+      "weight": 5,
+      "track": "main",
+      "version": "tests actifs",
+      "efficiency": "Très bonne",
+      "notes": "Les tests d’intégrité et de provenance font partie de la qualification Alpha.",
+      "history": [
+        {
+          "date": "2026-09",
+          "text": "Ajout des tests vision-integrity et vision-source-provenance."
+        },
+        {
+          "date": "2026-09-20",
+          "text": "Conservés dans la qualification Candidate 14."
+        }
+      ]
+    },
+    {
+      "id": "vision-perf",
+      "category": "vision",
+      "name": "Performance / backpressure",
+      "summary": "Contrôle du rythme d’analyse, résolution et charge du pipeline Vision.",
+      "status": "stable",
+      "progress": 82,
+      "maturity": "Qualifié Alpha",
+      "roadmap": true,
+      "weight": 5,
+      "track": "main",
+      "version": "tests actifs",
+      "efficiency": "Bonne",
+      "notes": "Backpressure, résolution et apparence disposent de tests dédiés. Reste à mesurer sur un panel matériel plus large.",
+      "history": [
+        {
+          "date": "2026-09",
+          "text": "Tests backpressure, analysis-resolution et appearance-batch intégrés."
+        }
+      ]
+    },
+    {
+      "id": "vision-bench",
+      "category": "vision",
+      "name": "Benchmark qualité Vision",
+      "summary": "Mesure reproductible détection/identification selon carte, lumière et caméra.",
+      "status": "planned",
+      "progress": 35,
+      "maturity": "À formaliser",
+      "roadmap": true,
+      "weight": 4,
+      "track": "future",
+      "version": "—",
+      "efficiency": "Pas de KPI consolidé",
+      "notes": "Nécessaire pour remplacer les impressions qualitatives par des métriques stables.",
+      "history": [
+        {
+          "date": "2026-10-22",
+          "text": "Ajout comme chantier de mesure dans le workspace."
+        }
+      ]
+    },
+    {
+      "id": "db-cp",
+      "category": "bdd",
+      "name": "Cyberpunk TCG",
+      "summary": "Base principale actuellement opérationnelle dans TCGate.",
+      "status": "stable",
+      "progress": 92,
+      "maturity": "Opérationnelle",
+      "roadmap": true,
+      "weight": 8,
+      "track": "main",
+      "version": "DB 1.1.0",
+      "dbState": "Opérationnelle",
+      "coverage": "150 cartes canoniques · 229 printings/références",
+      "notes": "Runtime prêt et versionné. La maintenance de contenu restera continue avec les futurs sets.",
+      "history": [
+        {
+          "date": "2026-09-12",
+          "text": "DB Beta 1.1 immuable intégrée, source commit 56402636…"
+        },
+        {
+          "date": "2026-09-12",
+          "text": "150 cartes canoniques, 229 printings, 229 références matcher."
+        },
+        {
+          "date": "2026-09-19",
+          "text": "DB conservée dans Candidate 13 / main."
+        }
+      ]
+    },
+    {
+      "id": "db-swu",
+      "category": "bdd",
+      "name": "Star Wars Unlimited",
+      "summary": "Travail expérimental antérieur, non opérationnel dans la production actuelle.",
+      "status": "prototype",
+      "progress": 35,
+      "maturity": "Prototype archivé",
+      "roadmap": false,
+      "weight": 4,
+      "track": "archive",
+      "version": "ancienne branche multitcg",
+      "dbState": "Non opérationnelle en production",
+      "coverage": "Prototype partiel",
+      "notes": "À reprendre proprement si SWU revient dans la roadmap.",
+      "history": [
+        {
+          "date": "2026-09-01",
+          "text": "Prototype SWU avec sérialisation du runtime Vision."
+        },
+        {
+          "date": "2026-09-13",
+          "text": "Branche distante supprimée après archivage."
+        }
+      ]
+    },
+    {
+      "id": "db-runtime",
+      "category": "bdd",
+      "name": "Runtime multi-BDD",
+      "summary": "Chargement/versionnement d’une base selon le TCG sélectionné.",
+      "status": "in-progress",
+      "progress": 68,
+      "maturity": "Fondations présentes",
+      "roadmap": true,
+      "weight": 5,
+      "track": "main",
+      "version": "Cyberpunk actif",
+      "dbState": "Partiellement opérationnel",
+      "coverage": "Cyberpunk validé, seconde BDD à qualifier",
+      "notes": "database-source et game-databases existent. Le caractère réellement multi-TCG reste à prouver avec une seconde BDD complète.",
+      "history": [
+        {
+          "date": "2026-09",
+          "text": "Ajout de database-source.js et game-databases.js."
+        },
+        {
+          "date": "2026-09-12",
+          "text": "Cyberpunk 1.1 devient la première base immuable qualifiée."
+        }
+      ]
+    },
+    {
+      "id": "db-registry",
+      "category": "bdd",
+      "name": "Card Registry",
+      "summary": "Registre séparé des bases de cartes et de leur cycle de versionnement.",
+      "status": "in-progress",
+      "progress": 55,
+      "maturity": "Architecture définie",
+      "roadmap": false,
+      "weight": 3,
+      "track": "separate",
+      "version": "Workbench",
+      "dbState": "Séparé de la plateforme",
+      "coverage": "Par TCG",
+      "notes": "Chaque TCG garde une base indépendante. Non inclus dans le score principal tant qu’il reste hors roadmap applicative.",
+      "history": [
+        {
+          "date": "2026-09",
+          "text": "Principe figé : bases indépendantes, GitHub pour distribution/versionnement, Registry séparé."
+        }
+      ]
+    },
+    {
+      "id": "ux-home",
+      "category": "uiux",
+      "name": "Accueil Alpha",
+      "summary": "Page d’entrée, création/rejoindre une partie et positionnement produit.",
+      "status": "stable",
+      "progress": 92,
+      "maturity": "Qualifié",
+      "roadmap": true,
+      "weight": 5,
+      "track": "main",
+      "version": "UI 1.1.0",
+      "notes": "Accueil Candidate préservé lors de l’intégration Future UX.",
+      "history": [
+        {
+          "date": "2026-09-13",
+          "text": "Future UX intégrée sans remplacer la homepage Candidate."
+        }
+      ]
+    },
+    {
+      "id": "ux-lobby",
+      "category": "uiux",
+      "name": "Lobby / préparation de partie",
+      "summary": "Choix TCG, réglages partagés, installation personnelle, joueurs et Ready.",
+      "status": "stable",
+      "progress": 90,
+      "maturity": "Qualifié",
+      "roadmap": true,
+      "weight": 6,
+      "track": "main",
+      "version": "Future UX v3.7",
+      "notes": "Configuration avant la partie ; Host contrôle les réglages partagés, Guest en lecture seule.",
+      "history": [
+        {
+          "date": "2026-09-13",
+          "text": "Qualification Future UX v3.7 : Session / Mon installation / Joueurs."
+        }
+      ]
+    },
+    {
+      "id": "ux-table",
+      "category": "uiux",
+      "name": "Table de jeu",
+      "summary": "Webcam/table quasi plein écran, overlays discrets et commandes contextuelles.",
+      "status": "stable",
+      "progress": 90,
+      "maturity": "Qualifié",
+      "roadmap": true,
+      "weight": 7,
+      "track": "main",
+      "version": "Future UX v3.7",
+      "notes": "Philosophie figée : table de jeu augmentée, pas de sidebar fixe.",
+      "history": [
+        {
+          "date": "2026-09-13",
+          "text": "Q0–Q9 Future UX v3.7 PASS."
+        },
+        {
+          "date": "2026-09-13",
+          "text": "Dock mic/cam/settings/•••/quitter qualifié."
+        }
+      ]
+    },
+    {
+      "id": "ux-vision",
+      "category": "uiux",
+      "name": "Interaction Vision carte",
+      "summary": "Preview sur carte physique, clic carte réelle, zoom puis fermeture.",
+      "status": "stable",
+      "progress": 87,
+      "maturity": "Qualifié avec follow-up",
+      "roadmap": true,
+      "weight": 5,
+      "track": "main",
+      "version": "Future UX v3.7",
+      "notes": "Le follow-up restant concerne surtout l’efficacité d’identification, pas le parcours UX.",
+      "history": [
+        {
+          "date": "2026-09-13",
+          "text": "Hover → preview → clic carte réelle → zoom qualifié."
+        }
+      ]
+    },
+    {
+      "id": "ux-timer",
+      "category": "uiux",
+      "name": "Timer partagé",
+      "summary": "Timer optionnel, état serveur autoritatif et contrôle partagé.",
+      "status": "stable",
+      "progress": 95,
+      "maturity": "Qualifié",
+      "roadmap": true,
+      "weight": 5,
+      "track": "main",
+      "version": "Future UX v3.7",
+      "notes": "Synchronisation corrigée par calibration de l’horloge serveur.",
+      "history": [
+        {
+          "date": "2026-09-13",
+          "text": "Q2 PASS après correction d’un décalage d’environ 3 secondes."
+        }
+      ]
+    },
+    {
+      "id": "ux-gig",
+      "category": "uiux",
+      "name": "Gig Dice Cyberpunk",
+      "summary": "Dés d4 à d20, valeurs, drag/drop, vol, Street Cred, reset et zoom.",
+      "status": "in-progress",
+      "progress": 88,
+      "maturity": "Qualifié + correctifs UX en update",
+      "roadmap": true,
+      "weight": 6,
+      "track": "update/next",
+      "version": "v3.7 + zoom fixes",
+      "notes": "Fonction qualifiée sur main, mais des correctifs de zoom/hover restent uniquement sur update/next.",
+      "history": [
+        {
+          "date": "2026-09-13",
+          "text": "Q3 PASS : valeurs, vol, couleurs natives et reset bilatéral."
+        },
+        {
+          "date": "2026-09-29",
+          "text": "Correctifs visuels des dés sur update/next."
+        },
+        {
+          "date": "2026-10-02",
+          "text": "Durcissement du cycle de vie de la couche de zoom Gig Dice."
+        }
+      ]
+    },
+    {
+      "id": "ux-hubs",
+      "category": "uiux",
+      "name": "Hubs événementiels",
+      "summary": "Salle temporaire au-dessus des sessions : présence, vocal commun, tables et retour.",
+      "status": "spec",
+      "progress": 12,
+      "maturity": "SPEC produit",
+      "roadmap": false,
+      "weight": 7,
+      "track": "after-tests",
+      "version": "V1 à définir",
+      "notes": "Chantier “Après les tests”. Aucun impact sur l’Alpha avant validation produit puis étude SYSTEM.",
+      "history": [
+        {
+          "date": "2026-09-22",
+          "text": "Concept confirmé : Hub temporaire, pas Discord bis, couche au-dessus du moteur 1v1."
+        }
+      ]
+    },
+    {
+      "id": "webrtc",
+      "category": "annex",
+      "name": "WebRTC / signaling 1v1",
+      "summary": "Établissement et maintien de l’audio/vidéo entre Host et Guest.",
+      "status": "stable",
+      "progress": 94,
+      "maturity": "Qualifié Alpha",
+      "roadmap": true,
+      "weight": 8,
+      "track": "main",
+      "version": "C13",
+      "notes": "Recovery sérialisé, guards de génération, ICE en file et filtrage des ICE obsolètes.",
+      "history": [
+        {
+          "date": "2026-09-06",
+          "text": "Connexion WebRTC et audio/vidéo qualifiés."
+        },
+        {
+          "date": "2026-09",
+          "text": "Durcissement RTCPeerConnection et offer delivery retry."
+        }
+      ]
+    },
+    {
+      "id": "turn",
+      "category": "annex",
+      "name": "TURN / ICE",
+      "summary": "Relay TURN, politique ICE et credentials temporaires.",
+      "status": "stable",
+      "progress": 92,
+      "maturity": "Qualifié",
+      "roadmap": true,
+      "weight": 6,
+      "track": "main + C14",
+      "version": "Q7 PASS",
+      "notes": "Candidate 14 ajoute la purge du cache TURN expiré.",
+      "history": [
+        {
+          "date": "2026-09-13",
+          "text": "Q7 TURN relay PASS."
+        },
+        {
+          "date": "2026-09-20",
+          "text": "Candidate 14 : purge cache TURN + turn-cache-test.js."
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "category": "annex",
+      "name": "Recovery F5 / réseau",
+      "summary": "Récupération après refresh, double refresh, coupure réseau et retour médias.",
+      "status": "stable",
+      "progress": 91,
+      "maturity": "Qualifié Alpha",
+      "roadmap": true,
+      "weight": 8,
+      "track": "main",
+      "version": "C11+",
+      "notes": "Doit rester prioritaire si de futures couches comme les Hubs sont ajoutées.",
+      "history": [
+        {
+          "date": "2026-09-06",
+          "text": "F5 Host/Guest, double F5 et coupure réseau validés."
+        }
+      ]
+    },
+    {
+      "id": "phone",
+      "category": "annex",
+      "name": "Téléphone comme caméra",
+      "summary": "QR, capture mobile, contrôle PC↔téléphone, reconnexion et diagnostics.",
+      "status": "experimental",
+      "progress": 72,
+      "maturity": "Intégré expérimentalement",
+      "roadmap": true,
+      "weight": 5,
+      "track": "main",
+      "version": "Alpha intégré / Lab 0.6.4.1",
+      "notes": "Ne pas confondre la fonction intégrée et le Phone Camera Lab standalone.",
+      "history": [
+        {
+          "date": "2026-08",
+          "text": "Phone Camera Lab standalone 0.6.4.1."
+        },
+        {
+          "date": "2026-09",
+          "text": "Phone Camera intégré avec tests et diagnostics."
+        }
+      ]
+    },
+    {
+      "id": "reports",
+      "category": "annex",
+      "name": "Report Schema V2",
+      "summary": "Rapports structurés et versionnés pour incidents, réseau, Vision et environnement.",
+      "status": "stable",
+      "progress": 90,
+      "maturity": "Promu sur main",
+      "roadmap": true,
+      "weight": 6,
+      "track": "main",
+      "version": "Candidate 13",
+      "notes": "Candidate 13 est la baseline main actuelle et introduit Report Schema V2.",
+      "history": [
+        {
+          "date": "2026-09-19",
+          "text": "Candidate 13 promue sur main avec Report Schema V2."
+        }
+      ]
+    },
+    {
+      "id": "privacy",
+      "category": "annex",
+      "name": "Confidentialité des rapports",
+      "summary": "Sanitation des secrets, URLs, IP, SDP et candidats ICE.",
+      "status": "qualified",
+      "progress": 96,
+      "maturity": "Candidate qualifiée",
+      "roadmap": true,
+      "weight": 5,
+      "track": "candidate/alpha-0.1-c14",
+      "version": "Candidate 14",
+      "notes": "Implémentée dans C14 mais pas encore dans main.",
+      "history": [
+        {
+          "date": "2026-09-20",
+          "text": "Fixtures adversariales et garanties privacy ajoutées."
+        },
+        {
+          "date": "2026-09-20",
+          "text": "Candidate 14 préparée à c4adb95…"
+        }
+      ]
+    },
+    {
+      "id": "cc",
+      "category": "annex",
+      "name": "Control Center",
+      "summary": "Ancien projet de centralisation rapports, incidents, builds et diagnostics.",
+      "status": "abandoned",
+      "progress": 40,
+      "maturity": "Abandonné",
+      "roadmap": false,
+      "weight": 0,
+      "track": "retired",
+      "version": "arrêté",
+      "notes": "Décision produit : ne plus investir dans ce chantier comme outil principal. Le pilotage passe par ce workspace puis un futur dashboard.",
+      "history": [
+        {
+          "date": "2026-09",
+          "text": "Forwarder et coordination Report Schema V2 expérimentés."
+        },
+        {
+          "date": "2026-10-22",
+          "text": "Décision d’abandonner le Control Center."
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "category": "annex",
+      "name": "Dashboard de pilotage TCGate",
+      "summary": "Future vue dynamique alimentée par le même modèle de données que ce workspace.",
+      "status": "planned",
+      "progress": 20,
+      "maturity": "Fondation créée",
+      "roadmap": false,
+      "weight": 4,
+      "track": "future",
+      "version": "après workspace",
+      "notes": "Le HTML expose une API JS et un export JSON pour servir de base à un futur dashboard.",
+      "history": [
+        {
+          "date": "2026-10-22",
+          "text": "Création du modèle de données unifié et du workspace local éditable."
+        }
+      ]
+    },
+    {
+      "id": "annex-disaster-recovery",
+      "category": "annex",
+      "name": "Disaster Recovery / sauvegarde complète",
+      "summary": "Procédure de reconstruction complète en cas de perte locale ou d'infrastructure.",
+      "status": "planned",
+      "progress": 8,
+      "maturity": "Différé",
+      "roadmap": false,
+      "weight": 2,
+      "track": "future",
+      "version": "—",
+      "notes": "Le code, le modèle Vision et la BDD Cyberpunk sont versionnés sur GitHub. Les secrets Railway et le volume /data nécessiteront plus tard une procédure de sauvegarde dédiée.",
+      "history": [
+        {
+          "date": "2026-10-22",
+          "text": "Audit rapide : perte du PC local récupérable depuis GitHub ; reconstruction totale Railway non encore documentée. Chantier différé."
+        }
+      ]
+    }
+  ],
+  "session": {
+    "activeWork": [
+      {
+        "title": "Workspace de pilotage + chat TCGate unique",
+        "status": "active",
+        "detail": "Faire du workspace la source de vérité et utiliser un seul chat pour Général, Vision, BDD, UI/UX, SYSTEM et fonctions futures."
+      },
+      {
+        "title": "Réaligner update/next avant le prochain cycle",
+        "status": "attention",
+        "detail": "update/next est divergente de main : 10 commits devant et 7 derrière. Ne pas démarrer un nouveau lot sans décider comment réconcilier les correctifs Gig Dice et les changements C13/C14."
+      },
+      {
+        "title": "Hubs événementiels",
+        "status": "paused",
+        "detail": "SPEC produit commencée, registre « Après les tests ». Ne pas implémenter tant que le chantier n'est pas explicitement repris."
+      },
+      {
+        "title": "Vision Lab comme laboratoire Vision + BDD",
+        "status": "active",
+        "detail": "Utiliser le Lab pour améliorer Vision et pour qualifier les cartes/références de toute nouvelle BDD avant intégration."
+      }
+    ],
+    "priorities": [
+      {
+        "title": "Stabiliser le mode de travail autour de main / update/next / Test",
+        "status": "next",
+        "detail": "Éviter le retour à une multiplication de branches et d'environnements."
+      },
+      {
+        "title": "Consolider l'état réel des fonctions dans le workspace",
+        "status": "next",
+        "detail": "Après chaque qualification, correctif important ou changement de roadmap, mettre à jour le workspace."
+      },
+      {
+        "title": "Mesurer plus objectivement l'efficacité Vision",
+        "status": "later",
+        "detail": "Construire un benchmark reproductible plutôt qu'un simple ressenti qualitatif."
+      },
+      {
+        "title": "Formaliser une campagne Vision Lab reproductible",
+        "status": "next",
+        "detail": "Définir un protocole commun de tests par carte/BBD : bonnes identifications, erreurs, NI, faux positifs et conditions de capture."
+      }
+    ],
+    "decisions": [
+      {
+        "title": "Promotion éventuelle de Candidate 14 sur main",
+        "status": "open",
+        "detail": "Candidate 14 est 1 commit devant main et apporte surtout confidentialité Report Schema V2 + purge cache TURN."
+      },
+      {
+        "title": "Stratégie de réconciliation de update/next",
+        "status": "open",
+        "detail": "Préserver les correctifs Gig Dice utiles tout en repartant proprement de la baseline main/C14."
+      },
+      {
+        "title": "Moment de reprise des Hubs événementiels",
+        "status": "deferred",
+        "detail": "Le concept produit existe mais reste hors Alpha figée."
+      }
+    ],
+    "notes": "Le Control Center n'est plus le centre de pilotage. Les rapports techniques utiles restent dans TCGate, mais le suivi produit et la reprise de travail passent par ce workspace.\nWorkspace permanent : l'état partagé est publié sur la branche GitHub workspace-state dans tcgate_workspace_state.json. Le HTML se synchronise automatiquement à l'ouverture."
+  },
+  "verification": {
+    "verifiedAt": "2026-10-22",
+    "source": "GitHub",
+    "main": "f5f2ba00e178f58c011c87f788c9c56064d8c32a",
+    "candidate14": "c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3",
+    "updateNext": "07c4838defc8ee9946d00cd0ab0a18e39f35ceda",
+    "updateVsMain": {
+      "status": "diverged",
+      "ahead": 10,
+      "behind": 7
+    },
+    "candidate14VsMain": {
+      "status": "ahead",
+      "ahead": 1,
+      "behind": 0
+    }
+  },
+  "visionLab": {
+    "version": "0.5.1-r14.1",
+    "qualification": "R14.1 ERA",
+    "role": "Laboratoire autonome Vision + qualification de nouvelles BDD",
+    "productionIsolation": true,
+    "principles": [
+      "Le Vision Lab ne modifie jamais directement la Vision de production.",
+      "Toute amélioration Vision est mesurée dans le Lab avant intégration.",
+      "Une nouvelle BDD peut être chargée/testée dans le Lab avant activation dans TCGate.",
+      "Les erreurs doivent être distinguées : wrong identification, non-identification, faux positif, problème d’asset ou de BDD.",
+      "Les résultats d’une campagne doivent rester comparables à une baseline."
+    ],
+    "campaigns": [
+      {
+        "id": "baseline-cyberpunk",
+        "name": "Baseline Cyberpunk",
+        "database": "Cyberpunk DB 1.1.0",
+        "mode": "reference",
+        "status": "reference",
+        "plannedCards": 0,
+        "testedCards": 0,
+        "correctIdentifications": 0,
+        "wrongIdentifications": 0,
+        "nonIdentifications": 0,
+        "falsePositives": 0,
+        "notes": "Référence actuelle. Les métriques historiques ne sont pas encore consolidées dans ce workspace."
+      }
+    ]
+  },
+  "sync": {
+    "githubTechnicalAutoSync": true,
+    "remoteStateAutoSync": true,
+    "remoteStateUrl": "https://raw.githubusercontent.com/maximelaburthe-commits/TCGate/workspace-state/tcgate_workspace_state.json",
+    "remoteStateMode": "canonical",
+    "lastGithubSync": null,
+    "lastRemoteSync": null,
+    "note": "Le HTML permanent charge automatiquement cet état JSON depuis la branche GitHub workspace-state. Les futures mises à jour du projet modifient l'état JSON, pas le fichier HTML."
+  }
+}
