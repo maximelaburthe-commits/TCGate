@@ -4,12 +4,14 @@ Le Workspace est servi par le serveur TCGate existant à /workspace.html. Le Lab
 
 ## Utilisation
 
-1. Vision Lab → choisir Cyberpunk · production ou Manifest de test (URL GitHub blob/raw publique).
-2. Inspecter la BDD : version, schema/snapshot si exposés, locales, cartes, printings, groupes, références et couverture. Les champs non exposés restent explicitement inconnus. Les erreurs de manifest sont locales à cet écran.
-3. Démarrer le Lab : construction des descripteurs puis démarrage du vrai matcher. Les images manquantes empêchent l’identification et figurent dans les diagnostics. Activer ensuite la caméra (sans microphone), puis la détection. Le démarrage et les changements caméra/résolution réutilisent vision-core.js.
-4. Survoler une carte détectée : crop, meilleur candidat, score/indice, marge, acceptation/refus, qualité/glare et Top 5 proviennent exclusivement de TCGIdentificationLab.getSnapshot() et getAnalyzedCropDataUrl(). Les métriques ONNX et tracking sont celles du détecteur existant. Le score est un indice de matching, pas une probabilité.
-5. Capturer les cas puis saisir un feedback (Correct, Mauvaise identification, Non-identification ou Faux positif). recognizedAs est requis pour une mauvaise identification. Le dernier résultat observé et son crop sont conservés lorsque le pointeur rejoint les boutons. L’export JSON contient source/version/ref ou URL, observation horodatée, paramètres, diagnostics, Top 5 et images des captures. Les données restent en mémoire jusqu’à export ; recharger efface la session. Limites : 40 captures existantes, 100 feedbacks.
-6. Changer de BDD via Nouvelle session : la page est rechargée pour isoler totalement les corpus et workers.
+1. Ouvrir Vision Lab : Caméra & détection sont immédiatement visibles. Les contrôles chargent les seuls scripts du détecteur, sans manifest ni matcher. Aucun accès webcam avant le clic utilisateur.
+2. Activer la caméra, choisir la caméra et la résolution, puis Activer la détection. Ce parcours fonctionne sans BDD. Les métriques, boxes, tracking, réglages et captures sont ceux de vision-core.js ; audio:false.
+3. Facultativement, dans Identification : choisir Cyberpunk · production ou Manifest de test (URL GitHub blob/raw publique), Inspecter la BDD, puis Activer l’identification. Les diagnostics version/schema/snapshot/locales/couverture restent disponibles. Une erreur de BDD affecte uniquement cette couche.
+4. Survoler une carte détectée pour son crop, résultat et Top 5. Les résultats proviennent exclusivement des snapshots/crops du moteur existant, sans recalcul.
+5. Capturer et exporter même sans identification : webcam, overlay, paramètres, métriques et détections. Avec identification : source BDD et dernière observation sont attachées au moment de la capture ; une identification activée ultérieurement ne réétiquette pas une capture antérieure. Feedback local et export JSON restent disponibles.
+6. Nouvelle session recharge la page pour changer de corpus après initialisation. Les données sont en mémoire jusqu’à export (40 captures existantes, 100 feedbacks).
+
+Voir [correctif du parcours caméra](WORKSPACE_CAMERA_FLOW.md) et [smoke caméra d’abord](WORKSPACE_CAMERA_FLOW_VALIDATION.txt). Aucune qualification webcam physique revendiquée.
 
 ## Contrat du provider Lab
 

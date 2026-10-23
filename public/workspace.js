@@ -7,6 +7,7 @@
   document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{
     document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b===button)));
     document.querySelectorAll('[role=tabpanel]').forEach(p=>p.hidden=p.id!=='panel-'+button.dataset.tab);
+    if(button.dataset.tab==='lab')ensureDetectionRuntime().catch(()=>{});
   }));
   async function loadState(){
     try{const response=await fetch(rawStateUrl,{credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('HTTP '+response.status);
@@ -57,17 +58,74 @@
     }catch(error){$('labDatabase').textContent='';$('labDatabaseSummary').replaceChildren();$('labStatus').textContent='BDD invalide ou indisponible : '+error.message;}
     finally{inspecting=false;$('labInspect').disabled=false;$('labSource').disabled=false;$('labManifestUrl').disabled=false;}
   });
-  const scripts=['/vision-library-integrity.js','/vision-frame-gate.js','/vision-analysis-frame.js','/vision-appearance-sampler.js','/vision-core.js','/identification.js'];
-  const loadScript=src=>new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=src;script.onload=resolve;script.onerror=()=>reject(Error('Chargement impossible : '+src));document.head.append(script);});
+  // Camera/tracking has no dependency on a manifest, corpus, or matcher.
+  const detectionScripts=['/vision-frame-gate.js','/vision-analysis-frame.js','/vision-appearance-sampler.js','/vision-core.js'];
+  const identificationScripts=['/vision-library-integrity.js','/identification.js'];
+  const scriptLoads=new Map();
+  function loadScript(src){
+    if(!scriptLoads.has(src))scriptLoads.set(src,new Promise((resolve,reject)=>{
+      const script=document.createElement('script');script.src=src;script.onload=resolve;
+      script.onerror=()=>{script.remove();scriptLoads.delete(src);reject(Error('Chargement impossible : '+src));};document.head.append(script);
+    }));return scriptLoads.get(src);
+  }
+  let detectionRuntime=null;
+  function cameraAvailability(){return window.TCGWorkspaceCameraStatus.availability(window.isSecureContext,navigator.mediaDevices);}
+  function updateRuntimeStatus(){
+    const state=window.TCGDetectionLab?.state,video=$('remoteVideo');
+    const warning=$('visionRuntimeWarning').textContent;
+    const cameraError=/Caméra|Camera/.test(warning)?window.TCGWorkspaceCameraStatus.error(warning):null;
+    $('labCameraStatus').textContent=state?.stream?'Caméra : active · '+video.videoWidth+'×'+video.videoHeight:'Caméra : '+(cameraAvailability()||cameraError||'arrêtée');
+    $('labDetectionStatus').textContent='Détection : '+(state?.detecting?'active':state?.modelLoading?'chargement du modèle…':'arrêtée');
+  }
+  function ensureDetectionRuntime(){
+    if(detectionRuntime)return detectionRuntime;
+    $('labCameraStatus').textContent='Caméra : chargement des contrôles…';
+    detectionRuntime=(async()=>{
+      for(const src of detectionScripts)await loadScript(src);
+      window.TCGVisionEngine.setDebugOverlay(true);
+      $('visionCameraButton').disabled=Boolean(cameraAvailability());
+      updateRuntimeStatus();
+    })().catch(error=>{detectionRuntime=null;$('labCameraStatus').textContent='Caméra & détection : '+error.message+' · rouvrir l’onglet pour réessayer.';throw error;});
+    return detectionRuntime;
+  }
+  // Vision Core owns getUserMedia, enumerateDevices, switching cameras and stopping tracks.
+  // Its raw camera warnings are translated here without changing the product engine.
+  $('visionCameraButton').addEventListener('click',event=>{
+    const unavailable=cameraAvailability();
+    if(unavailable){event.stopImmediatePropagation();$('labCameraStatus').textContent='Caméra : '+unavailable;return;}
+    $('visionRuntimeWarning').textContent='';
+    $('labCameraStatus').textContent=window.TCGDetectionLab?.state.stream?'Caméra : arrêt en cours…':'Caméra : demande d’autorisation…';
+  },true);
+  $('visionCaptureButton').addEventListener('click',async event=>{
+    event.stopImmediatePropagation();
+    const lab=window.TCGDetectionLab;if(!lab)return;
+    const count=lab.state.captures.length;
+    const source=sourceInfo?structuredClone(sourceInfo):null;
+    const observation=lastObservation?structuredClone(lastObservation):null;
+    try{await lab.captureCase('workspace-button');
+      const capture=lab.state.captures[count];if(capture){capture.labSource=source;capture.labObservation=observation;}
+    }catch(error){$('labFeedbackStatus').textContent='Capture impossible : '+error.message;}
+  },true);
+  new MutationObserver(updateRuntimeStatus).observe($('visionRuntimeWarning'),{childList:true,subtree:true,characterData:true});
+  window.addEventListener('tcg-camera-state',updateRuntimeStatus);
+  window.addEventListener('tcg-identification-library',event=>{
+    const ready=Boolean(event.detail.ready&&event.detail.workerReady);
+    $('identificationToggle').disabled=!ready;$('identificationToggle').checked=ready;
+    $('labStatus').textContent=ready?'Identification : active':'Identification : indisponible · consulter la bibliothèque et le matcher. Caméra et détection restent disponibles.';
+  });
   $('labStart').addEventListener('click',async()=>{
     if(started||!sourceInfo)return;started=true;$('labStart').disabled=true;$('labInspect').disabled=true;$('labSource').disabled=true;$('labManifestUrl').disabled=true;
-    try{if(provider)window.TCGWorkspaceLabProviderInstance=provider;for(const src of scripts)await loadScript(src);
-      $('labControls').hidden=false;window.TCGVisionEngine.setDebugOverlay(true);
-      const cameras=await navigator.mediaDevices?.enumerateDevices().catch(()=>[]);for(const [i,cam] of (cameras||[]).filter(d=>d.kind==='videoinput').entries()){const option=text('option',cam.label||'Caméra '+(i+1),$('visionCameraSelect'));option.value=cam.deviceId;}
-      $('labStatus').textContent='Construction des références et démarrage du matcher…';
-      const result=await window.TCGIdentificationLab.start();$('labStatus').textContent=result.ready&&result.workerReady?'Lab prêt · activez la caméra puis la détection.':'Bibliothèque ou matcher indisponible : consulter les diagnostics ; nouvelle session pour réessayer.';
+    try{
+      await ensureDetectionRuntime();
+      if(provider)window.TCGWorkspaceLabProviderInstance=provider;
+      for(const src of identificationScripts)await loadScript(src);
+      $('labStatus').textContent='Identification : construction des références et démarrage du matcher…';
+      const result=await window.TCGIdentificationLab.start();
+      const ready=Boolean(result.ready&&result.workerReady);
+      $('identificationToggle').disabled=!ready;$('identificationToggle').checked=ready;$('identRefreshButton').disabled=false;
+      $('labStatus').textContent=ready?'Identification : active · BDD '+sourceInfo.version:'Identification : indisponible · consulter les diagnostics. Caméra et détection restent disponibles.';
       refresh();
-    }catch(error){$('labStatus').textContent='Lab indisponible : '+error.message+' · Nouvelle session pour réessayer.';}
+    }catch(error){$('labStatus').textContent='Identification indisponible : '+error.message+'. Caméra et détection restent disponibles ; nouvelle session pour réessayer.';}
   });
   function parameters(){const s=window.TCGDetectionLab?.state;return s?{confidence:s.confidence,intervalMs:s.intervalMs,confirmations:s.confirmationsNeeded,misses:s.maxMisses,identityMemoryMs:s.identityMemoryMs,reidSimilarity:s.reidSimilarity,
     tracking:$('visionTrackingToggle').checked,shapeFilter:$('visionShapeFilterToggle').checked,visualLock:$('visionVisualLockToggle').checked,resolution:$('visionResolutionSelect').value}:{};}
@@ -82,7 +140,7 @@
     const crop=lastObservation?.crop||null;$('labCrop').hidden=!crop;if(crop)$('labCrop').src=crop;
   }
   window.addEventListener('tcg-identification-result',()=>queueMicrotask(refresh));
-  setInterval(()=>{if(started&&!$('panel-lab').hidden)refresh();},500);
+  setInterval(()=>{if(!$('panel-lab').hidden){updateRuntimeStatus();if(started)refresh();}},250);
   document.querySelectorAll('[data-feedback]').forEach(button=>button.addEventListener('click',()=>{
     try{const id=window.TCGIdentificationLab?.getSnapshot();if(!id)throw Error('Démarrer le Lab avant de saisir un feedback');
       if(feedback.length>=100)throw Error('Maximum de 100 feedbacks : exporter puis ouvrir une nouvelle session');
@@ -92,7 +150,7 @@
   }));
   $('labExport').addEventListener('click',async()=>{
     try{const captures=await Promise.all((window.TCGDetectionLab?.state.captures||[]).map(async c=>{const data=blob=>new Promise((resolve,reject)=>{if(!blob)return resolve(null);const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob);});
-      return {id:c.id,meta:c.meta,raw:await data(c.rawBlob),overlay:await data(c.overlayBlob),crop:await data(c.hoveredCardBlob)};}));
+      return {id:c.id,source:c.labSource??null,observation:c.labObservation??null,meta:c.meta,raw:await data(c.rawBlob),overlay:await data(c.overlayBlob),crop:await data(c.hoveredCardBlob)};}));
       const payload={format:'tcgate-workspace-lab-v1',exportedAt:new Date().toISOString(),source:sourceInfo,feedback,captures,lastObservation,labState:{cameraActive:Boolean(window.TCGDetectionLab?.state.stream),detecting:Boolean(window.TCGDetectionLab?.state.detecting)},parameters:parameters(),detection:window.TCGVisionEngine?.getSnapshot(),identification:window.TCGIdentificationLab?.getSnapshot()};
       const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='tcgate-vision-lab-'+Date.now()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
     }catch(error){$('labFeedbackStatus').textContent='Export impossible : '+error.message;}

@@ -20,7 +20,9 @@
     "test:report-schema-v2": "node report-schema-v2-test.js",
     "smoke:ui": "node smoke-test-ui-integration.js && node future-ux-v3.7-test.js && node future-ux-room-metadata-test.js",
     "test:workspace": "node workspace-test.js",
-    "test:workspace-browser": "node workspace-browser-test.js"
+    "test:workspace-browser": "node workspace-browser-test.js",
+    "test:workspace-camera": "node workspace-camera-test.js",
+    "test:workspace-camera-browser": "node workspace-camera-browser-test.js"
   },
   "engines": {
     "node": ">=20"
