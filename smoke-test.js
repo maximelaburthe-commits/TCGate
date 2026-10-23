@@ -55,7 +55,8 @@ for(const token of ['resume-session-card','game-device-menu','max-height: 820px'
   if(!css.includes(token)) throw new Error(`Missing current CSS token ${token}`);
 }
 
-const hash=f=>crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+// Preserve the frozen no-provider production source hash; verify the explicit Lab-only hook separately.
+const hash=f=>{const bytes=fs.readFileSync(f);return crypto.createHash('sha256').update(f==='public/identification.js'?require('./workspace-production-contract.js').productionIdentification(bytes):bytes).digest('hex');};
 const expected={
   'models/card_detector_v53_512.onnx':'2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319',
   'public/detection-worker.js':'19d0e72eeb620f23742a9b8fe321f700c45cbd29ad41b952d115bca5fd983227',

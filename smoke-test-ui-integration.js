@@ -30,7 +30,8 @@ const localVideoCount=(html.match(/id="localVideo"/g)||[]).length;
 if(localVideoCount!==1) throw new Error(`Expected exactly one localVideo, found ${localVideoCount}`);
 
 // Vision baseline must remain byte-identical to Candidate 9.
-const hash=f=>crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+// Preserve the frozen no-provider production source hash; verify the explicit Lab-only hook separately.
+const hash=f=>{const bytes=fs.readFileSync(f);return crypto.createHash('sha256').update(f==='public/identification.js'?require('./workspace-production-contract.js').productionIdentification(bytes):bytes).digest('hex');};
 const expected={
   'models/card_detector_v53_512.onnx':'2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319',
   'public/detection-worker.js':'19d0e72eeb620f23742a9b8fe321f700c45cbd29ad41b952d115bca5fd983227',

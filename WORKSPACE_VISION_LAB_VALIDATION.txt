@@ -1,0 +1,192 @@
+TCGate Workspace Vision Lab + Database Hub — 2026-10-23 (Europe/Paris)
+
+Git CLI uniquement. Aucun GitHub MCP/API write.
+Avant : main f5f2ba00e178f58c011c87f788c9c56064d8c32a
+Avant : update/next 07c4838defc8ee9946d00cd0ab0a18e39f35ceda
+Candidate 14 : c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3
+Merge normal sans conflit : 1d547bca4e729a6f8c2d5185f129d987335a805b
+git fetch origin --prune : exit 0 ; deux worktrees propres au départ.
+git merge --no-edit origin/main : exit 0 ; main ancêtre de update/next.
+
+Fixture BDD historique : extraction Git archive en dossier temporaire de
+56402636a77af9c8b5dc4e3b61c509a185f3c834 (manifest, db-manifest, runtime).
+TCGATE_DB_FIXTURE_ROOT pointe vers cette extraction ; aucun checkout DB changé.
+Playwright installé uniquement dans un dossier temporaire, Chrome local.
+
+Vérification supplémentaire en lecture seule des manifests raw réels : exit 0.
+Production 1.1.0 : schema 2.0.0, snapshot 2026-09-12, 150 cartes / 229 printings / 229 références / 150 groupes.
+Checkpoint 1.2.0 425e0198 : schema 2.1.0, development, snapshot 2026-09-24.
+Son runtime : 150 cartes / 229 printings / 229 références / 150 groupes.
+Son catalogue multilingue : 151 cartes / 700 printings ; EN 447 assets Vision, FR 0 assets Vision.
+FR : 140 cartes localisées / 150 printings ; pas une qualification physique FR.
+
+Les premières exécutions ont détecté des erreurs d’échappement dans les scripts de test générés,
+un champ expectedMatcherReferences absent de l’adaptateur, puis les quatre gardes de hash Vision.
+Corrections appliquées ; les assertions historiques conservent les mêmes hashes de production
+via une projection strictement limitée au raccord Lab. Les résultats ci-dessous portent sur la version finale.
+
+$ node workspace-test.js
+exit: 0
+WORKSPACE_DATABASE_HUB_AND_LAB_OK · provider, languages, isolation, feedback, server/model routes
+
+
+$ node workspace-browser-test.js
+exit: 0
+REAL_DETECTOR {"provider":"WebGPU","inference":{"preprocessMs":10.899999976158142,"inferenceMs":150,"totalMs":160.89999997615814,"detectionFps":1,"videoFps":4,"outputShape":"[1, 300, 7]"},"shape":"[1, 300, 7]"}
+WORKSPACE_BROWSER_OK · real engines/matcher, fake webcam, real detector, DB errors, export, isolation
+
+
+$ node vision-integrity-test.js
+exit: 0
+VISION_LIBRARY_INTEGRITY_OK
+
+
+$ node vision-source-provenance-test.js
+exit: 0
+VISION_SOURCE_PROVENANCE_OK refs=147 sourceRef=6d3a296724838265a75008f2b64b37e945cd1351
+
+
+$ node vision-backpressure-test.js
+exit: 0
+vision backpressure simulation: OK
+{"requested":100,"processed":8,"dropped":92,"maxQueueDepth":1,"sample":[1,15,29,43,57,71,85,99]}
+
+
+$ node vision-analysis-resolution-test.js
+exit: 0
+VISION_ANALYSIS_RESOLUTION_OK 1920x1080->640x360 1280x720->640x360 sourceCopies=1
+
+
+$ node vision-appearance-batch-test.js
+exit: 0
+VISION_APPEARANCE_BATCH_OK readbacksForSix=1 descriptorSimilarity>=0.999999 flip180>=0.995
+{"1":{"legacyReadbackEmulation":{"p50":0.255,"p95":0.533},"batch":{"p50":0.02,"p95":0.036}},"2":{"legacyReadbackEmulation":{"p50":0.482,"p95":1.087},"batch":{"p50":0.029,"p95":0.468}},"4":{"legacyReadbackEmulation":{"p50":0.92,"p95":3.236},"batch":{"p50":0.059,"p95":0.383}},"6":{"legacyReadbackEmulation":{"p50":1.387,"p95":4.148},"batch":{"p50":0.085,"p95":0.184}},"10":{"legacyReadbackEmulation":{"p50":2.305,"p95":6.478},"batch":{"p50":0.142,"p95":0.228}}}
+
+
+$ node cyberpunk-db-integration-test.js
+exit: 0
+PASS cyberpunk-db-integration (real DB v1 fixture)
+150 canonical / 229 printings / 229 matcher references / 150 recognition groups / requests=7 / bytes=517511
+
+
+$ node --expose-gc cyberpunk-db-performance-test.js
+exit: 0
+CYBERPUNK_DB_MATCHER_PERFORMANCE_OK
+{
+  "baselineCandidate": {
+    "references": 150,
+    "syntheticDescriptorInitializationMs": 71.8,
+    "descriptorMemoryMiB": 20.3,
+    "identificationAverageMs": 143.9,
+    "identificationP95Ms": 175.82,
+    "samples": 24
+  },
+  "betaRuntime": {
+    "references": 229,
+    "syntheticDescriptorInitializationMs": 110.38,
+    "descriptorMemoryMiB": 30.99,
+    "identificationAverageMs": 149.18,
+    "identificationP95Ms": 172.81,
+    "samples": 24
+  },
+  "change": {
+    "syntheticDescriptorInitializationPercent": 53.7,
+    "descriptorMemoryPercent": 52.7,
+    "identificationAveragePercent": 3.7,
+    "identificationP95Percent": -1.7
+  }
+}
+
+
+$ node smoke-test.js
+exit: 0
+SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_13_UI_1.1.0
+models/card_detector_v53_512.onnx=2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319
+public/detection-worker.js=19d0e72eeb620f23742a9b8fe321f700c45cbd29ad41b952d115bca5fd983227
+public/table-state-engine.js=59c7bf98827abb69eba68e685377dde0ef46bff8349d53238a14ba6ea7b4c1f3
+public/vision-core.js=f3cbd789476c92f86dd25292a67a0d0e96eee9888584a867c841b3b61e8650d1
+public/identification.js=fa3b700ffd19f9726e5fe1b24c6f1bc56fd30de7f9ff0a813fdf986920028b15
+
+
+$ node smoke-test-c11.js
+exit: 0
+SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_13_UI_1.1.0
+
+
+$ node integration-test-c11.js
+exit: 0
+INTEGRATION_OK_TCGATE_ALPHA_0.1_CANDIDATE_11
+
+
+$ node smoke-test-ui-integration.js
+exit: 0
+SMOKE_OK_TCGATE_C9_UI_INTEGRATION_1
+
+
+$ node future-ux-v3.7-test.js
+exit: 0
+FUTURE_UX_V3_7_HUB_OK
+warning: in the working copy of 'public/identification.js', LF will be replaced by CRLF the next time Git touches it
+
+
+$ node future-ux-room-metadata-test.js
+exit: 0
+FUTURE_UX_ROOM_METADATA_SSE_OK
+
+
+$ node report-schema-v2-test.js
+exit: 0
+Report Schema V2 tests: OK
+
+
+$ npm run check
+exit: not applicable
+Not available: no check script in package.json
+
+$ node --check public/workspace.js
+exit: 0
+
+
+$ node --check public/workspace-databases.js
+exit: 0
+
+
+$ node --check public/workspace-lab-provider.js
+exit: 0
+
+
+$ node --check public/identification.js
+exit: 0
+
+
+$ node --check workspace-test.js
+exit: 0
+
+
+$ node --check workspace-browser-test.js
+exit: 0
+
+
+$ node --check workspace-lab-fixture.js
+exit: 0
+
+
+$ node --check workspace-production-contract.js
+exit: 0
+
+
+$ git diff --check
+exit: 0
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'future-ux-v3.7-test.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/identification.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'smoke-test-c11.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'smoke-test-ui-integration.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'smoke-test.js', LF will be replaced by CRLF the next time Git touches it
+
+
+Limites : webcam simulée ; géométrie synthétique pour crop/Top 5 et vrai matcher ;
+vrai détecteur ONNX/WebGPU, sans résultats de détection fabriqués. Pas de qualification webcam physique,
+ni de reconnaissance physique EN/FR. Aucun déploiement Railway effectué ou vérifié dans cette session.
+Pas de script npm run check existant. Les contrôles syntaxiques ci-dessus le remplacent.

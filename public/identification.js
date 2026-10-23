@@ -3,6 +3,7 @@
 
 (() => {
   const lab = window.TCGDetectionLab;
+  const labProvider = window.TCGWorkspaceLabProviderInstance || null;
   if (!lab) return;
   const percentile=window.TCGVisionFrameGate?.percentile || ((values,p)=>{
     const sorted=values.filter(Number.isFinite).slice().sort((a,b)=>a-b);
@@ -971,6 +972,7 @@
   }
 
   async function loadCardList() {
+    if (labProvider) return labProvider.loadCardList();
     try {
       const database=await window.TCGateDatabaseSource.load('cyberpunk');
       const manifest=database.manifest;
@@ -1039,16 +1041,16 @@
       const {cards,source,sourceUrl,sourceRef,sourceImmutable,sourceAssetBase,sourceError,databaseInfo}=await loadCardList();
       state.sourceRef=sourceRef;state.sourceAssetBase=sourceAssetBase;state.databaseInfo=databaseInfo||null;
       state.cards=cards.filter(c=>c?.name&&c?.image);
-      const baselineMinimum=VALIDATED_ALPHA_MINIMUM_REFERENCES;
+      const baselineMinimum=labProvider ? 1 : VALIDATED_ALPHA_MINIMUM_REFERENCES;
       const fp=fingerprint(state.cards,sourceRef);
       let cache={status:force?'bypassed':'miss',refs:null,sourceCount:null,librarySize:null};
 
-      if (!force) {
+      if (!force && !labProvider) {
         cache=loadCache(fp,state.cards.length,sourceRef);
         if (cache.status==='hit') {
           state.refs=cache.refs;
           state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:0,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum,source,sourceUrl,sourceRef,sourceImmutable,sourceError});
-          state.ready=window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
+          state.ready=labProvider ? state.refs.length > 0 && state.refs.length === state.cards.length : window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
           state.libraryPerformance={source,cacheStatus:'hit',databaseLoadMs:Number(databaseInfo?.loadMetrics?.totalMs||0),descriptorBuildMs:0,totalReadyMs:performance.now()-readyStartedAt,referenceCount:state.refs.length,networkRequests:Number(databaseInfo?.loadMetrics?.requests||0),networkBytes:Number(databaseInfo?.loadMetrics?.bytes||0)};
           state.loading=false;
           setLibraryStatus(state.ready?`Bibliothèque : ${state.refs.length} cartes · cache alpha15`:`Vision indisponible : bibliothèque dégradée (${state.refs.length}/${state.cards.length})`);
@@ -1090,9 +1092,9 @@
 
       state.refs=refs.filter(Boolean);
       const failed=state.cards.filter((_,index)=>!refs[index]).map(card=>({name:card.name,image:card.image}));
-      saveCache(fp,state.refs,state.cards.length,sourceRef);
+      if (!labProvider) saveCache(fp,state.refs,state.cards.length,sourceRef);
       state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:failed.length,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum,source,sourceUrl,sourceRef,sourceImmutable,sourceError,failed});
-      state.ready=window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
+      state.ready=labProvider ? state.refs.length > 0 && state.refs.length === state.cards.length : window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
       state.libraryPerformance={source,cacheStatus:cache.status,databaseLoadMs:Number(databaseInfo?.loadMetrics?.totalMs||0),descriptorBuildMs:performance.now()-descriptorStartedAt,totalReadyMs:performance.now()-readyStartedAt,referenceCount:state.refs.length,networkRequests:Number(databaseInfo?.loadMetrics?.requests||0)+state.cards.length,networkBytes:Number(databaseInfo?.loadMetrics?.bytes||0)};
       setLibraryStatus(state.ready?`Bibliothèque : ${state.refs.length} cartes prêtes · moteur alpha15`:`Vision indisponible : bibliothèque dégradée (${state.refs.length}/${state.cards.length})`);
     } catch (err) {
@@ -2434,7 +2436,7 @@ function applyQualityGuard(result,quality) {
   });
 
   ui.refresh?.addEventListener('click',async()=>{
-    try { localStorage.removeItem(CACHE_KEY); } catch {}
+    if (!labProvider) { try { localStorage.removeItem(CACHE_KEY); } catch {} }
     state.hoverCache.clear();
     state.identityStability.tracks.clear();
     clearTimeout(state.temporalRecheckTimer);

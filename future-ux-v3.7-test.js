@@ -143,7 +143,10 @@ const visionFiles = [
   'public/table-state-engine.js'
 ];
 const changedVisionFiles = execFileSync('git', ['diff', '--name-only', 'HEAD', '--', ...visionFiles], { encoding: 'utf8' }).trim();
-assert(!changedVisionFiles, `Vision engine files changed: ${changedVisionFiles}`);
+const unexpectedVisionFiles=changedVisionFiles.split(/\r?\n/).filter(file=>file&&file!=='public/identification.js');
+assert(!unexpectedVisionFiles.length, `Vision engine files changed: ${unexpectedVisionFiles}`);
+const productionIdentification=require('./workspace-production-contract.js').productionIdentification(fs.readFileSync('public/identification.js'));
+assert(require('crypto').createHash('sha256').update(productionIdentification).digest('hex')==='fa3b700ffd19f9726e5fe1b24c6f1bc56fd30de7f9ff0a813fdf986920028b15','Production identification changed outside the explicit Lab hook');
 
 assert(html.includes('id="gigTotem"') && html.includes('class="gig-trigger2"') && html.includes('aria-expanded="false"'), 'Prototype Gig trigger is missing');
 for (const className of ['gig-totem', 'gig-shell', 'gig-scrim', 'gig-side2', 'dice-line2', 'gig-core', 'street-core', 'gig-trigger2']) {

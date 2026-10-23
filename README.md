@@ -20,3 +20,7 @@ Cette Candidate coordonne l’émission du Report Schema V2 avec le Control Cent
 - health : `tcgate-alpha-0.1-candidate-13`
 
 Voir `RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_13.md` et `REPORT_SCHEMA_V2.md`.
+
+## Workspace de pilotage et Vision Lab
+
+Ouvrir `/workspace.html` sur le serveur TCGate. Pilotage canonique, cockpit BDD Cyberpunk/SWU et vrai Lab webcam isolé. Voir [utilisation et contrats](WORKSPACE_VISION_LAB.md). Tests : `npm run test:workspace` ; test Chrome optionnel : `npm run test:workspace-browser`.

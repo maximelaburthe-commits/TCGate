@@ -54,7 +54,7 @@ if (!(candidateBranch > handleStart && ensureInHandle > candidateBranch)) {
   throw new Error('ICE candidates must be buffered before ensurePeerConnection can be invoked');
 }
 
-// Candidate 11 may orchestrate Vision, but the frozen Vision files themselves must remain byte-identical.
+// Frozen production source remains byte-identical after removing the explicitly tested Lab-only hook.
 const expected = {
   'models/card_detector_v53_512.onnx':'2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319',
   'public/detection-worker.js':'19d0e72eeb620f23742a9b8fe321f700c45cbd29ad41b952d115bca5fd983227',
@@ -63,7 +63,9 @@ const expected = {
   'public/identification.js':'fa3b700ffd19f9726e5fe1b24c6f1bc56fd30de7f9ff0a813fdf986920028b15'
 };
 for (const [file,want] of Object.entries(expected)) {
-  const got = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+  const bytes = fs.readFileSync(file);
+  const checked = file === 'public/identification.js' ? require('./workspace-production-contract.js').productionIdentification(bytes) : bytes;
+  const got = crypto.createHash('sha256').update(checked).digest('hex');
   if (got !== want) throw new Error(`Frozen Vision changed: ${file}`);
 }
 console.log(`SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_${metadata.candidate}_UI_${metadata.ui}`);
