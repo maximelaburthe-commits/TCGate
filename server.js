@@ -13,7 +13,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = path.join(__dirname, 'public');
 const MODEL_FILE = path.join(__dirname, 'models', 'card_detector_v53_512.onnx');
 const MODEL_ROUTE = '/api/model/card-detector-v53-512-alpha9p1.onnx';
-const VERSION = 'tcgate-alpha-0.1-candidate-12';
+const VERSION = 'tcgate-alpha-0.1-candidate-13';
 
 const mime = {
   '.html': 'text/html; charset=utf-8',
@@ -612,7 +612,12 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && pathname === '/api/health') {
-      return sendJson(res, 200, { ok: true, version: VERSION });
+      return sendJson(res, 200, {
+        ok: true,
+        version: VERSION,
+        buildSha: process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || null,
+        environment: process.env.RAILWAY_ENVIRONMENT_NAME || process.env.NODE_ENV || 'local'
+      });
     }
 
     if (req.method === 'GET' && pathname === '/phone') {
@@ -1215,7 +1220,7 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 server.listen(PORT, HOST, () => {
-  console.log(`TCGate Alpha 0.1 Candidate 12 -> http://127.0.0.1:${PORT}`);
+  console.log(`TCGate Alpha 0.1 Candidate 13 -> http://127.0.0.1:${PORT}`);
   const nets = os.networkInterfaces();
   for (const entries of Object.values(nets)) {
     for (const net of entries || []) {
