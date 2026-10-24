@@ -1,32 +1,16 @@
 'use strict';
 (()=>{
-  const $=id=>document.getElementById(id),rawStateUrl='https://raw.githubusercontent.com/maximelaburthe-commits/TCGate/workspace-state/tcgate_workspace_state.json';
+  const $=id=>document.getElementById(id);
   const text=(tag,value,parent)=>{const e=document.createElement(tag);e.textContent=String(value??'Non renseigné');parent.append(e);return e;};
   const summary=(id,entries)=>{const parent=$(id);parent.replaceChildren();for(const [label,value]of entries){text('dt',label,parent);text('dd',typeof value==='object'&&value!==null?JSON.stringify(value):value,parent);}};
   const link=(label,url,parent)=>{const e=text('a',label,parent);e.href=url;e.target='_blank';e.rel='noopener noreferrer';e.className='button';return e;};
   document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{
     document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b===button)));
     document.querySelectorAll('[role=tabpanel]').forEach(p=>p.hidden=p.id!=='panel-'+button.dataset.tab);
-    if(button.dataset.tab==='lab')ensureDetectionRuntime().catch(()=>{});
+    $('workspaceViewTitle').textContent=button.textContent;
+    $('workspaceMain').classList.toggle('lab-view',button.dataset.tab==='lab');
+    if(button.dataset.tab==='lab'){ensureDetectionRuntime().catch(()=>{});window.dispatchEvent(new Event('resize'));}
   }));
-  async function loadState(){
-    try{const response=await fetch(rawStateUrl,{credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('HTTP '+response.status);
-      const state=await response.json();if(!Array.isArray(state.items)||!state.session)throw Error('État canonique invalide');
-      $('workspaceStateStatus').textContent='État canonique · Workspace '+state.meta?.workspaceVersion+' · '+(state.meta?.generatedAt||'date inconnue');
-      const home=$('content-reprise');text('h2','Reprise',home);
-      for(const [key,label] of [['activeWork','Travaux actifs'],['priorities','Priorités'],['decisions','Décisions ouvertes']]){
-        text('h3',label,home);for(const item of state.session[key]||[]){const a=text('article','',home);text('strong',item.title,a);text('p',item.detail,a);text('small',item.status,a);}
-      }
-      text('p',state.session.notes||'',home);
-      for(const [id,label] of [['general','Général'],['vision','Vision'],['uiux','UI / UX'],['annex','Fonctions annexes']]){
-        const panel=$('content-'+id);text('h2',label,panel);for(const item of state.items.filter(i=>i.category===id)){
-          const a=text('article','',panel);text('h3',item.name,a);text('p',item.summary,a);text('small',[item.status,item.version,item.maturity,item.progress+' %'].join(' · '),a);text('p',item.notes||'',a);
-          if(item.history?.length){const d=text('details','',a);text('summary','Historique',d);item.history.forEach(h=>text('p',h.date+' · '+h.text,d));}
-        }
-      }
-    }catch(error){$('workspaceStateStatus').textContent='État canonique indisponible : '+error.message+'. Le Vision Lab reste indépendant.';}
-  }
-  loadState();
   function renderDatabases(){for(const db of window.TCGWorkspaceDatabases){
     const card=text('article','',$('databaseCards'));text('h3',db.label,card);const production=window.TCGateGameDatabases.get(db.gameId);
     text('strong',production?'ACTIVE · '+production.expectedVersion:'ACTIVE · non configurée',card);

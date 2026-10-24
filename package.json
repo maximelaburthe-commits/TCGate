@@ -22,7 +22,10 @@
     "test:workspace": "node workspace-test.js",
     "test:workspace-browser": "node workspace-browser-test.js",
     "test:workspace-camera": "node workspace-camera-test.js",
-    "test:workspace-camera-browser": "node workspace-camera-browser-test.js"
+    "test:workspace-camera-browser": "node workspace-camera-browser-test.js",
+    "check": "node check.js",
+    "test:workspace-cockpit": "node workspace-cockpit-test.js",
+    "test:workspace-cockpit-browser": "node workspace-cockpit-browser-test.js"
   },
   "engines": {
     "node": ">=20"

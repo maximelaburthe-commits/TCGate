@@ -1,0 +1,183 @@
+TCGate — Workspace cockpit UI restoration — 2026-10-24 Europe/Paris
+
+Branche : update/next
+Départ : 9f4605c3d697ff2a882303738a56d6961bc49763
+main : f5f2ba00e178f58c011c87f788c9c56064d8c32a
+Candidate 14 : c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3
+workspace-state : 9088d31567585b12889a4e1f0e104b262e97ee88
+
+git fetch origin --prune : exit 0 ; SHA local et distant conformes ; working tree initial propre.
+Référence visuelle : tcgate_workspace_permanent.html (v3), consultée en lecture seule.
+Le modèle conserve la formule et les compteurs de cette référence.
+Le rendu utilise le JSON canonique sans mutation ni substitution par des données en dur.
+
+Le runtime Lab dans workspace.js depuis 'let provider' est inchangé après normalisation LF ; hash contrôlé par le test.
+Aucun moteur/worker/modèle Vision, écran produit, registry DB ou serveur modifié.
+Les assertions historiques sont conservées ; l’assertion de chargement canonique suit seulement le nouveau module de rendu.
+Tests navigateur : Chrome local avec Playwright temporaire, aucune dépendance produit ajoutée.
+Cockpit : fixtures synthétiques avec valeurs modifiées à la synchronisation, tests de texte sûr et échec canonique.
+Captures contrôlées : 8 captures dans C:/Users/maxim/AppData/Local/Temp/tcgate-cockpit-captures (1920 et 1366).
+Responsive vérifié : 1920x1080, 1366x900, 900x900, 560x900 ; pas de débordement horizontal, vidéo suffisamment large.
+Smoke Lab : deux caméras simulées ; vrai ONNX/WebGPU, vrais manifest/assets Cyberpunk production,
+229 références matcher ; manifest invalide non bloquant ; sélection/résolution, overlay, tracks arrêtées, audio:false.
+Navigation et synchronisation cockpit pendant la détection : même MediaStream et même moteur, toujours actifs.
+Fixture BDD historique extraite en temporaire du SHA de production 56402636a77af9c8b5dc4e3b61c509a185f3c834.
+Aucun repository DB modifié ; aucun test de webcam physique revendiqué.
+
+$ node workspace-cockpit-test.js
+exit: 0
+WORKSPACE_COCKPIT_MODEL_OK · original weighted formula, counters, all category items, read-only source and separate Lab
+
+
+$ node workspace-cockpit-browser-test.js
+exit: 0
+WORKSPACE_COCKPIT_BROWSER_OK · seven views; canonical references, weighted metrics, categories, safe text, sync and failure isolation; production link; 1920/1366/900/560 responsive; independent lazy camera controls
+
+
+$ node workspace-test.js
+exit: 0
+WORKSPACE_DATABASE_HUB_AND_LAB_OK · provider, languages, isolation, feedback, server/model routes
+
+
+$ node workspace-browser-test.js
+exit: 0
+REAL_DETECTOR {"provider":"WebGPU","inference":{"preprocessMs":55.799999952316284,"inferenceMs":314.8000000715256,"totalMs":370.60000002384186,"detectionFps":1,"videoFps":1,"outputShape":"[1, 300, 7]"},"shape":"[1, 300, 7]"}
+WORKSPACE_BROWSER_OK · real engines/matcher, fake webcam, real detector, DB errors, export, isolation
+
+
+$ node workspace-camera-test.js
+exit: 0
+WORKSPACE_CAMERA_FLOW_CONTRACT_OK · visible controls, independent runtime, optional identification, camera error messages
+
+
+$ node workspace-camera-browser-test.js
+exit: 0
+CAMERA_FIRST_NO_DB {"camera":"Caméra : active · 1280×720","detection":"Détection : active","identification":"Identification : non chargée · choisir puis inspecter une BDD.","provider":"WebGPU","frames":2}
+PRODUCTION_IDENTIFICATION {"status":"Identification : active · BDD 1.1.0","db":{"databaseGame":"cyberpunk","databaseVersion":"1.1.0","databaseStatus":"candidate-qualified","canonicalCount":150,"printingCount":229,"visionReferenceCount":229,"recognitionGroupCount":150,"databaseSource":"public-github-direct","fallbackActive":false},"worker":true}
+WORKSPACE_CAMERA_BROWSER_OK · camera first without DB, real ONNX detection, invalid manifest while streaming, real production matcher, two-device switch, resize/resolution, track stop, audio:false, errors
+
+
+$ node vision-integrity-test.js
+exit: 0
+VISION_LIBRARY_INTEGRITY_OK
+
+
+$ node vision-source-provenance-test.js
+exit: 0
+VISION_SOURCE_PROVENANCE_OK refs=147 sourceRef=6d3a296724838265a75008f2b64b37e945cd1351
+
+
+$ node vision-backpressure-test.js
+exit: 0
+vision backpressure simulation: OK
+{"requested":100,"processed":8,"dropped":92,"maxQueueDepth":1,"sample":[1,15,29,43,57,71,85,99]}
+
+
+$ node vision-analysis-resolution-test.js
+exit: 0
+VISION_ANALYSIS_RESOLUTION_OK 1920x1080->640x360 1280x720->640x360 sourceCopies=1
+
+
+$ node vision-appearance-batch-test.js
+exit: 0
+VISION_APPEARANCE_BATCH_OK readbacksForSix=1 descriptorSimilarity>=0.999999 flip180>=0.995
+{"1":{"legacyReadbackEmulation":{"p50":0.52,"p95":1.106},"batch":{"p50":0.093,"p95":0.17}},"2":{"legacyReadbackEmulation":{"p50":1.515,"p95":3.121},"batch":{"p50":0.084,"p95":0.658}},"4":{"legacyReadbackEmulation":{"p50":2.254,"p95":7.326},"batch":{"p50":0.169,"p95":0.731}},"6":{"legacyReadbackEmulation":{"p50":3.18,"p95":10.094},"batch":{"p50":0.144,"p95":0.429}},"10":{"legacyReadbackEmulation":{"p50":5.024,"p95":14.971},"batch":{"p50":0.236,"p95":0.403}}}
+
+
+$ node cyberpunk-db-integration-test.js
+exit: 0
+PASS cyberpunk-db-integration (real DB v1 fixture)
+150 canonical / 229 printings / 229 matcher references / 150 recognition groups / requests=7 / bytes=517511
+
+
+$ node --expose-gc cyberpunk-db-performance-test.js
+exit: 0
+CYBERPUNK_DB_MATCHER_PERFORMANCE_OK
+{
+  "baselineCandidate": {
+    "references": 150,
+    "syntheticDescriptorInitializationMs": 126.21,
+    "descriptorMemoryMiB": 20.3,
+    "identificationAverageMs": 281.5,
+    "identificationP95Ms": 374.94,
+    "samples": 24
+  },
+  "betaRuntime": {
+    "references": 229,
+    "syntheticDescriptorInitializationMs": 212.94,
+    "descriptorMemoryMiB": 30.99,
+    "identificationAverageMs": 323.18,
+    "identificationP95Ms": 417.96,
+    "samples": 24
+  },
+  "change": {
+    "syntheticDescriptorInitializationPercent": 68.7,
+    "descriptorMemoryPercent": 52.7,
+    "identificationAveragePercent": 14.8,
+    "identificationP95Percent": 11.5
+  }
+}
+
+
+$ node smoke-test.js
+exit: 0
+SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_13_UI_1.1.0
+models/card_detector_v53_512.onnx=2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319
+public/detection-worker.js=19d0e72eeb620f23742a9b8fe321f700c45cbd29ad41b952d115bca5fd983227
+public/table-state-engine.js=59c7bf98827abb69eba68e685377dde0ef46bff8349d53238a14ba6ea7b4c1f3
+public/vision-core.js=f3cbd789476c92f86dd25292a67a0d0e96eee9888584a867c841b3b61e8650d1
+public/identification.js=fa3b700ffd19f9726e5fe1b24c6f1bc56fd30de7f9ff0a813fdf986920028b15
+
+
+$ node smoke-test-c11.js
+exit: 0
+SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_13_UI_1.1.0
+
+
+$ node integration-test-c11.js
+exit: 0
+INTEGRATION_OK_TCGATE_ALPHA_0.1_CANDIDATE_11
+
+
+$ node smoke-test-ui-integration.js
+exit: 0
+SMOKE_OK_TCGATE_C9_UI_INTEGRATION_1
+
+
+$ node future-ux-v3.7-test.js
+exit: 0
+FUTURE_UX_V3_7_HUB_OK
+
+
+$ node future-ux-room-metadata-test.js
+exit: 0
+FUTURE_UX_ROOM_METADATA_SSE_OK
+
+
+$ node report-schema-v2-test.js
+exit: 0
+Report Schema V2 tests: OK
+
+
+$ npm.cmd run check
+exit: 0
+
+> tcgate-alpha@0.1.0-candidate.13 check
+> node check.js
+
+CHECK_OK 67 JavaScript files
+
+
+$ git diff --check
+exit: 0
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/workspace.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/workspace.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/workspace.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'workspace-camera-browser-test.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'workspace-test.js', LF will be replaced by CRLF the next time Git touches it
+
+
+Résultat : 20 suites + npm.cmd run check + git diff --check réussis, codes 0.
+Aucune action ou configuration Railway ; déploiement Test non exécuté/vérifié dans cette session.
+Journaux historiques conservés.

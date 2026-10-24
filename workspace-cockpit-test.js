@@ -1,0 +1,15 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const model=require('./public/workspace-cockpit-model.js');
+const items=[{id:'a',category:'general',roadmap:true,status:'stable',weight:4,progress:90},{id:'b',category:'vision',roadmap:true,status:'qualified',weight:2,progress:60},{id:'c',category:'bdd',roadmap:true,status:'experimental',weight:1,progress:40},{id:'d',category:'annex',roadmap:false,status:'attention',weight:99,progress:0},{id:'e',category:'uiux',roadmap:true,status:'abandoned',weight:99,progress:0},{id:'f',category:'bdd',roadmap:true,status:'prototype',weight:0,progress:100}];
+const before=JSON.stringify(items);
+assert.deepEqual(model.metrics(items),{overall:74,count:6,stableCount:2,attentionCount:3,roadmapCount:3});
+assert.deepEqual(model.category(items,'bdd').map(i=>i.id),['c','f']);assert.equal(model.score(model.category(items,'bdd')),40);assert.equal(model.score([]),0);
+assert.equal(model.score([{roadmap:true,status:'stable',weight:'2',progress:'80'},{roadmap:true,status:'stable',weight:1,progress:20}]),60);
+assert.equal(JSON.stringify(items),before,'Rendering model must never mutate canonical state');
+const html=fs.readFileSync('public/workspace.html','utf8'),ui=fs.readFileSync('public/workspace-cockpit.js','utf8'),lab=fs.readFileSync('public/workspace.js','utf8');
+assert(html.includes('id="workspaceSidebar"'));assert(html.includes('Production TCGate'));assert(html.includes('id="content-bdd"'));assert(ui.includes('workspace-state/tcgate_workspace_state.json'));
+assert(!/localStorage|setItem|innerHTML|TCGIdentificationLab|TCGVisionEngine/.test(ui),'Cockpit renderer is read-only and independent of the Lab');
+assert(lab.includes("if(button.dataset.tab==='lab'){ensureDetectionRuntime()"));
+const runtime=lab.replace(/\r\n/g,'\n');assert.equal(require('node:crypto').createHash('sha256').update(runtime.slice(runtime.indexOf('  let provider='))).digest('hex'),'91b15804d5c4751a957d91b9875d5e1f67f228d102a4f53df9ee32f29eca1576','Validated camera/detection/identification runtime must stay unchanged for this UI restoration');
+console.log('WORKSPACE_COCKPIT_MODEL_OK · original weighted formula, counters, all category items, read-only source and separate Lab');
