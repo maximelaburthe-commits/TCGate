@@ -119,11 +119,11 @@ async function run() {
     await page.goto(origin+'/workspace.html');
     await page.waitForFunction(()=>document.querySelector('#workspaceStateStatus').textContent.includes('fixture-1'));
     assert.equal(canonicalRequests.length,1);
-    const labels=['Reprise','Général','Vision','BDD','UI / UX','Fonctions annexes','Vision Lab'];
+    const labels=['Reprise','Général','Journal','Vision','BDD','UI / UX','Fonctions annexes','Vision Lab'];
     const sidebarTabs=page.locator('#workspaceSidebar [role=tab]');
     assert.equal(await sidebarTabs.count(),labels.length);
     for(const label of labels)assert.equal(await page.locator('#workspaceSidebar').getByRole('tab',{name:label,exact:true}).count(),1);
-    assert.deepEqual(await sidebarTabs.evaluateAll(tabs=>tabs.map(tab=>tab.getAttribute('aria-controls'))),['panel-reprise','panel-general','panel-vision','panel-bdd','panel-uiux','panel-annex','panel-lab']);
+    assert.deepEqual(await sidebarTabs.evaluateAll(tabs=>tabs.map(tab=>tab.getAttribute('aria-controls'))),['panel-reprise','panel-general','panel-journal','panel-vision','panel-bdd','panel-uiux','panel-annex','panel-lab']);
     const production=page.getByRole('link',{name:'Production TCGate',exact:true});
     assert.equal(await production.getAttribute('href'),productionUrl);
     assert(await production.isVisible());
@@ -190,7 +190,7 @@ async function run() {
     await failedPage.waitForFunction(()=>document.querySelector('#workspaceStateStatus').textContent.includes('indisponible'));
     await assertLabReady(failedPage,failedRequests);
     assert.deepEqual(failedErrors,[]);
-    console.log('WORKSPACE_COCKPIT_BROWSER_OK · seven views; canonical references, weighted metrics, categories, safe text, sync and failure isolation; production link; 1920/1366/900/560 responsive; independent lazy camera controls');
+    console.log('WORKSPACE_COCKPIT_BROWSER_OK · eight views; canonical references, weighted metrics, categories, safe text, sync and failure isolation; production link; 1920/1366/900/560 responsive; independent lazy camera controls');
   } finally {await browser?.close();server.kill();}
 }
 run().catch(error=>{console.error(error);process.exitCode=1;});

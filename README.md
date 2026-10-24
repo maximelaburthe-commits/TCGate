@@ -24,3 +24,5 @@ Voir `RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_13.md` et `REPORT_SCHEMA_V2.md`.
 ## Workspace de pilotage et Vision Lab
 
 Ouvrir `/workspace.html` sur le serveur TCGate. Pilotage canonique, cockpit BDD Cyberpunk/SWU et vrai Lab webcam isolé. Voir [utilisation et contrats](WORKSPACE_VISION_LAB.md). Tests : `npm run test:workspace` ; test Chrome optionnel : `npm run test:workspace-browser`.
+
+Le Workspace propose aussi la [maintenance BDD et le Journal de pilotage](WORKSPACE_DATABASE_JOURNAL.md). Le Journal utilise les Issues GitHub `[JOURNAL]` ; leur création est confirmée par le propriétaire sur GitHub.

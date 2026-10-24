@@ -26,7 +26,7 @@ async function run(){
   const diagnostic=JSON.parse(await page.locator('#labDatabase').textContent());assert.deepEqual(diagnostic.locales,['en','fr']);assert.equal(diagnostic.printings,2);
   await page.click('#labStart');await page.waitForFunction(()=>window.TCGIdentificationLab?.getSnapshot().matcherWorker.ready,{},{timeout:45000});
   assert.equal(await page.evaluate(()=>window.TCGIdentificationLab.getSnapshot().librarySize),2);assert.equal(await page.evaluate(()=>window.TCGateGameDatabases.get('cyberpunk').expectedVersion),'1.1.0');
-  await page.click('#visionCameraButton');await page.waitForFunction(()=>document.querySelector('#remoteVideo').videoWidth>0);assert(await page.locator('#visionDetectButton').isEnabled());
+  await page.click('#visionCameraButton');await page.waitForFunction(()=>document.querySelector('#remoteVideo').videoWidth>0&&!document.querySelector('#visionDetectButton').disabled);assert(await page.locator('#visionDetectButton').isEnabled());
   // Synthetic geometry exercises the real crop + matcher and retained Top 5 after pointer leaves.
   await page.evaluate(()=>{const s=window.TCGDetectionLab.state,v=document.querySelector('#remoteVideo');s.tracks=[{uid:900,displayId:1,confirmed:true,misses:0,conf:.99,cx:v.videoWidth/2,cy:v.videoHeight/2,w:160,h:240,angle:0}];});
   const feed=await page.locator('#opponentFeed').boundingBox();await page.mouse.move(feed.x+feed.width/2,feed.y+feed.height/2);

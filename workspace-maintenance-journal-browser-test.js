@@ -1,0 +1,97 @@
+'use strict';
+// Browser integration uses public-read fixtures and never creates real Issues or runs workflows.
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {spawn}=require('node:child_process');
+const {chromium}=require(process.env.WORKSPACE_PLAYWRIGHT_PATH||'playwright');
+const {fixture}=require(path.join(process.cwd(),'workspace-lab-fixture.js'));
+const origin='http://127.0.0.1:4392',owner='maximelaburthe-commits';
+const canonicalUrl='https://raw.githubusercontent.com/'+owner+'/TCGate/workspace-state/tcgate_workspace_state.json';
+const candidateRepo=owner+'/tcgate_db_cyberpunk',headUrl='https://api.github.com/repos/'+candidateRepo+'/commits/develop-cyberpunk-db-v1.2';
+const shaA='a'.repeat(40),shaB='b'.repeat(40),fallbackSha='425e0198610cd0a746c4e2d1fc3094b3823340e4',activeSha='56402636a77af9c8b5dc4e3b61c509a185f3c834';
+const xss='<img src=x onerror="window.__journalXss=true">';
+let assertions=0;
+function equal(actual,expected,message){assert.deepEqual(actual,expected,message);assertions++;}
+function check(value,message){assert(value,message);assertions++;}
+function canonical(){return {meta:{workspaceVersion:'3.0',generatedAt:'2026-10-24',production:{label:'Production',branch:'main',sha:'f5f2ba00e178f58c011c87f788c9c56064d8c32a'},development:{label:'Développement',branch:'update/next',sha:'be40bf6405421f1f45bfa98866f13bbddaad7a42',ahead:14,behind:0,sync:'ahead'}},categories:[{id:'general',label:'Général'},{id:'vision',label:'Vision'},{id:'bdd',label:'BDD'},{id:'uiux',label:'UI / UX'},{id:'annex',label:'Fonctions annexes'}],items:[],session:{activeWork:[],priorities:[],decisions:[],notes:'État canonique témoin'},verification:{verifiedAt:'2026-10-24',source:'Fixture navigateur'},sync:{remoteStateMode:'canonical'}};}
+function documents(){
+  const docs=fixture();
+  Object.assign(docs['manifest.json'],{game_id:'cyberpunk-tcg',database_version:'1.2.0',status:'development',runtime_scope:'cyberpunk-beta-2026',runtime_ready:true,availableLocales:['en','fr']});
+  Object.assign(docs['db-manifest.json'],{schemaVersion:'2.1.0',databaseVersion:'1.2.0',status:'development',activeSnapshot:'2026-10-24',runtimeScope:'cyberpunk-beta-2026',runtimeReady:true});
+  const localizationCoverage={en:{canonicalCards:151,printings:550,displayAssets:550,visionAssets:229,missingAssets:[],missingMetadata:[]},fr:{canonicalCards:140,printings:150,displayAssets:149,visionAssets:100,missingAssets:['missing-fr-art'],missingMetadata:['missing-fr-flavour']}};
+  docs['data/coverage.json']={snapshotDate:'2026-10-24',canonicalCards:151,officialPrintings:700,runtimeEligiblePrintings:229,runtimeDisplayAssets:229,runtimeVisionAssets:229,visionEligible:229,visionMissing:0,futureAssetsMissing:1,localizationCoverage};
+  docs['data/multilingual-coverage.json']={availableLocales:['en','fr'],localizationCoverage};
+  docs['data/control-center-update-candidate.json']={sourceSnapshot:{snapshotDate:'2026-10-24',capturedAt:'2026-10-24T08:15:00Z',canonicalCards:151,expectedOfficialPrintings:700,officialSite:'https://example.invalid/official-source'},sourceStatus:{authority:'Source officielle témoin',assetRightsReviewRequired:true},updateSummary:{newCards:['new-card-a','new-card-b'],newPrintings:['new-print-a','new-print-b','new-print-c'],newLocales:['fr'],newAssets:['new-en.png','new-fr.png'],changedAssets:['changed-en.png'],missingAssets:['missing-fr-art'],missingMetadata:['missing-fr-flavour']},localizationCoverage};
+  docs['staging/latest/sync_report.json']={snapshotDate:'2026-09-12',capturedAt:'2026-09-12T09:00:00Z',mode:'staging-only',sourceHealth:'ok',blocked:false,canonicalCards:150,printings:460};
+  return docs;
+}
+function issue(number,{priority='Intermédiaire',type='À tester',state='open',created='2026-10-01T10:00:00Z',title='Entrée '+number,description='Résumé '+number}={}){
+  return {number,title:'[JOURNAL] '+title,body:'<!-- tcgate-workspace-journal:v1 -->\n\nType: '+type+'\nDomaine: Vision\nPriorité: '+priority+'\nCréé depuis: TCGate Workspace\n\n## Description\n\n'+description,state,created_at:created,closed_at:state==='closed'?'2026-10-'+(number===91?'24':'23')+'T11:00:00Z':null,html_url:'https://github.com/'+owner+'/TCGate/issues/'+number};
+}
+const issues1=[issue(42),issue(41,{priority:'Majeur',type:'Bug',created:'2026-10-21T10:00:00Z',description:xss}),issue(90,{state:'closed'}),{...issue(70),pull_request:{}},{...issue(71),title:'Une Issue extérieure au Journal'}];
+const issues2=[issue(40,{priority:'Majeur',created:'2026-09-01T10:00:00Z'}),issue(45,{priority:'Mineur',created:'2026-08-01T10:00:00Z'}),issue(91,{type:'Bug',state:'closed'})];
+async function choose(page,name){const tab=page.getByRole('tab',{name,exact:true});await tab.click();equal(await tab.getAttribute('aria-selected'),'true',name+' selected');equal(await page.locator('[role=tabpanel]:visible').count(),1,'One visible panel');}
+async function noOverflow(page,label){const dimensions=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,offenders:[...document.querySelectorAll('body *')].filter(element=>{const r=element.getBoundingClientRect();return r.width>0&&(r.right>innerWidth+1||r.left< -1);}).slice(0,8).map(element=>({id:element.id,tag:element.tagName,className:element.className}))}));check(dimensions.scroll<=dimensions.width+1,label+' overflow: '+JSON.stringify(dimensions));}
+async function screenshot(page,name){if(!process.env.WORKSPACE_SCREENSHOT_DIR)return;fs.mkdirSync(process.env.WORKSPACE_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.WORKSPACE_SCREENSHOT_DIR,name+'.png'),fullPage:true});}
+async function initPage(context,flags={}){
+  const page=await context.newPage(),calls={head:[],raw:[],issues:[],requests:[],errors:[]},docs=documents();
+  page.on('pageerror',error=>calls.errors.push(error.message));page.on('request',request=>calls.requests.push({url:request.url(),method:request.method(),headers:request.headers()}));
+  await page.addInitScript(()=>{window.__journalXss=false;window.__openedJournalForms=[];window.__cameraCalls=0;window.open=(url,target,features)=>{window.__openedJournalForms.push({url,target,features});return {};};if(navigator.mediaDevices?.getUserMedia){navigator.mediaDevices.getUserMedia=()=>{window.__cameraCalls++;return Promise.reject(Error('No camera required by this test'));};}});
+  await page.route('https://api.github.com/**',route=>{
+    const url=new URL(route.request().url());
+    if(url.href===headUrl){calls.head.push(url.href);if(flags.apiFailure)return route.fulfill({status:403,json:{message:'API fixture unavailable'}});return route.fulfill({json:{sha:calls.head.length===1?shaA:shaB}});}
+    if(url.pathname==='/repos/'+owner+'/TCGate/issues'){
+      calls.issues.push(url.href);if(flags.journalFailure)return route.fulfill({status:503,json:{message:'Journal fixture unavailable'}});
+      const pageNumber=Number(url.searchParams.get('page')||1),headers=pageNumber===1?{link:'<https://api.github.com/repos/'+owner+'/TCGate/issues?state=all&per_page=100&page=2>; rel="next"'}:{};
+      return route.fulfill({json:pageNumber===1?issues1:issues2,headers:{...headers,'access-control-expose-headers':'Link'}});
+    }
+    return route.fulfill({status:404,json:{message:'Unexpected fixture API URL'}});
+  });
+  await page.route('https://raw.githubusercontent.com/**',route=>{
+    const url=new URL(route.request().url());if(url.href===canonicalUrl)return route.fulfill({json:canonical()});
+    const prefix='/'+candidateRepo+'/';if(!url.pathname.startsWith(prefix))return route.fulfill({status:404,body:'Unexpected raw fixture path'});
+    const relative=url.pathname.slice(prefix.length),slash=relative.indexOf('/'),sha=relative.slice(0,slash),name=relative.slice(slash+1);calls.raw.push({sha,name,url:url.href});
+    if(![shaA,shaB,fallbackSha].includes(sha))return route.fulfill({status:404,body:'Unexpected SHA'});
+    if(!Object.hasOwn(docs,name))return route.fulfill({status:404,body:'Missing fixture '+name});return route.fulfill({json:docs[name]});
+  });
+  await page.goto(origin+'/workspace.html');await page.waitForFunction(()=>document.querySelector('#workspaceStateStatus').textContent.includes('État canonique'));
+  return {page,calls};
+}
+async function run(){
+  const server=spawn(process.execPath,['server.js'],{cwd:process.cwd(),env:{...process.env,PORT:'4392',HOST:'127.0.0.1'},stdio:['ignore','pipe','pipe']});let logs='',browser;
+  server.stdout.on('data',data=>logs+=data);server.stderr.on('data',data=>logs+=data);
+  try{
+    let ready=false;for(let attempt=0;attempt<60;attempt++){try{if((await fetch(origin+'/api/health')).ok){ready=true;break;}}catch{}await new Promise(resolve=>setTimeout(resolve,100));}check(ready,'Browser server ready '+logs);
+    const workspaceCsp=(await fetch(origin+'/workspace.html')).headers.get('content-security-policy'),rootCsp=(await fetch(origin+'/')).headers.get('content-security-policy');check(workspaceCsp.includes('https://api.github.com'),'Workspace permits public API read');check(!rootCsp.includes('https://api.github.com'),'Application root CSP unchanged');
+    browser=await chromium.launch({channel:'chrome',headless:true});const context=await browser.newContext({viewport:{width:1920,height:1080}});const {page,calls}=await initPage(context);
+    equal(await page.locator('#workspaceSidebar [role=tab]').allTextContents(),['Reprise','Général','Journal','Vision','BDD','UI / UX','Fonctions annexes','Vision Lab']);
+    const activeBefore=await page.evaluate(()=>JSON.stringify(window.TCGateGameDatabases.get('cyberpunk')));
+    await choose(page,'BDD');await page.waitForFunction(()=>window.TCGWorkspaceDatabaseMaintenance.snapshot().sha==='a'.repeat(40)&&!document.querySelector('#databaseRefresh').disabled);
+    const rows=await page.locator('#databaseCyberpunk tbody tr').evaluateAll(rows=>Object.fromEntries(rows.map(row=>[row.cells[0].textContent,[row.cells[1].textContent,row.cells[2].textContent]])));
+    equal(rows.Version,['1.1.0','1.2.0']);equal(rows['SHA immuable'],[activeSha,shaA]);equal(rows.Statut[0],'candidate-qualified');equal(rows.Jeu[0],'cyberpunk-tcg');equal(rows['Scope runtime'][0],'cyberpunk-beta-2026');equal(rows['Cartes canoniques'][0],'150');equal(rows['Printings runtime Vision'][0],'229');equal(rows['Recognition groups'][0],'150');equal(rows['Matcher references'][0],'229');equal(rows.Schema[1],'2.1.0');equal(rows.Locales[1],'en / fr');
+    const bddText=await page.locator('#databaseCyberpunk').innerText();check(bddText.includes('Snapshot Candidate : 24/10/2026'),'Candidate snapshot date');check(bddText.includes('Dernière synchronisation staging : 12/09/2026'),'Staging retains its independent date');check(bddText.includes('promote = false'),'Workflow promotes only by explicit GitHub user choice');check(bddText.includes('READY FOR LAB'));check(!bddText.includes('QUALIFIED'),'Passing UI tests never invent a Candidate qualification');
+    const summaries=await page.locator('#databaseCyberpunk details summary').allTextContents();check(summaries.includes('Nouvelles cartes : 2'));check(summaries.includes('Nouveaux printings : 3'));check(summaries.includes('Assets manquants (update report) : 1'));equal(await page.locator('#databaseCyberpunk details[open]').count(),0,'Long lists start collapsed');
+    await page.locator('#databaseCyberpunk details').filter({has:page.locator('summary',{hasText:'Nouvelles cartes : 2'})}).locator('summary').click();check((await page.locator('#databaseCyberpunk').innerText()).includes('new-card-a'),'Full list is available on demand');
+    equal(await page.locator('#databaseCheckUpdates').getAttribute('href'),'https://github.com/'+candidateRepo+'/actions/workflows/build-database.yml');
+    check(calls.raw.length>=6);check(calls.raw.every(request=>request.sha===shaA),'Initial Candidate documents pinned to resolved HEAD');
+    const beforeRefresh=calls.raw.length;await page.click('#databaseRefresh');await page.waitForFunction(()=>window.TCGWorkspaceDatabaseMaintenance.snapshot().sha==='b'.repeat(40)&&!document.querySelector('#databaseRefresh').disabled);
+    equal(calls.head.length,2);check(calls.raw.slice(beforeRefresh).length>=6);check(calls.raw.slice(beforeRefresh).every(request=>request.sha===shaB),'Refresh resolves current HEAD and pins every RAW URL to new SHA');
+    await page.click('#databaseTestCandidate');await page.waitForFunction(()=>!document.querySelector('#labStart').disabled);
+    equal(await page.getByRole('tab',{name:'Vision Lab',exact:true}).getAttribute('aria-selected'),'true');equal(await page.locator('#labSource').inputValue(),'test');equal(await page.locator('#labManifestUrl').inputValue(),'https://raw.githubusercontent.com/'+candidateRepo+'/'+shaB+'/manifest.json');check((await page.locator('#labDatabase').textContent()).includes('1.2.0'));equal(await page.evaluate(()=>Boolean(window.TCGIdentificationLab)),false);equal(calls.requests.some(request=>/\/identification(?:-worker)?\.js(?:\?|$)/.test(request.url)),false);equal(await page.evaluate(()=>window.__cameraCalls),0);equal(await page.evaluate(()=>JSON.stringify(window.TCGateGameDatabases.get('cyberpunk'))),activeBefore,'Lab-only test never changes ACTIVE configuration');
+    await choose(page,'Journal');await page.waitForFunction(()=>document.querySelector('#journalStatus').textContent.includes('entrées Journal'));
+    equal(calls.issues.length,2);equal(await page.locator('#journalOpen .journal-entry').evaluateAll(elements=>elements.map(element=>Number(element.dataset.issueNumber))),[40,41,42,45]);equal(await page.locator('#journalClosed .journal-entry').evaluateAll(elements=>elements.map(element=>Number(element.dataset.issueNumber))),[91,90]);check((await page.locator('#journalOpen').innerText()).includes(xss));equal(await page.locator('#journalMount img').count(),0);equal(await page.evaluate(()=>window.__journalXss),false);
+    await page.selectOption('#journalFilterType','Bug');equal(await page.locator('#journalOpen .journal-entry').count(),1);await page.selectOption('#journalFilterPriority','Mineur');equal(await page.locator('#journalOpen .journal-entry').count(),0);await page.selectOption('#journalFilterType','all');await page.selectOption('#journalFilterPriority','all');
+    await page.selectOption('#journalType','À vérifier');await page.selectOption('#journalDomain','Workspace');await page.selectOption('#journalPriority','Majeur');await page.fill('#journalTitle','Brouillon de contrôle & accents ?');await page.fill('#journalDescription','Décrire la vérification sans secret.');await page.fill('#journalContext','Contexte facultatif.');await page.fill('#journalValidation','Validation explicite sur GitHub.');
+    await page.click('#journalPublish');const opened=await page.evaluate(()=>window.__openedJournalForms);equal(opened.length,1);const formUrl=new URL(opened[0].url);equal(formUrl.origin,'https://github.com');equal(formUrl.pathname,'/'+owner+'/TCGate/issues/new');equal(formUrl.searchParams.get('title'),'[JOURNAL] Brouillon de contrôle & accents ?');const body=formUrl.searchParams.get('body');for(const text of ['<!-- tcgate-workspace-journal:v1 -->','Type: À vérifier','Domaine: Workspace','Priorité: Majeur','## Description','## Contexte','## Critère de validation'])check(body.includes(text));
+    equal(calls.issues.length,2,'Preparing a form never writes or creates an Issue');check((await page.locator('#journalDraftStatus').innerText()).includes('Brouillon local'));equal(await page.locator('#journalOpen .journal-entry').count(),4);
+    await page.reload();await page.waitForFunction(()=>document.querySelector('#workspaceStateStatus').textContent.includes('État canonique'));await choose(page,'Journal');await page.waitForFunction(()=>document.querySelector('#journalStatus').textContent.includes('entrées Journal'));equal(await page.locator('#journalTitle').inputValue(),'Brouillon de contrôle & accents ?');equal(await page.locator('#journalOpen .journal-entry').count(),4);check(!(await page.locator('#journalOpen').innerText()).includes('Brouillon de contrôle'),'Local draft is never shown as an official entry');await page.click('#journalClearDraft');equal(await page.locator('#journalTitle').inputValue(),'');equal(await page.evaluate(()=>localStorage.getItem('tcgate.workspace.journal.draft.v1')),null);
+    for(const width of [1920,1366,900,560]){
+      await page.setViewportSize({width,height:width===1920?1080:900});
+      for(const view of ['BDD','Journal']){await choose(page,view);if(view==='BDD')await page.waitForFunction(()=>!document.querySelector('#databaseRefresh').disabled);await noOverflow(page,width+' '+view);if(width===1366)await screenshot(page,'workspace-maintenance-journal-'+(view==='BDD'?'bdd':'journal'));}
+      if(width===560){const boxes=await Promise.all(['#journalType','#journalDomain','#journalPriority'].map(selector=>page.locator(selector).boundingBox()));check(boxes.every(box=>Math.abs(box.x-boxes[0].x)<2),'Journal selectors stack in one column on mobile');}
+    }
+    await choose(page,'Reprise');check(await page.locator('#content-reprise').isVisible());await choose(page,'Général');check(await page.locator('#overall').isVisible());await choose(page,'Vision Lab');await page.waitForFunction(()=>!document.querySelector('#visionCameraButton').disabled);equal(await page.evaluate(()=>window.__cameraCalls),0);equal(await page.evaluate(()=>Boolean(window.TCGIdentificationLab)),false);equal(await page.evaluate(()=>JSON.stringify(window.TCGateGameDatabases.get('cyberpunk'))),activeBefore);equal(calls.requests.some(request=>request.method!=='GET'),false,'All application and GitHub requests are read-only');check(calls.requests.filter(request=>request.url.startsWith('https://api.github.com/')).every(request=>!request.headers.authorization),'No API credential');equal(calls.errors,[]);
+    const failure=await initPage(context,{apiFailure:true,journalFailure:true});await choose(failure.page,'BDD');await failure.page.waitForFunction(()=>window.TCGWorkspaceDatabaseMaintenance.snapshot().lastRead&&!document.querySelector('#databaseRefresh').disabled);equal(await failure.page.evaluate(()=>window.TCGWorkspaceDatabaseMaintenance.snapshot().sha),fallbackSha);check((await failure.page.locator('#databaseCyberpunk').innerText()).includes('fallback configuré'));check(failure.calls.raw.every(request=>request.sha===fallbackSha));await choose(failure.page,'Journal');await failure.page.waitForFunction(()=>document.querySelector('#journalStatus').textContent.startsWith('Journal indisponible actuellement · ouvrir GitHub'));check(await failure.page.locator('#journalGitHub').isVisible());await choose(failure.page,'Vision Lab');await failure.page.waitForFunction(()=>!document.querySelector('#visionCameraButton').disabled);check(await failure.page.locator('#labControls').isVisible());equal(await failure.page.evaluate(()=>window.__cameraCalls),0);equal(await failure.page.evaluate(()=>Boolean(window.TCGIdentificationLab)),false);equal(failure.calls.errors,[]);equal(failure.calls.requests.some(request=>request.method!=='GET'),false);
+    console.log('WORKSPACE_MAINTENANCE_JOURNAL_BROWSER_OK · '+assertions+' assertions · active/candidate snapshots, live SHA/fallback, isolated Candidate Lab inspection, paginated Journal, human-confirmed form, local draft, safe text, errors and 1920/1366/900/560 responsive');
+  }finally{await browser?.close();server.kill();}
+}
+run().catch(error=>{console.error(error);process.exitCode=1;});

@@ -11,18 +11,6 @@
     $('workspaceMain').classList.toggle('lab-view',button.dataset.tab==='lab');
     if(button.dataset.tab==='lab'){ensureDetectionRuntime().catch(()=>{});window.dispatchEvent(new Event('resize'));}
   }));
-  function renderDatabases(){for(const db of window.TCGWorkspaceDatabases){
-    const card=text('article','',$('databaseCards'));text('h3',db.label,card);const production=window.TCGateGameDatabases.get(db.gameId);
-    text('strong',production?'ACTIVE · '+production.expectedVersion:'ACTIVE · non configurée',card);
-    if(production){text('p','SHA actif : '+production.manifestUrl.split('/')[5],card);text('p','Statut : '+production.expectedStatus+' · snapshot/locales : non exposés dans la configuration active.',card);link('Manifest actif',production.manifestUrl,card);}else text('p','Version, SHA et snapshot : non qualifiés / non configurés.',card);
-    text('p',db.source,card);
-    if(db.candidate){const c=db.candidate;text('h3','DEVELOPMENT / CANDIDATE · '+c.status,card);text('p','Version '+c.version+' · schema '+c.schema+' · locales '+c.locales.join(' / '),card);text('p','Checkpoint '+c.sha,card);text('p',c.detail,card);text('p','Snapshot : à inspecter dans le manifest candidate.',card);text('p','Blockers : '+c.blockers.join(' ; '),card);}
-    else text('p','Aucune Candidate',card);
-    const actions=text('div','',card);actions.className='toolbar';link('Vérifier / Mettre à jour',db.updateWorkflowUrl||db.actionsUrl,actions);
-    if(!db.updateWorkflowUrl)text('small','Workflow de mise à jour non configuré · ouvre GitHub Actions.',card);
-    if(db.candidateUrl)link('Voir la Candidate',db.candidateUrl,actions);else{const disabled=text('button','Aucune Candidate',actions);disabled.disabled=true;}
-    link('Voir la DB GitHub',db.repositoryUrl,actions);
-  }}renderDatabases();
   let provider=null,sourceInfo=null,started=false,inspecting=false,lastObservation=null;const feedback=[];
   $('labSource').addEventListener('change',()=>{provider=null;sourceInfo=null;$('labDatabase').textContent='';$('labDatabaseSummary').replaceChildren();$('labStart').disabled=true;$('labManifestLabel').hidden=$('labSource').value!=='test';});
   $('labManifestUrl').addEventListener('input',()=>{provider=null;sourceInfo=null;$('labStart').disabled=true;});

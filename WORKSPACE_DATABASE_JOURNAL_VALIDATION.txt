@@ -1,0 +1,218 @@
+TCGate — Maintenance BDD + Journal — 2026-10-24 Europe/Paris
+
+Départ update/next be40bf6405421f1f45bfa98866f13bbddaad7a42 ; workspace-state9088d31567585b12889a4e1f0e104b262e97ee88.
+main f5f2ba00e178f58c011c87f788c9c56064d8c32a ; Candidate14c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3.
+git fetch origin --prune : exit0 ; branches/worktrees propres ; relation initiale14ahead0behind.
+Lecture réelle Candidate : APIHTTP200 + git ls-remote =>425e0198610cd0a746c4e2d1fc3094b3823340e4.
+Module réel loadCandidate : exit0, rapports RAW sans erreur, snapshot09-24/staging09-12, development1.2.0/schema2.1.0.
+ACTIVE lu depuis le registre inchangé :1.1.0/SHA56402636/150cartes/229références.
+
+Tests nouveaux : Journal102assertions ; maintenance initial51 puis53 après garde de provenance ; navigateur126assertions.
+Les fixtures navigateur n’ouvrent aucune Issue réelle et ne déclenchent aucun workflow.
+La première fixture de pagination ne reproduisait pas l’exposition CORS de Link ; corrigée pour correspondre au header public GitHub.
+La revue a ajouté la provenance explicite de la date sélectionnée lorsque l’update report est partiel.
+Le smoke historique a rencontré une course d’attente : videoWidth devient connu avant que le Core active le bouton détecteur.
+Son attente couvre désormais ces deux conditions ; l’assertion de bouton activé est conservée, moteurs inchangés.
+
+Première exécution complète des23suites, puis contrôles :
+
+$ node workspace-journal-test.js
+exit: 0
+WORKSPACE_JOURNAL_OK · 102 assertions · structured Issues, safe form URLs, pagination, filters/order, local draft and read-only GitHub
+
+
+$ node workspace-database-maintenance-test.js
+exit: 0
+WORKSPACE_DATABASE_MAINTENANCE_OK · 51 assertions · ACTIVE registry, immutable Candidate HEAD/fallback, snapshots, changes, locales, rights, safe workflow and Lab handoff
+
+
+$ node workspace-maintenance-journal-browser-test.js
+exit: 0
+WORKSPACE_MAINTENANCE_JOURNAL_BROWSER_OK · 126 assertions · active/candidate snapshots, live SHA/fallback, isolated Candidate Lab inspection, paginated Journal, human-confirmed form, local draft, safe text, errors and 1920/1366/900/560 responsive
+
+
+$ node workspace-cockpit-test.js
+exit: 0
+WORKSPACE_COCKPIT_MODEL_OK · original weighted formula, counters, all category items, read-only source and separate Lab
+
+
+$ node workspace-cockpit-browser-test.js
+exit: 0
+WORKSPACE_COCKPIT_BROWSER_OK · seven views; canonical references, weighted metrics, categories, safe text, sync and failure isolation; production link; 1920/1366/900/560 responsive; independent lazy camera controls
+
+
+$ node workspace-test.js
+exit: 0
+WORKSPACE_DATABASE_HUB_AND_LAB_OK · provider, languages, isolation, feedback, server/model routes
+
+
+$ node workspace-browser-test.js
+exit: 1
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert(await page.locator('#visionDetectButton').isEnabled())
+
+    at run (C:\Users\maxim\Documents\TCGate\TCGate\workspace-browser-test.js:29:127) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+
+$ node workspace-camera-test.js
+exit: 0
+WORKSPACE_CAMERA_FLOW_CONTRACT_OK · visible controls, independent runtime, optional identification, camera error messages
+
+
+$ node workspace-camera-browser-test.js
+exit: 0
+CAMERA_FIRST_NO_DB {"camera":"Caméra : active · 1280×720","detection":"Détection : active","identification":"Identification : non chargée · choisir puis inspecter une BDD.","provider":"WebGPU","frames":2}
+PRODUCTION_IDENTIFICATION {"status":"Identification : active · BDD 1.1.0","db":{"databaseGame":"cyberpunk","databaseVersion":"1.1.0","databaseStatus":"candidate-qualified","canonicalCount":150,"printingCount":229,"visionReferenceCount":229,"recognitionGroupCount":150,"databaseSource":"public-github-direct","fallbackActive":false},"worker":true}
+WORKSPACE_CAMERA_BROWSER_OK · camera first without DB, real ONNX detection, invalid manifest while streaming, real production matcher, two-device switch, resize/resolution, track stop, audio:false, errors
+
+
+$ node vision-integrity-test.js
+exit: 0
+VISION_LIBRARY_INTEGRITY_OK
+
+
+$ node vision-source-provenance-test.js
+exit: 0
+VISION_SOURCE_PROVENANCE_OK refs=147 sourceRef=6d3a296724838265a75008f2b64b37e945cd1351
+
+
+$ node vision-backpressure-test.js
+exit: 0
+vision backpressure simulation: OK
+{"requested":100,"processed":8,"dropped":92,"maxQueueDepth":1,"sample":[1,15,29,43,57,71,85,99]}
+
+
+$ node vision-analysis-resolution-test.js
+exit: 0
+VISION_ANALYSIS_RESOLUTION_OK 1920x1080->640x360 1280x720->640x360 sourceCopies=1
+
+
+$ node vision-appearance-batch-test.js
+exit: 0
+VISION_APPEARANCE_BATCH_OK readbacksForSix=1 descriptorSimilarity>=0.999999 flip180>=0.995
+{"1":{"legacyReadbackEmulation":{"p50":0.677,"p95":1.576},"batch":{"p50":0.069,"p95":0.146}},"2":{"legacyReadbackEmulation":{"p50":1.06,"p95":1.796},"batch":{"p50":0.059,"p95":0.649}},"4":{"legacyReadbackEmulation":{"p50":2.094,"p95":6.714},"batch":{"p50":0.167,"p95":0.683}},"6":{"legacyReadbackEmulation":{"p50":3.385,"p95":10.37},"batch":{"p50":0.147,"p95":0.858}},"10":{"legacyReadbackEmulation":{"p50":7.185,"p95":16.334},"batch":{"p50":0.285,"p95":0.843}}}
+
+
+$ node cyberpunk-db-integration-test.js
+exit: 0
+PASS cyberpunk-db-integration (real DB v1 fixture)
+150 canonical / 229 printings / 229 matcher references / 150 recognition groups / requests=7 / bytes=517511
+
+
+$ node --expose-gc cyberpunk-db-performance-test.js
+exit: 0
+CYBERPUNK_DB_MATCHER_PERFORMANCE_OK
+{
+  "baselineCandidate": {
+    "references": 150,
+    "syntheticDescriptorInitializationMs": 134.5,
+    "descriptorMemoryMiB": 20.3,
+    "identificationAverageMs": 298.33,
+    "identificationP95Ms": 343.71,
+    "samples": 24
+  },
+  "betaRuntime": {
+    "references": 229,
+    "syntheticDescriptorInitializationMs": 207.7,
+    "descriptorMemoryMiB": 30.99,
+    "identificationAverageMs": 295.12,
+    "identificationP95Ms": 443.73,
+    "samples": 24
+  },
+  "change": {
+    "syntheticDescriptorInitializationPercent": 54.4,
+    "descriptorMemoryPercent": 52.7,
+    "identificationAveragePercent": -1.1,
+    "identificationP95Percent": 29.1
+  }
+}
+
+
+$ node smoke-test.js
+exit: 0
+SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_13_UI_1.1.0
+models/card_detector_v53_512.onnx=2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319
+public/detection-worker.js=19d0e72eeb620f23742a9b8fe321f700c45cbd29ad41b952d115bca5fd983227
+public/table-state-engine.js=59c7bf98827abb69eba68e685377dde0ef46bff8349d53238a14ba6ea7b4c1f3
+public/vision-core.js=f3cbd789476c92f86dd25292a67a0d0e96eee9888584a867c841b3b61e8650d1
+public/identification.js=fa3b700ffd19f9726e5fe1b24c6f1bc56fd30de7f9ff0a813fdf986920028b15
+
+
+$ node smoke-test-c11.js
+exit: 0
+SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_13_UI_1.1.0
+
+
+$ node integration-test-c11.js
+exit: 0
+INTEGRATION_OK_TCGATE_ALPHA_0.1_CANDIDATE_11
+
+
+$ node smoke-test-ui-integration.js
+exit: 0
+SMOKE_OK_TCGATE_C9_UI_INTEGRATION_1
+
+
+$ node future-ux-v3.7-test.js
+exit: 0
+FUTURE_UX_V3_7_HUB_OK
+
+
+$ node future-ux-room-metadata-test.js
+exit: 0
+FUTURE_UX_ROOM_METADATA_SSE_OK
+
+
+$ node report-schema-v2-test.js
+exit: 0
+Report Schema V2 tests: OK
+
+
+$ npm.cmd run check
+exit: 0
+
+> tcgate-alpha@0.1.0-candidate.13 check
+> node check.js
+
+CHECK_OK 75 JavaScript files
+
+
+$ git diff --check
+exit: 0
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/workspace-cockpit.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/workspace-databases.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/workspace.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/workspace.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/workspace.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'server.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'workspace-cockpit-browser-test.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'workspace-test.js', LF will be replaced by CRLF the next time Git touches it
+
+
+Réexécutions après les corrections ciblées (version finale) :
+$ node workspace-database-maintenance-test.js
+exit:0 — WORKSPACE_DATABASE_MAINTENANCE_OK · 53 assertions
+$ node workspace-maintenance-journal-browser-test.js
+exit:0 — WORKSPACE_MAINTENANCE_JOURNAL_BROWSER_OK · 126 assertions
+$ node workspace-browser-test.js
+exit:0 — WORKSPACE_BROWSER_OK ; vrai ONNX/WebGPU, matcher et webcam simulée
+$ npm.cmd run check
+exit:0 — CHECK_OK 75 JavaScript files
+$ git diff --check
+exit:0
+
+Résultat final :23suites réussies sur leur dernière exécution, npm run check et git diff --check codes0.
+Captures automatiquesBDD/Journal en dossier temporaire, responsive1920/1366/900/560.
+Fixture historiqueBDD extraite en temporaire du SHA de production, aucun checkoutBDD modifié.
+Caméras simulées, reconnaissance physique non qualifiée ; aucun token ou appel API write dans le navigateur.
+Aucune Issue réelle de test créée ; aucune promotionBDD ; aucune configuration Railway modifiée.
+Le contrôle JSON canonique et les SHA finaux sont confirmés séparément après les deux pushes normaux.

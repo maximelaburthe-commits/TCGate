@@ -71,6 +71,7 @@
   function render(state){
     renderResume(state);renderGeneral(state);for(const[id,label]of [['vision','Vision'],['bdd','BDD'],['uiux','UI / UX'],['annex','Fonctions annexes']])renderCategory(state,id,label);
     $('workspaceVersion').textContent='Workspace '+(state.meta?.workspaceVersion||'—');
+    window.dispatchEvent(new CustomEvent('tcgate-workspace-state-loaded',{detail:state}));
   }
   let loading=false;
   async function loadState(){

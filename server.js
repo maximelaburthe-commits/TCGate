@@ -65,7 +65,8 @@ function securityHeaders(req, res) {
     'Content-Security-Policy',
     "default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; " +
     "script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; worker-src 'self' blob:; " +
-    "connect-src 'self' https://raw.githubusercontent.com https://cdn.jsdelivr.net https://rtc.live.cloudflare.com; " +
+    "connect-src 'self' https://raw.githubusercontent.com https://cdn.jsdelivr.net https://rtc.live.cloudflare.com" +
+    (String(req.url || '').split('?')[0] === '/workspace.html' ? ' https://api.github.com' : '') + '; ' +
     "img-src 'self' data: blob: https://raw.githubusercontent.com https://cdn.jsdelivr.net; " +
     "style-src 'self'; media-src 'self' blob:"
   );

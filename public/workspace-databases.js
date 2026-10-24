@@ -2,9 +2,9 @@
   'use strict';
   const base='https://github.com/maximelaburthe-commits/';
   return Object.freeze([
-    Object.freeze({gameId:'cyberpunk',label:'Cyberpunk',repositoryUrl:base+'tcgate_db_cyberpunk',actionsUrl:base+'tcgate_db_cyberpunk/actions',updateWorkflowUrl:null,
+    Object.freeze({gameId:'cyberpunk',label:'Cyberpunk',repositoryUrl:base+'tcgate_db_cyberpunk',actionsUrl:base+'tcgate_db_cyberpunk/actions',updateWorkflowUrl:base+'tcgate_db_cyberpunk/actions/workflows/build-database.yml',
       candidateUrl:base+'tcgate_db_cyberpunk/tree/develop-cyberpunk-db-v1.2',
-      candidate:{status:'development',version:'1.2.0',schema:'2.1.0',sha:'425e0198610cd0a746c4e2d1fc3094b3823340e4',locales:['en','fr'],
+      candidate:{branch:'develop-cyberpunk-db-v1.2',fallbackSha:'425e0198610cd0a746c4e2d1fc3094b3823340e4',status:'development',version:'1.2.0',schema:'2.1.0',sha:'425e0198610cd0a746c4e2d1fc3094b3823340e4',locales:['en','fr'],
         detail:'Checkpoint connu : 151 cartes canoniques · 700 printings · 140 cartes FR · 150 printings FR · fallback FR → EN. Retail préparé, non actif.',
         blockers:['Asset rights review','Assets Retail à ingérer','Qualification physique Vision EN/FR','Validation du scope Retail']},
       source:'Snapshots versionnés du repository DB ; aucune source externe en partie.'}),
