@@ -1,7 +1,7 @@
 {
   "meta": {
     "workspaceVersion": "3.0",
-    "generatedAt": "2026-10-22",
+    "generatedAt": "2026-10-24",
     "project": "TCGate",
     "production": {
       "label": "Alpha 0.1 Candidate 13 · UI 1.1.0",
@@ -16,11 +16,11 @@
     },
     "development": {
       "branch": "update/next",
-      "sha": "07c4838defc8ee9946d00cd0ab0a18e39f35ceda",
-      "sync": "diverged",
-      "ahead": 10,
-      "behind": 7,
-      "note": "À réaligner avant le prochain cycle normal de développement."
+      "sha": "25cd174c2bd4952fd8d0d317ad543d7b720cf3a0",
+      "sync": "ahead",
+      "ahead": 15,
+      "behind": 0,
+      "note": "Baseline main intégrée ; état vérifié par Git CLI local. Le Workspace, le Vision Lab, le centre de maintenance BDD et le Journal sont intégrés sur update/next. Aucun changement de main ni promotion BDD."
     },
     "principle": "Un seul chat TCGate · workspace = source de vérité · main = stable · update/next = prochaine mise à jour · Test = update/next"
   },
@@ -113,14 +113,14 @@
       "category": "general",
       "name": "Synchronisation main ↔ update/next",
       "summary": "Faire repartir chaque cycle Update de la baseline de production.",
-      "status": "attention",
-      "progress": 45,
-      "maturity": "À remettre en ordre",
+      "status": "stable",
+      "progress": 100,
+      "maturity": "Baseline main intégrée",
       "roadmap": true,
       "weight": 5,
       "track": "process",
-      "version": "10 ahead / 7 behind",
-      "notes": "update/next est actuellement divergente de main (10 commits devant / 7 derrière). C'est le premier point de workflow à traiter avant un nouveau cycle de développement.",
+      "version": "15 ahead / 0 behind",
+      "notes": "update/next contient la baseline main ; état vérifié : 15 commits devant / 0 derrière. Les branches main et Candidate 14 sont inchangées. Le cycle main / update/next / Test reste la référence.",
       "history": [
         {
           "date": "2026-09-13",
@@ -133,6 +133,24 @@
         {
           "date": "2026-10-02",
           "text": "update/next reçoit encore des correctifs Gig Dice sans réalignement préalable."
+        },
+        {
+          "date": "2026-10-23",
+          "text": "Réconciliation réalisée par intégration de main dans update/next, sans modification de main.",
+          "sha": "1d547bca4e729a6f8c2d5185f129d987335a805b"
+        },
+        {
+          "date": "2026-10-24",
+          "text": "État distant vérifié après le lot maintenance BDD et Journal : 15 ahead / 0 behind.",
+          "sha": "25cd174c2bd4952fd8d0d317ad543d7b720cf3a0"
+        },
+        {
+          "date": "2026-10-24",
+          "text": "Point de pilotage résolu : Réaligner update/next avant le prochain cycle. Contexte historique : update/next est divergente de main : 10 commits devant et 7 derrière. Ne pas démarrer un nouveau lot sans décider comment réconcilier les correctifs Gig Dice et les changements C13/C14."
+        },
+        {
+          "date": "2026-10-24",
+          "text": "Point de pilotage résolu : Stratégie de réconciliation de update/next. Contexte historique : Préserver les correctifs Gig Dice utiles tout en repartant proprement de la baseline main/C14."
         }
       ]
     },
@@ -147,7 +165,7 @@
       "roadmap": true,
       "weight": 5,
       "track": "workspace",
-      "version": "Workspace v2",
+      "version": "Workspace 3.0",
       "notes": "Le workspace devient la source de vérité du projet et le point de reprise d'un chat unique TCGate.",
       "history": [
         {
@@ -161,6 +179,26 @@
         {
           "date": "2026-10-22",
           "text": "Création du workspace HTML de pilotage fonctionnel."
+        },
+        {
+          "date": "2026-10-23",
+          "text": "Vision Lab intégré au Workspace permanent ; webcam, détection et identification séparée, sans remplacement de la BDD active.",
+          "sha": "6ba0b2d7258331e17c82aadd28e7a7d4a592fada"
+        },
+        {
+          "date": "2026-10-24",
+          "text": "Cockpit UI restauré : sidebar, vues de pilotage, historique et score pondéré alimentés par workspace-state.",
+          "sha": "be40bf6405421f1f45bfa98866f13bbddaad7a42"
+        },
+        {
+          "date": "2026-10-24",
+          "text": "Railway Test validé sur be40bf6405… selon confirmation du propriétaire du projet. Reconnaissance Vision : à tester avec cartes physiques.",
+          "sha": "be40bf6405421f1f45bfa98866f13bbddaad7a42"
+        },
+        {
+          "date": "2026-10-24",
+          "text": "Centre de maintenance BDD et Journal de pilotage intégrés sur update/next ; nouveau lot prêt pour test, sans promotion BDD ni modification de configuration Railway.",
+          "sha": "25cd174c2bd4952fd8d0d317ad543d7b720cf3a0"
         }
       ]
     },
@@ -168,16 +206,16 @@
       "id": "vision-lab",
       "category": "vision",
       "name": "Vision Lab",
-      "summary": "Laboratoire autonome pour améliorer Vision et qualifier les cartes d’une nouvelle BDD avant intégration.",
+      "summary": "Laboratoire intégré au Workspace pour améliorer Vision et tester les cartes/références d’une nouvelle BDD avant intégration.",
       "status": "stable",
       "progress": 82,
-      "maturity": "Outil de qualification opérationnel",
+      "maturity": "Intégré au Workspace · à tester avec cartes physiques",
       "roadmap": true,
       "weight": 5,
-      "track": "standalone / laboratoire",
+      "track": "update/next / laboratoire",
       "version": "0.5.1-r14.1",
       "efficiency": "Outil de mesure et de validation",
-      "notes": "Double rôle figé : 1) améliorer détection, identification, seuils, faux positifs, non-identifications et performance ; 2) tester les cartes/références d’une nouvelle BDD avant qu’elle ne soit déclarée compatible avec TCGate. Le Lab reste distinct du moteur de production et doit produire des résultats exploitables avant toute promotion.",
+      "notes": "Double rôle figé : 1) améliorer détection, identification, seuils, faux positifs, non-identifications et performance ; 2) tester les cartes/références d’une nouvelle BDD avant qu’elle ne soit déclarée compatible avec TCGate. Le Lab reste distinct du moteur de production et doit produire des résultats exploitables avant toute promotion.\nVision Lab intégré au Workspace : webcam et détection indépendantes du chargement BDD, identification activée séparément sur demande. Reconnaissance Vision : à tester avec cartes physiques ; aucune qualification physique nouvelle.",
       "history": [
         {
           "date": "2026-10-22",
@@ -190,6 +228,21 @@
         {
           "date": "2026-09",
           "text": "Feedback testeur Vision étendu pour distinguer notamment wrong_identification."
+        },
+        {
+          "date": "2026-10-23",
+          "text": "Vision Lab intégré au Workspace avec webcam, détection, identification séparée, manifest de test isolé, captures et exports.",
+          "sha": "6ba0b2d7258331e17c82aadd28e7a7d4a592fada"
+        },
+        {
+          "date": "2026-10-23",
+          "text": "Flux caméra et détection accessibles sans BDD ; une erreur de manifest reste confinée au Lab.",
+          "sha": "9f4605c3d697ff2a882303738a56d6961bc49763"
+        },
+        {
+          "date": "2026-10-24",
+          "text": "Cockpit UI restauré autour du vrai Vision Lab. La reconnaissance reste à tester avec cartes physiques.",
+          "sha": "be40bf6405421f1f45bfa98866f13bbddaad7a42"
         }
       ]
     },
@@ -747,6 +800,26 @@
         {
           "date": "2026-10-22",
           "text": "Création du modèle de données unifié et du workspace local éditable."
+        },
+        {
+          "date": "2026-10-23",
+          "text": "Vision Lab et cockpit BDD intégrés au Workspace permanent, état canonique chargé indépendamment du Lab.",
+          "sha": "6ba0b2d7258331e17c82aadd28e7a7d4a592fada"
+        },
+        {
+          "date": "2026-10-24",
+          "text": "Cockpit UI restauré : sidebar, vues de pilotage, historique et score pondéré alimentés par workspace-state.",
+          "sha": "be40bf6405421f1f45bfa98866f13bbddaad7a42"
+        },
+        {
+          "date": "2026-10-24",
+          "text": "Railway Test validé sur be40bf6405… selon confirmation du propriétaire du projet. Cette confirmation ne qualifie pas la reconnaissance Vision avec cartes physiques.",
+          "sha": "be40bf6405421f1f45bfa98866f13bbddaad7a42"
+        },
+        {
+          "date": "2026-10-24",
+          "text": "Centre de maintenance BDD et Journal de pilotage intégrés sur update/next ; nouveau lot prêt pour test, sans promotion BDD ni modification de configuration Railway.",
+          "sha": "25cd174c2bd4952fd8d0d317ad543d7b720cf3a0"
         }
       ]
     },
@@ -776,12 +849,7 @@
       {
         "title": "Workspace de pilotage + chat TCGate unique",
         "status": "active",
-        "detail": "Faire du workspace la source de vérité et utiliser un seul chat pour Général, Vision, BDD, UI/UX, SYSTEM et fonctions futures."
-      },
-      {
-        "title": "Réaligner update/next avant le prochain cycle",
-        "status": "attention",
-        "detail": "update/next est divergente de main : 10 commits devant et 7 derrière. Ne pas démarrer un nouveau lot sans décider comment réconcilier les correctifs Gig Dice et les changements C13/C14."
+        "detail": "Faire du workspace la source de vérité et utiliser un seul chat pour Général, Vision, BDD, UI/UX, SYSTEM et fonctions futures. Cockpit restauré ; centre de maintenance BDD et Journal GitHub Issues intégrés sur update/next, à tester."
       },
       {
         "title": "Hubs événementiels",
@@ -791,7 +859,7 @@
       {
         "title": "Vision Lab comme laboratoire Vision + BDD",
         "status": "active",
-        "detail": "Utiliser le Lab pour améliorer Vision et pour qualifier les cartes/références de toute nouvelle BDD avant intégration."
+        "detail": "Utiliser le Lab pour améliorer Vision et pour qualifier les cartes/références de toute nouvelle BDD avant intégration. Lab intégré au Workspace, caméra sans BDD et identification séparée. Reconnaissance : à tester avec cartes physiques."
       }
     ],
     "priorities": [
@@ -823,39 +891,40 @@
         "detail": "Candidate 14 est 1 commit devant main et apporte surtout confidentialité Report Schema V2 + purge cache TURN."
       },
       {
-        "title": "Stratégie de réconciliation de update/next",
-        "status": "open",
-        "detail": "Préserver les correctifs Gig Dice utiles tout en repartant proprement de la baseline main/C14."
-      },
-      {
         "title": "Moment de reprise des Hubs événementiels",
         "status": "deferred",
         "detail": "Le concept produit existe mais reste hors Alpha figée."
       }
     ],
-    "notes": "Le Control Center n'est plus le centre de pilotage. Les rapports techniques utiles restent dans TCGate, mais le suivi produit et la reprise de travail passent par ce workspace.\nWorkspace permanent : l'état partagé est publié sur la branche GitHub workspace-state dans tcgate_workspace_state.json. Le HTML se synchronise automatiquement à l'ouverture."
+    "notes": "Le Control Center n'est plus le centre de pilotage. Les rapports techniques utiles restent dans TCGate, mais le suivi produit et la reprise de travail passent par ce workspace.\nWorkspace permanent : l'état partagé est publié sur la branche GitHub workspace-state dans tcgate_workspace_state.json. Le HTML se synchronise automatiquement à l'ouverture.\nRailway Test : validation du propriétaire sur be40bf6405… ; le nouveau lot maintenance BDD et Journal reste à tester. Le Journal constitue l’inbox opérationnel du projet : consulter ses entrées ouvertes avec l’état canonique du Workspace avant de préparer les prochains jalons."
   },
   "verification": {
-    "verifiedAt": "2026-10-22",
-    "source": "GitHub",
+    "verifiedAt": "2026-10-24",
+    "source": "Git CLI local : références distantes et comparaison update/next avec main",
     "main": "f5f2ba00e178f58c011c87f788c9c56064d8c32a",
     "candidate14": "c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3",
-    "updateNext": "07c4838defc8ee9946d00cd0ab0a18e39f35ceda",
+    "updateNext": "25cd174c2bd4952fd8d0d317ad543d7b720cf3a0",
     "updateVsMain": {
-      "status": "diverged",
-      "ahead": 10,
-      "behind": 7
+      "status": "ahead",
+      "ahead": 15,
+      "behind": 0
     },
     "candidate14VsMain": {
       "status": "ahead",
       "ahead": 1,
       "behind": 0
+    },
+    "railwayTest": {
+      "sha": "be40bf6405421f1f45bfa98866f13bbddaad7a42",
+      "status": "validated",
+      "source": "Confirmation du propriétaire du projet dans la demande du 2026-10-24",
+      "note": "Railway Test validé sur be40bf6405… ; aucune qualification de reconnaissance Vision avec cartes physiques. Le nouveau lot maintenance BDD et Journal reste à tester."
     }
   },
   "visionLab": {
     "version": "0.5.1-r14.1",
     "qualification": "R14.1 ERA",
-    "role": "Laboratoire autonome Vision + qualification de nouvelles BDD",
+    "role": "Laboratoire intégré au Workspace : Vision + qualification de nouvelles BDD",
     "productionIsolation": true,
     "principles": [
       "Le Vision Lab ne modifie jamais directement la Vision de production.",
@@ -879,7 +948,13 @@
         "falsePositives": 0,
         "notes": "Référence actuelle. Les métriques historiques ne sont pas encore consolidées dans ce workspace."
       }
-    ]
+    ],
+    "physicalRecognition": "à tester avec cartes physiques",
+    "integration": {
+      "branch": "update/next",
+      "path": "/workspace.html",
+      "sha": "6ba0b2d7258331e17c82aadd28e7a7d4a592fada"
+    }
   },
   "sync": {
     "githubTechnicalAutoSync": true,
@@ -889,5 +964,12 @@
     "lastGithubSync": null,
     "lastRemoteSync": null,
     "note": "Le HTML permanent charge automatiquement cet état JSON depuis la branche GitHub workspace-state. Les futures mises à jour du projet modifient l'état JSON, pas le fichier HTML."
+  },
+  "journal": {
+    "backend": "github-issues",
+    "repository": "maximelaburthe-commits/TCGate",
+    "titlePrefix": "[JOURNAL]",
+    "role": "Inbox opérationnel pour intégration, tests, vérifications, bugs, idées et décisions",
+    "principle": "Le journal alimente les futurs jalons mais ne remplace pas l'état canonique du workspace."
   }
 }
