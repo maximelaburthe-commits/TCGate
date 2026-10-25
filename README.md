@@ -28,3 +28,11 @@ Voir `RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_13.md` et `REPORT_SCHEMA_V2.md`.
 Ouvrir `/workspace.html` sur le serveur TCGate. Pilotage canonique, cockpit BDD Cyberpunk/SWU et vrai Lab webcam isolé. Voir [utilisation et contrats](WORKSPACE_VISION_LAB.md). Tests : `npm run test:workspace` ; test Chrome optionnel : `npm run test:workspace-browser`.
 
 Le Workspace propose aussi la [maintenance BDD et le Journal de pilotage](WORKSPACE_DATABASE_JOURNAL.md). Le Journal utilise les Issues GitHub `[JOURNAL]` ; leur création est confirmée par le propriétaire sur GitHub.
+
+## Phone Camera produit
+
+Phone Camera fait partie du produit TCGate. **Phone Camera engine → TCGate repository** : tout développement futur utilise les propriétaires Phone intégrés. Le standalone 0.6.4.1 reste une référence historique et ne constitue plus la source de développement.
+
+Dans Lobby → Mon installation, associer le téléphone par QR puis utiliser les réglages Phone repliables sur le PC : qualité auto/720p30/1080p expérimental, zoom/champ maximum selon capacités, arrêt et diagnostic JSON. Le téléphone reste vidéo uniquement ; le microphone reste celui du PC. Autofocus natif selon navigateur, sans commande de focus manuel.
+
+**Phone Lab : NOT NEEDED** : les contrôles utiles sont dans le panneau produit et les diagnostics utilisent le même moteur. Aucune vue Workspace ni serveur supplémentaire. Voir [la matrice et les preuves de consolidation](PHONE_CONSOLIDATION_1_2C.md), [la checklist physique](PHONE_PHYSICAL_QUALIFICATION_1_2C.md) et le journal PHONE_CONSOLIDATION_1_2C_VALIDATION.txt. Chrome Android physique non qualifié.

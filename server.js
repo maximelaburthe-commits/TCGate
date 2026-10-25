@@ -7,6 +7,8 @@ const crypto = require('crypto');
 const os = require('os');
 const QRCode = require('./vendor/QRCode');
 const QRErrorCorrectLevel = require('./vendor/QRCode/QRErrorCorrectLevel');
+const PhoneCameraPrivacy = require('./public/phone-camera-privacy.js');
+const { validatePhoneControlPayload } = require('./public/phone-camera-control.js');
 
 const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -420,34 +422,17 @@ function closePhonePair(pair, reason = 'dissociated') {
   phonePairs.delete(pair.id);
 }
 
-function safeDiagnosticValue(value, depth = 0) {
-  if (depth > 5) return null;
-  if (value == null || typeof value === 'boolean') return value;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  if (typeof value === 'string') return /^(data:|blob:)/i.test(value) || value.length > 1000 ? null : value;
-  if (Array.isArray(value)) return value.slice(-120).map(item => safeDiagnosticValue(item, depth + 1));
-  if (typeof value !== 'object') return null;
-  const out = {};
-  for (const [key, item] of Object.entries(value).slice(0, 80)) {
-    if (/^(sdp|candidate|image|frame|video|audio|screenshot|token|authorization|deviceId|groupId)$/i.test(key)) continue;
-    out[key] = safeDiagnosticValue(item, depth + 1);
-  }
-  return out;
+function safeDiagnosticValue(value, secrets = []) {
+  return PhoneCameraPrivacy.sanitize(value, { secrets });
 }
 
-function validatePhoneSignal(type, payload) {
+function validatePhoneSignal(type, payload, phoneState = null) {
   if (!PHONE_SIGNAL_TYPES.has(type)) return false;
   if (type === 'candidate') {
     const candidate = payload?.candidate?.candidate ?? payload?.candidate;
     return typeof candidate === 'string' && candidate.length <= 4096;
   }
-  if (type === 'control') {
-    return payload && typeof payload === 'object' &&
-      typeof payload.requestId === 'string' && payload.requestId.length >= 6 && payload.requestId.length <= 80 &&
-      payload.action === 'select-camera' &&
-      payload.args && typeof payload.args === 'object' &&
-      /^camera-[1-9][0-9]{0,2}$/.test(String(payload.args.cameraId || ''));
-  }
+  if (type === 'control') return validatePhoneControlPayload(payload, phoneState);
   if (!['offer', 'answer'].includes(type)) return payload == null || (typeof payload === 'object' && !Array.isArray(payload));
   const description = payload?.description ?? payload;
   return description && description.type === type && typeof description.sdp === 'string' && description.sdp.length <= 56000;
@@ -744,17 +729,19 @@ const server = http.createServer(async (req, res) => {
         const body = await readJson(req);
         const role = body.role === 'phone' ? 'phone' : 'pc';
         if ((role === 'phone' && !isPhone) || (role === 'pc' && !pcPeer)) return sendJson(res, 401, { ok: false, error: 'Session téléphone inconnue' });
-        if (!validatePhoneSignal(body.type, body.payload ?? null)) return sendJson(res, 400, { ok: false, error: 'Signal téléphone invalide' });
+        if (!validatePhoneSignal(body.type, body.payload ?? null, pair.phoneState)) return sendJson(res, 400, { ok: false, error: 'Signal téléphone invalide' });
         const phoneSignals = new Set(['offer', 'candidate', 'reset-peer', 'control-result', 'control-state']);
         const pcSignals = new Set(['answer', 'candidate', 'restart-request', 'reset', 'control']);
         if (!(role === 'phone' ? phoneSignals : pcSignals).has(body.type)) return sendJson(res, 400, { ok: false, error: 'Signal interdit pour ce rôle' });
-        const delivered = sseSend(role === 'phone' ? pair.pcSse : pair.phoneSse, 'signal', { role, type: body.type, payload: body.payload ?? null, at: Date.now() }) ? 1 : 0;
+        const payload = ['control-state', 'control-result'].includes(body.type)
+          ? safeDiagnosticValue(body.payload, [bearerToken(req)]) : body.payload ?? null;
+        const delivered = sseSend(role === 'phone' ? pair.pcSse : pair.phoneSse, 'signal', { role, type: body.type, payload, at: Date.now() }) ? 1 : 0;
         return sendJson(res, 200, { ok: true, delivered });
       }
       if (action === 'state' && req.method === 'POST') {
         if (!isPhone) return sendJson(res, 401, { ok: false, error: 'Session téléphone inconnue' });
         const body = await readJson(req, 32 * 1024);
-        pair.phoneState = safeDiagnosticValue(body.state || {});
+        pair.phoneState = safeDiagnosticValue(body.state || {}, [bearerToken(req)]);
         pair.lastSeenAt = Date.now();
         sseSend(pair.pcSse, 'phone-state', { state: pair.phoneState, updatedAt: new Date().toISOString() });
         return sendJson(res, 200, { ok: true });
@@ -766,7 +753,7 @@ const server = http.createServer(async (req, res) => {
       if (action === 'report' && req.method === 'POST') {
         if (!isPhone) return sendJson(res, 401, { ok: false, error: 'Session téléphone inconnue' });
         const body = await readJson(req, PHONE_REPORT_LIMIT_BYTES);
-        pair.phoneReport = safeDiagnosticValue(body.report || {});
+        pair.phoneReport = safeDiagnosticValue(body.report || {}, [bearerToken(req)]);
         pair.lastSeenAt = Date.now();
         return sendJson(res, 200, { ok: true, stored: true });
       }

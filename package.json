@@ -31,7 +31,9 @@
     "test:ui-1.2": "node tcgate-ui-1.2-test.js && node tcgate-ui-1.2-client-test.js && node tcgate-ui-1.2-room-test.js",
     "test:ui-1.2-browser": "node tcgate-ui-1.2-browser-test.js",
     "test:project-cleanup": "node report-email-bridge-test.js",
-    "test:report-email-browser": "node report-email-browser-test.js"
+    "test:report-email-browser": "node report-email-browser-test.js",
+    "test:phone-consolidation": "node phone-consolidation-1.2c-test.js",
+    "test:phone-consolidation-browser": "node phone-consolidation-1.2c-browser-test.js"
   },
   "engines": {
     "node": ">=20"

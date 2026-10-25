@@ -1,0 +1,18 @@
+/* PC Phone Camera settings only. The mobile /phone presentation is unchanged. */
+#phoneCameraPanel #phoneCameraSettings{margin:14px 0;padding-top:12px;border-top:1px solid #27324a;min-width:0}
+#phoneCameraPanel #phoneCameraSettings[hidden],#phoneCameraPanel #phoneCameraSettings [hidden]{display:none!important}
+#phoneCameraPanel #phoneCameraSettings summary{cursor:pointer;color:#cbd5e8;font-size:12px;font-weight:650;line-height:1.5}
+#phoneCameraPanel .phone-settings-content{display:grid;gap:12px;padding-top:12px;min-width:0}
+#phoneCameraPanel #phoneCameraQualityField{margin:0}
+#phoneCameraPanel #phoneCameraZoomField>label{display:block;margin-bottom:7px;color:#aab6cc;font-size:12px}
+#phoneCameraPanel .phone-settings-zoom{display:flex;align-items:center;gap:10px;min-width:0;margin-bottom:8px}
+#phoneCameraPanel #phoneCameraZoom{flex:1;min-width:60px;padding:0;accent-color:#9b86ff}
+#phoneCameraPanel #phoneCameraZoomValue{flex:none;min-width:44px;color:#cbbcff;font-size:12px;text-align:right}
+#phoneCameraPanel #phoneCameraMetrics{display:grid;grid-template-columns:minmax(95px,.85fr) minmax(0,1.15fr);gap:7px 12px;margin:0;font-size:11px;line-height:1.45}
+#phoneCameraPanel #phoneCameraMetrics dt{color:#8f9bb0}
+#phoneCameraPanel #phoneCameraMetrics dd{margin:0;min-width:0;color:#d5deed;overflow-wrap:anywhere}
+#phoneCameraPanel .phone-settings-hint,#phoneCameraPanel .phone-settings-status{margin:0;color:#8f9bb0;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+#phoneCameraPanel .phone-settings-status[data-state=error]{color:#f06a75}
+#phoneCameraPanel #phoneCameraSettings button{max-width:100%;font-size:11px;white-space:normal}
+#phoneCameraPanel #phoneCameraSettings button:focus-visible,#phoneCameraPanel #phoneCameraSettings input:focus-visible,#phoneCameraPanel #phoneCameraSettings select:focus-visible,#phoneCameraPanel #phoneCameraSettings summary:focus-visible{outline:2px solid #9b86ff;outline-offset:3px}
+@media(max-width:560px){#phoneCameraPanel #phoneCameraMetrics{grid-template-columns:minmax(90px,.85fr) minmax(0,1.15fr);gap:7px 9px}#phoneCameraPanel #phoneCameraSettings .phone-camera-actions{display:grid;grid-template-columns:1fr}#phoneCameraPanel #phoneCameraSettings button{width:100%}}

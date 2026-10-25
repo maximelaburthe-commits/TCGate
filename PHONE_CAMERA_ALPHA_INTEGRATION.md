@@ -1,7 +1,7 @@
 # TCGate Phone Camera Alpha
 
 Baseline TCGate: Candidate 11, commit `dd96acf54a291696439a48416e0e2bcc7b9cba05`.
-Référence technique: TCGate Phone Camera Lab V0.6.4.1.
+Référence historique de l’intégration initiale : TCGate Phone Camera Lab V0.6.4.1. Depuis Maintenance 1.2C, le moteur intégré au dépôt TCGate est la source de vérité produit et de développement ; voir PHONE_CONSOLIDATION_1_2C.md.
 
 ## Architecture
 

@@ -4,6 +4,7 @@
   if (root) root.TCGatePhoneCameraDiagnostics = api;
 })(typeof window !== 'undefined' ? window : globalThis, function createPhoneCameraDiagnostics() {
   'use strict';
+  const privacy = typeof module === 'object' && module.exports ? require('./phone-camera-privacy.js') : globalThis.TCGatePhoneCameraPrivacy;
   const candidateTypes=new Set(['host','srflx','prflx','relay']);
   const protocols=new Set(['udp','tcp','tls']);
   const generic=(value,allowed)=>allowed.has(String(value||'').toLowerCase())?String(value).toLowerCase():null;
@@ -19,11 +20,11 @@
     });
     const local=pair?byId.get(pair.localCandidateId):null,remote=pair?byId.get(pair.remoteCandidateId):null;
     const codec=sender?.codecId?byId.get(sender.codecId):null;
-    return {
+    return privacy.sanitize({
       route:{localCandidateType:generic(local?.candidateType,candidateTypes),remoteCandidateType:generic(remote?.candidateType,candidateTypes),localProtocol:generic(local?.protocol,protocols),remoteProtocol:generic(remote?.protocol,protocols),relayProtocol:generic(local?.relayProtocol||remote?.relayProtocol,protocols),usingRelay:local?.candidateType==='relay'||remote?.candidateType==='relay'},
       sender:sender?{framesEncoded:sender.framesEncoded??null,framesSent:sender.framesSent??null,totalEncodeTime:sender.totalEncodeTime??null,averageEncodeMsPerFrame:averageMs(sender.totalEncodeTime,sender.framesEncoded),bitrateKbps:null,fps:sender.framesPerSecond??null,codec:codec?.mimeType||null,encoderImplementation:sender.encoderImplementation||null,powerEfficientEncoder:sender.powerEfficientEncoder??null,rttMs:pair?.currentRoundTripTime!=null?pair.currentRoundTripTime*1000:null}:null,
       receiver:receiver?{packetsReceived:receiver.packetsReceived??null,packetsLost:receiver.packetsLost??null,jitter:receiver.jitter??null,framesDecoded:receiver.framesDecoded??null,framesDropped:receiver.framesDropped??null,jitterBufferDelay:receiver.jitterBufferDelay??null,jitterBufferTargetDelay:receiver.jitterBufferTargetDelay??null,jitterBufferEmittedCount:receiver.jitterBufferEmittedCount??null,totalDecodeTime:receiver.totalDecodeTime??null,totalProcessingDelay:receiver.totalProcessingDelay??null,averageJitterBufferMsPerFrame:averageMs(receiver.jitterBufferDelay,receiver.jitterBufferEmittedCount),averageDecodeMsPerFrame:averageMs(receiver.totalDecodeTime,receiver.framesDecoded)}:null
-    };
+    });
   }
   return Object.freeze({averageMs,collect});
 });

@@ -70,18 +70,24 @@ const st = {
 };
 
 
+function phoneDiagnostic(value) {
+  return window.TCGatePhoneCameraPrivacy.sanitize(value, {
+    secrets: [st.token, urlToken, ...st.cameraDevices.map(device => device.deviceId), ...st.cameraAliases.keys()]
+  });
+}
+
 function cleanSettings(settings = {}) {
   const out = { ...settings };
   delete out.deviceId;
   delete out.groupId;
-  return out;
+  return phoneDiagnostic(out);
 }
 
 function cleanCapabilities(caps = {}) {
   const out = { ...caps };
   delete out.deviceId;
   delete out.groupId;
-  return out;
+  return phoneDiagnostic(out);
 }
 
 function cleanPhoneError(error) {
@@ -89,14 +95,14 @@ function cleanPhoneError(error) {
   for (const device of st.cameraDevices) {
     if (device?.deviceId) message = message.split(device.deviceId).join('[camera]');
   }
-  return {
+  return phoneDiagnostic({
     name: String(error?.name || 'Error').slice(0, 60),
     message: message.replace(/[\u0000-\u001F\u007F]/g, '').slice(0, 180)
-  };
+  });
 }
 
 function log(type, data = {}) {
-  st.events.push({ at: new Date().toISOString(), type, data });
+  st.events.push(phoneDiagnostic({ at: new Date().toISOString(), type, data }));
   if (st.events.length > 240) st.events.shift();
 }
 
@@ -395,7 +401,7 @@ function enqueueSignal(s) {
 async function signal(type, payload) {
   return api(`/api/phone/pairs/${st.pair}/signal`, {
     method: 'POST',
-    body: { role: 'phone', type, payload },
+    body: { role: 'phone', type, payload: ['control-state', 'control-result'].includes(type) ? phoneDiagnostic(payload) : payload },
   });
 }
 
@@ -778,6 +784,18 @@ function activeCameraIndex() {
   return idx >= 0 ? idx : null;
 }
 
+function captureCapabilityRanges(track) {
+  const caps = track?.getCapabilities?.() || {}, ranges = {};
+  for (const key of ['width', 'height', 'frameRate']) {
+    const value = caps[key];
+    if (value && Number.isFinite(value.min) && Number.isFinite(value.max) && value.min >= 0 && value.max >= value.min) {
+      ranges[key] = { min: value.min, max: value.max };
+      if (Number.isFinite(value.step) && value.step > 0) ranges[key].step = value.step;
+    }
+  }
+  return ranges;
+}
+
 function controlSnapshot(reason = 'state') {
   const track = st.stream?.getVideoTracks()[0] || null;
   const settings = cleanSettings(track?.getSettings?.() || st.lastCapture || {});
@@ -785,7 +803,7 @@ function controlSnapshot(reason = 'state') {
   const zoom = caps.zoom && Number.isFinite(caps.zoom.min) && Number.isFinite(caps.zoom.max)
     ? { min: Number(caps.zoom.min), max: Number(caps.zoom.max), step: Number(caps.zoom.step || 0.1), value: Number(track?.getSettings?.().zoom ?? caps.zoom.min) }
     : null;
-  return {
+  return phoneDiagnostic({
     reason,
     cameraActive: track?.readyState === 'live',
     orientation: st.orientationLandscape ? 'landscape' : 'portrait',
@@ -796,6 +814,7 @@ function controlSnapshot(reason = 'state') {
     requestedMode: $('resolution').value,
     activeProfile: currentProfile(),
     capture: settings,
+    captureCapabilities: captureCapabilityRanges(track),
     zoom,
     focus: {
       state: 'native-autofocus',
@@ -822,7 +841,7 @@ function controlSnapshot(reason = 'state') {
         userFeel: st.energy.manualThermalFeel,
       },
     },
-  };
+  });
 }
 
 async function pushControlState(reason = 'state') {
@@ -843,16 +862,21 @@ async function pushControlState(reason = 'state') {
 async function setZoomRemote(value) {
   const track = st.stream?.getVideoTracks()[0];
   if (!track) throw new Error('Caméra inactive');
+  if (st.captureBusy) throw new Error('Caméra occupée, réessayez après le changement en cours');
   const caps = track.getCapabilities?.() || {};
   const min = Number(caps.zoom?.min), max = Number(caps.zoom?.max);
   if (!Number.isFinite(min) || !Number.isFinite(max)) throw new Error('Zoom indisponible');
-  const v = Math.max(min, Math.min(max, Number(value)));
-  await track.applyConstraints({ advanced: [{ zoom: v }] });
-  $('zoom').value = String(v);
-  $('zoomValue').textContent = `${v.toFixed(1)}×`;
-  log('zoom-remote', { value: v });
-  await pushControlState('zoom-remote');
-  return controlSnapshot('zoom-remote');
+  if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error('Valeur de zoom invalide');
+  const v = Math.max(min, Math.min(max, value));
+  st.captureBusy = true;
+  try {
+    await track.applyConstraints({ advanced: [{ zoom: v }] });
+    $('zoom').value = String(v);
+    $('zoomValue').textContent = v.toFixed(1) + '×';
+    log('zoom-remote', { value: v });
+    await pushControlState('zoom-remote');
+    return controlSnapshot('zoom-remote');
+  } finally { st.captureBusy = false; }
 }
 
 async function executeRemoteControl(payload = {}) {
@@ -862,6 +886,8 @@ async function executeRemoteControl(payload = {}) {
   st.remoteCommandCount += 1;
   log('remote-control', { requestId, action, count: st.remoteCommandCount });
   try {
+    if (!window.TCGatePhoneCameraControl.validatePhoneControlPayload(payload, controlSnapshot('validation'))) throw new Error('Commande ou capacités invalides');
+    if (st.captureBusy && ['select-camera', 'set-quality', 'wide', 'set-zoom'].includes(action)) throw new Error('Caméra occupée, réessayez après le changement en cours');
     let result = null;
     if (action === 'request-state') {
       result = controlSnapshot('request-state');
@@ -876,12 +902,22 @@ async function executeRemoteControl(payload = {}) {
     } else if (action === 'set-quality') {
       const mode = String(args.mode || 'auto');
       if (!['auto','1280x720','1920x1080'].includes(mode)) throw new Error('Profil qualité invalide');
+      const previousMode = $('resolution').value, previousAuto = st.autoProfile, previousProfile = currentProfile();
       $('resolution').value = mode;
-      await changeResolution();
+      try { await changeResolution(); } catch (error) {
+        $('resolution').value = previousMode;
+        st.autoProfile = previousAuto;
+        error.rollbackRestored = false;
+        if (st.stream) {
+          try { await applyCaptureProfile(previousProfile, 'quality-rollback'); error.rollbackRestored = true; } catch {}
+        }
+        throw error;
+      }
       result = controlSnapshot('set-quality');
     } else if (action === 'wide') {
-      await setMinimumZoom();
-      result = controlSnapshot('wide');
+      const track = st.stream?.getVideoTracks()[0];
+      const caps = track?.getCapabilities?.() || {};
+      result = await setZoomRemote(caps.zoom?.min);
     } else if (action === 'set-zoom') {
       result = await setZoomRemote(args.value);
     } else if (action === 'stop-camera') {
@@ -1281,8 +1317,8 @@ async function stats() {
 }
 
 function buildPhoneReport() {
-  return {
-    version: 'tcgate-phone-camera-lab-v0.6.4.1',
+  return phoneDiagnostic({
+    version: 'tcgate-phone-camera-integrated-1.2c',
     generatedAt: new Date().toISOString(),
     role: 'phone',
     pair: st.pair,
@@ -1322,14 +1358,14 @@ function buildPhoneReport() {
       policy: st.config?.iceTransportPolicy || null,
     },
     events: st.events,
-  };
+  });
 }
 
 function downloadPhoneReport(data) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const file = new File([blob], `tcgate-phone-lab-phone-${Date.now()}.json`, { type: 'application/json' });
+  const file = new File([blob], `tcgate-phone-camera-diagnostic-${Date.now()}.json`, { type: 'application/json' });
   if (navigator.canShare?.({ files: [file] }) && navigator.share) {
-    return navigator.share({ files: [file], title: 'Diagnostic TCGate Phone Camera Lab' });
+    return navigator.share({ files: [file], title: 'Diagnostic TCGate Phone Camera' });
   }
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);

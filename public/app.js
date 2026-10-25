@@ -1900,6 +1900,7 @@ async function startPcMicrophoneOnly(microphoneId = null) {
   state.cameraEnabled = false;
   state.micEnabled = true;
   state.selectedMicrophoneId = audio.getSettings?.().deviceId || microphoneId || null;
+  state.selectedCameraId = state.selectedCameraId || readMediaPreferences().cameraId;
   saveMediaPreferences();
   attachLocalTrackLifecycle(audio, 'audio');
   if (state.audioTransceiver?.sender) await state.audioTransceiver.sender.replaceTrack(audio);
@@ -1937,6 +1938,7 @@ async function restorePhoneCameraAfterRecovery() {
     logEvent('phone-camera-restore-error', { name: err?.name || null, message: err?.message || String(err) });
     return null;
   });
+  await enumerateDevices();
   updatePhoneCameraUi({
     status: restored?.connected ? (restored.cameraActive ? 'streaming' : 'connected') : 'disconnected',
     diagnostics: restored?.state || null,
@@ -1992,11 +1994,12 @@ function updatePhoneCameraUi(info = {}) {
       select.disabled = true;
     }
   }
-  $('returnToWebcam')?.classList.toggle('hidden', status !== 'streaming' || state.videoSource !== 'phone');
+  $('returnToWebcam')?.classList.toggle('hidden', status === 'idle' || status === 'waiting' || state.videoSource !== 'phone');
   $('reusePhoneCamera')?.classList.toggle('hidden', !(status === 'streaming' && state.videoSource === 'webcam'));
   if (status === 'disconnected') help.textContent = 'La partie reste active. Garde cette page ouverte pendant la reconnexion.';
   else if (status === 'streaming') help.textContent = 'Le téléphone remplace la webcam. Le microphone reste celui du PC.';
   if (info.controlError) toast(info.controlError);
+  window.TCGatePhoneCameraSettings?.update(info);
 }
 
 async function pairPhoneCamera() {

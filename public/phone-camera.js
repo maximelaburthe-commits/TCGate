@@ -11,7 +11,7 @@
   };
 
   function record(type, data = {}) {
-    state.events.push({ at: new Date().toISOString(), type, data });
+    state.events.push(window.TCGatePhoneCameraPrivacy.sanitize({ at: new Date().toISOString(), type, data }));
     if (state.events.length > 200) state.events.shift();
   }
 
@@ -169,11 +169,12 @@
     }
     if (message.type === 'control-state') {
       state.phoneState = message.payload || null;
+      state.cameraActive = Boolean(state.phoneState?.cameraActive);
       notify(state.cameraActive ? 'streaming' : 'connected', { diagnostics: state.phoneState });
       return;
     }
     if (message.type === 'control-result') {
-      if (message.payload?.state) state.phoneState = message.payload.state;
+      if (message.payload?.state) { state.phoneState = message.payload.state; state.cameraActive = Boolean(state.phoneState.cameraActive); }
       state.controls.settle(message.payload || {});
       record('control-result', {
         requestId: message.payload?.requestId || null,
@@ -190,27 +191,28 @@
     }
   }
 
-  async function selectCamera(cameraId) {
-    const id = String(cameraId || '');
-    const known = state.phoneState?.cameraDevices?.some(camera => camera.id === id);
-    if (!known) throw new Error('Objectif téléphone inconnu');
-    const requestId = `camera-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  async function requestControl(action, args = {}) {
+    if (!state.pairId || !state.connected) throw new Error('Téléphone indisponible');
+    const requestId = 'phone-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    const payload = { requestId, action, args };
+    if (!window.TCGatePhoneCameraControl.validatePhoneControlPayload(payload, state.phoneState)) throw new Error('Commande indisponible pour cette caméra');
     const completion = state.controls.wait(requestId);
-    let delivered;
     try {
-      delivered = await signal('control', { requestId, action: 'select-camera', args: { cameraId: id } });
+      const delivered = await signal('control', payload);
+      if (!delivered?.delivered) throw new Error('Téléphone indisponible');
     } catch (error) {
       state.controls.cancel(requestId, error.message || 'Commande non délivrée');
       await completion.catch(() => {});
       throw error;
     }
-    if (!delivered?.delivered) {
-      state.controls.cancel(requestId, 'Téléphone indisponible');
-      await completion.catch(() => {});
-      throw new Error('Téléphone indisponible');
-    }
-    record('camera-select-requested', { cameraId: id, requestId });
+    record('control-requested', { action, requestId });
     return completion;
+  }
+
+  async function selectCamera(cameraId) {
+    const id = String(cameraId || '');
+    if (!state.phoneState?.cameraDevices?.some(camera => camera.id === id)) throw new Error('Objectif téléphone inconnu');
+    return requestControl('select-camera', { cameraId: id });
   }
 
   async function findCurrent({ api, room, peerId }) {
@@ -258,7 +260,7 @@
   }
 
   function snapshot() {
-    return {
+    return window.TCGatePhoneCameraPrivacy.sanitize({
       version: 'tcgate-phone-camera-alpha-1',
       used: Boolean(state.pairId),
       pairId: state.pairId,
@@ -273,7 +275,7 @@
       },
       report: state.phoneReport,
       events: state.events.slice()
-    };
+    });
   }
 
   async function disconnect({ server = true, quiet = false } = {}) {
@@ -295,6 +297,8 @@
     if (server && pairId && state.api) await call(`/api/phone/pairs/${pairId}`, { method: 'DELETE' }).catch(() => {});
     state.pairId = null;
     state.phoneUrl = null;
+    state.phoneState = null;
+    state.phoneReport = null;
     if (!quiet) notify('idle');
   }
 
@@ -304,6 +308,7 @@
     fetchDiagnostics,
     getSnapshot: snapshot,
     selectCamera,
+    requestControl,
     findCurrent,
     restoreCurrent,
     usePhoneSource
