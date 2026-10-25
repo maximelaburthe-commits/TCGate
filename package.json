@@ -28,7 +28,9 @@
     "test:workspace-cockpit-browser": "node workspace-cockpit-browser-test.js",
     "test:workspace-journal": "node workspace-journal-test.js",
     "test:workspace-maintenance": "node workspace-database-maintenance-test.js",
-    "test:workspace-maintenance-browser": "node workspace-maintenance-journal-browser-test.js"
+    "test:workspace-maintenance-browser": "node workspace-maintenance-journal-browser-test.js",
+    "test:ui-1.2": "node tcgate-ui-1.2-test.js && node tcgate-ui-1.2-client-test.js && node tcgate-ui-1.2-room-test.js",
+    "test:ui-1.2-browser": "node tcgate-ui-1.2-browser-test.js"
   },
   "engines": {
     "node": ">=20"

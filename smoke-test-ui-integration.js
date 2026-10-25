@@ -4,10 +4,12 @@ const crypto=require('crypto');
 
 const html=fs.readFileSync('public/index.html','utf8');
 const app=fs.readFileSync('public/app.js','utf8');
+require('./tcgate-ui-1.2-contract.js').assertHome(html);
+require('./tcgate-ui-1.2-contract.js').assertGame(html,fs.readFileSync('public/future-ux-v3.7.js','utf8'));
 const css=fs.readFileSync('public/tcgate-alpha.css','utf8');
 
 for(const token of [
-  'tcgate-home-shell','home-alpha-orbit-hero-approved.webp','tcgate-home-steps',
+  'tcgate-home-shell','ui12-home-accueil','tcgate-home-steps',
   'tcgate-game-topbar','displayCardPanel','displayCardButton','displayCardImage',
   'tcgate-local-pip','fullscreenMic','fullscreenCam','fullscreenCardPreview',
   'remoteVideo','visionOverlay','localVideo'

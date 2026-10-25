@@ -485,6 +485,7 @@ function roomSnapshot(room) {
   return {
     code: room.code,
     game: room.game,
+    gigDiceEnabled: room.game === 'cyberpunk' && room.gigDiceEnabled === true,
     createdAt: room.createdAt,
     recoveryEpoch: room.recoveryEpoch || 0,
     phase: room.phase || 'lobby',
@@ -796,9 +797,11 @@ const server = http.createServer(async (req, res) => {
       const code = makeCode();
       const id = peerId();
       const token = sessionToken();
+      const game = ALLOWED_GAMES.has(String(body.game || '')) ? String(body.game) : 'cyberpunk';
       const room = {
         code,
-        game: ALLOWED_GAMES.has(String(body.game || '')) ? String(body.game) : 'cyberpunk',
+        game,
+        gigDiceEnabled: game === 'cyberpunk',
         createdAt: Date.now(),
         recoveryEpoch: 0,
         phase: 'lobby',
@@ -878,8 +881,19 @@ const server = http.createServer(async (req, res) => {
       const updatesName = Object.prototype.hasOwnProperty.call(body, 'name');
       const updatesGame = Object.prototype.hasOwnProperty.call(body, 'game');
       const updatesTimer = Object.prototype.hasOwnProperty.call(body, 'timer');
-      if (!updatesName && !updatesGame && !updatesTimer) {
+      const updatesGigDice = Object.prototype.hasOwnProperty.call(body, 'gigDiceEnabled');
+      if (!updatesName && !updatesGame && !updatesTimer && !updatesGigDice) {
         return sendJson(res, 400, { ok: false, error: 'Aucune modification valide' });
+      }
+      if (updatesGigDice) {
+        if (peer.role !== 'host') return sendJson(res, 403, { ok: false, error: 'Seul l\u2019h\u00f4te peut modifier Gig Dice' });
+        if (typeof body.gigDiceEnabled !== 'boolean') {
+          return sendJson(res, 400, { ok: false, error: 'Configuration Gig Dice invalide' });
+        }
+        const nextGame = updatesGame ? String(body.game || '') : room.game;
+        if (body.gigDiceEnabled && nextGame !== 'cyberpunk') {
+          return sendJson(res, 400, { ok: false, error: 'Gig Dice est r\u00e9serv\u00e9 \u00e0 Cyberpunk' });
+        }
       }
       if (updatesName) {
         if (typeof body.name !== 'string' || !body.name.trim() || body.name.length > 64) {
@@ -892,7 +906,10 @@ const server = http.createServer(async (req, res) => {
         if (!ALLOWED_GAMES.has(String(body.game || ''))) {
           return sendJson(res, 400, { ok: false, error: 'Jeu invalide' });
         }
+        const previousGame = room.game;
         room.game = String(body.game);
+        if (room.game !== 'cyberpunk') room.gigDiceEnabled = false;
+        else if (previousGame !== 'cyberpunk') room.gigDiceEnabled = true;
       }
       if (updatesTimer) {
         if (peer.role !== 'host') return sendJson(res, 403, { ok: false, error: 'Seul l\u2019h\u00f4te peut modifier le minuteur' });
@@ -903,6 +920,7 @@ const server = http.createServer(async (req, res) => {
         }
         room.timer = { enabled, durationSeconds: minutes * 60, running: false, remainingSeconds: minutes * 60, endsAt: null, revision: (room.timer?.revision || 0) + 1 };
       }
+      if (updatesGigDice) room.gigDiceEnabled = body.gigDiceEnabled;
       peer.lastSeen = Date.now();
       const snapshot = roomSnapshot(room);
       broadcastRoomState(room);
@@ -925,6 +943,7 @@ const server = http.createServer(async (req, res) => {
         role: peer.role,
         name: peer.name,
         game: room.game,
+        gigDiceEnabled: room.game === 'cyberpunk' && room.gigDiceEnabled === true,
         phase: room.phase || 'lobby'
       });
     }
@@ -1118,6 +1137,9 @@ const server = http.createServer(async (req, res) => {
       const from = authenticatedPeer(req, room, body.from);
       if (!room || !from) return sendJson(res, 401, { ok: false, error: 'Session inconnue' });
       if (!sessionRateLimit(res, from, 'signal', 360, 60 * 1000)) return;
+      if (body.type === 'gig-state' && (room.game !== 'cyberpunk' || room.gigDiceEnabled !== true)) {
+        return sendJson(res, 403, { ok: false, error: 'Gig Dice est d\u00e9sactiv\u00e9 pour ce salon' });
+      }
       if (!validateSignal(body.type, body.payload ?? null)) {
         return sendJson(res, 400, { ok: false, error: 'Signal WebRTC invalide' });
       }

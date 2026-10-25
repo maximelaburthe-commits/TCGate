@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 13 · UI 1.1.0';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 13 · UI 1.2.0';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -71,6 +71,8 @@ const state = {
   videoSource: 'webcam',
   phoneCameraQrUrl: null,
 
+  gigDiceEnabled: false,
+  gigDiceConfigPending: false,
   gigDice: [],
   dieDrag: null,
   lastMovedDieId: null,
@@ -405,6 +407,7 @@ function hydrateSessionFromResult(result) {
   state.playerName = result.name || state.playerName || 'Joueur';
   state.roomSnapshot = result.room || null;
   state.game = result.room?.game || state.game || 'cyberpunk';
+  state.gigDiceEnabled = gigDiceEnabledFromSnapshot(result.room);
   state.recoveryEpoch = Number(result.room?.recoveryEpoch || 0);
   state.rtcConfig = null;
   state.rtcConfigKey = null;
@@ -437,6 +440,7 @@ function syncHubSessionControls() {
   if ($('copyLink')) $('copyLink').disabled = !connected;
   if ($('timerToggle')) $('timerToggle').disabled = !host;
   if ($('timerMinutes')) $('timerMinutes').disabled = !host;
+  renderGigDiceConfiguration();
 }
 
 function updateServerClockOffset(serverNowMs, clientReferenceMs = Date.now()) {
@@ -692,7 +696,29 @@ function visionEnabledForCurrentGame() {
 }
 
 function gigDiceEnabledForCurrentGame() {
-  return state.game === 'cyberpunk';
+  return state.game === 'cyberpunk' && state.gigDiceEnabled === true;
+}
+
+function gigDiceEnabledFromSnapshot(snapshot) {
+  if (!snapshot || (snapshot.game || state.game) !== 'cyberpunk') return false;
+  // Old saved snapshots and deterministic legacy fixtures predate the room option.
+  // Current server snapshots always supply a boolean; never infer a malformed value.
+  return snapshot.gigDiceEnabled === undefined ? true : snapshot.gigDiceEnabled === true;
+}
+
+function renderGigDiceConfiguration() {
+  const available = state.game === 'cyberpunk';
+  const connected = Boolean(state.roomCode && state.peerId && state.authToken);
+  const canConfigure = connected && state.role === 'host' && !state.gameActive && !state.gameEntering && state.roomSnapshot?.phase !== 'game';
+  $('gigDiceHubConfig')?.classList.toggle('hidden', !available);
+  if ($('gigDiceHubConfig')) $('gigDiceHubConfig').hidden = !available;
+  const toggle = $('gigDiceToggle');
+  if (toggle) {
+    toggle.classList.toggle('on', gigDiceEnabledForCurrentGame());
+    toggle.setAttribute('aria-pressed', gigDiceEnabledForCurrentGame() ? 'true' : 'false');
+    toggle.disabled = !available || !canConfigure || state.gigDiceConfigPending;
+  }
+  if ($('gigDiceSettingStatus')) $('gigDiceSettingStatus').textContent = gigDiceEnabledForCurrentGame() ? 'Activés' : 'Désactivés';
 }
 
 function localGigRole() {
@@ -917,8 +943,20 @@ function renderGigDicePanel() {
   const panel = $('gigDicePanel');
   const visible = gigDiceEnabledForCurrentGame();
   panel?.classList.toggle('hidden', !visible);
-  $('gigDiceReset')?.classList.toggle('hidden', !visible);
+  const totem = $('gigTotem'), reset = $('gigDiceReset');
+  for (const element of [panel, totem, reset]) {
+    element?.classList.toggle('hidden', !visible);
+    if (element) { element.hidden = !visible; element.inert = !visible; }
+  }
+  if (totem) totem.disabled = !visible;
+  if (reset) reset.disabled = !visible;
   if (!visible || !panel) {
+    panel?.classList.remove('open');
+    totem?.setAttribute('aria-expanded', 'false');
+    state.dieDrag?.ghost?.remove();
+    state.dieDrag?.sourceEl?.classList.remove('is-dragging-die');
+    state.dieDrag = null;
+    clearDieDropTargets();
     clearGigDieZoom();
     return;
   }
@@ -982,6 +1020,7 @@ function applyRemoteGigState(payload = {}) {
 }
 
 function changeDieValue(dieId, delta) {
+  if (!gigDiceEnabledForCurrentGame()) return;
   const die = ensureGigDiceState().find(item => item.id === dieId);
   if (!die) return;
   die.value = Math.min(die.sides, Math.max(0, Number(die.value) + delta));
@@ -1005,6 +1044,7 @@ function resetGigDice() {
 }
 
 function transferDie(dieId, targetUiOwner) {
+  if (!gigDiceEnabledForCurrentGame()) return false;
   const die = ensureGigDiceState().find(item => item.id === dieId);
   if (!die) return false;
   const targetOwner = targetUiOwner === 'self' ? localGigRole() : opponentGigRole();
@@ -1040,6 +1080,7 @@ function uiOwnerForDie(die) {
 }
 
 function beginDieDrag(event, dieWrap) {
+  if (!gigDiceEnabledForCurrentGame()) return;
   clearGigDieZoom();
   const dieId = dieWrap.dataset.dieId;
   const die = ensureGigDiceState().find(item => item.id === dieId);
@@ -2696,6 +2737,7 @@ async function tryResumeSavedSession() {
   state.role = saved.role || null;
   state.playerName = saved.playerName || 'Joueur';
   state.game = saved.game || 'cyberpunk';
+  state.gigDiceEnabled = false;
   state.gigDice = validGigDiceState(saved.gigDice) ? saved.gigDice.map(die => ({ ...die })) : createGigDiceState();
 
   try {
@@ -2800,6 +2842,7 @@ async function enterLobby({ provisional = false } = {}) {
     state.role = result.role;
     state.roomSnapshot = result.room;
     state.game = result.room?.game || state.game || 'cyberpunk';
+    state.gigDiceEnabled = gigDiceEnabledFromSnapshot(result.room);
     state.gigDice = createGigDiceState();
     state.lastMovedDieId = null;
     state.rtcConfig = null;
@@ -2998,11 +3041,16 @@ function applyRoomState(snapshot, { source = 'room-state', clientReferenceMs = D
   }
   state.recoveryEpoch = incomingRecoveryEpoch;
   state.roomSnapshot = snapshot;
+  const previousGigDiceEnabled = state.gigDiceEnabled;
+  state.gigDiceEnabled = gigDiceEnabledFromSnapshot(snapshot);
   if (snapshot.timer) applySharedTimer(snapshot.timer, source, snapshot.serverNowMs, clientReferenceMs);
   if (snapshot.game && snapshot.game !== state.game) {
     state.game = snapshot.game;
     applyGameModeUi();
+  } else if (previousGigDiceEnabled !== state.gigDiceEnabled) {
+    renderGigDicePanel();
   }
+  syncHubSessionControls();
 
   const me = snapshot.peers.find(p => p.id === state.peerId);
   const opponent = snapshot.peers.find(p => p.id !== state.peerId);
@@ -4467,7 +4515,11 @@ async function leaveRoom() {
   $('roomCodeInput').value = '';
   state.gameEntering = false;
   state.gameActive = false;
+  state.gigDiceEnabled = false;
+  state.gigDiceConfigPending = false;
   state.gigDice = createGigDiceState();
+  renderGigDicePanel();
+  renderGigDiceConfiguration();
   state.dieDrag = null;
   state.lastMovedDieId = null;
   state.localPreviewVisible = true;
@@ -5134,6 +5186,16 @@ window.addEventListener('tcg-identification-visible-cleared',(event)=>{
 
 /* ---------- Bindings ---------- */
 
+$('gigDiceToggle')?.addEventListener('click', () => {
+  if (state.role !== 'host' || state.game !== 'cyberpunk' || !state.roomCode || !state.peerId || !state.authToken || state.gameActive || state.gameEntering || state.roomSnapshot?.phase === 'game' || state.gigDiceConfigPending) return;
+  state.gigDiceConfigPending = true;
+  renderGigDiceConfiguration();
+  updateHubMetadata({ gigDiceEnabled: !state.gigDiceEnabled }).finally(() => {
+    state.gigDiceConfigPending = false;
+    renderGigDiceConfiguration();
+  });
+});
+
 $('timerToggle')?.addEventListener('click', () => {
   if (state.role !== 'host') return;
   const minutes = Math.max(1, Math.min(180, Number($('timerMinutes')?.value || 50)));
@@ -5155,6 +5217,7 @@ $('gigDiceReset')?.addEventListener('click', event => {
 });
 
 $('gigDicePanel')?.addEventListener('pointerdown', event => {
+  if (!gigDiceEnabledForCurrentGame()) return;
   if (event.target.closest('.die-control2') || event.target.closest('#gigDiceReset')) return;
   const dieWrap = event.target.closest('.die-slot2');
   if (dieWrap) beginDieDrag(event, dieWrap);
@@ -5184,6 +5247,7 @@ window.addEventListener('pointermove', updateDieDrag, { passive: false });
 window.addEventListener('pointerup', finishDieDrag);
 window.addEventListener('pointercancel', finishDieDrag);
 $('gigDicePanel')?.addEventListener('click', event => {
+  if (!gigDiceEnabledForCurrentGame()) return;
   const dieWrap = event.target.closest('.die-slot2');
   const action = event.target.closest('[data-action]')?.dataset.action;
   if (!dieWrap || !action) return;
@@ -5428,6 +5492,7 @@ document.addEventListener('keydown', e => {
 
 state.gigDice = createGigDiceState();
 renderGigDicePanel();
+renderGigDiceConfiguration();
 setupDraggableGigPanel();
 window.addEventListener('resize', () => {
   renderGigDicePanel();

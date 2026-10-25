@@ -1,0 +1,218 @@
+TCGATE UI 1.2 — validation locale automatisée
+2026-10-25T11:55:28.802Z
+Branche update/next ; départ 25cd174c2bd4952fd8d0d317ad543d7b720cf3a0
+30 suites distinctes : toutes code 0.
+Environnement : Windows, Node v24.18.1, Chrome/Playwright installé hors du dépôt.
+WORKSPACE_PLAYWRIGHT_PATH fournit Playwright ; TCGATE_DB_FIXTURE_ROOT fournit le fixture production BDD 1.1.0.
+Médias simulés ; aucune qualification de webcams physiques, téléphone réel ou TURN distant.
+
+COMMAND node tcgate-ui-1.2-test.js
+EXIT 0
+TCGATE_UI_1_2_CONTRACT_OK · five Home pages, static single-control Lobby, exact logo, original Ready and full Table HTML/presentation
+
+COMMAND node tcgate-ui-1.2-client-test.js
+EXIT 0
+UI12_GIG_CLIENT_OK · 45 assertions · default/authoritative snapshots, host/lobby control, disabled visibility/network/mutations, recovery and unchanged Ready
+
+COMMAND node tcgate-ui-1.2-room-test.js
+EXIT 0
+TCGATE_UI_1_2_ROOM_OK - 59 assertions - Host/Guest HTTP+SSE, defaults, access, snapshots, recovery, signaling and existing locks
+
+COMMAND node tcgate-ui-1.2-browser-test.js
+EXIT 0
+UI12_DISABLED_ROOM_OK {"assertions":306,"roomCodeLength":6,"recovery":true,"gigSignalsWhileDisabled":0}
+TCGATE_UI_1_2_BROWSER_OK {"assertions":366,"homePages":5,"lobbyTabs":3,"viewports":["1920x1080","1366x768","900x900","560x900"],"realRoomSseWebRtc":true,"fakeCameraAndAudio":true,"physicalDevicesValidated":false,"elapsedSeconds":26}
+
+COMMAND node workspace-journal-test.js
+EXIT 0
+WORKSPACE_JOURNAL_OK · 102 assertions · structured Issues, safe form URLs, pagination, filters/order, local draft and read-only GitHub
+
+COMMAND node workspace-database-maintenance-test.js
+EXIT 0
+WORKSPACE_DATABASE_MAINTENANCE_OK · 53 assertions · ACTIVE registry, immutable Candidate HEAD/fallback, snapshots, changes, locales, rights, safe workflow and Lab handoff
+
+COMMAND node workspace-maintenance-journal-browser-test.js
+EXIT 0
+WORKSPACE_MAINTENANCE_JOURNAL_BROWSER_OK · 126 assertions · active/candidate snapshots, live SHA/fallback, isolated Candidate Lab inspection, paginated Journal, human-confirmed form, local draft, safe text, errors and 1920/1366/900/560 responsive
+
+COMMAND node workspace-cockpit-test.js
+EXIT 0
+WORKSPACE_COCKPIT_MODEL_OK · original weighted formula, counters, all category items, read-only source and separate Lab
+
+COMMAND node workspace-cockpit-browser-test.js
+EXIT 0
+WORKSPACE_COCKPIT_BROWSER_OK · eight views; canonical references, weighted metrics, categories, safe text, sync and failure isolation; production link; 1920/1366/900/560 responsive; independent lazy camera controls
+
+COMMAND node workspace-test.js
+EXIT 0
+WORKSPACE_DATABASE_HUB_AND_LAB_OK · provider, languages, isolation, feedback, server/model routes
+
+COMMAND node workspace-browser-test.js
+EXIT 0
+REAL_DETECTOR {"provider":"WebGPU","inference":{"preprocessMs":19.700000047683716,"inferenceMs":146.79999995231628,"totalMs":166.5,"detectionFps":1,"videoFps":5,"outputShape":"[1, 300, 7]"},"shape":"[1, 300, 7]"}
+WORKSPACE_BROWSER_OK · real engines/matcher, fake webcam, real detector, DB errors, export, isolation
+
+COMMAND node workspace-camera-test.js
+EXIT 0
+WORKSPACE_CAMERA_FLOW_CONTRACT_OK · visible controls, independent runtime, optional identification, camera error messages
+
+COMMAND node workspace-camera-browser-test.js
+EXIT 0
+CAMERA_FIRST_NO_DB {"camera":"Caméra : active · 1280×720","detection":"Détection : active","identification":"Identification : non chargée · choisir puis inspecter une BDD.","provider":"WebGPU","frames":2}
+PRODUCTION_IDENTIFICATION {"status":"Identification : active · BDD 1.1.0","db":{"databaseGame":"cyberpunk","databaseVersion":"1.1.0","databaseStatus":"candidate-qualified","canonicalCount":150,"printingCount":229,"visionReferenceCount":229,"recognitionGroupCount":150,"databaseSource":"public-github-direct","fallbackActive":false},"worker":true}
+WORKSPACE_CAMERA_BROWSER_OK · camera first without DB, real ONNX detection, invalid manifest while streaming, real production matcher, two-device switch, resize/resolution, track stop, audio:false, errors
+
+COMMAND node vision-integrity-test.js
+EXIT 0
+VISION_LIBRARY_INTEGRITY_OK
+
+COMMAND node vision-source-provenance-test.js
+EXIT 0
+VISION_SOURCE_PROVENANCE_OK refs=147 sourceRef=6d3a296724838265a75008f2b64b37e945cd1351
+
+COMMAND node vision-backpressure-test.js
+EXIT 0
+vision backpressure simulation: OK
+{"requested":100,"processed":8,"dropped":92,"maxQueueDepth":1,"sample":[1,15,29,43,57,71,85,99]}
+
+COMMAND node vision-analysis-resolution-test.js
+EXIT 0
+VISION_ANALYSIS_RESOLUTION_OK 1920x1080->640x360 1280x720->640x360 sourceCopies=1
+
+COMMAND node vision-appearance-batch-test.js
+EXIT 0
+VISION_APPEARANCE_BATCH_OK readbacksForSix=1 descriptorSimilarity>=0.999999 flip180>=0.995
+{"1":{"legacyReadbackEmulation":{"p50":0.31,"p95":1.035},"batch":{"p50":0.026,"p95":0.061}},"2":{"legacyReadbackEmulation":{"p50":0.627,"p95":2.099},"batch":{"p50":0.046,"p95":0.397}},"4":{"legacyReadbackEmulation":{"p50":1.121,"p95":3.242},"batch":{"p50":0.074,"p95":0.527}},"6":{"legacyReadbackEmulation":{"p50":1.595,"p95":4.468},"batch":{"p50":0.108,"p95":0.358}},"10":{"legacyReadbackEmulation":{"p50":2.638,"p95":6.825},"batch":{"p50":0.148,"p95":0.234}}}
+
+COMMAND node cyberpunk-db-integration-test.js
+EXIT 0
+PASS cyberpunk-db-integration (real DB v1 fixture)
+150 canonical / 229 printings / 229 matcher references / 150 recognition groups / requests=7 / bytes=517511
+
+COMMAND node --expose-gc cyberpunk-db-performance-test.js
+EXIT 0
+CYBERPUNK_DB_MATCHER_PERFORMANCE_OK
+{
+  "baselineCandidate": {
+    "references": 150,
+    "syntheticDescriptorInitializationMs": 75.46,
+    "descriptorMemoryMiB": 20.3,
+    "identificationAverageMs": 157.3,
+    "identificationP95Ms": 175.17,
+    "samples": 24
+  },
+  "betaRuntime": {
+    "references": 229,
+    "syntheticDescriptorInitializationMs": 114.35,
+    "descriptorMemoryMiB": 30.99,
+    "identificationAverageMs": 159.82,
+    "identificationP95Ms": 178.29,
+    "samples": 24
+  },
+  "change": {
+    "syntheticDescriptorInitializationPercent": 51.5,
+    "descriptorMemoryPercent": 52.7,
+    "identificationAveragePercent": 1.6,
+    "identificationP95Percent": 1.8
+  }
+}
+
+COMMAND node smoke-test.js
+EXIT 0
+SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_13_UI_1.2.0
+models/card_detector_v53_512.onnx=2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319
+public/detection-worker.js=19d0e72eeb620f23742a9b8fe321f700c45cbd29ad41b952d115bca5fd983227
+public/table-state-engine.js=59c7bf98827abb69eba68e685377dde0ef46bff8349d53238a14ba6ea7b4c1f3
+public/vision-core.js=f3cbd789476c92f86dd25292a67a0d0e96eee9888584a867c841b3b61e8650d1
+public/identification.js=fa3b700ffd19f9726e5fe1b24c6f1bc56fd30de7f9ff0a813fdf986920028b15
+
+COMMAND node smoke-test-c11.js
+EXIT 0
+SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_13_UI_1.2.0
+
+COMMAND node integration-test-c11.js
+EXIT 0
+INTEGRATION_OK_TCGATE_ALPHA_0.1_CANDIDATE_11
+
+COMMAND node smoke-test-ui-integration.js
+EXIT 0
+SMOKE_OK_TCGATE_C9_UI_INTEGRATION_1
+
+COMMAND node future-ux-v3.7-test.js
+EXIT 0
+FUTURE_UX_V3_7_HUB_OK
+
+COMMAND node future-ux-room-metadata-test.js
+EXIT 0
+FUTURE_UX_ROOM_METADATA_SSE_OK
+
+COMMAND node report-schema-v2-test.js
+EXIT 0
+Report Schema V2 tests: OK
+
+COMMAND node phone-camera-test.js
+EXIT 0
+PHONE_CAMERA_INTEGRATION_OK
+
+COMMAND node phone-camera-diagnostics-test.js
+EXIT 0
+PHONE_CAMERA_DIAGNOSTICS_OK
+
+COMMAND node control-center-forwarder-test.js
+EXIT 0
+CONTROL_CENTER_FORWARDER_OK
+email + 201/200 + 401/500/timeout + unconfigured + security: OK
+
+COMMAND npm.cmd run check
+EXIT 0
+
+> tcgate-alpha@0.1.0-candidate.13 check
+> node check.js
+
+CHECK_OK 81 JavaScript files
+
+COMMAND git diff --check
+EXIT 2
+public/index.html:48: trailing whitespace.
++
+warning: in the working copy of 'future-ux-v3.7-test.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/app.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/future-ux-v3.7.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'smoke-test-ui-integration.js', LF will be replaced by CRLF the next time Git touches it
+
+
+Finalisation : attributs accessibles du minuteur et documentation ajoutés ; espace final Home retiré.
+Le premier git diff --check avait signalé uniquement cet espace ; vérification finale ci-dessous.
+
+FINAL COMMAND node tcgate-ui-1.2-test.js
+EXIT 0
+TCGATE_UI_1_2_CONTRACT_OK · five Home pages, static single-control Lobby, exact logo, original Ready and full Table HTML/presentation
+
+FINAL COMMAND npm.cmd run check
+EXIT 0
+
+> tcgate-alpha@0.1.0-candidate.13 check
+> node check.js
+
+CHECK_OK 81 JavaScript files
+
+FINAL COMMAND git diff --check
+EXIT 0
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'future-ux-v3.7-test.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/app.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/future-ux-v3.7.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'public/index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'smoke-test-ui-integration.js', LF will be replaced by CRLF the next time Git touches it
+
+
+Logo PNG RGBA 2048x682 SHA256 56660fac88d53f7fc9e6056725a4067f89f5cc0079f70407cb79180bb7d92515
+GAME HTML LF SHA256 6e6806461eb164695df0a4b3721e067fe24547c73c8d829b339713502a13a091
+Branches distantes revérifiées après fetch :
+main f5f2ba00e178f58c011c87f788c9c56064d8c32a
+candidate/alpha-0.1-c14 c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3
+workspace-state 1ac77efebd86d1e5bc14c5cc18771de4456f2587
+Aucune opération Railway. Pas de merge ni de nouvelle Candidate.

@@ -9,68 +9,29 @@
   <link rel="stylesheet" href="/tcgate-alpha-ui-1.0.5.css">
   <link rel="stylesheet" href="/future-ux-v3.7.css">
   <link rel="stylesheet" href="/report-mail.css">
+  <link rel="stylesheet" href="/tcgate-ui-1.2.css">
 </head>
 <body>
   <div id="app">
 
     <!-- HOME -->
     <section id="screenHome" class="screen active">
-      <div class="home-shell tcgate-home-shell">
-        <header class="tcgate-home-header" aria-label="TCGate">
-          <img class="tcgate-home-logo" src="/assets/tcgate-logo-final.png" alt="TCGate">
-          <span class="tcgate-home-alpha-badge"><i aria-hidden="true"></i>ALPHA</span>
-        </header>
-
-        <div class="tcgate-home-hero">
-          <div class="tcgate-home-copy">
-            <h1>La plateforme webcam pensée pour les TCG</h1>
-            <p>Affrontez des joueurs en direct, survolez les cartes pour les afficher en haute définition et profitez d’une interface conçue pour chaque jeu.</p>
-            <div class="tcgate-home-benefits" aria-label="Avantages TCGate">
-              <span class="tcgate-home-benefit">Jouez en direct</span>
-              <span class="tcgate-home-benefit">Cartes en HD</span>
-            </div>
-            <div class="tcgate-home-actions">
-              <div id="resumeSessionCard" class="resume-session-card hidden">
-                <span class="eyebrow">Partie en cours</span>
-                <strong id="resumeSessionTitle">Une partie peut être reprise</strong>
-                <small id="resumeSessionMeta">Reconnexion disponible pendant quelques minutes.</small>
-                <button id="resumeSessionButton" class="primary full">Reprendre la partie</button>
-              </div>
-              <button id="goCreate" class="primary large">Créer une partie</button>
-              <button id="goJoin" class="secondary large">Rejoindre une partie</button>
-            </div>
-          </div>
-
-          <div class="tcgate-home-visual" aria-hidden="true">
-            <img class="tcgate-home-orbit-art" src="/assets/home-alpha-orbit-hero-approved.webp" alt="">
-          </div>
+      <div class="home-shell tcgate-home-shell ui12-home-shell">
+        <header class="tcgate-home-header ui12-home-header" aria-label="TCGate"><a href="#" class="ui12-brand-home" aria-label="Accueil TCGate"><img class="tcgate-home-logo" src="/assets/tcgate-logo-final.png" alt="TCGate"></a><span class="tcgate-home-alpha-badge"><i aria-hidden="true"></i>ALPHA</span></header>
+        <nav class="ui12-home-nav" role="tablist" aria-label="Découvrir TCGate"><button id="ui12-home-tab-accueil" type="button" role="tab" data-home-page="accueil" aria-controls="ui12-home-accueil" aria-selected="true" tabindex="0">Accueil</button><button id="ui12-home-tab-fonctionnement" type="button" role="tab" data-home-page="fonctionnement" aria-controls="ui12-home-fonctionnement" aria-selected="false" tabindex="-1">Fonctionnement</button><button id="ui12-home-tab-fonctions" type="button" role="tab" data-home-page="fonctions" aria-controls="ui12-home-fonctions" aria-selected="false" tabindex="-1">Fonctions</button><button id="ui12-home-tab-jeux" type="button" role="tab" data-home-page="jeux" aria-controls="ui12-home-jeux" aria-selected="false" tabindex="-1">Jeux</button><button id="ui12-home-tab-alpha" type="button" role="tab" data-home-page="alpha" aria-controls="ui12-home-alpha" aria-selected="false" tabindex="-1">Alpha</button></nav>
+        <div id="ui12-home-accueil" data-home-panel="accueil" role="tabpanel" aria-labelledby="ui12-home-tab-accueil">
+          <div class="tcgate-home-hero ui12-home-hero"><div class="tcgate-home-copy">
+            <span class="ui12-eyebrow">VOS CARTES. VOTRE TABLE. EN DIRECT.</span><h1>La plateforme webcam pensée pour les TCG</h1>
+            <p>Jouez à distance avec vos vraies cartes. Un salon privé, votre webcam et une table qui vous rapproche de votre adversaire.</p>
+            <div class="tcgate-home-benefits" aria-label="Avantages TCGate"><span class="tcgate-home-benefit">Jouez en direct</span><span class="tcgate-home-benefit">Vos cartes restent physiques</span><span class="tcgate-home-benefit">Vision sur les jeux compatibles</span></div>
+            <div class="tcgate-home-actions"><div id="resumeSessionCard" class="resume-session-card hidden"><span class="eyebrow">Partie en cours</span><strong id="resumeSessionTitle">Une partie peut être reprise</strong><small id="resumeSessionMeta">Reconnexion disponible pendant quelques minutes.</small><button id="resumeSessionButton" class="primary full">Reprendre la partie</button></div><div class="ui12-home-primary-actions"><button id="goCreate" class="primary large">Créer une partie</button><button id="goJoin" class="secondary large">Rejoindre une partie</button></div></div>
+          </div></div>
+          <div class="tcgate-home-steps" aria-label="Étapes principales"><div class="tcgate-step-item"><span class="tcgate-step-index">1</span><div><strong>Créer</strong><p>Ouvrez votre salon privé.</p></div></div><div class="tcgate-step-item"><span class="tcgate-step-index">2</span><div><strong>Inviter</strong><p>Partagez le code ou le lien.</p></div></div><div class="tcgate-step-item"><span class="tcgate-step-index">3</span><div><strong>Jouer</strong><p>Installez vos cartes et jouez.</p></div></div></div>
         </div>
-
-        <div class="tcgate-home-steps" aria-label="Étapes principales">
-          <div class="tcgate-step-item">
-            <span class="tcgate-step-index">1</span>
-            <div>
-              <strong>Créer</strong>
-              <p>Créez votre table en un clic.</p>
-            </div>
-          </div>
-          <div class="tcgate-step-arrow">→</div>
-          <div class="tcgate-step-item">
-            <span class="tcgate-step-index">2</span>
-            <div>
-              <strong>Inviter</strong>
-              <p>Invitez un adversaire à vous rejoindre.</p>
-            </div>
-          </div>
-          <div class="tcgate-step-arrow">→</div>
-          <div class="tcgate-step-item">
-            <span class="tcgate-step-index">3</span>
-            <div>
-              <strong>Jouer</strong>
-              <p>Installez vos cartes et jouez.</p>
-            </div>
-          </div>
-        </div>
+        <div id="ui12-home-fonctionnement" data-home-panel="fonctionnement" role="tabpanel" aria-labelledby="ui12-home-tab-fonctionnement" hidden><div class="ui12-page-heading"><span class="ui12-eyebrow">COMMENT ÇA MARCHE</span><h1>Le plaisir du jeu physique,<br>même à distance.</h1><p>Vous gardez vos cartes et les règles de votre jeu. TCGate vous donne un espace commun pour vous retrouver.</p></div><div class="ui12-info-grid"><article class="ui12-info-card"><span class="ui12-card-index">01</span><h2>Préparez votre installation</h2><p>Cadrez votre table avec votre webcam, ou utilisez un téléphone comme caméra. Vérifiez votre micro et votre aperçu.</p></article><article class="ui12-info-card"><span class="ui12-card-index">02</span><h2>Connectez-vous dans un salon privé</h2><p>Créez une partie et transmettez le code ou le lien à votre adversaire. Choisissez ensemble les options utiles.</p></article><article class="ui12-info-card"><span class="ui12-card-index">03</span><h2>Jouez votre partie physique</h2><p>Piochez, posez et manipulez vos vraies cartes. La webcam rapproche vos deux tables, les outils restent à votre service.</p></article></div><p class="ui12-principle">TCGate assiste la partie, il ne la remplace pas.</p></div>
+        <div id="ui12-home-fonctions" data-home-panel="fonctions" role="tabpanel" aria-labelledby="ui12-home-tab-fonctions" hidden><div class="ui12-page-heading"><span class="ui12-eyebrow">LES OUTILS DE VOTRE PARTIE</span><h1>Juste ce qu’il faut<br>pour jouer ensemble.</h1><p>Une table lisible et des fonctions que vous choisissez selon votre jeu.</p></div><div class="ui12-feature-grid"><article class="ui12-info-card"><h2>Table webcam</h2><p>Vos cartes et celles de votre adversaire, au centre de l’expérience.</p></article><article class="ui12-info-card"><h2>Salons privés</h2><p>Un code ou un lien pour rejoindre votre adversaire.</p></article><article class="ui12-info-card"><h2>Vision sur les jeux compatibles</h2><p>Détection et identification des cartes, selon la base prise en charge.</p></article><article class="ui12-info-card"><h2>Affichage des cartes</h2><p>Consultez les cartes identifiées en grand format.</p></article><article class="ui12-info-card"><h2>Minuteur partagé optionnel</h2><p>Un même temps de partie, visible par les deux joueurs.</p></article><article class="ui12-info-card"><h2>Modules spécifiques aux TCG</h2><p>Des outils adaptés au jeu, comme les Gig Dice Cyberpunk.</p></article><article class="ui12-info-card"><h2>Téléphone comme caméra</h2><p>Une autre façon de cadrer votre table. Fonction expérimentale.</p></article></div></div>
+        <div id="ui12-home-jeux" data-home-panel="jeux" role="tabpanel" aria-labelledby="ui12-home-tab-jeux" hidden><div class="ui12-page-heading"><span class="ui12-eyebrow">VOTRE JEU, VOTRE FAÇON DE JOUER</span><h1>Une table commune.<br>Des outils selon le TCG.</h1></div><div class="ui12-game-grid"><article class="ui12-info-card"><span class="ui12-status-pill">Pris en charge</span><h2>Cyberpunk Trading Card Game</h2><p>Une expérience enrichie pour vos cartes Cyberpunk.</p><ul><li>Vision et BDD Cyberpunk</li><li>Affichage des cartes identifiées</li><li>Gig Dice optionnel : dés et Street Cred</li><li>Minuteur partagé optionnel</li></ul></article><article class="ui12-info-card"><span class="ui12-status-pill muted-pill">Mode universel</span><h2>Sans jeu</h2><p>Retrouvez votre adversaire, quel que soit le jeu physique sur votre table.</p><ul><li>Webcam et audio</li><li>Salon privé</li><li>Minuteur optionnel</li><li>Pas de Vision spécifique</li></ul></article></div></div>
+        <div id="ui12-home-alpha" data-home-panel="alpha" role="tabpanel" aria-labelledby="ui12-home-tab-alpha" hidden><div class="ui12-page-heading"><span class="ui12-eyebrow">CONSTRUISONS LA SUITE</span><h1>TCGate est encore<br>en Alpha.</h1><p>Vos parties et vos retours nous aident à améliorer l’expérience, étape après étape.</p></div><div class="ui12-info-grid"><article class="ui12-info-card"><h2>Connexion & reprise</h2><p>Tester la connexion et le retour dans une partie après une interruption.</p></article><article class="ui12-info-card"><h2>Vision</h2><p>Observer l’identification dans des conditions réelles : cartes, éclairage, reflets et caméras.</p></article><article class="ui12-info-card"><h2>Expérience de partie</h2><p>Rendre les réglages, les outils et la table plus clairs et agréables.</p></article></div><p class="ui12-principle">Un souci pendant vos tests ? L’action Rapport reste accessible dans le salon et en partie.</p></div>
       </div>
     </section>
 
@@ -84,7 +45,19 @@
           <p id="setupSubtitle">Quelques informations suffisent.</p>
         </div>
 
-        <div class="form-card">
+
+      </div>
+    </section>
+
+    <!-- LOBBY -->
+    <section id="screenLobby" class="screen">
+      <div class="panel-shell ui12-lobby-shell">
+        <header class="lobby-head ui12-lobby-header"><div class="lobby-title-wrap"><img class="tcgate-wordmark compact" src="/assets/tcgate-logo-final.png" alt="TCGate"><div><span class="eyebrow">Salon privé</span><h2>Préparez votre partie</h2></div></div><div class="ui12-lobby-connection"><div class="network-state-line">
+            <span id="networkDot" class="network-dot"></span>
+            <span id="networkStatus">Connexion au salon…</span>
+          </div></div><div class="header-actions"><button id="generateReportLobby" class="ghost report-button">Rapport</button><button id="leaveLobby" class="ghost">Quitter</button></div></header>
+        <nav class="ui12-lobby-tabs" role="tablist" aria-label="Préparation du salon"><button id="ui12-lobby-tab-session" data-lobby-page="session" role="tab" aria-controls="ui12-lobby-session" aria-selected="true" tabindex="0" type="button">Session</button><button id="ui12-lobby-tab-installation" data-lobby-page="installation" role="tab" aria-controls="ui12-lobby-installation" aria-selected="false" tabindex="-1" type="button">Mon installation</button><button id="ui12-lobby-tab-players" data-lobby-page="players" role="tab" aria-controls="ui12-lobby-players" aria-selected="false" tabindex="-1" type="button">Joueurs</button></nav>
+        <section id="ui12-lobby-session" class="ui12-lobby-pane" data-lobby-panel="session" role="tabpanel" aria-labelledby="ui12-lobby-tab-session"><div class="ui12-session-heading"><h3>Les réglages communs</h3><p>L’hôte configure la session. Chaque joueur prépare son installation dans son propre onglet.</p></div><div class="ui12-session-grid"><section class="future-hub-zone future-hub-session"><div id="ui12SessionForm"><div class="form-card">
           <label>
             <span>Pseudo</span>
             <input id="playerName" maxlength="24" placeholder="Joueur">
@@ -112,40 +85,19 @@
 
           <div id="timerHubConfig">
             <div class="toggle-row">
-              <div><strong>Minuteur</strong><div class="sub">Partagé pendant la partie</div></div>
-              <button class="toggle on" id="timerToggle" type="button" aria-pressed="true"><div class="knob"></div></button>
+              <div><strong>Minuteur partagé</strong><div class="sub">Option commune · réglage par l’hôte</div></div>
+              <button class="toggle on" id="timerToggle" aria-label="Minuteur partagé" type="button" aria-pressed="true"><div class="knob"></div></button>
             </div>
             <div id="timerCfg">
-              <label>Durée initiale (minutes)</label>
+              <label for="timerMinutes">Durée initiale (minutes)</label>
               <input type="number" id="timerMinutes" min="1" max="180" value="50" />
             </div>
             <div class="summary-line"><span>Minuteur</span><strong id="sumTimer">50 min</strong></div>
           </div>
 
+          <div id="gigDiceHubConfig" class="ui12-shared-option"><div class="toggle-row"><div><strong>Gig Dice</strong><div class="sub">Dés et Street Cred spécifiques à Cyberpunk TCG</div></div><button id="gigDiceToggle" class="toggle" type="button" aria-label="Gig Dice" aria-pressed="false" disabled><div class="knob"></div></button></div><small id="gigDiceSettingStatus">Désactivés</small></div>
           <button id="setupContinue" class="primary full">Continuer</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- LOBBY -->
-    <section id="screenLobby" class="screen">
-      <div class="panel-shell">
-        <header class="lobby-head">
-          <div class="lobby-title-wrap">
-            <img class="tcgate-wordmark compact" src="/assets/tcgate-logo-final.png" alt="TCGate">
-            <div>
-            <span class="eyebrow">Salon privé</span>
-            <h2>Partie prête à être lancée</h2>
-            </div>
-          </div>
-          <div class="header-actions">
-            <button id="generateReportLobby" class="ghost report-button">Générer un rapport complet</button>
-            <button id="leaveLobby" class="ghost">Quitter</button>
-          </div>
-        </header>
-
-        <div class="lobby-grid">
-          <div class="invite-card">
+        </div></div></section><div class="ui12-session-sidebar"><div class="invite-card">
             <span class="label">Code de la partie</span>
             <span id="lobbyGameLabel" class="lobby-game-label">Cyberpunk Trading Card Game · Vision</span>
             <div class="room-code-row">
@@ -154,29 +106,8 @@
             </div>
             <p>Partage ce code ou le lien avec ton adversaire.</p>
             <button id="copyLink" class="secondary full">Copier le lien d’invitation</button>
-          </div>
-
-          <div class="players-card">
-            <div class="player-row ready">
-              <div class="avatar">J1</div>
-              <div>
-                <strong id="lobbyPlayerName">Joueur</strong>
-                <span id="lobbyOwnStatus">Préparation</span>
-              </div>
-              <span class="status-dot"></span>
-            </div>
-            <div class="player-row waiting">
-              <div class="avatar">J2</div>
-              <div>
-                <strong id="lobbyOpponentName">Adversaire</strong>
-                <span id="opponentWaitingText">En attente…</span>
-              </div>
-              <span class="loader-dot"></span>
-            </div>
-          </div>
-        </div>
-
-        <div class="equipment-card equipment-card-live">
+          </div><article class="ui12-context-card"><h3>Votre salon</h3><dl><dt>Host</dt><dd id="ui12HostName">En attente…</dd><dt>État</dt><dd id="ui12RoomState">Configuration</dd><dt>Vision</dt><dd id="ui12VisionStatus">Selon le jeu sélectionné</dd></dl><p>Les options partagées restent visibles pour les deux joueurs.</p></article></div></div></section>
+        <section id="ui12-lobby-installation" class="ui12-lobby-pane" data-lobby-panel="installation" role="tabpanel" aria-labelledby="ui12-lobby-tab-installation" hidden><div class="ui12-session-heading"><h3>Votre installation personnelle</h3><p>Ces réglages concernent uniquement votre caméra, votre micro et votre aperçu.</p></div><div class="ui12-installation-layout"><section id="ui12InstallationControls" class="future-hub-zone future-hub-installation"><div class="equipment-card equipment-card-live">
           <div class="equipment-copy">
             <span class="eyebrow">Préparation</span>
             <h3>Caméra et micro</h3>
@@ -243,15 +174,12 @@
               <button id="lobbyToggleMic" class="toggle-chip" disabled>Micro</button>
             </div>
           </div>
-        </div>
-
-        <div class="lobby-bottom">
-          <div class="network-state-line">
-            <span id="networkDot" class="network-dot"></span>
-            <span id="networkStatus">Connexion au salon…</span>
-          </div>
+        </div></section><section id="ui12CameraPreview" class="future-hub-zone future-hub-camera" aria-label="Aperçu caméra personnel"></section></div></section>
+        <section id="ui12-lobby-players" class="ui12-lobby-pane" data-lobby-panel="players" role="tabpanel" aria-labelledby="ui12-lobby-tab-players" hidden><div class="ui12-session-heading"><h3>Les joueurs du salon</h3><p>Présence et état Ready partagés. Les périphériques de l’adversaire restent ses réglages personnels.</p></div><section id="ui12Players" class="future-hub-zone future-hub-players"><div class="players-card ui12-players-card"><article class="player-row ready ui12-player-card"><div class="ui12-player-card-head"><div class="avatar">J1</div><div><strong id="lobbyPlayerName">Joueur</strong><span id="lobbyOwnStatus">Préparation</span></div><span class="status-dot"></span></div><dl><dt>Rôle</dt><dd id="ui12LocalRole">—</dd><dt>Présence</dt><dd id="ui12LocalPresence">Connexion…</dd><dt>Ready</dt><dd id="ui12LocalReady">Non prêt</dd><dt>Installation locale</dt><dd id="ui12LocalMedia">À préparer</dd></dl></article><article class="player-row waiting ui12-player-card"><div class="ui12-player-card-head"><div class="avatar">J2</div><div><strong id="lobbyOpponentName">Adversaire</strong><span id="opponentWaitingText">En attente…</span></div><span class="loader-dot"></span></div><dl><dt>Rôle</dt><dd id="ui12RemoteRole">—</dd><dt>Présence</dt><dd id="ui12RemotePresence">En attente…</dd><dt>Ready</dt><dd id="ui12RemoteReady">Non prêt</dd></dl></article></div></section></section>
+        <footer id="ui12LobbyReady"><div class="lobby-bottom">
+          <p class="ui12-ready-hint">Vérifiez votre installation, puis indiquez que vous êtes prêt.</p>
           <button id="startGame" class="primary" disabled>Je suis prêt</button>
-        </div>
+        </div></footer>
       </div>
     </section>
 
@@ -653,5 +581,6 @@
   <script src="/report-diagnostics-v2.js"></script>
   <script src="/app.js"></script>
   <script src="/report-mail-ui.js"></script>
+  <script src="/tcgate-ui-1.2.js"></script>
 </body>
 </html>

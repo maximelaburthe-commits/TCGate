@@ -53,13 +53,14 @@ const checkpointHtml = execFileSync('git', ['show', 'HEAD:public/index.html'], {
 const checkpointUx = execFileSync('git', ['show', 'HEAD:public/future-ux-v3.7.js'], { encoding: 'utf8' });
 const checkpointCss = execFileSync('git', ['show', 'HEAD:public/future-ux-v3.7.css'], { encoding: 'utf8' });
 
-assert(homeSlice(html) === homeSlice(baseHtml), 'Candidate Home changed');
+require('./tcgate-ui-1.2-contract.js').assertHome(html);
+require('./tcgate-ui-1.2-contract.js').assertGame(html,ux);
 assert(html.includes('href="/future-ux-v3.7.css"') && html.includes('src="/future-ux-v3.7.js"'), 'Hub assets are not loaded');
 assert(ux.includes('function mountUnifiedHub()'), 'Unified Hub mount is missing');
 assert(ux.includes('cameraZone.append(preview)'), 'Candidate camera preview is not mounted in the Hub');
-assert(ux.includes('sessionZone.append(form, invite)'), 'Candidate Session elements are not mounted in the Hub');
+assert(ux.includes('sessionZone.append(form)') && html.includes('id="ui12SessionForm"'), 'Candidate Session elements are not mounted in the Hub');
 assert(ux.includes('installationZone.append(equipment)'), 'Candidate media controls are not mounted in the Hub');
-assert(ux.includes('playersZone.append(players, ready)'), 'Candidate players and Ready are not mounted in the Hub');
+assert(ux.includes('playersZone.append(players)') && ux.includes('readyZone.append(ready)'), 'Candidate players and Ready are not mounted in the Hub');
 assert(!/cloneNode|replaceWith|insertAdjacentHTML|\.innerHTML\s*=/.test(ux), 'Hub rebuilds Candidate controls destructively');
 assert(!app.includes("showScreen('setup')"), 'Legacy Setup remains in the visible navigation path');
 assert(app.includes("$('goCreate').addEventListener('click', openCreateHub)"), 'Create does not use immediate room creation');
@@ -73,7 +74,7 @@ const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
 assert(duplicates.length === 0, `Duplicate IDs: ${[...new Set(duplicates)].join(', ')}`);
 
 assert(
-  normalize(between(app, 'function applyRoomState(', 'async function prewarmRtcInLobby(')
+  normalize(require('./tcgate-ui-1.2-contract.js').withoutGigAdoption(between(app, 'function applyRoomState(', 'async function prewarmRtcInLobby('))
     .replace("function applyRoomState(snapshot, { source = 'room-state', clientReferenceMs = Date.now() } = {})", 'function applyRoomState(snapshot)')
     .replace(/\s*if \(snapshot\.timer\) applySharedTimer\([^;]+;/, '')) === normalize(between(baseApp, 'function applyRoomState(', 'async function prewarmRtcInLobby(')),
   'Candidate applyRoomState/Ready eligibility changed'
@@ -89,14 +90,9 @@ assert(
 assert(css.includes('#screenLobby.future-hub-mounted'), 'Hub CSS is not scoped to the Lobby');
 assert(!css.includes('.tcgate-home-'), 'Future UX CSS touches the Candidate Home');
 assert(app.includes('function transferDie(') && app.includes('function applyRemoteGigState('), 'Checkpoint D Gig mechanics are missing');
-assert(
-  normalize(normalizeTimerMarkup(html.slice(0, html.indexOf('<!-- GAME -->')))) === normalize(normalizeTimerMarkup(checkpointHtml.slice(0, checkpointHtml.indexOf('<!-- GAME -->')))),
-  'Checkpoint G changed Candidate Home or Hub DOM outside the Timer placement'
-);
-assert(
-  normalize(ux.slice(0, ux.indexOf('  const game ='))).trimEnd() === normalize(checkpointUx.slice(0, checkpointUx.indexOf('  const game ='))).trimEnd(),
-  'Checkpoint B changed the Checkpoint A Hub behavior'
-);
+// UI1.2 changes only the Home/Hub presentation; all functional controls remain single original nodes.
+assert(html.includes('id="ui12LobbyReady"') && ux.includes('readyZone.append(ready)'), 'Ready is not mounted outside tab panels');
+assert(ux.includes("hub.classList.add('future-hub-mounted', 'hub-preconnect')"), 'Unified Hub state is missing');
 assert(
   normalize(css.slice(0, css.indexOf('/* Checkpoint B'))).trimEnd() === normalize(checkpointCss.slice(0, checkpointCss.indexOf('/* Checkpoint B'))).trimEnd(),
   'Checkpoint B changed the Checkpoint A Hub styles'
@@ -161,7 +157,7 @@ assert(expectedMenuOrder.every((id, index) => index === 0 || moreMenuMarkup.inde
 assert(moreMenuMarkup.includes('Réinitialiser Gig Dice'), 'Gig Reset is not in the prototype secondary menu');
 assert(!moreMenuMarkup.includes('id="finishMenu"') && !moreMenuMarkup.includes('Terminer la session'), 'Redundant Finish session menu entry remains');
 assert(!ux.includes('deviceMenu.append(gigReset)'), 'Gig Reset is still moved into the Candidate device menu');
-assert(app.includes("$('gigDiceReset')?.classList.toggle('hidden', !visible)"), 'Gig Reset applicability is not synchronized with the Cyberpunk Gig module');
+assert(app.includes("const visible = gigDiceEnabledForCurrentGame()") && app.includes("const totem = $('gigTotem'), reset = $('gigDiceReset')") && app.includes("for (const element of [panel, totem, reset])") && app.includes("element?.classList.toggle('hidden', !visible)"), 'Gig Reset applicability is not synchronized with the shared Gig module option');
 assert(app.includes("$('gigDiceReset')?.addEventListener('click', event =>") && app.includes("sendGigState('manual-reset')"), 'Gig Reset is not directly bound to the existing synchronized reset path');
 const gigPanelClick = between(app, "$('gigDicePanel')?.addEventListener('click'", "$('toggleLocalPreview')?.addEventListener");
 assert(!gigPanelClick.includes("closest('#gigDiceReset')"), 'Obsolete delegated Gig Reset handler remains');
@@ -254,7 +250,7 @@ const setupFormMarkup = between(html, '<div class="form-card">', '<button id="se
 assert(setupFormMarkup.includes('id="timerHubConfig"'), 'Hub Timer is not inside the Session form');
 assert(setupFormMarkup.indexOf('id="timerHubConfig"') > setupFormMarkup.indexOf('id="gameField"'), 'Hub Timer is not positioned below the TCG choice');
 const lobbyMarkup = between(html, '<!-- LOBBY -->', '<!-- GAME -->');
-assert(!lobbyMarkup.includes('id="timerHubConfig"'), 'Legacy full-width Hub Timer placement remains');
+assert(lobbyMarkup.includes('id="timerHubConfig"') && lobbyMarkup.includes('id="ui12-lobby-session"'), 'UI1.2 shared Timer must live in Session');
 assert(html.includes('class="center-state hidden" id="centerState"'), 'Prototype technical-state surface is missing');
 assert(app.includes("markup = '<h3>Reconnexion en cours…</h3>"), 'Network recovery is not represented by the prototype state');
 assert(app.includes("markup = '<h3>Caméra locale indisponible</h3>") && app.includes("markup = '<h3>Micro indisponible</h3>"), 'Unavailable local media states are missing');
