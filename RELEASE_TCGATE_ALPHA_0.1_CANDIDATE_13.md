@@ -1,5 +1,7 @@
 # TCGate Alpha 0.1 Candidate 13 · UI 1.1.0
 
+> Archive historique du jalon Candidate 13 : les mentions Control Center ci-dessous décrivent son ancien contexte de qualification. Depuis Maintenance 1.2A, le parcours actuel est Report Schema V2 + e-mail Resend ; consulter RAILWAY_REPORT_EMAIL_SETUP.md.
+
 Candidate coordonnée avec TCGate Control Center `0.3.1-rc.1` pour qualifier Report Schema V2.
 
 ## Périmètre

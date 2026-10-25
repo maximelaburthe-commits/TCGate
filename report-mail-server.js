@@ -1,56 +1,31 @@
 'use strict';
 
 /**
- * TCGate - Alpha report mail bridge + private Control Center Inbox
+ * TCGate Report Email Bridge
  *
- * Existing public behavior is preserved:
  *   GET  /api/report-email/status
  *   POST /api/report-email
- *
- * Private Control Center routes (Bearer token required):
- *   GET /api/control-center/status
- *   GET /api/control-center/reports
- *   GET /api/control-center/reports/:id
  *
  * Railway environment:
  *   RESEND_API_KEY
  *   TCGATE_REPORT_TO_EMAIL
  *   TCGATE_REPORT_FROM_EMAIL
- *   TCGATE_REPORT_INBOX_DIR=/data/tcgate-report-inbox
- *   TCGATE_CC_SYNC_TOKEN=<long random secret>
  */
 
 const http = require('http');
 const crypto = require('crypto');
-const fs = require('node:fs/promises');
-const path = require('node:path');
-const { createControlCenterForwarder, deliverReport } = require('./control-center-forwarder');
 
 const originalCreateServer = http.createServer.bind(http);
 const RESEND_API_KEY = String(process.env.RESEND_API_KEY || '').trim();
 const REPORT_TO = String(process.env.TCGATE_REPORT_TO_EMAIL || '').trim();
 const REPORT_FROM = String(process.env.TCGATE_REPORT_FROM_EMAIL || '').trim();
-const INBOX_DIR = String(process.env.TCGATE_REPORT_INBOX_DIR || '').trim();
-const SYNC_TOKEN = String(process.env.TCGATE_CC_SYNC_TOKEN || '').trim();
-const CONTROL_CENTER_URL = String(process.env.CONTROL_CENTER_URL || '').trim();
-const CONTROL_CENTER_INGEST_KEY = String(process.env.CONTROL_CENTER_INGEST_KEY || '').trim();
-const controlCenterForwarder = createControlCenterForwarder({
-  url: CONTROL_CENTER_URL,
-  ingestKey: CONTROL_CENTER_INGEST_KEY
-});
-
 const REPORT_BODY_LIMIT = 8 * 1024 * 1024;
 const REPORT_ATTACHMENT_LIMIT = 5 * 1024 * 1024;
 const NOTE_LIMIT = 2000;
-const INBOX_LIST_LIMIT = 500;
 const rateBuckets = new Map();
 
 function configured() {
   return Boolean(RESEND_API_KEY && REPORT_TO && REPORT_FROM);
-}
-
-function inboxConfigured() {
-  return Boolean(INBOX_DIR && SYNC_TOKEN);
 }
 
 function sendJson(res, status, body) {
@@ -151,199 +126,6 @@ function escapeHtml(value) {
     '"': '&quot;',
     "'": '&#039;'
   })[c]);
-}
-
-function validInboxId(value) {
-  return /^[a-f0-9]{32,64}$/i.test(String(value || ''))
-    ? String(value).toLowerCase()
-    : null;
-}
-
-function tokenMatches(req) {
-  if (!inboxConfigured()) return false;
-
-  const header = String(req.headers.authorization || '');
-  if (!header.startsWith('Bearer ')) return false;
-
-  const supplied = header.slice(7).trim();
-  if (!supplied) return false;
-
-  const a = Buffer.from(SYNC_TOKEN);
-  const b = Buffer.from(supplied);
-
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
-}
-
-async function ensureInbox() {
-  if (!inboxConfigured()) return;
-  await fs.mkdir(INBOX_DIR, { recursive: true });
-}
-
-async function persistInboxReport({ attachment, filename, note, roomCode, context }) {
-  if (!inboxConfigured()) {
-    return { stored: false, reason: 'not-configured' };
-  }
-
-  await ensureInbox();
-
-  const sha256 = crypto.createHash('sha256').update(attachment).digest('hex');
-  const id = sha256.slice(0, 40);
-
-  const zipPath = path.join(INBOX_DIR, `${id}.zip`);
-  const metaPath = path.join(INBOX_DIR, `${id}.json`);
-
-  const receivedAt = new Date().toISOString();
-
-  const meta = {
-    id,
-    sha256,
-    filename,
-    note,
-    roomCode,
-    context,
-    size: attachment.length,
-    receivedAt
-  };
-
-  try {
-    await fs.writeFile(zipPath, attachment, {
-      flag: 'wx',
-      mode: 0o600
-    });
-  } catch (error) {
-    if (error.code !== 'EEXIST') throw error;
-  }
-
-  await fs.writeFile(
-    metaPath,
-    JSON.stringify(meta, null, 2),
-    { mode: 0o600 }
-  );
-
-  return {
-    stored: true,
-    id,
-    duplicate: false
-  };
-}
-
-async function listInboxReports() {
-  await ensureInbox();
-
-  const names = await fs.readdir(INBOX_DIR);
-  const metas = [];
-
-  for (const name of names.filter(
-    n => /^[a-f0-9]{32,64}\.json$/i.test(n)
-  )) {
-    try {
-      const meta = JSON.parse(
-        await fs.readFile(path.join(INBOX_DIR, name), 'utf8')
-      );
-      metas.push(meta);
-    } catch {}
-  }
-
-  metas.sort(
-    (a, b) => String(b.receivedAt).localeCompare(String(a.receivedAt))
-  );
-
-  return metas.slice(0, INBOX_LIST_LIMIT);
-}
-
-async function getInboxReport(id) {
-  const safeId = validInboxId(id);
-  if (!safeId) return null;
-
-  try {
-    const [metaRaw, zip] = await Promise.all([
-      fs.readFile(path.join(INBOX_DIR, `${safeId}.json`), 'utf8'),
-      fs.readFile(path.join(INBOX_DIR, `${safeId}.zip`))
-    ]);
-
-    const meta = JSON.parse(metaRaw);
-
-    return {
-      ...meta,
-      zipBase64: zip.toString('base64')
-    };
-  } catch (error) {
-    if (error.code === 'ENOENT') return null;
-    throw error;
-  }
-}
-
-async function handleControlCenter(req, res, pathname) {
-  if (!pathname.startsWith('/api/control-center/')) {
-    return false;
-  }
-
-  if (!inboxConfigured()) {
-    sendJson(res, 503, {
-      ok: false,
-      error: 'Control Center Inbox non configuree.'
-    });
-    return true;
-  }
-
-  if (!tokenMatches(req)) {
-    sendJson(res, 401, {
-      ok: false,
-      error: 'Authentification Control Center refusee.'
-    });
-    return true;
-  }
-
-  if (
-    req.method === 'GET' &&
-    pathname === '/api/control-center/status'
-  ) {
-    sendJson(res, 200, {
-      ok: true,
-      configured: true
-    });
-    return true;
-  }
-
-  if (
-    req.method === 'GET' &&
-    pathname === '/api/control-center/reports'
-  ) {
-    sendJson(res, 200, {
-      ok: true,
-      reports: await listInboxReports()
-    });
-    return true;
-  }
-
-  const match = pathname.match(
-    /^\/api\/control-center\/reports\/([a-f0-9]{32,64})$/i
-  );
-
-  if (req.method === 'GET' && match) {
-    const report = await getInboxReport(match[1]);
-
-    if (!report) {
-      sendJson(res, 404, {
-        ok: false,
-        error: 'Rapport introuvable.'
-      });
-    } else {
-      sendJson(res, 200, {
-        ok: true,
-        report
-      });
-    }
-
-    return true;
-  }
-
-  sendJson(res, 404, {
-    ok: false,
-    error: 'Route Control Center inconnue.'
-  });
-
-  return true;
 }
 
 async function sendViaResend({
@@ -449,9 +231,7 @@ async function handleReportMail(req, res, pathname) {
   ) {
     return sendJson(res, 200, {
       ok: true,
-      configured: configured(),
-      inboxConfigured: inboxConfigured(),
-      controlCenterConfigured: controlCenterForwarder.configured()
+      configured: configured()
     });
   }
 
@@ -531,45 +311,17 @@ async function handleReportMail(req, res, pathname) {
   const context = cleanText(body.context, 120);
   const filename = safeFilename(body.filename);
 
-  let inbox = {
-    stored: false
-  };
-
-  try {
-    inbox = await persistInboxReport({
-      attachment,
-      filename,
-      note,
-      roomCode,
-      context
-    });
-  } catch (error) {
-    console.error(
-      '[report-inbox]',
-      error?.message || String(error)
-    );
-  }
-
-  const delivery = await deliverReport({
-    report: {
-      attachment,
-      filename,
-      note,
-      roomCode,
-      context
-    },
-    sendEmail: sendViaResend,
-    forwarder: controlCenterForwarder,
-    logger: console
+  const result = await sendViaResend({
+    attachment,
+    filename,
+    note,
+    roomCode,
+    context
   });
-
-  const result = delivery.email;
 
   sendJson(res, 200, {
     ok: true,
-    messageId: result?.id || null,
-    inboxStored: Boolean(inbox.stored),
-    controlCenterForwarded: Boolean(delivery.controlCenter.forwarded)
+    messageId: result?.id || null
   });
 
   return true;
@@ -600,21 +352,6 @@ http.createServer = function patchedCreateServer(
         req.url || '/',
         `http://${req.headers.host || 'localhost'}`
       );
-
-      if (
-        url.pathname.startsWith(
-          '/api/control-center/'
-        )
-      ) {
-        const handled =
-          await handleControlCenter(
-            req,
-            res,
-            url.pathname
-          );
-
-        if (handled !== false) return;
-      }
 
       if (
         url.pathname === '/api/report-email' ||

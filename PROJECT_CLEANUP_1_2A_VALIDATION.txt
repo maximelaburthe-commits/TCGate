@@ -1,0 +1,197 @@
+TCGATE MAINTENANCE 1.2A — VALIDATION
+2026-10-25T12:50:51.316Z
+Branche update/next ; checkpoint 5d808633b2793dc33e1f859f04ae56a10779db01
+31 suites distinctes. Environnement Windows, Node v24.18.1, Chrome/Playwright hors dépôt.
+WORKSPACE_PLAYWRIGHT_PATH fournit Playwright ; TCGATE_DB_FIXTURE_ROOT fournit le fixture BDD production 1.1.0.
+Resend strictement simulé dans le processus enfant : aucun e-mail externe. Caméra et micro simulés, pas de qualification physique ni de TURN distant.
+
+COMMAND node report-email-bridge-test.js
+EXIT 0
+REPORT_EMAIL_BRIDGE_OK · 344 assertions · real HTTP, mocked Resend, unchanged ZIP, sanitation/idempotency, reduced contract, validation/limits/origin/rate/errors and retired-route 404
+Provider non-JSON HTTP 2xx retains historical ok:true/messageId:null; above-8-MiB request retains historical connection-close rejection. No email sent.
+
+COMMAND node report-email-browser-test.js
+EXIT 0
+REPORT_EMAIL_BROWSER_OK {"assertions":47,"realLobbyAndTableZip":true,"reportSchemaVersion":2,"unchangedZipToMockedResend":true,"fakeMedia":true,"externalEmailsSent":0}
+
+COMMAND node tcgate-ui-1.2-test.js
+EXIT 0
+TCGATE_UI_1_2_CONTRACT_OK · five Home pages, static single-control Lobby, exact logo, original Ready and full Table HTML/presentation
+
+COMMAND node tcgate-ui-1.2-client-test.js
+EXIT 0
+UI12_GIG_CLIENT_OK · 45 assertions · default/authoritative snapshots, host/lobby control, disabled visibility/network/mutations, recovery and unchanged Ready
+
+COMMAND node tcgate-ui-1.2-room-test.js
+EXIT 0
+TCGATE_UI_1_2_ROOM_OK - 59 assertions - Host/Guest HTTP+SSE, defaults, access, snapshots, recovery, signaling and existing locks
+
+COMMAND node tcgate-ui-1.2-browser-test.js
+EXIT 0
+UI12_DISABLED_ROOM_OK {"assertions":306,"roomCodeLength":6,"recovery":true,"gigSignalsWhileDisabled":0}
+TCGATE_UI_1_2_BROWSER_OK {"assertions":366,"homePages":5,"lobbyTabs":3,"viewports":["1920x1080","1366x768","900x900","560x900"],"realRoomSseWebRtc":true,"fakeCameraAndAudio":true,"physicalDevicesValidated":false,"elapsedSeconds":32}
+
+COMMAND node workspace-journal-test.js
+EXIT 0
+WORKSPACE_JOURNAL_OK · 102 assertions · structured Issues, safe form URLs, pagination, filters/order, local draft and read-only GitHub
+
+COMMAND node workspace-database-maintenance-test.js
+EXIT 0
+WORKSPACE_DATABASE_MAINTENANCE_OK · 53 assertions · ACTIVE registry, immutable Candidate HEAD/fallback, snapshots, changes, locales, rights, safe workflow and Lab handoff
+
+COMMAND node workspace-maintenance-journal-browser-test.js
+EXIT 0
+WORKSPACE_MAINTENANCE_JOURNAL_BROWSER_OK · 126 assertions · active/candidate snapshots, live SHA/fallback, isolated Candidate Lab inspection, paginated Journal, human-confirmed form, local draft, safe text, errors and 1920/1366/900/560 responsive
+
+COMMAND node workspace-cockpit-test.js
+EXIT 0
+WORKSPACE_COCKPIT_MODEL_OK · original weighted formula, counters, all category items, read-only source and separate Lab
+
+COMMAND node workspace-cockpit-browser-test.js
+EXIT 0
+WORKSPACE_COCKPIT_BROWSER_OK · eight views; canonical references, weighted metrics, categories, safe text, sync and failure isolation; production link; 1920/1366/900/560 responsive; independent lazy camera controls
+
+COMMAND node workspace-test.js
+EXIT 0
+WORKSPACE_DATABASE_HUB_AND_LAB_OK · provider, languages, isolation, feedback, server/model routes
+
+COMMAND node workspace-browser-test.js
+EXIT 0
+REAL_DETECTOR {"provider":"WebGPU","inference":{"preprocessMs":11.799999952316284,"inferenceMs":132.80000007152557,"totalMs":144.60000002384186,"detectionFps":1,"videoFps":3,"outputShape":"[1, 300, 7]"},"shape":"[1, 300, 7]"}
+WORKSPACE_BROWSER_OK · real engines/matcher, fake webcam, real detector, DB errors, export, isolation
+
+COMMAND node workspace-camera-test.js
+EXIT 0
+WORKSPACE_CAMERA_FLOW_CONTRACT_OK · visible controls, independent runtime, optional identification, camera error messages
+
+COMMAND node workspace-camera-browser-test.js
+EXIT 0
+CAMERA_FIRST_NO_DB {"camera":"Caméra : active · 1280×720","detection":"Détection : active","identification":"Identification : non chargée · choisir puis inspecter une BDD.","provider":"WebGPU","frames":2}
+PRODUCTION_IDENTIFICATION {"status":"Identification : active · BDD 1.1.0","db":{"databaseGame":"cyberpunk","databaseVersion":"1.1.0","databaseStatus":"candidate-qualified","canonicalCount":150,"printingCount":229,"visionReferenceCount":229,"recognitionGroupCount":150,"databaseSource":"public-github-direct","fallbackActive":false},"worker":true}
+WORKSPACE_CAMERA_BROWSER_OK · camera first without DB, real ONNX detection, invalid manifest while streaming, real production matcher, two-device switch, resize/resolution, track stop, audio:false, errors
+
+COMMAND node vision-integrity-test.js
+EXIT 0
+VISION_LIBRARY_INTEGRITY_OK
+
+COMMAND node vision-source-provenance-test.js
+EXIT 0
+VISION_SOURCE_PROVENANCE_OK refs=147 sourceRef=6d3a296724838265a75008f2b64b37e945cd1351
+
+COMMAND node vision-backpressure-test.js
+EXIT 0
+vision backpressure simulation: OK
+{"requested":100,"processed":8,"dropped":92,"maxQueueDepth":1,"sample":[1,15,29,43,57,71,85,99]}
+
+COMMAND node vision-analysis-resolution-test.js
+EXIT 0
+VISION_ANALYSIS_RESOLUTION_OK 1920x1080->640x360 1280x720->640x360 sourceCopies=1
+
+COMMAND node vision-appearance-batch-test.js
+EXIT 0
+VISION_APPEARANCE_BATCH_OK readbacksForSix=1 descriptorSimilarity>=0.999999 flip180>=0.995
+{"1":{"legacyReadbackEmulation":{"p50":0.298,"p95":0.617},"batch":{"p50":0.026,"p95":0.053}},"2":{"legacyReadbackEmulation":{"p50":0.559,"p95":1.793},"batch":{"p50":0.037,"p95":0.216}},"4":{"legacyReadbackEmulation":{"p50":1.044,"p95":2.65},"batch":{"p50":0.056,"p95":0.25}},"6":{"legacyReadbackEmulation":{"p50":1.557,"p95":4.349},"batch":{"p50":0.108,"p95":0.301}},"10":{"legacyReadbackEmulation":{"p50":2.828,"p95":7.03},"batch":{"p50":0.172,"p95":0.283}}}
+
+COMMAND node cyberpunk-db-integration-test.js
+EXIT 0
+PASS cyberpunk-db-integration (real DB v1 fixture)
+150 canonical / 229 printings / 229 matcher references / 150 recognition groups / requests=7 / bytes=517511
+
+COMMAND node --expose-gc cyberpunk-db-performance-test.js
+EXIT 0
+CYBERPUNK_DB_MATCHER_PERFORMANCE_OK
+{
+  "baselineCandidate": {
+    "references": 150,
+    "syntheticDescriptorInitializationMs": 74.17,
+    "descriptorMemoryMiB": 20.3,
+    "identificationAverageMs": 176.99,
+    "identificationP95Ms": 242.59,
+    "samples": 24
+  },
+  "betaRuntime": {
+    "references": 229,
+    "syntheticDescriptorInitializationMs": 126.86,
+    "descriptorMemoryMiB": 30.99,
+    "identificationAverageMs": 169.01,
+    "identificationP95Ms": 209.13,
+    "samples": 24
+  },
+  "change": {
+    "syntheticDescriptorInitializationPercent": 71,
+    "descriptorMemoryPercent": 52.7,
+    "identificationAveragePercent": -4.5,
+    "identificationP95Percent": -13.8
+  }
+}
+
+COMMAND node smoke-test.js
+EXIT 0
+SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_13_UI_1.2.0
+models/card_detector_v53_512.onnx=2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319
+public/detection-worker.js=19d0e72eeb620f23742a9b8fe321f700c45cbd29ad41b952d115bca5fd983227
+public/table-state-engine.js=59c7bf98827abb69eba68e685377dde0ef46bff8349d53238a14ba6ea7b4c1f3
+public/vision-core.js=f3cbd789476c92f86dd25292a67a0d0e96eee9888584a867c841b3b61e8650d1
+public/identification.js=fa3b700ffd19f9726e5fe1b24c6f1bc56fd30de7f9ff0a813fdf986920028b15
+
+COMMAND node smoke-test-c11.js
+EXIT 0
+SMOKE_OK_TCGATE_ALPHA_0.1_CANDIDATE_13_UI_1.2.0
+
+COMMAND node integration-test-c11.js
+EXIT 0
+INTEGRATION_OK_TCGATE_ALPHA_0.1_CANDIDATE_11
+
+COMMAND node smoke-test-ui-integration.js
+EXIT 0
+SMOKE_OK_TCGATE_C9_UI_INTEGRATION_1
+
+COMMAND node future-ux-v3.7-test.js
+EXIT 0
+FUTURE_UX_V3_7_HUB_OK
+
+COMMAND node future-ux-room-metadata-test.js
+EXIT 0
+FUTURE_UX_ROOM_METADATA_SSE_OK
+
+COMMAND node report-schema-v2-test.js
+EXIT 0
+Report Schema V2 tests: OK
+
+COMMAND node phone-camera-test.js
+EXIT 0
+PHONE_CAMERA_INTEGRATION_OK
+
+COMMAND node phone-camera-diagnostics-test.js
+EXIT 0
+PHONE_CAMERA_DIAGNOSTICS_OK
+
+COMMAND npm.cmd run check
+EXIT 0
+
+> tcgate-alpha@0.1.0-candidate.13 check
+> node check.js
+
+CHECK_OK 82 JavaScript files
+
+COMMAND git diff --check
+EXIT 0
+warning: in the working copy of 'CHANGELOG_TCGATE_ALPHA_HOME_UI_1.0.6.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'RAILWAY_REPORT_EMAIL_SETUP.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_13.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'UI_1_2_VALIDATION.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+
+COMMAND git diff --exit-code 5d808633 -- public server.js models railway.json REPORT_SCHEMA_V2.md report-schema-v2-test.js fixtures/report-v2-redacted.json
+EXIT 0
+
+LOGO SHA256 56660fac88d53f7fc9e6056725a4067f89f5cc0079f70407cb79180bb7d92515
+VOLUME /data : probablement orphelin selon le code ; aucune opération sur Railway ni le volume.
+Les anciennes variables sont ignorées par le nouveau runtime mais restent intactes sur Railway.
+
+FINAL CONTRACT — après extension au propriétaire frontend public/report-mail-ui.js
+COMMAND node report-email-bridge-test.js
+EXIT 0
+REPORT_EMAIL_BRIDGE_OK · 344 assertions · real HTTP, mocked Resend, unchanged ZIP, sanitation/idempotency, reduced contract, validation/limits/origin/rate/errors and retired-route 404
+Provider non-JSON HTTP 2xx retains historical ok:true/messageId:null; above-8-MiB request retains historical connection-close rejection. No email sent.

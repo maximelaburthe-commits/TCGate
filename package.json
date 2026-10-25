@@ -11,7 +11,6 @@
     "test:vision-source": "node vision-source-provenance-test.js",
     "test:cyberpunk-db": "node cyberpunk-db-integration-test.js",
     "test:cyberpunk-db-performance": "node --expose-gc cyberpunk-db-performance-test.js",
-    "test:control-center-forwarder": "node control-center-forwarder-test.js",
     "test:phone-diagnostics": "node phone-camera-diagnostics-test.js",
     "test:future-ux": "node future-ux-v3.7-test.js && node future-ux-room-metadata-test.js",
     "test:vision-backpressure": "node vision-backpressure-test.js",
@@ -30,7 +29,9 @@
     "test:workspace-maintenance": "node workspace-database-maintenance-test.js",
     "test:workspace-maintenance-browser": "node workspace-maintenance-journal-browser-test.js",
     "test:ui-1.2": "node tcgate-ui-1.2-test.js && node tcgate-ui-1.2-client-test.js && node tcgate-ui-1.2-room-test.js",
-    "test:ui-1.2-browser": "node tcgate-ui-1.2-browser-test.js"
+    "test:ui-1.2-browser": "node tcgate-ui-1.2-browser-test.js",
+    "test:project-cleanup": "node report-email-bridge-test.js",
+    "test:report-email-browser": "node report-email-browser-test.js"
   },
   "engines": {
     "node": ">=20"

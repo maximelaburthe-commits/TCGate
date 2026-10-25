@@ -1,55 +1,38 @@
-# TCGate v0.4 - Configuration envoi des rapports par mail
+# TCGate — configuration de l’envoi des rapports Alpha
 
-## Fichiers à copier dans GitHub
+Le service démarre avec `npm start`, qui lance `report-mail-server.js` puis le serveur TCGate. Le bridge assure uniquement le transport par e-mail des ZIP générés par l’application ; Report Schema V2, les diagnostics et la génération ZIP restent côté frontend.
 
-À la racine du dépôt `TCGate` :
-- `report-mail-server.js`
-- `package.json` (remplace le fichier existant)
+## Variables nécessaires au mail
 
-Dans `public/` :
-- `index.html` (remplace le fichier existant)
-- `report-mail-ui.js`
-- `report-mail.css`
+Configurer sur le service TCGate :
 
-Les fichiers `server.js` et `public/app.js` restent inchangés.
+- `RESEND_API_KEY` : clé API Resend ;
+- `TCGATE_REPORT_TO_EMAIL` : destinataire des rapports ;
+- `TCGATE_REPORT_FROM_EMAIL` : expéditeur autorisé par Resend.
 
-## Variables Railway
+Ne jamais écrire leurs valeurs dans Git, le navigateur ou les rapports. Le statut public n’expose ni adresse ni secret. Ces trois variables ne remplacent pas les variables réseau et TURN du service.
 
-Ajouter dans le service TCGate :
+## Contrat HTTP
 
-- `RESEND_API_KEY` = clé API Resend, commence typiquement par `re_...`
-- `TCGATE_REPORT_TO_EMAIL` = votre adresse qui recevra les rapports
-- `TCGATE_REPORT_FROM_EMAIL` = expéditeur autorisé par Resend, par exemple `TCGate Reports <reports@votredomaine.fr>`
-- `CONTROL_CENTER_URL` = origine HTTPS publique exacte du TCGate Control Center, sans slash final
-- `CONTROL_CENTER_INGEST_KEY` = même secret d'ingestion que celui configuré sur le service Control Center
+`GET /api/report-email/status` retourne `{ "ok": true, "configured": true|false }` selon la présence des trois variables.
 
-Ne jamais écrire les clés API ou d'ingestion dans GitHub ou dans le JavaScript navigateur.
+`POST /api/report-email` reçoit le JSON contenant `zipBase64`, `filename`, `note`, `roomCode` et `context`. Après validation, Resend reçoit le ZIP inchangé en pièce jointe, avec note et contexte assainis. La réponse de succès est `{ "ok": true, "messageId": "..." }` ; l’identifiant peut être null si le fournisseur ne le transmet pas.
 
-Le forwarding Control Center est facultatif et tolérant aux pannes : s'il est absent,
-indisponible ou refuse le rapport, l'envoi historique par e-mail continue normalement.
+Les contrôles existants restent appliqués : origine comparée au Host, dix tentatives par connexion et par heure, corps limité à 8 Mio, pièce jointe limitée à 5 Mio, contrôle base64 et signature ZIP, nom de fichier et textes assainis, HTML échappé et clé d’idempotence Resend dérivée du ZIP et de la note. Les erreurs fournisseur sont renvoyées sous forme d’erreur générique côté testeur.
 
-## Resend
+Le bridge n’écrit aucun rapport sur disque. Aucun volume de rapports n’est nécessaire à ce parcours mail. Le volume Railway existant reste inchangé et son éventuel retrait exige une décision séparée.
 
-Pour un test initial, Resend propose `onboarding@resend.dev` dans ses exemples. Pour un usage normal, utilisez une adresse d'un domaine que vous avez vérifié dans Resend.
+## Parcours testeur et confidentialité
 
-## Parcours testeur
+1. Cliquer sur Rapport dans le Lobby ou la Table.
+2. Ajouter éventuellement une note puis cliquer sur Envoyer le rapport.
+3. Le frontend génère le ZIP technique existant et le transmet au bridge.
+4. Le bridge valide puis expédie le ZIP par Resend.
 
-1. Le testeur clique sur `Rapport`.
-2. Une fenêtre `Notes facultatives` s'ouvre.
-3. Il ajoute éventuellement son contexte.
-4. Il clique sur `Envoyer le rapport`.
-5. TCGate génère le même ZIP technique que le bouton Rapport actuel.
-6. Le ZIP est envoyé au serveur TCGate.
-7. Le serveur l'expédie à `TCGATE_REPORT_TO_EMAIL` via Resend.
+Le navigateur ne reçoit jamais la clé API ni l’adresse destinataire. La note figure dans le corps du mail. La génération conserve Report Schema V2 et ses protections : aucune vidéo, aucun audio, aucune capture d’écran automatique et aucun parcours utilisateur collecté par V2. Voir [REPORT_SCHEMA_V2.md](REPORT_SCHEMA_V2.md).
 
-Le navigateur ne reçoit jamais l'adresse destinataire ni la clé API.
+## Validation locale
 
-## Confidentialité
+`npm run test:project-cleanup` vérifie le bridge HTTP avec Resend mocké, ses protections et le retrait des dépendances supprimées. `npm run test:report-email-browser` vérifie la génération réelle de ZIP depuis les boutons de rapport et le transport jusqu’au mock Resend ; Playwright doit être disponible, éventuellement via WORKSPACE_PLAYWRIGHT_PATH.
 
-Le rapport existant indique :
-- aucune vidéo enregistrée ;
-- aucun audio enregistré ;
-- aucune capture d'écran automatique ;
-- aucune adresse IP incluse dans le ZIP.
-
-La note facultative est incluse dans le corps du mail.
+Les tests n’envoient aucun e-mail externe. Le déploiement Railway Test et la livraison réelle à une boîte mail restent à valider séparément. Aucune variable, aucun volume ni aucun service Railway n’est modifié par ces tests.

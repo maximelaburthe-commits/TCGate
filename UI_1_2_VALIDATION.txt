@@ -1,3 +1,5 @@
+ARCHIVE HISTORIQUE — résultats au checkpoint UI 1.2 (5d808633). La suite de forwarding mentionnée dans ce journal a été retirée avec Maintenance 1.2A ; ce journal ne constitue pas une configuration active.
+
 TCGATE UI 1.2 — validation locale automatisée
 2026-10-25T11:55:28.802Z
 Branche update/next ; départ 25cd174c2bd4952fd8d0d317ad543d7b720cf3a0

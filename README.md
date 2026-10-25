@@ -2,7 +2,7 @@
 
 Ce jalon UI 1.2 ajoute cinq pages internes à l’Accueil et trois onglets au Lobby, avec Ready toujours visible. Gig Dice devient une option de salon partagée, modifiable uniquement par le Host avant lancement. Le logo approuvé est copié sans transformation. La Table conserve sa présentation et ses mécanismes. Voir [le contrat et la validation UI 1.2](UI_1_2_HOME_LOBBY.md).
 
-Cette Candidate coordonne l’émission du Report Schema V2 avec le Control Center 0.3.1-rc.1. Elle conserve intégralement les fonctions réseau, WebRTC, Vision, Phone Camera, Future UX et Cyberpunk DB déjà qualifiées.
+Le système de rapports Alpha utilise Report Schema V2 et l’envoi par e-mail avec ZIP via Resend. Les diagnostics et la génération des rapports restent indépendants de la messagerie. Voir [la configuration mail](RAILWAY_REPORT_EMAIL_SETUP.md) et [le rapport Maintenance 1.2A](PROJECT_CLEANUP_1_2A.md). Les fonctions réseau, WebRTC, Vision, Phone Camera, UI 1.2 et Cyberpunk DB sont conservées.
 
 ## Report Schema V2
 - enveloppe versionnée et compatible avec les rapports Legacy ;
