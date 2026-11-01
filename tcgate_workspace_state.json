@@ -1,28 +1,73 @@
 {
   "meta": {
     "workspaceVersion": "3.0",
-    "generatedAt": "2026-10-24",
+    "generatedAt": "2026-11-01",
     "project": "TCGate",
     "production": {
-      "label": "Alpha 0.1 Candidate 13 · UI 1.1.0",
-      "branch": "main",
-      "sha": "f5f2ba00e178f58c011c87f788c9c56064d8c32a"
-    },
-    "candidate": {
-      "label": "Alpha 0.1 Candidate 14 · UI 1.1.0",
+      "label": "Alpha 0.1 Candidate 14 · Production actuelle",
       "branch": "candidate/alpha-0.1-c14",
       "sha": "c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3",
-      "note": "Candidate corrective disponible, non promue sur main."
+      "source": "État Production confirmé par le propriétaire pour Candidate 15 ; aucune mutation Railway par ce script."
+    },
+    "candidate": {
+      "label": "Alpha 0.1 Candidate 15 · préparation",
+      "branch": "update/next",
+      "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+      "note": "Ports sélectifs C14 privacy et purge/renouvellement TURN présents dans ce SHA ; aucune fusion de C14. Gel fonctionnel ; qualification complète au SHA exact et promotion main ultérieure. Vision physique Q16, relay WAN Q15 et livraison Resend réelle : NOT TESTED. Campagne automatisée finale PASS : 37 suites, huit navigateur, 3358 appels Node assert comptés. Prête pour qualification complète humaine, pas promue.",
+      "status": "preparation"
     },
     "development": {
       "branch": "update/next",
-      "sha": "25cd174c2bd4952fd8d0d317ad543d7b720cf3a0",
+      "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
       "sync": "ahead",
-      "ahead": 15,
+      "ahead": 22,
       "behind": 0,
-      "note": "Baseline main intégrée ; état vérifié par Git CLI local. Le Workspace, le Vision Lab, le centre de maintenance BDD et le Journal sont intégrés sur update/next. Aucun changement de main ni promotion BDD."
+      "note": "Comparaisons Git réelles au SHA sélectionné : main 22 ahead / 0 behind ; C14 22 ahead / 1 behind. Ports sélectifs C14 privacy et purge/renouvellement TURN présents dans ce SHA ; aucune fusion de C14.",
+      "comparisonWithCandidate14": {
+        "status": "diverged",
+        "ahead": 22,
+        "behind": 1
+      }
     },
-    "principle": "Un seul chat TCGate · workspace = source de vérité · main = stable · update/next = prochaine mise à jour · Test = update/next"
+    "principle": "Workspace = source de vérité produit, roadmap et historique ; GitHub = vérité technique. main = baseline stable Git ; Production déploie encore C14 ; cible à la promotion Candidate 15 : Production → main, Test → update/next.",
+    "history": [
+      {
+        "date": "2026-11-01",
+        "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+        "text": "Préparation Candidate 15 ; état précédent conservé avant correction du déploiement réel et des références.",
+        "before": {
+          "workspaceVersion": "3.0",
+          "generatedAt": "2026-10-24",
+          "project": "TCGate",
+          "production": {
+            "label": "Alpha 0.1 Candidate 13 · UI 1.1.0",
+            "branch": "main",
+            "sha": "f5f2ba00e178f58c011c87f788c9c56064d8c32a"
+          },
+          "candidate": {
+            "label": "Alpha 0.1 Candidate 14 · UI 1.1.0",
+            "branch": "candidate/alpha-0.1-c14",
+            "sha": "c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3",
+            "note": "Candidate corrective disponible, non promue sur main."
+          },
+          "development": {
+            "branch": "update/next",
+            "sha": "25cd174c2bd4952fd8d0d317ad543d7b720cf3a0",
+            "sync": "ahead",
+            "ahead": 15,
+            "behind": 0,
+            "note": "Baseline main intégrée ; état vérifié par Git CLI local. Le Workspace, le Vision Lab, le centre de maintenance BDD et le Journal sont intégrés sur update/next. Aucun changement de main ni promotion BDD."
+          },
+          "principle": "Un seul chat TCGate · workspace = source de vérité · main = stable · update/next = prochaine mise à jour · Test = update/next"
+        }
+      }
+    ],
+    "stable": {
+      "label": "Baseline Git stable · main",
+      "branch": "main",
+      "sha": "f5f2ba00e178f58c011c87f788c9c56064d8c32a",
+      "note": "Branche stable distincte de la source Railway Production actuelle C14. Promotion Candidate 15 et réalignement Production → main ultérieurs."
+    }
   },
   "categories": [
     {
@@ -59,12 +104,12 @@
       "summary": "Créer/rejoindre une room, Host/Guest, Ready, lancement et session webcam 1v1.",
       "status": "stable",
       "progress": 95,
-      "maturity": "Qualifié Alpha",
+      "maturity": "Socle préservé · qualification C15 à compléter",
       "roadmap": true,
       "weight": 10,
-      "track": "main",
-      "version": "C13",
-      "notes": "Base à préserver. Les nouvelles fonctions doivent rester des couches autour du moteur 1v1.",
+      "track": "update/next",
+      "version": "Candidate 15 en préparation",
+      "notes": "Base à préserver. Les nouvelles fonctions doivent rester des couches autour du moteur 1v1.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Socle room/Host/Guest/Ready/start et WebRTC conservé ; aucune nouvelle fonction produit ni promotion main. Les résultats logiciels sont distincts de la passe humaine au SHA gelé.",
       "history": [
         {
           "date": "2026-09-06",
@@ -77,6 +122,25 @@
         {
           "date": "2026-09-19",
           "text": "Candidate 13 promue sur main."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Socle room/Host/Guest/Ready/start et WebRTC conservé ; aucune nouvelle fonction produit ni promotion main. Les résultats logiciels sont distincts de la passe humaine au SHA gelé.",
+          "before": {
+            "id": "alpha-core",
+            "category": "general",
+            "name": "Socle Alpha 1v1",
+            "summary": "Créer/rejoindre une room, Host/Guest, Ready, lancement et session webcam 1v1.",
+            "status": "stable",
+            "progress": 95,
+            "maturity": "Qualifié Alpha",
+            "roadmap": true,
+            "weight": 10,
+            "track": "main",
+            "version": "C13",
+            "notes": "Base à préserver. Les nouvelles fonctions doivent rester des couches autour du moteur 1v1."
+          }
         }
       ]
     },
@@ -87,12 +151,12 @@
       "summary": "Qualification automatisée, smoke réel, promotion contrôlée et rollback.",
       "status": "stable",
       "progress": 90,
-      "maturity": "Opérationnel",
+      "maturity": "Préparation / gel fonctionnel",
       "roadmap": true,
       "weight": 6,
-      "track": "main",
-      "version": "C13 / C14",
-      "notes": "Candidate 14 ajoute npm run qualify:alpha. Le processus doit maintenant se simplifier autour du workflow Update.",
+      "track": "update/next",
+      "version": "Candidate 15",
+      "notes": "Candidate 14 ajoute npm run qualify:alpha. Le processus doit maintenant se simplifier autour du workflow Update.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Workflow unique npm run qualify:alpha et qualification au SHA exact ; promotion main préparée, pas exécutée. Ports sélectifs C14 privacy et purge/renouvellement TURN présents dans ce SHA ; aucune fusion de C14.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Qualification automatisée finale PASS : 37 suites dont huit navigateur, 3358 appels Node assert comptés. Test health même SHA, sans volume. Qualification humaine Q0–Q16 et promotion ultérieures.",
       "history": [
         {
           "date": "2026-09-13",
@@ -105,6 +169,30 @@
         {
           "date": "2026-09-20",
           "text": "Candidate 14 préparée avec qualification courante documentée."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Workflow unique npm run qualify:alpha et qualification au SHA exact ; promotion main préparée, pas exécutée. Ports sélectifs C14 privacy et purge/renouvellement TURN présents dans ce SHA ; aucune fusion de C14.",
+          "before": {
+            "id": "release",
+            "category": "general",
+            "name": "Cycle qualification / release",
+            "summary": "Qualification automatisée, smoke réel, promotion contrôlée et rollback.",
+            "status": "stable",
+            "progress": 90,
+            "maturity": "Opérationnel",
+            "roadmap": true,
+            "weight": 6,
+            "track": "main",
+            "version": "C13 / C14",
+            "notes": "Candidate 14 ajoute npm run qualify:alpha. Le processus doit maintenant se simplifier autour du workflow Update."
+          }
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Qualification automatisée finale PASS : 37 suites dont huit navigateur, 3358 appels Node assert comptés. Test health même SHA, sans volume. Qualification humaine Q0–Q16 et promotion ultérieures."
         }
       ]
     },
@@ -115,12 +203,12 @@
       "summary": "Faire repartir chaque cycle Update de la baseline de production.",
       "status": "stable",
       "progress": 100,
-      "maturity": "Baseline main intégrée",
+      "maturity": "Baseline main intégrée · Production réelle distincte",
       "roadmap": true,
       "weight": 5,
       "track": "process",
-      "version": "15 ahead / 0 behind",
-      "notes": "update/next contient la baseline main ; état vérifié : 15 commits devant / 0 derrière. Les branches main et Candidate 14 sont inchangées. Le cycle main / update/next / Test reste la référence.",
+      "version": "22 ahead / 0 behind",
+      "notes": "update/next contient la baseline main ; état vérifié : 15 commits devant / 0 derrière. Les branches main et Candidate 14 sont inchangées. Le cycle main / update/next / Test reste la référence.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] État mesuré par Git : main 22/0 ; C14 22/1 (ahead/behind). C14 n’est pas mergée ; ses ports manuels ne suppriment pas sa divergence Git.",
       "history": [
         {
           "date": "2026-09-13",
@@ -151,6 +239,25 @@
         {
           "date": "2026-10-24",
           "text": "Point de pilotage résolu : Stratégie de réconciliation de update/next. Contexte historique : Préserver les correctifs Gig Dice utiles tout en repartant proprement de la baseline main/C14."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "État mesuré par Git : main 22/0 ; C14 22/1 (ahead/behind). C14 n’est pas mergée ; ses ports manuels ne suppriment pas sa divergence Git.",
+          "before": {
+            "id": "sync",
+            "category": "general",
+            "name": "Synchronisation main ↔ update/next",
+            "summary": "Faire repartir chaque cycle Update de la baseline de production.",
+            "status": "stable",
+            "progress": 100,
+            "maturity": "Baseline main intégrée",
+            "roadmap": true,
+            "weight": 5,
+            "track": "process",
+            "version": "15 ahead / 0 behind",
+            "notes": "update/next contient la baseline main ; état vérifié : 15 commits devant / 0 derrière. Les branches main et Candidate 14 sont inchangées. Le cycle main / update/next / Test reste la référence."
+          }
         }
       ]
     },
@@ -161,12 +268,12 @@
       "summary": "Suivi explicite des fonctions, maturité et poids dans l’avancement global.",
       "status": "in-progress",
       "progress": 82,
-      "maturity": "Workspace opérationnel",
+      "maturity": "État canonique actualisé pour la préparation C15",
       "roadmap": true,
       "weight": 5,
-      "track": "workspace",
+      "track": "workspace-state",
       "version": "Workspace 3.0",
-      "notes": "Le workspace devient la source de vérité du projet et le point de reprise d'un chat unique TCGate.",
+      "notes": "Le workspace devient la source de vérité du projet et le point de reprise d'un chat unique TCGate.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Workspace remis à jour après UI 1.2 et maintenances 1.2A–D ; éléments anciens et score pondéré conservés, aucune fonction future promue en implémentation.",
       "history": [
         {
           "date": "2026-10-22",
@@ -199,6 +306,25 @@
           "date": "2026-10-24",
           "text": "Centre de maintenance BDD et Journal de pilotage intégrés sur update/next ; nouveau lot prêt pour test, sans promotion BDD ni modification de configuration Railway.",
           "sha": "25cd174c2bd4952fd8d0d317ad543d7b720cf3a0"
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Workspace remis à jour après UI 1.2 et maintenances 1.2A–D ; éléments anciens et score pondéré conservés, aucune fonction future promue en implémentation.",
+          "before": {
+            "id": "roadmap",
+            "category": "general",
+            "name": "Pilotage roadmap produit",
+            "summary": "Suivi explicite des fonctions, maturité et poids dans l’avancement global.",
+            "status": "in-progress",
+            "progress": 82,
+            "maturity": "Workspace opérationnel",
+            "roadmap": true,
+            "weight": 5,
+            "track": "workspace",
+            "version": "Workspace 3.0",
+            "notes": "Le workspace devient la source de vérité du projet et le point de reprise d'un chat unique TCGate."
+          }
         }
       ]
     },
@@ -209,13 +335,13 @@
       "summary": "Laboratoire intégré au Workspace pour améliorer Vision et tester les cartes/références d’une nouvelle BDD avant intégration.",
       "status": "stable",
       "progress": 82,
-      "maturity": "Intégré au Workspace · à tester avec cartes physiques",
+      "maturity": "Intégré · Q16 physique NOT TESTED",
       "roadmap": true,
       "weight": 5,
       "track": "update/next / laboratoire",
       "version": "0.5.1-r14.1",
       "efficiency": "Outil de mesure et de validation",
-      "notes": "Double rôle figé : 1) améliorer détection, identification, seuils, faux positifs, non-identifications et performance ; 2) tester les cartes/références d’une nouvelle BDD avant qu’elle ne soit déclarée compatible avec TCGate. Le Lab reste distinct du moteur de production et doit produire des résultats exploitables avant toute promotion.\nVision Lab intégré au Workspace : webcam et détection indépendantes du chargement BDD, identification activée séparément sur demande. Reconnaissance Vision : à tester avec cartes physiques ; aucune qualification physique nouvelle.",
+      "notes": "Double rôle figé : 1) améliorer détection, identification, seuils, faux positifs, non-identifications et performance ; 2) tester les cartes/références d’une nouvelle BDD avant qu’elle ne soit déclarée compatible avec TCGate. Le Lab reste distinct du moteur de production et doit produire des résultats exploitables avant toute promotion.\nVision Lab intégré au Workspace : webcam et détection indépendantes du chargement BDD, identification activée séparément sur demande. Reconnaissance Vision : à tester avec cartes physiques ; aucune qualification physique nouvelle.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Vision physique Q16 : NOT TESTED, réponse explicite du propriétaire dans cette session. Version 0.5.1-r14.1, qualification R14.1 ERA et campagnes inchangées. Vision Qualification 1.0 reste un futur chantier séparé ; aucun benchmark ni nouveau PASS physique.",
       "history": [
         {
           "date": "2026-10-22",
@@ -243,6 +369,26 @@
           "date": "2026-10-24",
           "text": "Cockpit UI restauré autour du vrai Vision Lab. La reconnaissance reste à tester avec cartes physiques.",
           "sha": "be40bf6405421f1f45bfa98866f13bbddaad7a42"
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Vision physique Q16 : NOT TESTED, réponse explicite du propriétaire dans cette session. Version 0.5.1-r14.1, qualification R14.1 ERA et campagnes inchangées. Vision Qualification 1.0 reste un futur chantier séparé ; aucun benchmark ni nouveau PASS physique.",
+          "before": {
+            "id": "vision-lab",
+            "category": "vision",
+            "name": "Vision Lab",
+            "summary": "Laboratoire intégré au Workspace pour améliorer Vision et tester les cartes/références d’une nouvelle BDD avant intégration.",
+            "status": "stable",
+            "progress": 82,
+            "maturity": "Intégré au Workspace · à tester avec cartes physiques",
+            "roadmap": true,
+            "weight": 5,
+            "track": "update/next / laboratoire",
+            "version": "0.5.1-r14.1",
+            "efficiency": "Outil de mesure et de validation",
+            "notes": "Double rôle figé : 1) améliorer détection, identification, seuils, faux positifs, non-identifications et performance ; 2) tester les cartes/références d’une nouvelle BDD avant qu’elle ne soit déclarée compatible avec TCGate. Le Lab reste distinct du moteur de production et doit produire des résultats exploitables avant toute promotion.\nVision Lab intégré au Workspace : webcam et détection indépendantes du chargement BDD, identification activée séparément sur demande. Reconnaissance Vision : à tester avec cartes physiques ; aucune qualification physique nouvelle."
+          }
         }
       ]
     },
@@ -353,17 +499,37 @@
       "summary": "Mesure reproductible détection/identification selon carte, lumière et caméra.",
       "status": "planned",
       "progress": 35,
-      "maturity": "À formaliser",
+      "maturity": "Futur chantier séparé · non implémenté",
       "roadmap": true,
       "weight": 4,
       "track": "future",
-      "version": "—",
+      "version": "Vision Qualification 1.0 · futur",
       "efficiency": "Pas de KPI consolidé",
-      "notes": "Nécessaire pour remplacer les impressions qualitatives par des métriques stables.",
+      "notes": "Nécessaire pour remplacer les impressions qualitatives par des métriques stables.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Vision Qualification 1.0 reste séparée et future. Candidate 15 ne lance pas le benchmark ; petite passe Q16 caméra/détection/identification physique encore NOT TESTED. Avancement/poids historiques conservés sans promotion automatique.",
       "history": [
         {
           "date": "2026-10-22",
           "text": "Ajout comme chantier de mesure dans le workspace."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Vision Qualification 1.0 reste séparée et future. Candidate 15 ne lance pas le benchmark ; petite passe Q16 caméra/détection/identification physique encore NOT TESTED. Avancement/poids historiques conservés sans promotion automatique.",
+          "before": {
+            "id": "vision-bench",
+            "category": "vision",
+            "name": "Benchmark qualité Vision",
+            "summary": "Mesure reproductible détection/identification selon carte, lumière et caméra.",
+            "status": "planned",
+            "progress": 35,
+            "maturity": "À formaliser",
+            "roadmap": true,
+            "weight": 4,
+            "track": "future",
+            "version": "—",
+            "efficiency": "Pas de KPI consolidé",
+            "notes": "Nécessaire pour remplacer les impressions qualitatives par des métriques stables."
+          }
         }
       ]
     },
@@ -374,14 +540,14 @@
       "summary": "Base principale actuellement opérationnelle dans TCGate.",
       "status": "stable",
       "progress": 92,
-      "maturity": "Opérationnelle",
+      "maturity": "Cyberpunk actif · source immuable conservée",
       "roadmap": true,
       "weight": 8,
       "track": "main",
       "version": "DB 1.1.0",
-      "dbState": "Opérationnelle",
+      "dbState": "ACTIVE TCGATE · runtime seul",
       "coverage": "150 cartes canoniques · 229 printings/références",
-      "notes": "Runtime prêt et versionné. La maintenance de contenu restera continue avec les futurs sets.",
+      "notes": "Runtime prêt et versionné. La maintenance de contenu restera continue avec les futurs sets.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] tcgate_db_cyberpunk actif ; production garde DB 1.1.0 à 56402636a77af9c8b5dc4e3b61c509a185f3c834, sans reconstruction ni promotion. Nettoyage des branches BDD effectué précédemment ; aucune mutation BDD dans C15.",
       "history": [
         {
           "date": "2026-09-12",
@@ -394,6 +560,27 @@
         {
           "date": "2026-09-19",
           "text": "DB conservée dans Candidate 13 / main."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "tcgate_db_cyberpunk actif ; production garde DB 1.1.0 à 56402636a77af9c8b5dc4e3b61c509a185f3c834, sans reconstruction ni promotion. Nettoyage des branches BDD effectué précédemment ; aucune mutation BDD dans C15.",
+          "before": {
+            "id": "db-cp",
+            "category": "bdd",
+            "name": "Cyberpunk TCG",
+            "summary": "Base principale actuellement opérationnelle dans TCGate.",
+            "status": "stable",
+            "progress": 92,
+            "maturity": "Opérationnelle",
+            "roadmap": true,
+            "weight": 8,
+            "track": "main",
+            "version": "DB 1.1.0",
+            "dbState": "Opérationnelle",
+            "coverage": "150 cartes canoniques · 229 printings/références",
+            "notes": "Runtime prêt et versionné. La maintenance de contenu restera continue avec les futurs sets."
+          }
         }
       ]
     },
@@ -401,17 +588,17 @@
       "id": "db-swu",
       "category": "bdd",
       "name": "Star Wars Unlimited",
-      "summary": "Travail expérimental antérieur, non opérationnel dans la production actuelle.",
-      "status": "prototype",
+      "summary": "Dépôt SWU actif pour développement, runtime SWU non activé dans TCGate.",
+      "status": "in-progress",
       "progress": 35,
-      "maturity": "Prototype archivé",
+      "maturity": "BDD de développement conservée",
       "roadmap": false,
       "weight": 4,
-      "track": "archive",
+      "track": "tcgate_db_star_wars_unlimited",
       "version": "ancienne branche multitcg",
-      "dbState": "Non opérationnelle en production",
+      "dbState": "Développement actif · INACTIVE EN PRODUCTION",
       "coverage": "Prototype partiel",
-      "notes": "À reprendre proprement si SWU revient dans la roadmap.",
+      "notes": "À reprendre proprement si SWU revient dans la roadmap.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] tcgate_db_star_wars_unlimited conservé comme BDD de développement ; aucune activation produit/production ni qualification Vision déduite de son existence. Ancien prototype et historiques préservés.",
       "history": [
         {
           "date": "2026-09-01",
@@ -420,6 +607,27 @@
         {
           "date": "2026-09-13",
           "text": "Branche distante supprimée après archivage."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "tcgate_db_star_wars_unlimited conservé comme BDD de développement ; aucune activation produit/production ni qualification Vision déduite de son existence. Ancien prototype et historiques préservés.",
+          "before": {
+            "id": "db-swu",
+            "category": "bdd",
+            "name": "Star Wars Unlimited",
+            "summary": "Travail expérimental antérieur, non opérationnel dans la production actuelle.",
+            "status": "prototype",
+            "progress": 35,
+            "maturity": "Prototype archivé",
+            "roadmap": false,
+            "weight": 4,
+            "track": "archive",
+            "version": "ancienne branche multitcg",
+            "dbState": "Non opérationnelle en production",
+            "coverage": "Prototype partiel",
+            "notes": "À reprendre proprement si SWU revient dans la roadmap."
+          }
         }
       ]
     },
@@ -434,10 +642,10 @@
       "roadmap": true,
       "weight": 5,
       "track": "main",
-      "version": "Cyberpunk actif",
+      "version": "Cyberpunk actif · SWU développement inactif",
       "dbState": "Partiellement opérationnel",
       "coverage": "Cyberpunk validé, seconde BDD à qualifier",
-      "notes": "database-source et game-databases existent. Le caractère réellement multi-TCG reste à prouver avec une seconde BDD complète.",
+      "notes": "database-source et game-databases existent. Le caractère réellement multi-TCG reste à prouver avec une seconde BDD complète.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Architecture programme : Cyberpunk actif, SWU développement inactif en production, Riftbound ARCHIVE CANDIDATE. Langue physique personnelle par joueur décidée pour après Candidate 15 seulement ; aucun changement de chargement Vision actuel.",
       "history": [
         {
           "date": "2026-09",
@@ -446,6 +654,27 @@
         {
           "date": "2026-09-12",
           "text": "Cyberpunk 1.1 devient la première base immuable qualifiée."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Architecture programme : Cyberpunk actif, SWU développement inactif en production, Riftbound ARCHIVE CANDIDATE. Langue physique personnelle par joueur décidée pour après Candidate 15 seulement ; aucun changement de chargement Vision actuel.",
+          "before": {
+            "id": "db-runtime",
+            "category": "bdd",
+            "name": "Runtime multi-BDD",
+            "summary": "Chargement/versionnement d’une base selon le TCG sélectionné.",
+            "status": "in-progress",
+            "progress": 68,
+            "maturity": "Fondations présentes",
+            "roadmap": true,
+            "weight": 5,
+            "track": "main",
+            "version": "Cyberpunk actif",
+            "dbState": "Partiellement opérationnel",
+            "coverage": "Cyberpunk validé, seconde BDD à qualifier",
+            "notes": "database-source et game-databases existent. Le caractère réellement multi-TCG reste à prouver avec une seconde BDD complète."
+          }
         }
       ]
     },
@@ -475,19 +704,38 @@
       "id": "ux-home",
       "category": "uiux",
       "name": "Accueil Alpha",
-      "summary": "Page d’entrée, création/rejoindre une partie et positionnement produit.",
+      "summary": "Accueil UI 1.2 : cinq pages internes, navigation, création/rejoindre et présentation produit.",
       "status": "stable",
       "progress": 92,
-      "maturity": "Qualifié",
+      "maturity": "UI 1.2 intégrée · couverture logicielle",
       "roadmap": true,
       "weight": 5,
-      "track": "main",
-      "version": "UI 1.1.0",
-      "notes": "Accueil Candidate préservé lors de l’intégration Future UX.",
+      "track": "update/next",
+      "version": "UI 1.2.0",
+      "notes": "Accueil Candidate préservé lors de l’intégration Future UX.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Home UI 1.2 intégrée avec cinq pages. Les validations navigateur locales ne constituent pas une nouvelle qualification matérielle.",
       "history": [
         {
           "date": "2026-09-13",
           "text": "Future UX intégrée sans remplacer la homepage Candidate."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Home UI 1.2 intégrée avec cinq pages. Les validations navigateur locales ne constituent pas une nouvelle qualification matérielle.",
+          "before": {
+            "id": "ux-home",
+            "category": "uiux",
+            "name": "Accueil Alpha",
+            "summary": "Page d’entrée, création/rejoindre une partie et positionnement produit.",
+            "status": "stable",
+            "progress": 92,
+            "maturity": "Qualifié",
+            "roadmap": true,
+            "weight": 5,
+            "track": "main",
+            "version": "UI 1.1.0",
+            "notes": "Accueil Candidate préservé lors de l’intégration Future UX."
+          }
         }
       ]
     },
@@ -495,19 +743,38 @@
       "id": "ux-lobby",
       "category": "uiux",
       "name": "Lobby / préparation de partie",
-      "summary": "Choix TCG, réglages partagés, installation personnelle, joueurs et Ready.",
+      "summary": "Lobby UI 1.2 : Session / Mon installation / Joueurs, Ready toujours visible.",
       "status": "stable",
       "progress": 90,
-      "maturity": "Qualifié",
+      "maturity": "UI 1.2 intégrée · trois onglets",
       "roadmap": true,
       "weight": 6,
-      "track": "main",
-      "version": "Future UX v3.7",
-      "notes": "Configuration avant la partie ; Host contrôle les réglages partagés, Guest en lecture seule.",
+      "track": "update/next",
+      "version": "UI 1.2.0",
+      "notes": "Configuration avant la partie ; Host contrôle les réglages partagés, Guest en lecture seule.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Lobby trois onglets ; Host édite les réglages communs, Guest les lit. Réglages personnels dans Mon installation ; aucune langue physique par joueur encore implémentée.",
       "history": [
         {
           "date": "2026-09-13",
           "text": "Qualification Future UX v3.7 : Session / Mon installation / Joueurs."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Lobby trois onglets ; Host édite les réglages communs, Guest les lit. Réglages personnels dans Mon installation ; aucune langue physique par joueur encore implémentée.",
+          "before": {
+            "id": "ux-lobby",
+            "category": "uiux",
+            "name": "Lobby / préparation de partie",
+            "summary": "Choix TCG, réglages partagés, installation personnelle, joueurs et Ready.",
+            "status": "stable",
+            "progress": 90,
+            "maturity": "Qualifié",
+            "roadmap": true,
+            "weight": 6,
+            "track": "main",
+            "version": "Future UX v3.7",
+            "notes": "Configuration avant la partie ; Host contrôle les réglages partagés, Guest en lecture seule."
+          }
         }
       ]
     },
@@ -579,15 +846,15 @@
       "id": "ux-gig",
       "category": "uiux",
       "name": "Gig Dice Cyberpunk",
-      "summary": "Dés d4 à d20, valeurs, drag/drop, vol, Street Cred, reset et zoom.",
+      "summary": "Gig Dice option partagée de room, activable par Host avant lancement sur TCG supporté.",
       "status": "in-progress",
       "progress": 88,
-      "maturity": "Qualifié + correctifs UX en update",
+      "maturity": "180 sondes PASS logiciel · passe humaine distincte",
       "roadmap": true,
       "weight": 6,
       "track": "update/next",
-      "version": "v3.7 + zoom fixes",
-      "notes": "Fonction qualifiée sur main, mais des correctifs de zoom/hover restent uniquement sur update/next.",
+      "version": "UI 1.2 · option room",
+      "notes": "Fonction qualifiée sur main, mais des correctifs de zoom/hover restent uniquement sur update/next.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Option room ON/OFF conservée. Hover centre/bords, zone interactive et zoom : 180 sondes navigateur locales PASS sur la baseline 30e553f2c287101b162a995abf368ad9c4ac22de (1366/900/560), matériel simulé. Aucun nouveau PASS physique inventé ; toute reproduction du bug est INTERMÉDIAIRE et ouvre un follow-up séparé.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Gig Dice : 180 sondes PASS au SHA final, centres/bords, zone interactive et zoom ; aucun correctif produit. Échec initial du helper menu analysé par témoin déterministe, test réveillant désormais le dock par mouvement souris réel ; aucun défaut produit reproduit.",
       "history": [
         {
           "date": "2026-09-13",
@@ -600,6 +867,30 @@
         {
           "date": "2026-10-02",
           "text": "Durcissement du cycle de vie de la couche de zoom Gig Dice."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Option room ON/OFF conservée. Hover centre/bords, zone interactive et zoom : 180 sondes navigateur locales PASS sur la baseline 30e553f2c287101b162a995abf368ad9c4ac22de (1366/900/560), matériel simulé. Aucun nouveau PASS physique inventé ; toute reproduction du bug est INTERMÉDIAIRE et ouvre un follow-up séparé.",
+          "before": {
+            "id": "ux-gig",
+            "category": "uiux",
+            "name": "Gig Dice Cyberpunk",
+            "summary": "Dés d4 à d20, valeurs, drag/drop, vol, Street Cred, reset et zoom.",
+            "status": "in-progress",
+            "progress": 88,
+            "maturity": "Qualifié + correctifs UX en update",
+            "roadmap": true,
+            "weight": 6,
+            "track": "update/next",
+            "version": "v3.7 + zoom fixes",
+            "notes": "Fonction qualifiée sur main, mais des correctifs de zoom/hover restent uniquement sur update/next."
+          }
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Gig Dice : 180 sondes PASS au SHA final, centres/bords, zone interactive et zoom ; aucun correctif produit. Échec initial du helper menu analysé par témoin déterministe, test réveillant désormais le dock par mouvement souris réel ; aucun défaut produit reproduit."
         }
       ]
     },
@@ -654,12 +945,12 @@
       "summary": "Relay TURN, politique ICE et credentials temporaires.",
       "status": "stable",
       "progress": 92,
-      "maturity": "Qualifié",
+      "maturity": "Cache/config/policy couverts ; relay WAN C15 NOT TESTED",
       "roadmap": true,
       "weight": 6,
-      "track": "main + C14",
-      "version": "Q7 PASS",
-      "notes": "Candidate 14 ajoute la purge du cache TURN expiré.",
+      "track": "update/next",
+      "version": "Cache TURN C14 réconcilié C15",
+      "notes": "Candidate 14 ajoute la purge du cache TURN expiré.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Ports sélectifs C14 privacy et purge/renouvellement TURN présents dans ce SHA ; aucune fusion de C14. Expiration, purge et renouvellement des credentials testés avec fournisseur simulé. Relay distant Q15 NOT TESTED sur C15 ; ancien Q7 PASS conservé comme historique.",
       "history": [
         {
           "date": "2026-09-13",
@@ -668,6 +959,25 @@
         {
           "date": "2026-09-20",
           "text": "Candidate 14 : purge cache TURN + turn-cache-test.js."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Ports sélectifs C14 privacy et purge/renouvellement TURN présents dans ce SHA ; aucune fusion de C14. Expiration, purge et renouvellement des credentials testés avec fournisseur simulé. Relay distant Q15 NOT TESTED sur C15 ; ancien Q7 PASS conservé comme historique.",
+          "before": {
+            "id": "turn",
+            "category": "annex",
+            "name": "TURN / ICE",
+            "summary": "Relay TURN, politique ICE et credentials temporaires.",
+            "status": "stable",
+            "progress": 92,
+            "maturity": "Qualifié",
+            "roadmap": true,
+            "weight": 6,
+            "track": "main + C14",
+            "version": "Q7 PASS",
+            "notes": "Candidate 14 ajoute la purge du cache TURN expiré."
+          }
         }
       ]
     },
@@ -695,15 +1005,15 @@
       "id": "phone",
       "category": "annex",
       "name": "Téléphone comme caméra",
-      "summary": "QR, capture mobile, contrôle PC↔téléphone, reconnexion et diagnostics.",
-      "status": "experimental",
+      "summary": "Phone intégré : QR/pairing, vidéo mobile, objectifs/zoom/qualité/autofocus, recovery/diagnostics ; audio PC.",
+      "status": "qualified",
       "progress": 72,
-      "maturity": "Intégré expérimentalement",
+      "maturity": "QUALIFIED · PHYSICAL QUALIFICATION PASS déclaré",
       "roadmap": true,
       "weight": 5,
-      "track": "main",
-      "version": "Alpha intégré / Lab 0.6.4.1",
-      "notes": "Ne pas confondre la fonction intégrée et le Phone Camera Lab standalone.",
+      "track": "update/next",
+      "version": "Phone Camera intégré 1.2C",
+      "notes": "Ne pas confondre la fonction intégrée et le Phone Camera Lab standalone.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] PHYSICAL QUALIFICATION PASS pour Phone 1.2C déclaré par le propriétaire dans la demande Candidate 15 ; aucun test matériel Codex inventé. Moteur intégré seule référence produit ; retour webcam et microphone PC préservés. Standalone Phone : DECOMMISSIONABLE / SAFE TO DELETE, aucune suppression effectuée.",
       "history": [
         {
           "date": "2026-08",
@@ -712,6 +1022,25 @@
         {
           "date": "2026-09",
           "text": "Phone Camera intégré avec tests et diagnostics."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "PHYSICAL QUALIFICATION PASS pour Phone 1.2C déclaré par le propriétaire dans la demande Candidate 15 ; aucun test matériel Codex inventé. Moteur intégré seule référence produit ; retour webcam et microphone PC préservés. Standalone Phone : DECOMMISSIONABLE / SAFE TO DELETE, aucune suppression effectuée.",
+          "before": {
+            "id": "phone",
+            "category": "annex",
+            "name": "Téléphone comme caméra",
+            "summary": "QR, capture mobile, contrôle PC↔téléphone, reconnexion et diagnostics.",
+            "status": "experimental",
+            "progress": 72,
+            "maturity": "Intégré expérimentalement",
+            "roadmap": true,
+            "weight": 5,
+            "track": "main",
+            "version": "Alpha intégré / Lab 0.6.4.1",
+            "notes": "Ne pas confondre la fonction intégrée et le Phone Camera Lab standalone."
+          }
         }
       ]
     },
@@ -719,19 +1048,38 @@
       "id": "reports",
       "category": "annex",
       "name": "Report Schema V2",
-      "summary": "Rapports structurés et versionnés pour incidents, réseau, Vision et environnement.",
+      "summary": "Report Schema V2, diagnostics et ZIP conservés, transport e-mail via Resend uniquement.",
       "status": "stable",
       "progress": 90,
-      "maturity": "Promu sur main",
+      "maturity": "Rapports intégrés · mail réel NOT TESTED",
       "roadmap": true,
       "weight": 6,
-      "track": "main",
-      "version": "Candidate 13",
-      "notes": "Candidate 13 est la baseline main actuelle et introduit Report Schema V2.",
+      "track": "update/next",
+      "version": "Report Schema V2 · ZIP · Resend",
+      "notes": "Candidate 13 est la baseline main actuelle et introduit Report Schema V2.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Control Center retiré du parcours. ZIP réel vers bridge/Resend mocké couvert ; livraison e-mail réelle NOT TESTED. Ancien service TCGate-report-schema-v2 supprimé et environnement report-schema-v2-qualification vide : SAFE TO DELETE ENVIRONMENT, selon état transmis pour C15.",
       "history": [
         {
           "date": "2026-09-19",
           "text": "Candidate 13 promue sur main avec Report Schema V2."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Control Center retiré du parcours. ZIP réel vers bridge/Resend mocké couvert ; livraison e-mail réelle NOT TESTED. Ancien service TCGate-report-schema-v2 supprimé et environnement report-schema-v2-qualification vide : SAFE TO DELETE ENVIRONMENT, selon état transmis pour C15.",
+          "before": {
+            "id": "reports",
+            "category": "annex",
+            "name": "Report Schema V2",
+            "summary": "Rapports structurés et versionnés pour incidents, réseau, Vision et environnement.",
+            "status": "stable",
+            "progress": 90,
+            "maturity": "Promu sur main",
+            "roadmap": true,
+            "weight": 6,
+            "track": "main",
+            "version": "Candidate 13",
+            "notes": "Candidate 13 est la baseline main actuelle et introduit Report Schema V2."
+          }
         }
       ]
     },
@@ -742,12 +1090,12 @@
       "summary": "Sanitation des secrets, URLs, IP, SDP et candidats ICE.",
       "status": "qualified",
       "progress": 96,
-      "maturity": "Candidate qualifiée",
+      "maturity": "Sanitation réconciliée · couverture adversariale",
       "roadmap": true,
       "weight": 5,
-      "track": "candidate/alpha-0.1-c14",
-      "version": "Candidate 14",
-      "notes": "Implémentée dans C14 mais pas encore dans main.",
+      "track": "update/next",
+      "version": "C14 réconciliée pour C15",
+      "notes": "Implémentée dans C14 mais pas encore dans main.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Ports sélectifs C14 privacy et purge/renouvellement TURN présents dans ce SHA ; aucune fusion de C14. Sanitation tokens/secrets/auth/cookies/URLs/IP/SDP/ICE/device IDs ; privacy Phone 1.2C indépendante conservée. Aucune réintroduction de forwarder, inbox disque ou variables CC.",
       "history": [
         {
           "date": "2026-09-20",
@@ -756,6 +1104,25 @@
         {
           "date": "2026-09-20",
           "text": "Candidate 14 préparée à c4adb95…"
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Ports sélectifs C14 privacy et purge/renouvellement TURN présents dans ce SHA ; aucune fusion de C14. Sanitation tokens/secrets/auth/cookies/URLs/IP/SDP/ICE/device IDs ; privacy Phone 1.2C indépendante conservée. Aucune réintroduction de forwarder, inbox disque ou variables CC.",
+          "before": {
+            "id": "privacy",
+            "category": "annex",
+            "name": "Confidentialité des rapports",
+            "summary": "Sanitation des secrets, URLs, IP, SDP et candidats ICE.",
+            "status": "qualified",
+            "progress": 96,
+            "maturity": "Candidate qualifiée",
+            "roadmap": true,
+            "weight": 5,
+            "track": "candidate/alpha-0.1-c14",
+            "version": "Candidate 14",
+            "notes": "Implémentée dans C14 mais pas encore dans main."
+          }
         }
       ]
     },
@@ -763,15 +1130,15 @@
       "id": "cc",
       "category": "annex",
       "name": "Control Center",
-      "summary": "Ancien projet de centralisation rapports, incidents, builds et diagnostics.",
+      "summary": "Control Center abandonné : aucun runtime, forwarder, route, inbox disque ou variable CC consommée.",
       "status": "abandoned",
       "progress": 40,
-      "maturity": "Abandonné",
+      "maturity": "Retiré du runtime · infrastructure préservée",
       "roadmap": false,
       "weight": 0,
       "track": "retired",
-      "version": "arrêté",
-      "notes": "Décision produit : ne plus investir dans ce chantier comme outil principal. Le pilotage passe par ce workspace puis un futur dashboard.",
+      "version": "Runtime retiré en 1.2A",
+      "notes": "Décision produit : ne plus investir dans ce chantier comme outil principal. Le pilotage passe par ce workspace puis un futur dashboard.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Rapports via Resend seulement. Infrastructure CC préservée jusqu’après promotion Candidate 15 ; données historiques, Postgres, volumes et bucket intacts en attente de décision explicite. Aucune opération Railway.",
       "history": [
         {
           "date": "2026-09",
@@ -780,6 +1147,25 @@
         {
           "date": "2026-10-22",
           "text": "Décision d’abandonner le Control Center."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Rapports via Resend seulement. Infrastructure CC préservée jusqu’après promotion Candidate 15 ; données historiques, Postgres, volumes et bucket intacts en attente de décision explicite. Aucune opération Railway.",
+          "before": {
+            "id": "cc",
+            "category": "annex",
+            "name": "Control Center",
+            "summary": "Ancien projet de centralisation rapports, incidents, builds et diagnostics.",
+            "status": "abandoned",
+            "progress": 40,
+            "maturity": "Abandonné",
+            "roadmap": false,
+            "weight": 0,
+            "track": "retired",
+            "version": "arrêté",
+            "notes": "Décision produit : ne plus investir dans ce chantier comme outil principal. Le pilotage passe par ce workspace puis un futur dashboard."
+          }
         }
       ]
     },
@@ -830,16 +1216,101 @@
       "summary": "Procédure de reconstruction complète en cas de perte locale ou d'infrastructure.",
       "status": "planned",
       "progress": 8,
-      "maturity": "Différé",
+      "maturity": "Différé · Test sans volume requis",
       "roadmap": false,
       "weight": 2,
       "track": "future",
       "version": "—",
-      "notes": "Le code, le modèle Vision et la BDD Cyberpunk sont versionnés sur GitHub. Les secrets Railway et le volume /data nécessiteront plus tard une procédure de sauvegarde dédiée.",
+      "notes": "Le code, le modèle Vision et la BDD Cyberpunk sont versionnés sur GitHub. Les secrets Railway et le volume /data nécessiteront plus tard une procédure de sauvegarde dédiée.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Test : montage /data détaché et redéploiement SUCCESS observé sur 30e553f2c287101b162a995abf368ad9c4ac22de, confirmé par le propriétaire ; Test persistent volume NOT REQUIRED. Production C14 et ses données restent préservées jusqu’à promotion/décision séparée ; secrets et sauvegardes historiques ne sont pas supprimés.",
       "history": [
         {
           "date": "2026-10-22",
           "text": "Audit rapide : perte du PC local récupérable depuis GitHub ; reconstruction totale Railway non encore documentée. Chantier différé."
+        },
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Test : montage /data détaché et redéploiement SUCCESS observé sur 30e553f2c287101b162a995abf368ad9c4ac22de, confirmé par le propriétaire ; Test persistent volume NOT REQUIRED. Production C14 et ses données restent préservées jusqu’à promotion/décision séparée ; secrets et sauvegardes historiques ne sont pas supprimés.",
+          "before": {
+            "id": "annex-disaster-recovery",
+            "category": "annex",
+            "name": "Disaster Recovery / sauvegarde complète",
+            "summary": "Procédure de reconstruction complète en cas de perte locale ou d'infrastructure.",
+            "status": "planned",
+            "progress": 8,
+            "maturity": "Différé",
+            "roadmap": false,
+            "weight": 2,
+            "track": "future",
+            "version": "—",
+            "notes": "Le code, le modèle Vision et la BDD Cyberpunk sont versionnés sur GitHub. Les secrets Railway et le volume /data nécessiteront plus tard une procédure de sauvegarde dédiée."
+          }
+        }
+      ]
+    },
+    {
+      "id": "db-riftbound",
+      "category": "bdd",
+      "name": "Riftbound · archive candidate",
+      "summary": "tcgate_db_riftbound conservé, sans reprise produit décidée.",
+      "status": "paused",
+      "maturity": "ARCHIVE CANDIDATE",
+      "track": "archive-candidate",
+      "version": "Hors roadmap active",
+      "dbState": "ARCHIVE CANDIDATE",
+      "coverage": "Non évaluée dans ce jalon",
+      "progress": 0,
+      "roadmap": false,
+      "weight": 0,
+      "notes": "[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] tcgate_db_riftbound : ARCHIVE CANDIDATE tant qu’aucune reprise produit n’est décidée. Aucun archivage ou suppression de repository effectué.",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "tcgate_db_riftbound : ARCHIVE CANDIDATE tant qu’aucune reprise produit n’est décidée. Aucun archivage ou suppression de repository effectué."
+        }
+      ]
+    },
+    {
+      "id": "db-player-locales",
+      "category": "bdd",
+      "name": "Langue physique personnelle par joueur",
+      "summary": "Décision d’architecture post-Candidate 15, sans implémentation.",
+      "status": "planned",
+      "maturity": "Décision enregistrée · non implémentée",
+      "track": "post-Candidate-15",
+      "version": "Concept uniquement",
+      "dbState": "Futur",
+      "coverage": "cardId canonique → printing → locale → index Vision par locale",
+      "architecture": {
+        "implemented": false,
+        "model": [
+          "TCG",
+          "cardId canonique",
+          "printing",
+          "locale",
+          "Vision index par locale"
+        ],
+        "sharedRoomChoice": "TCG",
+        "personalChoice": "Langue des cartes physiques dans Mon installation",
+        "example": {
+          "host": "Cyberpunk / FR",
+          "guest": "Cyberpunk / EN"
+        },
+        "sameCanonicalCardId": true,
+        "visionRule": "selected locale → load only that locale qualified Vision references",
+        "visionReadyRequired": true,
+        "crossLocaleVisualFallback": false
+      },
+      "progress": 0,
+      "roadmap": false,
+      "weight": 0,
+      "notes": "[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Chaque BDD déclarera ses langues physiques disponibles. TCG commun à la room, langue physique personnelle dans Mon installation. Même cardId canonique, corpus Vision par locale ; proposer Vision seulement si visionReady=true ; aucun fallback visuel EN lorsque FR est choisie. Fonction future, pas implémentée dans C15.",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "text": "Chaque BDD déclarera ses langues physiques disponibles. TCG commun à la room, langue physique personnelle dans Mon installation. Même cardId canonique, corpus Vision par locale ; proposer Vision seulement si visionReady=true ; aucun fallback visuel EN lorsque FR est choisie. Fonction future, pas implémentée dans C15."
         }
       ]
     }
@@ -847,9 +1318,15 @@
   "session": {
     "activeWork": [
       {
-        "title": "Workspace de pilotage + chat TCGate unique",
+        "title": "Candidate 15 · réconciliation, gel et qualification",
         "status": "active",
-        "detail": "Faire du workspace la source de vérité et utiliser un seul chat pour Général, Vision, BDD, UI/UX, SYSTEM et fonctions futures. Cockpit restauré ; centre de maintenance BDD et Journal GitHub Issues intégrés sur update/next, à tester."
+        "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+        "detail": "Ports sélectifs C14 privacy et purge/renouvellement TURN présents dans ce SHA ; aucune fusion de C14. Fonctions gelées, workflow automatisé unique, checklist Q0–Q16. Phone PASS physique déclaré ; Q16 Vision, Q15 relay WAN et livraison mail réelle restent NOT TESTED. Aucune promotion main ni mutation Railway Production. Campagne finale automatisée PASS sur ce SHA ; Test déployé sans volume, health confirmé. Qualification humaine et promotion restent ultérieures."
+      },
+      {
+        "title": "Workspace de pilotage + chat TCGate unique",
+        "status": "reported",
+        "detail": "État canonique actualisé pour UI 1.2, maintenances 1.2A–D et Candidate 15. Publication séparée sur workspace-state ; aucune fusion de branches."
       },
       {
         "title": "Hubs événementiels",
@@ -859,10 +1336,16 @@
       {
         "title": "Vision Lab comme laboratoire Vision + BDD",
         "status": "active",
-        "detail": "Utiliser le Lab pour améliorer Vision et pour qualifier les cartes/références de toute nouvelle BDD avant intégration. Lab intégré au Workspace, caméra sans BDD et identification séparée. Reconnaissance : à tester avec cartes physiques."
+        "detail": "Lab et campagnes conservés ; Q16 physique NOT TESTED. Vision Qualification 1.0 reste future et séparée ; ne pas lancer de benchmark dans Candidate 15."
       }
     ],
     "priorities": [
+      {
+        "title": "Qualifier Candidate 15 au SHA exact",
+        "status": "next",
+        "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+        "detail": "Compléter passe humaine Q0–Q16, dont Q16 quelques cartes Cyberpunk physiques, Q15 relay distant et livraison Resend réelle. Préserver les preuves et distinguer PASS logiciel des tests matériels."
+      },
       {
         "title": "Stabiliser le mode de travail autour de main / update/next / Test",
         "status": "next",
@@ -880,33 +1363,106 @@
       },
       {
         "title": "Formaliser une campagne Vision Lab reproductible",
-        "status": "next",
+        "status": "later",
         "detail": "Définir un protocole commun de tests par carte/BBD : bonnes identifications, erreurs, NI, faux positifs et conditions de capture."
       }
     ],
     "decisions": [
       {
         "title": "Promotion éventuelle de Candidate 14 sur main",
-        "status": "open",
-        "detail": "Candidate 14 est 1 commit devant main et apporte surtout confidentialité Report Schema V2 + purge cache TURN."
+        "status": "superseded",
+        "detail": "C14 n’est pas mergée/promue dans ce jalon ; ses correctifs utiles sont portés manuellement vers Candidate 15. Production reste sur C14 jusqu’à promotion Candidate 15 contrôlée vers main."
       },
       {
         "title": "Moment de reprise des Hubs événementiels",
         "status": "deferred",
         "detail": "Le concept produit existe mais reste hors Alpha figée."
+      },
+      {
+        "title": "Promotion Candidate 15 et source Production",
+        "status": "open",
+        "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+        "detail": "Après qualification, décider la promotion contrôlée vers main et réaligner Railway Production → main. Aucune modification Production dans ce jalon. Données CC/volumes préservées jusqu’à décision explicite."
+      },
+      {
+        "title": "BDD multilingue personnelle · post-Candidate 15",
+        "status": "decided",
+        "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+        "detail": "Concept cardId/printing/locale/index Vision par locale adopté ; choix personnel Mon installation, visionReady uniquement, aucun fallback visuel inter-langue. Implémentation différée."
       }
     ],
-    "notes": "Le Control Center n'est plus le centre de pilotage. Les rapports techniques utiles restent dans TCGate, mais le suivi produit et la reprise de travail passent par ce workspace.\nWorkspace permanent : l'état partagé est publié sur la branche GitHub workspace-state dans tcgate_workspace_state.json. Le HTML se synchronise automatiquement à l'ouverture.\nRailway Test : validation du propriétaire sur be40bf6405… ; le nouveau lot maintenance BDD et Journal reste à tester. Le Journal constitue l’inbox opérationnel du projet : consulter ses entrées ouvertes avec l’état canonique du Workspace avant de préparer les prochains jalons."
+    "notes": "Le Control Center n'est plus le centre de pilotage. Les rapports techniques utiles restent dans TCGate, mais le suivi produit et la reprise de travail passent par ce workspace.\nWorkspace permanent : l'état partagé est publié sur la branche GitHub workspace-state dans tcgate_workspace_state.json. Le HTML se synchronise automatiquement à l'ouverture.\nRailway Test : validation du propriétaire sur be40bf6405… ; le nouveau lot maintenance BDD et Journal reste à tester. Le Journal constitue l’inbox opérationnel du projet : consulter ses entrées ouvertes avec l’état canonique du Workspace avant de préparer les prochains jalons.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Préparation Candidate 15 au SHA e26b2e09579be53452c1e631b1dc5230191d0250. Phone 1.2C qualifié selon déclaration du propriétaire ; Vision physique NOT TESTED. Production réellement C14, main stable distinct. Test sans /data SUCCESS observé à 30e553f2c287101b162a995abf368ad9c4ac22de. Report qualification service supprimé/env vide ; Phone standalone SAFE TO DELETE ; aucune suppression infrastructure faite. Le Journal reste l’inbox opérationnel et les Hubs restent en pause.",
+    "history": [
+      {
+        "date": "2026-11-01",
+        "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+        "text": "Révision de pilotage Candidate 15 ; copie complète de la session précédente conservée.",
+        "before": {
+          "activeWork": [
+            {
+              "title": "Workspace de pilotage + chat TCGate unique",
+              "status": "active",
+              "detail": "Faire du workspace la source de vérité et utiliser un seul chat pour Général, Vision, BDD, UI/UX, SYSTEM et fonctions futures. Cockpit restauré ; centre de maintenance BDD et Journal GitHub Issues intégrés sur update/next, à tester."
+            },
+            {
+              "title": "Hubs événementiels",
+              "status": "paused",
+              "detail": "SPEC produit commencée, registre « Après les tests ». Ne pas implémenter tant que le chantier n'est pas explicitement repris."
+            },
+            {
+              "title": "Vision Lab comme laboratoire Vision + BDD",
+              "status": "active",
+              "detail": "Utiliser le Lab pour améliorer Vision et pour qualifier les cartes/références de toute nouvelle BDD avant intégration. Lab intégré au Workspace, caméra sans BDD et identification séparée. Reconnaissance : à tester avec cartes physiques."
+            }
+          ],
+          "priorities": [
+            {
+              "title": "Stabiliser le mode de travail autour de main / update/next / Test",
+              "status": "next",
+              "detail": "Éviter le retour à une multiplication de branches et d'environnements."
+            },
+            {
+              "title": "Consolider l'état réel des fonctions dans le workspace",
+              "status": "next",
+              "detail": "Après chaque qualification, correctif important ou changement de roadmap, mettre à jour le workspace."
+            },
+            {
+              "title": "Mesurer plus objectivement l'efficacité Vision",
+              "status": "later",
+              "detail": "Construire un benchmark reproductible plutôt qu'un simple ressenti qualitatif."
+            },
+            {
+              "title": "Formaliser une campagne Vision Lab reproductible",
+              "status": "next",
+              "detail": "Définir un protocole commun de tests par carte/BBD : bonnes identifications, erreurs, NI, faux positifs et conditions de capture."
+            }
+          ],
+          "decisions": [
+            {
+              "title": "Promotion éventuelle de Candidate 14 sur main",
+              "status": "open",
+              "detail": "Candidate 14 est 1 commit devant main et apporte surtout confidentialité Report Schema V2 + purge cache TURN."
+            },
+            {
+              "title": "Moment de reprise des Hubs événementiels",
+              "status": "deferred",
+              "detail": "Le concept produit existe mais reste hors Alpha figée."
+            }
+          ],
+          "notes": "Le Control Center n'est plus le centre de pilotage. Les rapports techniques utiles restent dans TCGate, mais le suivi produit et la reprise de travail passent par ce workspace.\nWorkspace permanent : l'état partagé est publié sur la branche GitHub workspace-state dans tcgate_workspace_state.json. Le HTML se synchronise automatiquement à l'ouverture.\nRailway Test : validation du propriétaire sur be40bf6405… ; le nouveau lot maintenance BDD et Journal reste à tester. Le Journal constitue l’inbox opérationnel du projet : consulter ses entrées ouvertes avec l’état canonique du Workspace avant de préparer les prochains jalons."
+        }
+      }
+    ]
   },
   "verification": {
-    "verifiedAt": "2026-10-24",
-    "source": "Git CLI local : références distantes et comparaison update/next avec main",
+    "verifiedAt": "2026-11-01",
+    "source": "Git CLI local en lecture seule pour références/comparaisons ; déclarations propriétaire et constats déjà recueillis distingués ci-dessous.",
     "main": "f5f2ba00e178f58c011c87f788c9c56064d8c32a",
     "candidate14": "c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3",
-    "updateNext": "25cd174c2bd4952fd8d0d317ad543d7b720cf3a0",
+    "updateNext": "e26b2e09579be53452c1e631b1dc5230191d0250",
     "updateVsMain": {
       "status": "ahead",
-      "ahead": 15,
+      "ahead": 22,
       "behind": 0
     },
     "candidate14VsMain": {
@@ -915,10 +1471,97 @@
       "behind": 0
     },
     "railwayTest": {
-      "sha": "be40bf6405421f1f45bfa98866f13bbddaad7a42",
-      "status": "validated",
-      "source": "Confirmation du propriétaire du projet dans la demande du 2026-10-24",
-      "note": "Railway Test validé sur be40bf6405… ; aucune qualification de reconnaissance Vision avec cartes physiques. Le nouveau lot maintenance BDD et Journal reste à tester."
+      "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+      "status": "SUCCESS",
+      "source": "Railway describe_environment en lecture seule + GET health public, même SHA Candidate 15 et aucun volume monté",
+      "note": "Déploiement automatique après push update/next ; health confirme Candidate 15 au SHA final. Pas de nouvelle qualification physique ou humaine déduite du health.",
+      "deploymentId": "839b458e-0d20-4023-abee-8d37a596fb21",
+      "noVolumeRedeployReference": "30e553f2c287101b162a995abf368ad9c4ac22de"
+    },
+    "history": [
+      {
+        "date": "2026-11-01",
+        "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+        "text": "Vérification locale des références et actualisation des faits déclarés pour C15.",
+        "before": {
+          "verifiedAt": "2026-10-24",
+          "source": "Git CLI local : références distantes et comparaison update/next avec main",
+          "main": "f5f2ba00e178f58c011c87f788c9c56064d8c32a",
+          "candidate14": "c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3",
+          "updateNext": "25cd174c2bd4952fd8d0d317ad543d7b720cf3a0",
+          "updateVsMain": {
+            "status": "ahead",
+            "ahead": 15,
+            "behind": 0
+          },
+          "candidate14VsMain": {
+            "status": "ahead",
+            "ahead": 1,
+            "behind": 0
+          },
+          "railwayTest": {
+            "sha": "be40bf6405421f1f45bfa98866f13bbddaad7a42",
+            "status": "validated",
+            "source": "Confirmation du propriétaire du projet dans la demande du 2026-10-24",
+            "note": "Railway Test validé sur be40bf6405… ; aucune qualification de reconnaissance Vision avec cartes physiques. Le nouveau lot maintenance BDD et Journal reste à tester."
+          }
+        }
+      }
+    ],
+    "workspaceStateBefore": "1ac77efebd86d1e5bc14c5cc18771de4456f2587",
+    "updateVsCandidate14": {
+      "status": "diverged",
+      "ahead": 22,
+      "behind": 1
+    },
+    "candidate15": {
+      "status": "preparation",
+      "productSha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+      "previewOnly": false,
+      "candidate14Merged": false,
+      "privacyPort": "PRESENT_AT_SHA",
+      "turnCachePort": "PRESENT_AT_SHA",
+      "automatedQualification": {
+        "status": "PASS",
+        "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+        "suites": 37,
+        "browserSuites": 8,
+        "nodeAssertionCalls": 3358,
+        "counting": "Node assert calls in instrumented test processes, including expected negative cases; custom throw-only checks are additional and are not counted.",
+        "startedAt": "2026-11-01T14:24:26.513Z",
+        "finishedAt": "2026-11-01T14:28:34.080Z",
+        "sourceTree": "626c576140c20fb08267cf7ecc4524f1f5685642",
+        "receipt": "CANDIDATE_15_VALIDATION.txt et reçu externe qualification-final/qualification.json au même SHA final",
+        "previousFrozenSha": "91fea9d695c2dc83135a125436be1ae3a57463f5",
+        "initialFailedCampaignPreserved": true
+      },
+      "gigDiceSoftware": {
+        "status": "PASS",
+        "probes": 180,
+        "scope": "Vrais événements souris, centres/bords, hit-test et zoom navigateur local, appareils simulés",
+        "observedSha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+        "newPhysicalQualification": false
+      },
+      "physical": {
+        "phone": {
+          "status": "PASS",
+          "source": "Déclaration explicite du propriétaire pour Phone intégré 1.2C",
+          "performedByCodex": false,
+          "hardwareDetails": "Non fournis ; non inventés"
+        },
+        "visionQ16": {
+          "status": "NOT TESTED",
+          "source": "Réponse explicite du propriétaire dans cette session"
+        },
+        "turnRelayWanQ15": {
+          "status": "NOT TESTED",
+          "scope": "Configuration/cache/policy mockés distincts du relay distant"
+        },
+        "realResendDelivery": {
+          "status": "NOT TESTED",
+          "scope": "ZIP et transport vers Resend mocké couverts séparément"
+        }
+      }
     }
   },
   "visionLab": {
@@ -971,5 +1614,62 @@
     "titlePrefix": "[JOURNAL]",
     "role": "Inbox opérationnel pour intégration, tests, vérifications, bugs, idées et décisions",
     "principle": "Le journal alimente les futurs jalons mais ne remplace pas l'état canonique du workspace."
+  },
+  "infrastructure": {
+    "date": "2026-11-01",
+    "productSha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+    "production": {
+      "branch": "candidate/alpha-0.1-c14",
+      "sha": "c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3",
+      "unchanged": true,
+      "target": "Production → main lors de promotion Candidate 15 ultérieure",
+      "deploymentId": "d20a24b5-3305-4168-b1c2-0e007731530c"
+    },
+    "test": {
+      "branch": "update/next",
+      "observedSha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+      "redeployStatus": "SUCCESS",
+      "dataVolumeAttached": false,
+      "persistentVolumeRequirement": "NOT REQUIRED",
+      "source": "Inventaire Railway en lecture seule + health public Test au SHA final ; aucune mutation de configuration",
+      "deploymentId": "839b458e-0d20-4023-abee-8d37a596fb21",
+      "healthVersion": "tcgate-alpha-0.1-candidate-15",
+      "noVolumeRedeployReference": "30e553f2c287101b162a995abf368ad9c4ac22de"
+    },
+    "reportQualification": {
+      "service": "TCGate-report-schema-v2",
+      "serviceStatus": "REMOVED",
+      "environment": "report-schema-v2-qualification",
+      "environmentStatus": "EMPTY",
+      "verdict": "SAFE TO DELETE ENVIRONMENT",
+      "actionPerformedByScript": false
+    },
+    "phoneStandalone": {
+      "resource": "TCGate-camera-phone / TCGate-Phone-Camera-Lab",
+      "classification": "Legacy standalone — superseded by integrated Phone Camera 1.2C",
+      "status": "DECOMMISSIONABLE",
+      "verdict": "SAFE TO DELETE",
+      "condition": "physical Chrome Android qualification PASS déclaré propriétaire",
+      "actionPerformedByScript": false
+    },
+    "controlCenter": {
+      "runtime": "REMOVED",
+      "infrastructure": "PRESERVED",
+      "removalCondition": "Après promotion Candidate 15 et décision explicite concernant données historiques",
+      "dataPreserved": true,
+      "actionPerformedByScript": false
+    },
+    "databases": {
+      "activeProgramRepositories": [
+        "tcgate_db_cyberpunk",
+        "tcgate_db_star_wars_unlimited"
+      ],
+      "productionRuntime": [
+        "tcgate_db_cyberpunk"
+      ],
+      "swu": "DEVELOPMENT / INACTIVE IN PRODUCTION",
+      "riftbound": "ARCHIVE CANDIDATE",
+      "branchCleanup": "Effectué précédemment ; aucune mutation BDD dans Candidate 15"
+    }
   }
 }
