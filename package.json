@@ -1,6 +1,6 @@
 {
   "name": "tcgate-alpha",
-  "version": "0.1.0-candidate.13",
+  "version": "0.1.0-candidate.15",
   "private": true,
   "scripts": {
     "start": "node report-mail-server.js",
@@ -34,7 +34,10 @@
     "test:report-email-browser": "node report-email-browser-test.js",
     "test:phone-consolidation": "node phone-consolidation-1.2c-test.js",
     "test:phone-consolidation-browser": "node phone-consolidation-1.2c-browser-test.js",
-    "test:project-hygiene": "node project-hygiene-1.2d-test.js"
+    "test:project-hygiene": "node project-hygiene-1.2d-test.js",
+    "test:turn-cache": "node turn-cache-test.js",
+    "test:candidate-15-browser": "node candidate-15-browser-test.js",
+    "qualify:alpha": "node qualify-alpha.js"
   },
   "engines": {
     "node": ">=20"

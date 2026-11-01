@@ -1,5 +1,7 @@
 # TCGate — préparation du décommissionnement 1.2D
 
+> **Snapshot historique Maintenance 1.2D.** La réconciliation, le PASS Phone déclaré, Test sans volume et le retrait du service Report qualification sont désormais suivis dans [la release Candidate 15](RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_15.md). Les constats ci-dessous restent datés de l'audit précédent ; aucune preuve historique n'est réécrite.
+
 Date : 1er novembre 2026. Dépôt `maximelaburthe-commits/TCGate`, branche exclusive `update/next`. SHA de départ vérifié après fetch : `e1455cbff845baf90e3fb8a027b5f59c33d571cf`, worktree propre. Ce jalon ajoute des contrôles et remet la documentation en accord avec le runtime. Aucune ressource Railway, BDD, branche protégée ou fonction produit n'est modifiée.
 
 ## Audit legacy

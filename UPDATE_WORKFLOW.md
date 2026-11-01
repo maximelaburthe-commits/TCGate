@@ -1,14 +1,14 @@
 # Workflow de mise à jour TCGate
 
-## Environnements actuels — Maintenance 1.2D
+## Environnements actuels — préparation Candidate 15
 
 - Railway Production utilise encore `candidate/alpha-0.1-c14`.
 - Railway Test déploie `update/next`.
 - Politique cible : Production → `main`, Test → `update/next`.
-- Dette bloquante Candidate 15 : **Production source must be realigned to main during Candidate 15 promotion.** Aucun réalignement ni promotion dans Maintenance 1.2D.
+- Dette bloquante Candidate 15 : **Production source must be realigned to main during Candidate 15 promotion.** Aucun réalignement ni promotion pendant cette préparation Candidate 15.
 - `workspace-state` est uniquement la branche d'état canonique du Workspace ; ne jamais la merger dans `main` ni la connecter à Railway. Sa maintenance reste séparée des commits produit.
 
-Voir [le pre-flight Candidate 15](CANDIDATE_15_PRE_FLIGHT.md) et [les conditions de retrait legacy](PROJECT_DECOMMISSION_1_2D.md).
+Voir [la release Candidate 15](RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_15.md), [la qualification sur SHA gelé](ALPHA_QUALIFICATION.md) et les snapshots historiques [pre-flight 1.2D](CANDIDATE_15_PRE_FLIGHT.md) / [décommissionnement 1.2D](PROJECT_DECOMMISSION_1_2D.md).
 
 ## Cycle cible après promotion Candidate 15
 

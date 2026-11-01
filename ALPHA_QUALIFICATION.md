@@ -1,0 +1,50 @@
+# Qualification Alpha courante — Candidate 15
+
+Un seul workflow de qualification complète :
+
+```text
+npm run qualify:alpha
+```
+
+Il exécute 37 suites distinctes, dont huit suites navigateur, puis le contrôle syntaxique correspondant à `npm run check` et `git diff --check HEAD^ HEAD`. Aucune suite navigateur n'est facultative. Aucun package npm runtime externe n'est déclaré ; le workflow C14 historique appelant le forwarder retiré n'est pas restauré.
+
+## Préconditions et preuves
+
+- `update/next` propre, commit gelé ; versions package/lock/frontend/server cohérentes Candidate 15.
+- Node 20+ ; Playwright installé et Chrome disponible. Fournir `WORKSPACE_PLAYWRIGHT_PATH` si Playwright est installé hors dépôt. Aucun téléchargement ou ajout de dépendance automatique.
+- Accès réseau aux ressources publiques GitHub immuables de Cyberpunk et aux assets de test navigateur existants. Aucun secret nécessaire. Les credentials fournisseur hérités sont neutralisés ; Cloudflare et Resend sont simulés dans leurs tests dédiés.
+- Les chemins alternatifs de staging et les hooks Node hérités sont neutralisés pour que les suites testent réellement le dépôt gelé. Le seul preload est le compteur d'assertions versionné.
+- Le dossier de preuves est nouveau et hors worktree : valeur automatique dans TEMP, ou `npm run qualify:alpha -- --output-dir CHEMIN_ABSOLU`. Refus de réécrire un reçu existant.
+
+`qualification.json` enregistre SHA, arbre Git, date, Node, Playwright, manifeste SHA-256 des tests, commandes, sorties, durée, PASS/FAIL et comptage. Les journaux, captures et audit Gig y sont conservés. Le workflow échoue au premier échec et préserve la campagne partielle ; une reprise utilise un nouveau dossier.
+
+Comptage : appels aux API Node `assert` des processus de test instrumentés, y compris cas négatifs attendus. Les gardes personnalisées `throw` de certaines suites historiques s'ajoutent sans être comptées. Ce nombre est une mesure explicitement bornée, pas une estimation du nombre total de contrôles manuels ou navigateur.
+
+## Couverture courante
+
+| Domaine | Suites / preuves principales |
+| --- | --- |
+| Core : room, Host/Guest, Ready/Start, permissions, reconnect | `integration-test-c11.js`, `tcgate-ui-1.2-room-test.js`, `candidate-15-browser-test.js` |
+| Offer/answer/ICE, audio/vidéo et recovery | smokes actuels, `offer-delivery-retry-test.js`, UI/Phone browser et complément C15 avec RTP et nouvelles images après F5 Host/Guest/double |
+| TURN config/cache/expiration/renouvellement/relay policy | `turn-cache-test.js`, tests réseau/Phone ; Cloudflare mocké, relay distant non certifié |
+| Report V2, privacy, ZIP et transport Resend | `report-schema-v2-test.js`, `report-email-bridge-test.js`, `report-email-browser-test.js` |
+| Home/Lobby 1.2, Game Table, logo et responsive | contrats UI 1.2, smokes UI courants, UI browser |
+| Timer ON/OFF et synchronisation | Room/UI tests + C15 browser start/pause/reset et temps dérivé côté deux joueurs |
+| Gig Dice ON/OFF, gating jeu, hover et zoom | Room/client/UI tests + C15 browser, 12 dés × 5 points × 3 largeurs |
+| Sans jeu : pas Vision/Gig, webcam/audio conservés | C15 browser, vrais RTP locaux et frames après Start/F5 |
+| Phone : pairing, changement source, PC micro, recovery, diagnostics, privacy et retour webcam | tests Phone actuels, consolidation 1.2C et smoke Chrome avec appareils factices |
+| Vision : intégrité, provenance, backpressure et contrats BDD | cinq suites Vision existantes, intégration Cyberpunk publique immuable ; test de performance synthétique historique conservé |
+| Workspace, BDD maintenance et Journal | contrats et quatre suites navigateur Workspace existantes |
+| Hygiène projet | `project-hygiene-1.2d-test.js`, aucune réintroduction CC/volume persistant/Phone standalone/runtime SWU |
+
+Le test synthétique de performance historique ne lance pas le futur benchmark de qualité Vision. Aucune nouvelle campagne par carte ou BDD n'est construite dans Candidate 15.
+
+## Qualification humaine et distante
+
+[Checklist Q0–Q16](CANDIDATE_15_BROWSER_CHECKLIST.md). Le workflow local ne remplace ni le relay WAN réel, ni la réception d'un vrai mail, ni les cartes physiques. Phone 1.2C est **PHYSICAL QUALIFICATION PASS** selon déclaration du propriétaire, consignée séparément. Vision Q16 est **NOT TESTED** ; quelques cartes seulement lors de la passe humaine suivante.
+
+Une régression Gig reproduite reste **INTERMÉDIAIRE** avec follow-up séparé ; ne pas corriger le produit pendant la qualification. Aucune source Railway Production n'est changée ici ; sa migration vers main appartient à la promotion ultérieure.
+
+## Suites historiques exclues
+
+Conservées dans Git mais superseded : `integration-test-c10.js`, `smoke-test-ui-v1.js`, `smoke-test-ui-v1-0-1.js`, `smoke-test-ui-v1-0-2.js`, `smoke-test-ui-v1-0-3.js`, `smoke-test-ui-v1-0-4.js`. Elles imposent une ancienne version ou un ancien markup. Les suites C11 adaptées aux contrats actuels restent actives. Aucun forwarder legacy n'est réintroduit pour satisfaire un ancien pipeline.

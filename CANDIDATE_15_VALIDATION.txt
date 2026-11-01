@@ -1,0 +1,17 @@
+TCGATE ALPHA 0.1 CANDIDATE 15 — GEL TECHNIQUE
+Date : 1er novembre 2026, Europe/Paris.
+Départ propre : 30e553f2c287101b162a995abf368ad9c4ac22de, update/next.
+SHA testé en qualification complète : à consigner après le commit de gel.
+Le reçu documentaire suivant consignera ce SHA exact ; le workflow sera ensuite exécuté aussi sur le SHA final contenant ce reçu.
+Ports ciblés préalables : Report privacy 189 assertions PASS ; TURN 213 assertions PASS.
+Complément navigateur sur baseline : code0, F5 Host/Guest/double, sans jeu, audio/vidéo RTP, Timer ON/OFF, 180 sondes Gig PASS.
+Campagne complète sur gel : PENDING ; ne pas confondre ces contrôles préalables avec son résultat.
+Phone physique : PASS, déclaration du propriétaire pour Phone 1.2C, pas un test matériel Codex.
+Vision physique Q16 : NOT TESTED, réponse explicite du propriétaire dans cette session.
+Relay TURN distant : NOT TESTED sur C15 ; configuration/cache/policy testés avec fournisseur simulé.
+Resend réel : NOT TESTED ; ZIP et transport jusqu'au mock couverts par la suite dédiée.
+Infrastructure lue : Test sans montage /data, redéploiement SUCCESS ; service Report qualification supprimé, environnement vide SAFE TO DELETE ENVIRONMENT ; Phone standalone SAFE TO DELETE selon PASS physique déclaré.
+Production : source candidate/alpha-0.1-c14, déploiement et volume conservés. Aucune mutation Railway.
+Control Center : aucune réintroduction ; données historiques intactes, suppression après promotion/décision distincte.
+BDD/Vision : aucune reconstruction ni changement moteur. Langues par joueur : décision future uniquement.
+Follow-ups : Q16 quelques cartes physiques ; Q15 relay WAN ; livraison mail réelle ; promotion contrôlée et source Production vers main.

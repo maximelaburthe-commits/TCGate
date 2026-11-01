@@ -1,5 +1,7 @@
 # TCGate Phone Camera Alpha
 
+> **État Candidate 15 : Phone Camera integrated QUALIFIED**, PASS physique déclaré par le propriétaire pour Phone 1.2C. Le standalone est **DECOMMISSIONABLE**. Les baselines et listes de validation ci-dessous conservent l'historique initial ; voir [le reçu](PHONE_PHYSICAL_QUALIFICATION_1_2C.md).
+
 > **Legacy standalone — superseded by integrated Phone Camera 1.2C**. Les mentions du Lab ci-dessous conservent le contexte historique ; le moteur produit courant est intégré au dépôt TCGate. **Decommission condition: physical Chrome Android qualification PASS**. Voir [la consolidation](PHONE_CONSOLIDATION_1_2C.md) et [la qualification physique restante](PHONE_PHYSICAL_QUALIFICATION_1_2C.md).
 
 Baseline TCGate: Candidate 11, commit `dd96acf54a291696439a48416e0e2bcc7b9cba05`.

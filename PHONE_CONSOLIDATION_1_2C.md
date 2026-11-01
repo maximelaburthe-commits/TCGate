@@ -1,5 +1,7 @@
 # Phone Camera — consolidation 1.2C
 
+> **Compte rendu historique 1.2C.** Depuis la demande Candidate 15, le propriétaire déclare le **PHYSICAL QUALIFICATION PASS** : Phone intégré **QUALIFIED**, standalone **DECOMMISSIONABLE**. Les réserves et états non qualifiés ci-dessous décrivent la campagne locale historique ; voir le [reçu actuel](PHONE_PHYSICAL_QUALIFICATION_1_2C.md) et la [release Candidate 15](RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_15.md).
+
 Branche : update/next. Checkpoint de départ : f0816d50baefa90cf543d516cea82ba31c72d21a. La source de vérité produit et de tout développement futur Phone Camera est désormais le dépôt TCGate. Le standalone est une archive de comparaison, sans dépendance runtime ni de développement.
 
 Classification : **LOCAL SOURCE FOUND**. Aucun fallback Railway nécessaire et aucun endpoint Railway interrogé.

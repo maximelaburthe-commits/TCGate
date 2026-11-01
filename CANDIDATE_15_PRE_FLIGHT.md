@@ -1,5 +1,7 @@
 # Candidate 15 — pre-flight après Maintenance 1.2D
 
+> **Snapshot historique Maintenance 1.2D.** La réconciliation, le PASS Phone déclaré, Test sans volume et le retrait du service Report qualification sont désormais suivis dans [la release Candidate 15](RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_15.md). Les constats ci-dessous restent datés de l'audit précédent ; aucune preuve historique n'est réécrite.
+
 Préparation uniquement, 1er novembre 2026. Aucun merge C14, promotion, modification Railway ou changement produit effectué. **Candidate 15 reste bloquée** par les réconciliations et qualifications ci-dessous ; le succès du jalon documentaire 1.2D ne constitue pas une qualification Candidate 15.
 
 ## Git

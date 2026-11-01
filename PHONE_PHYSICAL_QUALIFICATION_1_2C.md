@@ -1,5 +1,7 @@
 # Phone Camera 1.2C — qualification physique à réaliser
 
+> **Reçu de décision — Candidate 15, 1er novembre 2026.** Le propriétaire déclare Phone 1.2C **PHYSICAL QUALIFICATION PASS** dans sa demande Candidate 15. **Phone Camera integrated: QUALIFIED**. **Standalone Phone Lab: DECOMMISSIONABLE** ; `TCGate-camera-phone` **SAFE TO DELETE**. Aucun appareil physique n'est testé par Codex dans ce jalon ; SHA matériel, modèles et résultats détaillés par ligne non fournis. La checklist initiale ci-dessous reste une archive non cochée : elle ne contredit pas le PASS global déclaré et ne crée pas des preuves individuelles. Aucune suppression Railway effectuée.
+
 Statut initial : **Chrome Android physique non qualifié**. Tous les points ci-dessous sont NON QUALIFIÉS ; aucun appareil réel n’a été utilisé par Codex. Les tests Chrome avec périphériques factices vérifient des contrats logiciels uniquement.
 
 Consigner pour chaque campagne : date, SHA TCGate déployé, modèle téléphone, version Android/Chrome, modèle PC/navigateur, réseau, durée et observations. Distinguer succès, échec, non supporté et non testé. Le standalone doit rester disponible pendant cette qualification ; ne modifier aucune ressource Railway.

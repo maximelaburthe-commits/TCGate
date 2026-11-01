@@ -1,4 +1,4 @@
-# TCGate — Alpha 0.1 · Candidate 13 · UI 1.2.0
+# TCGate — Alpha 0.1 · Candidate 15 · UI 1.2.0
 
 Ce jalon UI 1.2 ajoute cinq pages internes à l’Accueil et trois onglets au Lobby, avec Ready toujours visible. Gig Dice devient une option de salon partagée, modifiable uniquement par le Host avant lancement. Le logo approuvé est copié sans transformation. La Table conserve sa présentation et ses mécanismes. Voir [le contrat et la validation UI 1.2](UI_1_2_HOME_LOBBY.md).
 
@@ -18,10 +18,10 @@ Le système de rapports Alpha utilise Report Schema V2 et l’envoi par e-mail a
 - baseline Vision gelée inchangée.
 
 ## Identification
-- frontend : `TCGate Alpha 0.1 Candidate 13 · UI 1.2.0`
-- health : `tcgate-alpha-0.1-candidate-13`
+- frontend : `TCGate Alpha 0.1 Candidate 15 · UI 1.2.0`
+- health : `tcgate-alpha-0.1-candidate-15`
 
-Voir `RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_13.md` et `REPORT_SCHEMA_V2.md`.
+Voir `RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_15.md` et `REPORT_SCHEMA_V2.md`.
 
 ## Workspace de pilotage et Vision Lab
 
@@ -35,12 +35,14 @@ Phone Camera fait partie du produit TCGate. **Phone Camera engine → TCGate rep
 
 Dans Lobby → Mon installation, associer le téléphone par QR puis utiliser les réglages Phone repliables sur le PC : qualité auto/720p30/1080p expérimental, zoom/champ maximum selon capacités, arrêt et diagnostic JSON. Le téléphone reste vidéo uniquement ; le microphone reste celui du PC. Autofocus natif selon navigateur, sans commande de focus manuel.
 
-**Phone Lab : NOT NEEDED** : les contrôles utiles sont dans le panneau produit et les diagnostics utilisent le même moteur. Aucune vue Workspace ni serveur supplémentaire. Voir [la matrice et les preuves de consolidation](PHONE_CONSOLIDATION_1_2C.md), [la checklist physique](PHONE_PHYSICAL_QUALIFICATION_1_2C.md) et le journal PHONE_CONSOLIDATION_1_2C_VALIDATION.txt. Chrome Android physique non qualifié.
+**Phone Lab : NOT NEEDED** : les contrôles utiles sont dans le panneau produit et les diagnostics utilisent le même moteur. Aucune vue Workspace ni serveur supplémentaire. Voir [la matrice et les preuves de consolidation](PHONE_CONSOLIDATION_1_2C.md), [la checklist physique](PHONE_PHYSICAL_QUALIFICATION_1_2C.md) et le journal PHONE_CONSOLIDATION_1_2C_VALIDATION.txt. Phone Camera integrated: QUALIFIED. PHYSICAL QUALIFICATION PASS déclaré par le propriétaire pour Phone 1.2C ; voir le reçu dans la checklist physique.
 
-## Architecture et préparation Candidate 15
+## Candidate 15 : réconciliation et gel
 
-Production Railway utilise encore `candidate/alpha-0.1-c14` ; Test suit `update/next`. La cible Production → main sera appliquée lors de la promotion Candidate 15. Voir [l'architecture courante et la décision langues](PROJECT_ARCHITECTURE.md), [le pre-flight Candidate 15](CANDIDATE_15_PRE_FLIGHT.md) et [l'inventaire de décommissionnement 1.2D](PROJECT_DECOMMISSION_1_2D.md).
+La Candidate 15 porte manuellement les garanties privacy C14 et la purge TURN, en conservant UI 1.2, Resend, Phone intégré, Vision et Cyberpunk. Aucun merge aveugle de C14, aucune nouvelle fonction produit. [Release et classification C14](RELEASE_TCGATE_ALPHA_0.1_CANDIDATE_15.md), [workflow de qualification](ALPHA_QUALIFICATION.md), [validation](CANDIDATE_15_VALIDATION.txt).
 
-Les dépôts BDD actifs du projet sont `tcgate_db_cyberpunk` et `tcgate_db_star_wars_unlimited` ; Cyberpunk seul est configuré en partie. `tcgate_db_riftbound` est **ARCHIVE CANDIDATE**. La langue physique personnelle par joueur est une décision post-Candidate 15, sans implémentation dans ce jalon.
+Production Railway reste sur `candidate/alpha-0.1-c14` ; Test suit `update/next` sans montage /data, redéploiement réussi. Report qualification : service retiré, environnement vide **SAFE TO DELETE ENVIRONMENT**. Phone standalone : **DECOMMISSIONABLE**, projet `TCGate-camera-phone` **SAFE TO DELETE** après le PASS physique déclaré. Aucune suppression ni modification Railway effectuée dans ce jalon.
 
-Phone : **Legacy standalone — superseded by integrated Phone Camera 1.2C**. **Decommission condition: physical Chrome Android qualification PASS** ; la qualification physique reste à réaliser. Control Center est retiré du runtime update ; Production C14 et les ressources legacy restent inchangées. Aucun volume persistant n'est requis par le runtime update audité. Contrôle automatique : `npm run test:project-hygiene`.
+Les dépôts BDD du programme sont Cyberpunk et SWU ; Cyberpunk seul est actif en partie. SWU reste en développement, inactif produit ; Riftbound est **ARCHIVE CANDIDATE**. [Architecture et décision langues post-Candidate 15](PROJECT_ARCHITECTURE.md). Aucun fallback visuel inter-langue ne sera autorisé ; aucune implémentation multilingue ici.
+
+Qualification complète du SHA gelé : `npm run qualify:alpha`. Playwright/Chrome sont requis, aucune suite navigateur n'est optionnelle. Les preuves sont écrites hors dépôt. Les médias navigateur simulés, le PASS Phone déclaré, les cartes physiques et le relay WAN restent distingués. La promotion vers main et le réalignement Production sont ultérieurs.
