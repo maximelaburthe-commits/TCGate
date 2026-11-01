@@ -115,8 +115,17 @@ async function enterGame(pair){
   }
 }
 async function openGameMenu(page){
+  // The dock auto-hides after 2600 ms. Approach it with real pointer input,
+  // then require the visible button's hit target before the normal click.
+  await page.bringToFront();
   const feed=await page.locator('#opponentFeed').boundingBox();await page.mouse.move(feed.x+feed.width/2,feed.y+feed.height/2);
-  await page.locator('#moreMenuToggle').click();
+  const toggle=page.locator('#moreMenuToggle'),button=await toggle.boundingBox();
+  await page.mouse.move(button.x+button.width/2,button.y+button.height/2,{steps:8});
+  await page.waitForFunction(()=>{
+    const controls=document.querySelector('#controls'),button=document.querySelector('#moreMenuToggle'),style=getComputedStyle(controls),rect=button.getBoundingClientRect();
+    return !controls.classList.contains('hidden-ui')&&Number(style.opacity)>.99&&style.pointerEvents==='auto'&&document.elementFromPoint(rect.x+rect.width/2,rect.y+rect.height/2)?.closest('#moreMenuToggle')===button;
+  },{},{timeout:5000});
+  await toggle.click();
   check(await page.locator('#moreMenu').isVisible(),'Existing Table secondary menu opens');
 }
 async function closePair(pair){await Promise.allSettled([pair.hostContext.close(),pair.guestContext.close()]);}
