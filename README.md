@@ -36,3 +36,11 @@ Phone Camera fait partie du produit TCGate. **Phone Camera engine → TCGate rep
 Dans Lobby → Mon installation, associer le téléphone par QR puis utiliser les réglages Phone repliables sur le PC : qualité auto/720p30/1080p expérimental, zoom/champ maximum selon capacités, arrêt et diagnostic JSON. Le téléphone reste vidéo uniquement ; le microphone reste celui du PC. Autofocus natif selon navigateur, sans commande de focus manuel.
 
 **Phone Lab : NOT NEEDED** : les contrôles utiles sont dans le panneau produit et les diagnostics utilisent le même moteur. Aucune vue Workspace ni serveur supplémentaire. Voir [la matrice et les preuves de consolidation](PHONE_CONSOLIDATION_1_2C.md), [la checklist physique](PHONE_PHYSICAL_QUALIFICATION_1_2C.md) et le journal PHONE_CONSOLIDATION_1_2C_VALIDATION.txt. Chrome Android physique non qualifié.
+
+## Architecture et préparation Candidate 15
+
+Production Railway utilise encore `candidate/alpha-0.1-c14` ; Test suit `update/next`. La cible Production → main sera appliquée lors de la promotion Candidate 15. Voir [l'architecture courante et la décision langues](PROJECT_ARCHITECTURE.md), [le pre-flight Candidate 15](CANDIDATE_15_PRE_FLIGHT.md) et [l'inventaire de décommissionnement 1.2D](PROJECT_DECOMMISSION_1_2D.md).
+
+Les dépôts BDD actifs du projet sont `tcgate_db_cyberpunk` et `tcgate_db_star_wars_unlimited` ; Cyberpunk seul est configuré en partie. `tcgate_db_riftbound` est **ARCHIVE CANDIDATE**. La langue physique personnelle par joueur est une décision post-Candidate 15, sans implémentation dans ce jalon.
+
+Phone : **Legacy standalone — superseded by integrated Phone Camera 1.2C**. **Decommission condition: physical Chrome Android qualification PASS** ; la qualification physique reste à réaliser. Control Center est retiré du runtime update ; Production C14 et les ressources legacy restent inchangées. Aucun volume persistant n'est requis par le runtime update audité. Contrôle automatique : `npm run test:project-hygiene`.

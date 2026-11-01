@@ -1,5 +1,7 @@
 # Changelog — TCGate Alpha 0.1 Candidate 11 · UI 1.0.3
 
+> **Legacy standalone — superseded by integrated Phone Camera 1.2C**. Les mentions du Lab ci-dessous conservent le contexte historique ; le moteur produit courant est intégré au dépôt TCGate. **Decommission condition: physical Chrome Android qualification PASS**. Voir [la consolidation](PHONE_CONSOLIDATION_1_2C.md) et [la qualification physique restante](PHONE_PHYSICAL_QUALIFICATION_1_2C.md).
+
 Candidate corrective construite **strictement sur Candidate 10 · UI 1.0.2 corrective** après le test réel du 26/08/2026.
 
 ## 🔴 Reprise F5 / WebRTC atomique

@@ -1,5 +1,7 @@
 # TCGate — Maintenance 1.2A
 
+> **Compte rendu historique 1.2A.** Pour l'état courant, voir [Maintenance 1.2D](PROJECT_DECOMMISSION_1_2D.md). Production utilise encore Candidate 14, pas main ; le verdict de stockage et le retrait du runtime Control Center décrits ici concernent update/next. Aucun retrait d'infrastructure Production n'est effectué.
+
 Branche exclusive : `update/next`. Checkpoint précédent et point de rollback : `5d808633b2793dc33e1f859f04ae56a10779db01` (UI 1.2). Ce checkpoint reste un commit distinct ; aucun squash ni merge.
 
 ## Retrait du Control Center

@@ -33,7 +33,8 @@
     "test:project-cleanup": "node report-email-bridge-test.js",
     "test:report-email-browser": "node report-email-browser-test.js",
     "test:phone-consolidation": "node phone-consolidation-1.2c-test.js",
-    "test:phone-consolidation-browser": "node phone-consolidation-1.2c-browser-test.js"
+    "test:phone-consolidation-browser": "node phone-consolidation-1.2c-browser-test.js",
+    "test:project-hygiene": "node project-hygiene-1.2d-test.js"
   },
   "engines": {
     "node": ">=20"

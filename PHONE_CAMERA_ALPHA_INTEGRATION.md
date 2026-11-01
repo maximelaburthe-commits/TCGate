@@ -1,5 +1,7 @@
 # TCGate Phone Camera Alpha
 
+> **Legacy standalone — superseded by integrated Phone Camera 1.2C**. Les mentions du Lab ci-dessous conservent le contexte historique ; le moteur produit courant est intégré au dépôt TCGate. **Decommission condition: physical Chrome Android qualification PASS**. Voir [la consolidation](PHONE_CONSOLIDATION_1_2C.md) et [la qualification physique restante](PHONE_PHYSICAL_QUALIFICATION_1_2C.md).
+
 Baseline TCGate: Candidate 11, commit `dd96acf54a291696439a48416e0e2bcc7b9cba05`.
 Référence historique de l’intégration initiale : TCGate Phone Camera Lab V0.6.4.1. Depuis Maintenance 1.2C, le moteur intégré au dépôt TCGate est la source de vérité produit et de développement ; voir PHONE_CONSOLIDATION_1_2C.md.
 

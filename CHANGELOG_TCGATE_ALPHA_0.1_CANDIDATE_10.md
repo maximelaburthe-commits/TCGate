@@ -1,5 +1,7 @@
 # TCGate Alpha 0.1 — Candidate 10
 
+> **Legacy standalone — superseded by integrated Phone Camera 1.2C**. Les mentions du Lab ci-dessous conservent le contexte historique ; le moteur produit courant est intégré au dépôt TCGate. **Decommission condition: physical Chrome Android qualification PASS**. Voir [la consolidation](PHONE_CONSOLIDATION_1_2C.md) et [la qualification physique restante](PHONE_PHYSICAL_QUALIFICATION_1_2C.md).
+
 ## Périmètre
 Candidate **MAJEURE de résilience de session et de périphériques**, basée sur Candidate 9.
 

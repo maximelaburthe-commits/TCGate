@@ -1,5 +1,7 @@
 # TCGate Alpha 0.1 Candidate 11 · UI 1.0.4 corrective
 
+> **Legacy standalone — superseded by integrated Phone Camera 1.2C**. Les mentions du Lab ci-dessous conservent le contexte historique ; le moteur produit courant est intégré au dépôt TCGate. **Decommission condition: physical Chrome Android qualification PASS**. Voir [la consolidation](PHONE_CONSOLIDATION_1_2C.md) et [la qualification physique restante](PHONE_PHYSICAL_QUALIFICATION_1_2C.md).
+
 ## Pourquoi cette corrective
 
 Les tests physiques de Candidate 11 ont validé la reprise/réseau, mais les correctifs visuels UI 1.0.3 n'ont pas produit l'effet attendu sur le poste HP et en plein écran.

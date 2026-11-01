@@ -1,5 +1,7 @@
 # Déploiement Railway — TCGate Alpha 0.1 Candidate 11
 
+> **Archive de procédure Candidate 11.** Les instructions et l'identité health ci-dessous décrivent ce jalon historique. Pour l'état actuel (Production C14 / Test update/next), la cible Candidate 15 et les conditions de décommissionnement, consulter [UPDATE_WORKFLOW.md](UPDATE_WORKFLOW.md), [CANDIDATE_15_PRE_FLIGHT.md](CANDIDATE_15_PRE_FLIGHT.md) et [PROJECT_DECOMMISSION_1_2D.md](PROJECT_DECOMMISSION_1_2D.md). Les variables TURN restent pertinentes ; aucune action Railway n'est effectuée par Maintenance 1.2D.
+
 Candidate 11 conserve la configuration TURN validée avec les Candidates précédentes.
 
 Variables recommandées :
