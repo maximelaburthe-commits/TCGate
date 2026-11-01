@@ -1,17 +1,140 @@
-TCGATE ALPHA 0.1 CANDIDATE 15 — GEL TECHNIQUE
-Date : 1er novembre 2026, Europe/Paris.
-Départ propre : 30e553f2c287101b162a995abf368ad9c4ac22de, update/next.
-SHA testé en qualification complète : à consigner après le commit de gel.
-Le reçu documentaire suivant consignera ce SHA exact ; le workflow sera ensuite exécuté aussi sur le SHA final contenant ce reçu.
-Ports ciblés préalables : Report privacy 189 assertions PASS ; TURN 213 assertions PASS.
-Complément navigateur sur baseline : code0, F5 Host/Guest/double, sans jeu, audio/vidéo RTP, Timer ON/OFF, 180 sondes Gig PASS.
-Campagne complète sur gel : PENDING ; ne pas confondre ces contrôles préalables avec son résultat.
-Phone physique : PASS, déclaration du propriétaire pour Phone 1.2C, pas un test matériel Codex.
-Vision physique Q16 : NOT TESTED, réponse explicite du propriétaire dans cette session.
-Relay TURN distant : NOT TESTED sur C15 ; configuration/cache/policy testés avec fournisseur simulé.
-Resend réel : NOT TESTED ; ZIP et transport jusqu'au mock couverts par la suite dédiée.
-Infrastructure lue : Test sans montage /data, redéploiement SUCCESS ; service Report qualification supprimé, environnement vide SAFE TO DELETE ENVIRONMENT ; Phone standalone SAFE TO DELETE selon PASS physique déclaré.
-Production : source candidate/alpha-0.1-c14, déploiement et volume conservés. Aucune mutation Railway.
-Control Center : aucune réintroduction ; données historiques intactes, suppression après promotion/décision distincte.
-BDD/Vision : aucune reconstruction ni changement moteur. Langues par joueur : décision future uniquement.
-Follow-ups : Q16 quelques cartes physiques ; Q15 relay WAN ; livraison mail réelle ; promotion contrôlée et source Production vers main.
+TCGATE ALPHA 0.1 CANDIDATE 15 — VALIDATION
+Date de livraison : 1er novembre 2026, Europe/Paris.
+Départ autorisé propre : 30e553f2c287101b162a995abf368ad9c4ac22de.
+SHA testé sur update/next : 91fea9d695c2dc83135a125436be1ae3a57463f5
+Arbre source : 8af920026a93b7ea5058c185d2e48b065c4b11dd
+Campagne : 2026-11-01T14:20:16.370Z → 2026-11-01T14:23:23.508Z
+Commande : npm.cmd run qualify:alpha
+Reçu externe complet : C:\Users\maxim\AppData\Local\Temp\tcgate-candidate-15-8291d9224723467bbaeb07183f3ae2fb\qualification-freeze-2\qualification.json
+Résultat : PASS, 37/37 suites, dont huit suites navigateur, plus contrôles syntaxe/diff.
+Assertions Node instrumentées : 3358 appels, cas négatifs attendus inclus.
+Les gardes historiques personnalisées throw-only sont supplémentaires et non comptées. Aucun cumul avec les campagnes précédentes.
+Node v24.18.1 ; Playwright C:\Users\maxim\AppData\Local\Temp\tcgate-workspace-browser\node_modules\playwright\index.js
+Le reçu JSON conserve le manifeste SHA256 des37tests, sorties/commandes/codes/durées et captures.
+
+RÉCONCILIATION C14
+Privacy Report V2 : PORT MANUALLY, garanties C14 et 20 nouveaux cas adversariaux, collecteurs/enveloppe conservés.
+TURN : PORT MANUALLY, helper/purge périodique/rooms ; 213 assertions sur cache/expiry/renewal/failures et policies all/relay mockées.
+Qualification : PORT MANUALLY, un seul workflow courant ; anciens markups/versions et forwarder exclus sans suppression des historiques.
+Anciennes versions README/app/package : ALREADY SUPERSEDED, identité C15 cohérente et UI1.2 conservée.
+Release C14 : HISTORICAL ONLY ; aucune fusion C14, aucune branche Candidate distante créée.
+
+NAVIGATEUR
+Home5pages/Lobby3onglets, permissions Host/Guest, Ready/Start, Webcam/micro, Table : PASS logiciel local.
+Timer ON/OFF/start/pause/reset et synchronisation : PASS.
+Sans jeu : PASS, médias bidirectionnels, aucune initialisation Vision ni signal Gig.
+F5Host/F5Guest/doubleF5 : PASS, room/peer/Ready conservés, nouvelles frames et RTP audio/video dans les deux sens.
+GigDice : PASS logiciel, 180/180 sondes centre/bords, zones interactives et zoom centré x2.6 sur12dés×3largeurs. Aucun correctif produit Gig.
+Phone : régression locale pairing/source/PCaudio/recovery/diagnostics/privacy/retourwebcam PASS avec appareils simulés.
+Report : vrai ZIP transmis inchangé au mock Resend, privacy V2 PASS ; aucun e-mail externe envoyé.
+Workspace : quatre suites navigateur PASS, moteurs existants, caméra/détection/identification de corpus et isolation conservées.
+
+PHYSIQUE / DISTANT
+Phone1.2C : PHYSICAL QUALIFICATION PASS déclaré explicitement par le propriétaire ; pas une campagne matérielle Codex.
+Phone Camera integrated: QUALIFIED. Standalone Phone Lab: DECOMMISSIONABLE. TCGate-camera-phone SAFE TO DELETE.
+Vision Q16 : NOT TESTED, réponse explicite du propriétaire dans cette session. Petite passe quelques cartes à faire, sans benchmark.
+TURN relay WAN Q15 : NOT TESTED pour C15 ; configuration/cache/policy testés avec fournisseur simulé, flux browser local host-host.
+Livraison Resend réelle : NOT TESTED ; le mock prouve le ZIP et le transport applicatif, pas la réception réelle d'un mail.
+Les cases humaines Q0–Q16 restent distinctes des PASS logiciels ; Vision Qualification1.0 reste un chantier futur.
+
+INFRASTRUCTURE
+Test suit update/next. /data détaché ; redéploiement sans volume SUCCESS à30e553f2c287101b162a995abf368ad9c4ac22de, healthpublic mêmeSHA confirmé. Test persistent volume: NOT REQUIRED.
+TCGate-report-schema-v2 supprimé ; projet inventorié ne contient plus ce service. Environnement report-schema-v2-qualification vide : SAFE TO DELETE ENVIRONMENT.
+Production inchangée : candidate/alpha-0.1-c14, déploiement d20a24b5-3305-4168-b1c2-0e007731530c, volume/data conservé.
+Aucune écriture Railway, aucune suppression de service/projet/volume/bucket/BDD. ControlCenter hors runtime ; infrastructure/données historiques préservées après promotion et décision séparée.
+Cible ultérieure : Production→main / Test→update/next. Source Production à réaligner lors de promotion Candidate15.
+
+WORKSPACE ET BDD
+Mise à jour canonique séparée workspace-state après le SHA final, jamais fusionnée ou déployée.
+Cyberpunk1.1.0 actif immuable, SWU développement inactif produit, Riftbound ARCHIVE CANDIDATE ; aucune reconstruction BDD ou modification Vision.
+Languespersonnelles/Moninstallation : décision post-C15 cardId→printing→locale→indexVision ; visionReady=true seulement, aucun fallback visuel inter-langue. Non implémenté.
+
+LIMITES / FOLLOW-UPS
+MAJEUR : aucun défaut logiciel bloquant détecté dans cette campagne réussie.
+INTERMÉDIAIRE : qualification humaine à compléter avant promotion, dont Q16cartes physiques/Q15relayWAN et réception mail réelle.
+MINEUR : aucun défaut supplémentaire identifié. Détails matériels Phone non fournis, non inventés.
+Échec initial préservé : qualification-freeze-1 auSHA9deaa57716e482f9a83cfb37607a1d7ae6b5f5a0, suiteUI échouée sur le dock auto-caché ; jamais transformé en PASS.
+Le diagnostic/reste des suites et le contrôle déterministe du dock sont conservés dans TEMP. Toute correction de séquence du test garde les vrais déplacements souris, hit-tests et clics ; aucune modification du dock produit.
+Ce reçu est ajouté par commit documentaire séparé. Le workflow doit ensuite être exécuté sur le SHA final contenant ce reçu, preuves externes liées à ce SHA ; il n'existe pas de SHA auto-référentiel dans ce fichier.
+
+COMMANDES / RÉSULTATS
+COMMAND smoke-test.js
+EXIT 0 · 0 assertions Node · 0.11s · smoke-test.js.log
+COMMAND smoke-test-c11.js
+EXIT 0 · 0 assertions Node · 0.1s · smoke-test-c11.js.log
+COMMAND integration-test-c11.js
+EXIT 0 · 0 assertions Node · 0.37s · integration-test-c11.js.log
+COMMAND offer-delivery-retry-test.js
+EXIT 0 · 0 assertions Node · 0.08s · offer-delivery-retry-test.js.log
+COMMAND turn-cache-test.js
+EXIT 0 · 213 assertions Node · 0.12s · turn-cache-test.js.log
+COMMAND report-schema-v2-test.js
+EXIT 0 · 189 assertions Node · 0.15s · report-schema-v2-test.js.log
+COMMAND report-email-bridge-test.js
+EXIT 0 · 355 assertions Node · 2.69s · report-email-bridge-test.js.log
+COMMAND tcgate-ui-1.2-test.js
+EXIT 0 · 84 assertions Node · 0.15s · tcgate-ui-1.2-test.js.log
+COMMAND tcgate-ui-1.2-client-test.js
+EXIT 0 · 57 assertions Node · 0.14s · tcgate-ui-1.2-client-test.js.log
+COMMAND tcgate-ui-1.2-room-test.js
+EXIT 0 · 59 assertions Node · 0.76s · tcgate-ui-1.2-room-test.js.log
+COMMAND future-ux-v3.7-test.js
+EXIT 0 · 27 assertions Node · 0.53s · future-ux-v3.7-test.js.log
+COMMAND future-ux-room-metadata-test.js
+EXIT 0 · 0 assertions Node · 0.39s · future-ux-room-metadata-test.js.log
+COMMAND smoke-test-ui-integration.js
+EXIT 0 · 25 assertions Node · 0.1s · smoke-test-ui-integration.js.log
+COMMAND phone-camera-test.js
+EXIT 0 · 0 assertions Node · 1.27s · phone-camera-test.js.log
+COMMAND phone-camera-diagnostics-test.js
+EXIT 0 · 0 assertions Node · 0.07s · phone-camera-diagnostics-test.js.log
+COMMAND phone-consolidation-1.2c-test.js
+EXIT 0 · 248 assertions Node · 0.96s · phone-consolidation-1.2c-test.js.log
+COMMAND vision-integrity-test.js
+EXIT 0 · 0 assertions Node · 0.07s · vision-integrity-test.js.log
+COMMAND vision-source-provenance-test.js
+EXIT 0 · 0 assertions Node · 0.35s · vision-source-provenance-test.js.log
+COMMAND vision-backpressure-test.js
+EXIT 0 · 16 assertions Node · 0.08s · vision-backpressure-test.js.log
+COMMAND vision-analysis-resolution-test.js
+EXIT 0 · 43 assertions Node · 0.08s · vision-analysis-resolution-test.js.log
+COMMAND vision-appearance-batch-test.js
+EXIT 0 · 32 assertions Node · 0.92s · vision-appearance-batch-test.js.log
+COMMAND cyberpunk-db-integration-test.js
+EXIT 0 · 59 assertions Node · 0.69s · cyberpunk-db-integration-test.js.log
+COMMAND cyberpunk-db-performance-test.js
+EXIT 0 · 1 assertions Node · 11.57s · cyberpunk-db-performance-test.js.log
+COMMAND workspace-test.js
+EXIT 0 · 87 assertions Node · 0.33s · workspace-test.js.log
+COMMAND workspace-camera-test.js
+EXIT 0 · 21 assertions Node · 0.07s · workspace-camera-test.js.log
+COMMAND workspace-cockpit-test.js
+EXIT 0 · 13 assertions Node · 0.08s · workspace-cockpit-test.js.log
+COMMAND workspace-journal-test.js
+EXIT 0 · 102 assertions Node · 0.13s · workspace-journal-test.js.log
+COMMAND workspace-database-maintenance-test.js
+EXIT 0 · 81 assertions Node · 0.08s · workspace-database-maintenance-test.js.log
+COMMAND project-hygiene-1.2d-test.js
+EXIT 0 · 464 assertions Node · 1.87s · project-hygiene-1.2d-test.js.log
+COMMAND tcgate-ui-1.2-browser-test.js
+EXIT 0 · 367 assertions Node · 41.18s · tcgate-ui-1.2-browser-test.js.log
+COMMAND candidate-15-browser-test.js
+EXIT 0 · 71 assertions Node · 61.76s · candidate-15-browser-test.js.log
+COMMAND report-email-browser-test.js
+EXIT 0 · 47 assertions Node · 10.04s · report-email-browser-test.js.log
+COMMAND phone-consolidation-1.2c-browser-test.js
+EXIT 0 · 74 assertions Node · 8.94s · phone-consolidation-1.2c-browser-test.js.log
+COMMAND workspace-browser-test.js
+EXIT 0 · 23 assertions Node · 8.58s · workspace-browser-test.js.log
+COMMAND workspace-camera-browser-test.js
+EXIT 0 · 76 assertions Node · 15.11s · workspace-camera-browser-test.js.log
+COMMAND workspace-cockpit-browser-test.js
+EXIT 0 · 398 assertions Node · 6.75s · workspace-cockpit-browser-test.js.log
+COMMAND workspace-maintenance-journal-browser-test.js
+EXIT 0 · 126 assertions Node · 4s · workspace-maintenance-journal-browser-test.js.log
+COMMAND npm run check (node check.js)
+EXIT 0 · 0 assertions Node · 6.24s · npm_run_check_node_check.js_.log
+COMMAND git diff --check HEAD^ HEAD
+EXIT 0 · 0 assertions Node · 0.05s · git_diff_--check_HEAD_HEAD.log
+
+VERDICT DE PRÉPARATION : TCGATE ALPHA 0.1 CANDIDATE 15 READY FOR FULL QUALIFICATION
