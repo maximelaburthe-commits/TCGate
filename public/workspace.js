@@ -32,7 +32,7 @@
   });
   // Camera/tracking has no dependency on a manifest, corpus, or matcher.
   const detectionScripts=['/vision-frame-gate.js','/vision-analysis-frame.js','/vision-appearance-sampler.js','/vision-core.js'];
-  const identificationScripts=['/vision-library-integrity.js','/identification.js'];
+  const identificationScripts=['/database-locale-core.js','/player-locale.js','/vision-locale.js','/vision-library-integrity.js','/identification.js'];
   const scriptLoads=new Map();
   function loadScript(src){
     if(!scriptLoads.has(src))scriptLoads.set(src,new Promise((resolve,reject)=>{
@@ -92,7 +92,7 @@
       if(provider)window.TCGWorkspaceLabProviderInstance=provider;
       for(const src of identificationScripts)await loadScript(src);
       $('labStatus').textContent='Identification : construction des références et démarrage du matcher…';
-      const result=await window.TCGIdentificationLab.start();
+      const result=await window.TCGIdentificationLab.start(provider ? undefined : {gameId:'cyberpunk',playerLocale:window.TCGatePlayerLocale.getPlayerLocale('cyberpunk')});
       const ready=Boolean(result.ready&&result.workerReady);
       $('identificationToggle').disabled=!ready;$('identificationToggle').checked=ready;$('identRefreshButton').disabled=false;
       $('labStatus').textContent=ready?'Identification : active · BDD '+sourceInfo.version:'Identification : indisponible · consulter les diagnostics. Caméra et détection restent disponibles.';

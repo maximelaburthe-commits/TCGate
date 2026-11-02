@@ -1,19 +1,33 @@
 'use strict';
-// Retain the original frozen production hash by projecting away ONLY the explicit Lab hook.
-// Every replacement is required exactly once. Any other production edit still fails the old hash.
-function productionIdentification(buffer){
- let source=buffer.toString('utf8').replace(/\r\n/g,'\n');
- const changes=[
-  ['  const labProvider = window.TCGWorkspaceLabProviderInstance || null;\n',''],
-  ['    if (labProvider) return labProvider.loadCardList();\n',''],
-  ['const baselineMinimum=labProvider ? 1 : VALIDATED_ALPHA_MINIMUM_REFERENCES;','const baselineMinimum=VALIDATED_ALPHA_MINIMUM_REFERENCES;'],
-  ['if (!force && !labProvider) {','if (!force) {'],
-  ['if (!labProvider) saveCache(fp,state.refs,state.cards.length,sourceRef);','saveCache(fp,state.refs,state.cards.length,sourceRef);'],
-  ["    if (!labProvider) { try { localStorage.removeItem(CACHE_KEY); } catch {} }", "    try { localStorage.removeItem(CACHE_KEY); } catch {}"]
- ];
- for(const[from,to]of changes){if(source.split(from).length!==2)throw Error('Unexpected Lab hook: '+from);source=source.replace(from,to);}
- const ready='state.ready=labProvider ? state.refs.length > 0 && state.refs.length === state.cards.length : window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);';
- if(source.split(ready).length!==3)throw Error('Unexpected Lab readiness hook');source=source.replaceAll(ready,'state.ready=window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);');
- return Buffer.from(source.replace(/\n/g,'\r\n'));
+// Jalon 4 changes corpus adapters and worker lifecycle. Freeze every other named
+// function and every recognition constant against the pre-Jalon-4 fingerprints.
+// Detector/model/identification-worker keep their separate complete byte hashes.
+function algorithmSections(buffer, lifecycle, expectedFunctions) {
+  const source = buffer.toString('utf8').replace(/\r\n/g, '\n');
+  const functions = [];
+  for (const match of source.matchAll(/^  (?:async )?function (\w+)\([^\n]*\)\s*\{/gm)) {
+    const firstEnd = source.indexOf('\n', match.index);
+    const firstLine = source.slice(match.index, firstEnd);
+    let end = firstEnd;
+    if (!firstLine.trimEnd().endsWith('}')) {
+      const closing = /^  }[;]?$/gm;
+      closing.lastIndex = firstEnd;
+      const last = closing.exec(source);
+      if (!last) throw Error('Unterminated Vision function: ' + match[1]);
+      end = last.index + last[0].length;
+    }
+    if (!lifecycle.includes(match[1])) functions.push([match[1], source.slice(match.index, end).trim()]);
+  }
+  if (functions.length !== expectedFunctions || new Set(functions.map(([name]) => name)).size !== expectedFunctions) throw Error('Protected Vision function set changed');
+  const adapterConstants = new Set(['FALLBACK_DB', 'STABLE_SOURCE_BASE', 'STABLE_SOURCE_MANIFEST', 'VALIDATED_ALPHA_MINIMUM_REFERENCES', 'CACHE_KEY']);
+  const constants = [...source.matchAll(/^  const ([A-Z][A-Z_0-9]*)\s*=[\s\S]*?;/gm)]
+    .filter(match => !adapterConstants.has(match[1])).map(match => [match[1], match[0].trim()]);
+  return Buffer.from(JSON.stringify({ functions: functions.sort(([a], [b]) => a.localeCompare(b)), constants: constants.sort(([a], [b]) => a.localeCompare(b)) }));
 }
-module.exports={productionIdentification};
+function productionIdentification(buffer) {
+  return algorithmSections(buffer, ['fingerprint', 'loadCache', 'saveCache', 'loadFallbackSnapshotCardList', 'loadCardList', 'buildLibrary', 'matcherWorkerPayload', 'initMatcherWorker', 'startProductIdentification', 'setContext'], 79);
+}
+function productionTableState(buffer) {
+  return algorithmSections(buffer, ['initWorker', 'start', 'stop'], 47);
+}
+module.exports = { productionIdentification, productionTableState };

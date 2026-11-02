@@ -13,6 +13,7 @@ const suites = [
   ['tcgate-ui-1.2-test.js'], ['tcgate-ui-1.2-client-test.js'], ['tcgate-ui-1.2-room-test.js'],
   ['site-ui-2.0-test.js'],
   ['player-locale-test.js'],
+  ['vision-locale-test.js'],
   ['future-ux-v3.7-test.js'], ['future-ux-room-metadata-test.js'], ['smoke-test-ui-integration.js'],
   ['phone-camera-test.js'], ['phone-camera-diagnostics-test.js'], ['phone-consolidation-1.2c-test.js'],
   ['vision-integrity-test.js'], ['vision-source-provenance-test.js'], ['vision-backpressure-test.js'],
@@ -25,7 +26,7 @@ const suites = [
   ['report-email-browser-test.js'], ['phone-consolidation-1.2c-browser-test.js'],
   ['workspace-browser-test.js'], ['workspace-camera-browser-test.js'],
   ['workspace-cockpit-browser-test.js'], ['workspace-maintenance-journal-browser-test.js'],
-  ['database-locale-core-browser-test.js'], ['site-ui-2.0-browser-test.js'], ['player-locale-browser-test.js']
+  ['database-locale-core-browser-test.js'], ['site-ui-2.0-browser-test.js'], ['player-locale-browser-test.js'], ['vision-locale-browser-test.js']
 ];
 
 function main() {
@@ -58,7 +59,7 @@ function main() {
   delete env.TCGATE_HYGIENE_SKIP_HTTP;
   delete env.REPORT_MAIL_TEST_SKIP_REMOVAL;
   delete env.REPORT_MAIL_BRIDGE_UNDER_TEST;
-  for (const key of ['PHONE_TEST_ROOT', 'TCGATE_PHONE_TEST_ROOT', 'TCGATE_UI12_SERVER', 'TCGATE_TEST_REPO', 'CANDIDATE_TEST_ROOT', 'TCGATE_TURN_SERVER_UNDER_TEST', 'REPORT_MAIL_TEST_ROOT', 'REPORT_MAIL_TEST_BRIDGE', 'TCGATE_PHONE_PAIRING_TTL_MS', 'PLAYER_LOCALE_TEST_ROOT']) delete env[key];
+  for (const key of ['PHONE_TEST_ROOT', 'TCGATE_PHONE_TEST_ROOT', 'TCGATE_UI12_SERVER', 'TCGATE_TEST_REPO', 'CANDIDATE_TEST_ROOT', 'TCGATE_TURN_SERVER_UNDER_TEST', 'REPORT_MAIL_TEST_ROOT', 'REPORT_MAIL_TEST_BRIDGE', 'TCGATE_PHONE_PAIRING_TTL_MS', 'PLAYER_LOCALE_TEST_ROOT', 'VISION_LOCALE_TEST_ROOT', 'TCGATE_VISION_LOCALE_TEST_ROOT']) delete env[key];
   env.TCGATE_ICE_TRANSPORT_POLICY = 'all';
   env.WORKSPACE_SCREENSHOT_DIR = path.join(output, 'screenshots');
   fs.mkdirSync(env.WORKSPACE_SCREENSHOT_DIR);

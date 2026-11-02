@@ -100,8 +100,9 @@ async function run(){
   assert(identification.includes("if(!loaded){ui.image.dataset.swapPending='0';return;}"),'failed replacement does not clear valid HD image');
   assert(identification.includes('const result=rehydrateWorkerResult(msg.result||null);'),'worker result is rehydrated with card/printing/artwork metadata');
   assert(identification.includes('const refsByImage=new Map(state.refs.map(ref=>[ref.image,ref]));'),'worker metadata lookup uses the initialized corpus without network');
-  assert(identification.includes("fallbackCoverage:'legacy-cyberpunk-0.7-147-references'"),'legacy fallback is explicitly reported as degraded coverage');
-  assert(identification.includes('recognitionMode:reference.recognitionMode||null'),'recognition mode reaches matcher metadata');
+  assert(!identification.includes('loadFallbackSnapshotCardList') && identification.includes('localeApi.prepare(state.localeContext)'), 'production corpus requires the locale API and never falls back to an unscoped snapshot');
+  assert(!identification.includes('database.references.map'), 'raw database references cannot construct the active matcher corpus');
+  assert(fs.readFileSync(path.join(__dirname,'public/vision-locale.js'),'utf8').includes('recognitionMode:reference.recognitionMode||null'),'recognition mode reaches matcher metadata through the scoped corpus adapter');
 
   const allSource=['server.js','public/app.js','public/database-source.js','public/game-databases.js','public/identification.js','DEPLOY_RAILWAY.md'].map(file=>fs.readFileSync(path.join(__dirname,file),'utf8')).join('\n');
   assert(!allSource.includes('TCGATE_DB_GITHUB_TOKEN'),'private GitHub token removed');
@@ -109,7 +110,7 @@ async function run(){
   assert(!allSource.includes('cyberpunk_cards'),'legacy mutable Cyberpunk source removed from active integration');
 
   const fallbackData=syntheticFixture(),fallbackCounters={requests:0,urls:[]};databaseSource.clear();
-  await assert.rejects(databaseSource.load('cyberpunk',{fetchImpl:fixtureFetch(fallbackData,fallbackCounters,{fail:true})}),/DB HTTP 503/,'remote failure reaches lightweight fallback path');
+  await assert.rejects(databaseSource.load('cyberpunk',{fetchImpl:fixtureFetch(fallbackData,fallbackCounters,{fail:true})}),/DB HTTP 503/,'remote failure remains explicit; active locale recognition never broadens to a global fallback');
 
   const criticalHashes={'public/detection-worker.js':'19d0e72eeb620f23742a9b8fe321f700c45cbd29ad41b952d115bca5fd983227','public/identification-worker.js':'306eafe4decdCCE26287683bc581cd8ca24a0c2f58cd299873b093942127a14a'.toLowerCase(),'models/card_detector_v53_512.onnx':'2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319'};
   for(const[file,expected]of Object.entries(criticalHashes)){const actual=crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,file))).digest('hex');assert.strictEqual(actual,expected,`critical component changed: ${file}`);}

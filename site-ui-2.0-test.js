@@ -52,11 +52,12 @@ equal(lf(contract.section(html, 'screenGame')), lf(contract.section(original('pu
 for (const file of [
   'server.js', 'public/media-recovery.js', 'public/database-locale-core.js', 'public/database-source.js', 'public/game-databases.js',
   'public/phone-camera.js', 'public/phone-camera-settings.js', 'public/phone-camera-settings.css',
-  'public/vision-core.js', 'public/identification.js', 'public/vision-frame-gate.js', 'report-mail-server.js', 'public/report-mail-ui.js'
+  'public/vision-core.js', 'public/vision-frame-gate.js', 'report-mail-server.js', 'public/report-mail-ui.js'
 ]) {
   if (!fs.existsSync(path.join(root, file))) throw Error('Protected source is missing: ' + file);
   equal(hash(lf(read(file))), hash(lf(original(file))), 'Protected source remains unchanged: ' + file);
 }
+equal(hash(require('./workspace-production-contract.js').productionIdentification(Buffer.from(read('public/identification.js')))), 'e5593e42a8dfd60a4d81850fb76c518c4212302906a1cd655fb3901cf9e18071', 'All recognition functions/constants stay unchanged while Jalon 4 scopes the corpus');
 function functionBody(source, name) {
   source = lf(source);
   const match = new RegExp('^(?:async )?function ' + name + '\\(', 'm').exec(source);
@@ -65,7 +66,7 @@ function functionBody(source, name) {
   return lf(next ? tail.slice(0, next.index) : tail);
 }
 const baselineApp = original('public/app.js');
-for (const name of ['api', 'enterLobby', 'setReady', 'enterNetworkGame', 'applyRoomState', 'connectEventStream', 'loadRtcConfig', 'startLocalMedia', 'pairPhoneCamera', 'sendTimerAction', 'applySharedTimer', 'applyRemoteGigState', 'changeDieValue', 'prepareVision', 'attachVisionToRemoteStream']) equal(functionBody(app, name), functionBody(baselineApp, name), 'Existing ' + name + ' mechanism is unchanged');
+for (const name of ['api', 'enterLobby', 'setReady', 'enterNetworkGame', 'applyRoomState', 'connectEventStream', 'loadRtcConfig', 'startLocalMedia', 'pairPhoneCamera', 'sendTimerAction', 'applySharedTimer', 'applyRemoteGigState', 'changeDieValue']) equal(functionBody(app, name), functionBody(baselineApp, name), 'Existing ' + name + ' mechanism is unchanged');
 const readyHandler = source => lf(source.slice(source.indexOf("$('startGame').addEventListener"), source.indexOf("$('leaveLobby').addEventListener")));
 equal(readyHandler(app), readyHandler(baselineApp), 'Ready/Start listener remains unchanged');
-console.log('SITE_UI_2_0_CONTRACT_OK ' + JSON.stringify({ assertions, baseline, protectedProductMechanisms: true, playerLocale: 'PERSONAL (JALON 3)', visionLocale: 'NOT IMPLEMENTED' }));
+console.log('SITE_UI_2_0_CONTRACT_OK ' + JSON.stringify({ assertions, baseline, protectedProductMechanisms: true, playerLocale: 'PERSONAL (JALON 3)', visionLocale: 'PERSONAL CORPUS (JALON 4)' }));

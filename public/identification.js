@@ -20,15 +20,12 @@
     if(values.length>240) values.shift();
   };
 
-  const FALLBACK_DB = '/cards-fallback.json';
-  const STABLE_SOURCE_BASE = '/assets/card-db/cyberpunk/0.7.0-6d3a296';
-  const STABLE_SOURCE_MANIFEST = `${STABLE_SOURCE_BASE}/vision-source-manifest.json`;
   // Temporary Alpha minimum: UZJMMX physically validated 141 references.
   // It is intentionally a floor, so a future larger catalogue remains valid.
   const VALIDATED_ALPHA_MINIMUM_REFERENCES = 141;
 
-  // New cache key is intentional: alpha1/2 descriptors are incompatible.
-  const CACHE_KEY = 'tcg-cyberpunk-db-v1-ident-cache-template-v5-fast';
+  // Candidate descriptors use a scope-specific key supplied by Vision Locale.
+  const localeApi = window.TCGateVisionLocale;
 
   // Reference resolution. Low enough for 120-card comparisons to remain immediate,
   // high enough to keep illustration structure and text/layout edges.
@@ -68,6 +65,11 @@
   };
 
   const state = {
+    localeContext: null,
+    contextInput: null,
+    contextError: null,
+    localeSource: null,
+    matcherWorkerCancelInit: null,
     loading: false,
     ready: false,
     cards: [],
@@ -933,100 +935,23 @@
     return createImageBitmap(blob);
   }
 
-  function fingerprint(cards,sourceRef) {
-    if (!cards.length) return 'empty';
-    return `v5-fast:${sourceRef||'unknown'}:${cards.length}:${cards[0]?.image||''}:${cards[cards.length-1]?.image||''}`;
-  }
-
-  function loadCache(fp, sourceCount, sourceRef) {
+  function loadCache(source) {
     try {
-      const raw=localStorage.getItem(CACHE_KEY);
-      const data=raw ? JSON.parse(raw) : null;
-      return window.TCGateVisionLibraryIntegrity.validateCache(data,{fingerprint:fp,sourceCount,sourceRef});
+      const raw=localStorage.getItem(source.visionIndexKey);
+      return localeApi.validateCache(raw ? JSON.parse(raw) : null,source);
     } catch { return {status:'invalid-json',refs:null,sourceCount:null,librarySize:null}; }
   }
 
-  function saveCache(fp, refs, sourceCount, sourceRef) {
-    try {
-      localStorage.setItem(CACHE_KEY,JSON.stringify({fingerprint:fp,sourceRef,sourceCount,librarySize:refs.length,refs}));
-    } catch {}
-  }
-
-  async function loadFallbackSnapshotCardList() {
-    try {
-      const manifestResponse=await fetch(STABLE_SOURCE_MANIFEST,{cache:'no-cache'});
-      if(!manifestResponse.ok)throw new Error(`Manifest HTTP ${manifestResponse.status}`);
-      const manifest=await manifestResponse.json();
-      if(!manifest.sourceImmutable||!/^[0-9a-f]{40}$/i.test(manifest.sourceRef||''))throw new Error('Source Alpha non immuable');
-      const indexUrl=`${STABLE_SOURCE_BASE}/${manifest.referenceIndex}`;
-      const indexResponse=await fetch(indexUrl,{cache:'no-cache'});
-      if(!indexResponse.ok)throw new Error(`Index HTTP ${indexResponse.status}`);
-      const index=await indexResponse.json(),references=Array.isArray(index.references)?index.references:[];
-      if(references.length!==Number(manifest.sourceReferences)||references.length<VALIDATED_ALPHA_MINIMUM_REFERENCES)throw new Error(`Cardinalité source invalide : ${references.length}/${manifest.sourceReferences}`);
-      const cards=references.map(ref=>({name:ref.name,type:ref.type||'',image:ref.visionAssetPath||ref.referenceImageUrl,imageUrl:`${STABLE_SOURCE_BASE}/${ref.visionAssetPath||ref.referenceImageUrl}`}));
-      return {cards,source:'TCGate same-origin versioned snapshot',sourceUrl:STABLE_SOURCE_MANIFEST,sourceRef:manifest.sourceRef,sourceImmutable:true,sourceAssetBase:STABLE_SOURCE_BASE,sourceError:null};
-    } catch (stableError) {
-      const local=await fetch(FALLBACK_DB,{cache:'no-cache'});if(!local.ok)throw stableError;
-      return {cards:await local.json(),source:'fallback local degraded',sourceUrl:FALLBACK_DB,sourceRef:'local-fallback',sourceImmutable:false,sourceAssetBase:null,sourceError:stableError?.message||String(stableError)};
-    }
+  function saveCache(source, refs) {
+    try { localStorage.setItem(source.visionIndexKey,JSON.stringify(localeApi.cacheRecord(source,refs))); } catch {}
   }
 
   async function loadCardList() {
     if (labProvider) return labProvider.loadCardList();
-    try {
-      const database=await window.TCGateDatabaseSource.load('cyberpunk');
-      const manifest=database.manifest;
-      const cards=database.references.map(reference=>{
-        const canonical=database.cardsById.get(reference.cardId);
-        return {
-          ...canonical,
-          refId:reference.refId,
-          cardId:reference.cardId,
-          printingId:reference.printingId,
-          referencePrintingId:reference.referencePrintingId||null,
-          recognitionGroupId:reference.recognitionGroupId||null,
-          recognitionMode:reference.recognitionMode||null,
-          variantKind:reference.variantKind||reference.variant_kind||null,
-          recognition:reference.recognition,
-          candidatePrintingIds:Array.isArray(reference.candidatePrintingIds)?[...reference.candidatePrintingIds]:[],
-          name:canonical.name,
-          type:canonical.type||'',
-          image:reference.refId,
-          referenceImageUrl:reference.referenceImageUrl,
-          imageUrl:reference.displayImageUrl||reference.displayAssetPath
-        };
-      });
-      return {
-        cards,
-        source:'TCGate public DB direct',
-        sourceUrl:window.TCGateGameDatabases.get('cyberpunk').manifestUrl,
-        sourceRef:manifest.sourceRef,
-        sourceImmutable:true,
-        sourceAssetBase:null,
-        sourceError:null,
-        databaseInfo:{...manifest,loadMetrics:database.metrics||null}
-      };
-    } catch (databaseError) {
-      const fallback=await loadFallbackSnapshotCardList();
-      return {
-        ...fallback,
-        sourceError:null,
-        databaseInfo:{
-          game:'cyberpunk',
-          databaseVersion:null,
-          databaseStatus:null,
-          canonicalCount:0,
-          visionReferenceCount:Array.isArray(fallback.cards)?fallback.cards.length:0,
-          source:fallback.source,
-          remoteError:databaseError?.message||String(databaseError),
-          fallbackActive:true,
-          degradedCoverage:true,
-          fallbackCoverage:'legacy-cyberpunk-0.7-147-references',
-          expectedRuntimeScope:'cyberpunk-beta-2026',
-          expectedVisionReferenceCount:229
-        }
-      };
-    }
+    if (!state.localeContext) throw new Error(state.contextError || 'Vision context unavailable');
+    const source=await localeApi.prepare(state.localeContext);
+    if (!source) throw new Error('Vision context unavailable');
+    return source;
   }
 
   async function buildLibrary(force=false) {
@@ -1038,37 +963,47 @@
     setLibraryStatus('Bibliothèque : construction des références visuelles…');
 
     try {
-      const {cards,source,sourceUrl,sourceRef,sourceImmutable,sourceAssetBase,sourceError,databaseInfo}=await loadCardList();
+      const loadedSource=await loadCardList();
+      if (generation!==state.generation) return;
+      const {cards,source,sourceUrl,sourceRef,sourceImmutable,sourceAssetBase,sourceError,databaseInfo}=loadedSource;
+      state.localeSource=labProvider ? null : loadedSource;
       state.sourceRef=sourceRef;state.sourceAssetBase=sourceAssetBase;state.databaseInfo=databaseInfo||null;
       state.cards=cards.filter(c=>c?.name&&c?.image);
-      const baselineMinimum=labProvider ? 1 : VALIDATED_ALPHA_MINIMUM_REFERENCES;
-      const fp=fingerprint(state.cards,sourceRef);
+      if (!labProvider) {
+        localeApi.assertReferences(state.cards,loadedSource);
+        if (state.cards.length!==cards.length) throw new Error('Vision locale corpus incomplete');
+      }
+      // The historical minimum belongs only to the currently pinned EN corpus.
+      // Other declared/qualified games and locales need complete coverage of their own corpus.
+      const baselineMinimum=labProvider ? 1 : Math.min(VALIDATED_ALPHA_MINIMUM_REFERENCES,loadedSource.referenceCountAfterLocale);
       let cache={status:force?'bypassed':'miss',refs:null,sourceCount:null,librarySize:null};
 
       if (!force && !labProvider) {
-        cache=loadCache(fp,state.cards.length,sourceRef);
+        cache=loadCache(loadedSource);
         if (cache.status==='hit') {
           state.refs=cache.refs;
           state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:0,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum,source,sourceUrl,sourceRef,sourceImmutable,sourceError});
           state.ready=labProvider ? state.refs.length > 0 && state.refs.length === state.cards.length : window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
-          state.libraryPerformance={source,cacheStatus:'hit',databaseLoadMs:Number(databaseInfo?.loadMetrics?.totalMs||0),descriptorBuildMs:0,totalReadyMs:performance.now()-readyStartedAt,referenceCount:state.refs.length,networkRequests:Number(databaseInfo?.loadMetrics?.requests||0),networkBytes:Number(databaseInfo?.loadMetrics?.bytes||0)};
+          state.libraryPerformance={source,referenceCountBeforeLocale:Number(loadedSource.referenceCountBeforeLocale??state.cards.length),referenceCountAfterLocale:state.cards.length,cacheStatus:'hit',databaseLoadMs:Number(databaseInfo?.loadMetrics?.totalMs||0),descriptorBuildMs:0,totalReadyMs:performance.now()-readyStartedAt,referenceCount:state.refs.length,networkRequests:Number(databaseInfo?.loadMetrics?.requests||0),networkBytes:Number(databaseInfo?.loadMetrics?.bytes||0)};
           state.loading=false;
           setLibraryStatus(state.ready?`Bibliothèque : ${state.refs.length} cartes · cache alpha15`:`Vision indisponible : bibliothèque dégradée (${state.refs.length}/${state.cards.length})`);
           return;
         }
       }
 
-      const refs=new Array(state.cards.length);
+      const buildingCards=state.cards;
+      const refs=new Array(buildingCards.length);
       const descriptorStartedAt=performance.now();
       let cursor=0,done=0;
       const workers=Math.min(6,state.cards.length);
 
       async function work() {
-        while (cursor<state.cards.length && generation===state.generation) {
+        while (cursor<buildingCards.length && generation===state.generation) {
           const i=cursor++;
-          const card=state.cards[i];
+          const card=buildingCards[i];
           try {
             const bitmap=await fetchBitmap(referenceImageUrl(card));
+            if (generation!==state.generation) { bitmap.close?.(); return; }
             refs[i]={
               ...card,
               name:card.name,
@@ -1080,6 +1015,7 @@
           } catch {
             refs[i]=null;
           }
+          if (generation!==state.generation) return;
           done++;
           if (done===1 || done%5===0 || done===state.cards.length) {
             setLibraryStatus(`Bibliothèque : ${done}/${state.cards.length} · ${source}`);
@@ -1092,12 +1028,16 @@
 
       state.refs=refs.filter(Boolean);
       const failed=state.cards.filter((_,index)=>!refs[index]).map(card=>({name:card.name,image:card.image}));
-      if (!labProvider) saveCache(fp,state.refs,state.cards.length,sourceRef);
+      if (!labProvider) {
+        localeApi.assertReferences(state.refs,loadedSource);
+        saveCache(loadedSource,state.refs);
+      }
       state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:failed.length,cacheStatus:cache.status,cacheSourceReferences:cache.sourceCount,cacheLibrarySize:cache.librarySize,baselineMinimum,source,sourceUrl,sourceRef,sourceImmutable,sourceError,failed});
       state.ready=labProvider ? state.refs.length > 0 && state.refs.length === state.cards.length : window.TCGateVisionLibraryIntegrity.isReady(state.libraryIntegrity);
-      state.libraryPerformance={source,cacheStatus:cache.status,databaseLoadMs:Number(databaseInfo?.loadMetrics?.totalMs||0),descriptorBuildMs:performance.now()-descriptorStartedAt,totalReadyMs:performance.now()-readyStartedAt,referenceCount:state.refs.length,networkRequests:Number(databaseInfo?.loadMetrics?.requests||0)+state.cards.length,networkBytes:Number(databaseInfo?.loadMetrics?.bytes||0)};
+      state.libraryPerformance={source,referenceCountBeforeLocale:Number(loadedSource.referenceCountBeforeLocale??state.cards.length),referenceCountAfterLocale:state.cards.length,cacheStatus:cache.status,databaseLoadMs:Number(databaseInfo?.loadMetrics?.totalMs||0),descriptorBuildMs:performance.now()-descriptorStartedAt,totalReadyMs:performance.now()-readyStartedAt,referenceCount:state.refs.length,networkRequests:Number(databaseInfo?.loadMetrics?.requests||0)+state.cards.length,networkBytes:Number(databaseInfo?.loadMetrics?.bytes||0)};
       setLibraryStatus(state.ready?`Bibliothèque : ${state.refs.length} cartes prêtes · moteur alpha15`:`Vision indisponible : bibliothèque dégradée (${state.refs.length}/${state.cards.length})`);
     } catch (err) {
+      if (generation!==state.generation) return;
       state.libraryIntegrity=window.TCGateVisionLibraryIntegrity.assess({sourceReferences:state.cards.length,loadedReferences:state.refs.length,failedReferences:Math.max(0,state.cards.length-state.refs.length),cacheStatus:'error',baselineMinimum:VALIDATED_ALPHA_MINIMUM_REFERENCES,sourceError:err?.message||String(err)});
       state.ready=false;
       setLibraryStatus(`Bibliothèque indisponible : ${err?.message||err}`);
@@ -1267,6 +1207,8 @@
 
   function matcherWorkerPayload() {
     return state.refs.map(ref=>({
+      locale:ref.locale||null,
+      refId:ref.refId||null,
       name:ref.name,
       type:ref.type||'',
       image:ref.image,
@@ -1371,6 +1313,7 @@
   }
 
   async function initMatcherWorker() {
+    const generation=state.generation;
     if (!window.Worker || !window.OffscreenCanvas || !window.createImageBitmap) {
       state.matcherWorkerReady=false;
       state.matcherWorkerError='Web Worker / OffscreenCanvas indisponible';
@@ -1391,9 +1334,11 @@
       state.matcherWorkerError=null;
 
       const readyPromise=new Promise((resolve,reject)=>{
+        state.matcherWorkerCancelInit=()=>{ clearTimeout(timeout); resolve(false); };
         const timeout=setTimeout(()=>reject(new Error('Timeout initialisation matcher worker')),12000);
 
         worker.onmessage=(event)=>{
+          if (generation!==state.generation || worker!==state.matcherWorker) { clearTimeout(timeout); resolve(false); return; }
           const msg=event.data||{};
 
           if (msg.type==='ready') {
@@ -1438,6 +1383,7 @@
         };
 
         worker.onerror=(event)=>{
+          if (generation!==state.generation || worker!==state.matcherWorker) { clearTimeout(timeout); resolve(false); return; }
           clearTimeout(timeout);
           state.matcherWorkerReady=false;
           state.matcherWorkerError=event.message||'Erreur matcher worker';
@@ -1449,13 +1395,15 @@
 
       const payload=matcherWorkerPayload();
       const t=performance.now();
-      worker.postMessage({type:'init',refs:payload});
+      worker.postMessage({type:'init',refs:payload,visionIndexKey:state.localeContext?.visionIndexKey||null,playerLocale:state.localeContext?.playerLocale||null});
       state.matcherWorkerInitMs=performance.now()-t;
       if (ui.matcherStatus) ui.matcherStatus.textContent='Matcher worker : initialisation…';
 
-      await readyPromise;
-      return true;
+      const ready=await readyPromise;
+      if (generation===state.generation) state.matcherWorkerCancelInit=null;
+      return Boolean(ready && generation===state.generation);
     } catch (err) {
+      if (generation!==state.generation) return false;
       state.matcherWorkerReady=false;
       state.matcherWorkerError=String(err?.message||err);
       if (ui.matcherStatus) ui.matcherStatus.textContent='Matcher : fallback thread principal';
@@ -2436,12 +2384,13 @@ function applyQualityGuard(result,quality) {
   });
 
   ui.refresh?.addEventListener('click',async()=>{
-    if (!labProvider) { try { localStorage.removeItem(CACHE_KEY); } catch {} }
+    if (!labProvider && state.localeContext) { try { localStorage.removeItem(state.localeContext.visionIndexKey); } catch {} }
     state.hoverCache.clear();
     state.identityStability.tracks.clear();
     clearTimeout(state.temporalRecheckTimer);
+    const generation=state.generation;
     await buildLibrary(true);
-    await initMatcherWorker();
+    if (state.ready && generation+1===state.generation) await initMatcherWorker();
   });
 
   function serializeRanked(result) {
@@ -2465,32 +2414,83 @@ function applyQualityGuard(result,quality) {
 
   let productStartPromise=null;
 
-  async function startProductIdentification() {
-    if (state.ready && state.matcherWorkerReady) {
-      return {ready:true,cards:state.refs.length,workerReady:true,integrity:state.libraryIntegrity};
-    }
+  function setContext(input=null) {
+    if (labProvider) return {changed:false,labOnly:true};
+    let next=null,error=null;
+    try { if(input?.gameId && input.gameId!=='no-game' && !localeApi) throw new Error('Vision locale source unavailable'); next=localeApi?.context(input) || null; }
+    catch (caught) { error=caught?.message || String(caught); }
+    const nextInput=input ? {gameId:input.gameId||null,playerLocale:input.playerLocale||null} : null;
+    if (JSON.stringify([state.localeContext?.visionIndexKey,state.contextError,state.contextInput?.gameId,state.contextInput?.playerLocale])===JSON.stringify([next?.visionIndexKey,error,nextInput?.gameId,nextInput?.playerLocale])) return {changed:false,gameId:nextInput?.gameId||null,playerLocale:nextInput?.playerLocale||null,error};
+    state.localeContext=next;
+    state.contextInput=nextInput;
+    state.contextError=error;
+    state.generation+=1;
+    state.hoverGeneration+=1;
+    state.loading=false;
+    state.ready=false;
+    state.cards=[];
+    state.refs=[];
+    state.localeSource=null;
+    state.libraryIntegrity=null;
+    state.libraryPerformance=null;
+    state.databaseInfo=null;
+    state.sourceRef=null;
+    state.sourceAssetBase=null;
+    state.matcherWorkerCancelInit?.();
+    state.matcherWorkerCancelInit=null;
+    state.matcherWorker?.terminate?.();
+    state.matcherWorker=null;
+    state.matcherWorkerReady=false;
+    state.matcherWorkerError=null;
+    state.matcherWorkerInitMs=null;
+    failWorkerTasks('vision-context-changed');
+    clearTimeout(state.hoverTimer);
+    clearTimeout(state.temporalRecheckTimer);
+    state.hoveredTrack=null;
+    state.hoverCache.clear();
+    state.identityStability.tracks.clear();
+    state.identityStability.last=null;
+    state.preloadedHdImages.clear();
+    state.visibleIdentity=null;
+    state.imageSwapSeq+=1;
+    if(ui.image){ui.image.removeAttribute('src');delete ui.image.dataset.cardUrl;ui.image.dataset.swapPending='0';ui.image.style.visibility='hidden';}
+    clearCurrentIdentification(error || 'Vision inactive · contexte modifié.');
+    if(ui.image) ui.image.dataset.swapPending='0';
+    setLibraryStatus(error || 'Vision inactive · en attente de préparation.');
+    productStartPromise=null;
+    const detail={changed:true,gameId:nextInput?.gameId||null,playerLocale:nextInput?.playerLocale||null,visionIndexKey:next?.visionIndexKey||null,error};
+    window.dispatchEvent(new CustomEvent('tcg-identification-context',{detail}));
+    return detail;
+  }
+
+  async function startProductIdentification(input) {
+    if(input!==undefined) setContext(input);
+    if (!labProvider && !state.localeContext) return {ready:false,cards:0,workerReady:false,error:state.contextError || 'Vision context unavailable',integrity:null};
+    if (state.ready && state.matcherWorkerReady) return {ready:true,cards:state.refs.length,workerReady:true,integrity:state.libraryIntegrity};
     if (productStartPromise) return productStartPromise;
-
-    productStartPromise=(async()=>{
+    const contextGeneration=state.generation;
+    const promise=(async()=>{
       await buildLibrary(false);
+      // buildLibrary owns one generation; a context switch owns another.
+      if (state.generation!==contextGeneration+1) return {ready:false,cards:0,workerReady:false,cancelled:true,error:'Vision context changed'};
       if (state.ready) await initMatcherWorker();
-
+      if (state.generation!==contextGeneration+1) return {ready:false,cards:0,workerReady:false,cancelled:true,error:'Vision context changed'};
       const detail={
-        ready:Boolean(state.ready),
-        cards:state.refs.length,
-        workerReady:Boolean(state.matcherWorkerReady),
-        error:state.matcherWorkerError || null,
+        ready:Boolean(state.ready),cards:state.refs.length,
+        workerReady:Boolean(state.matcherWorkerReady),error:state.matcherWorkerError || null,
         integrity:state.libraryIntegrity
       };
       window.dispatchEvent(new CustomEvent('tcg-identification-library',{detail}));
       return detail;
-    })().finally(()=>{productStartPromise=null;});
-
-    return productStartPromise;
+    })();
+    productStartPromise=promise;
+    try { return await promise; }
+    finally { if(productStartPromise===promise) productStartPromise=null; }
   }
 
   window.TCGIdentificationLab = {
-    version: '0.2.4-alpha21-full-handoff-dedup-memory-api',
+    version: '1.0.0-vision-locale',
+    setContext,
     start: startProductIdentification,
     preloadImage(image) {
       return preloadHdUrl(hdUrlFromImage(image));
@@ -2501,6 +2501,7 @@ function applyQualityGuard(result,quality) {
     showMemoryIdentity(payload={}) {
       const name=payload.name||null, image=payload.image||null;
       if (!name || !image) return false;
+      if (!labProvider && (!state.ready || !state.cards.some(card=>card.image===image && card.locale===state.localeContext?.playerLocale))) return false;
       const liveUid=state.hoveredTrack?.uid ?? null;
       const targetUid=payload.trackUid ?? null;
       if (liveUid!=null && targetUid!=null && String(liveUid)!==String(targetUid)) return false;
@@ -2524,11 +2525,19 @@ function applyQualityGuard(result,quality) {
     getSnapshot() {
       const result = state.lastResult;
       return {
+        gameId: state.contextInput?.gameId || null,
+        playerLocale: state.contextInput?.playerLocale || null,
+        visionReferenceCount: state.refs.length,
+        visionIndexKey: state.localeContext?.visionIndexKey || null,
+        visionLocales: [...new Set(state.refs.map(ref=>ref.locale).filter(Boolean))],
+        localeError: state.contextError,
         enabled: Boolean(ui.toggle?.checked),
         libraryReady: state.ready,
         librarySize: state.refs.length,
         libraryIntegrity: state.libraryIntegrity,
         database: state.databaseInfo ? {
+          gameId: state.contextInput?.gameId||null,
+          playerLocale: state.contextInput?.playerLocale||null,
           databaseGame: state.databaseInfo.game||null,
           databaseVersion: state.databaseInfo.databaseVersion||null,
           databaseStatus: state.databaseInfo.databaseStatus||null,

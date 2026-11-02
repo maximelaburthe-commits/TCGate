@@ -11,5 +11,12 @@ const html=fs.readFileSync('public/workspace.html','utf8'),ui=fs.readFileSync('p
 assert(html.includes('id="workspaceSidebar"'));assert(html.includes('Production TCGate'));assert(html.includes('id="content-bdd"'));assert(ui.includes('workspace-state/tcgate_workspace_state.json'));
 assert(!/localStorage|setItem|innerHTML|TCGIdentificationLab|TCGVisionEngine/.test(ui),'Cockpit renderer is read-only and independent of the Lab');
 assert(lab.includes("if(button.dataset.tab==='lab'){ensureDetectionRuntime()"));
-const runtime=lab.replace(/\r\n/g,'\n');assert.equal(require('node:crypto').createHash('sha256').update(runtime.slice(runtime.indexOf('  let provider='))).digest('hex'),'91b15804d5c4751a957d91b9875d5e1f67f228d102a4f53df9ee32f29eca1576','Validated camera/detection/identification runtime must stay unchanged for this UI restoration');
+let runtime=lab.replace(/\r\n/g,'\n');
+const localeStart="TCGIdentificationLab.start(provider ? undefined : {gameId:'cyberpunk',playerLocale:window.TCGatePlayerLocale.getPlayerLocale('cyberpunk')})";
+assert.equal(runtime.split(localeStart).length,2,'Production Lab must supply its personal locale explicitly');
+runtime=runtime.replace(localeStart,'TCGIdentificationLab.start()');
+const localeScripts="const identificationScripts=['/database-locale-core.js','/player-locale.js','/vision-locale.js','/vision-library-integrity.js','/identification.js'];";
+assert.equal(runtime.split(localeScripts).length,2,'Production Lab loads the same Locale Core and Player Locale adapters');
+runtime=runtime.replace(localeScripts,"const identificationScripts=['/vision-library-integrity.js','/identification.js'];");
+assert.equal(require('node:crypto').createHash('sha256').update(runtime.slice(runtime.indexOf('  let provider='))).digest('hex'),'91b15804d5c4751a957d91b9875d5e1f67f228d102a4f53df9ee32f29eca1576','Lab camera/detection/UI runtime is identical except explicit locale startup adapters');
 console.log('WORKSPACE_COCKPIT_MODEL_OK · original weighted formula, counters, all category items, read-only source and separate Lab');

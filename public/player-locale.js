@@ -110,7 +110,15 @@
     function setPlayerLocale(gameId, value) {
       const current = context(gameId);
       const normalized = normalize(current, value);
-      if (normalized !== null) write(current.key, normalized);
+      if (normalized !== null) {
+        const previous = normalize(current, read(current.key));
+        write(current.key, normalized);
+        if (previous !== normalized && typeof root?.dispatchEvent === 'function' && typeof root.CustomEvent === 'function') {
+          root.dispatchEvent(new root.CustomEvent('tcgate-player-locale-change', {
+            detail: { gameId: current.descriptor.gameId, playerLocale: normalized }
+          }));
+        }
+      }
       return normalized;
     }
 

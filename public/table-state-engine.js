@@ -902,12 +902,17 @@
 
   function initWorker(refs) {
     if (!Array.isArray(refs) || !refs.length) return false;
+    // A second start/library event must not create another worker while the
+    // current corpus is still being initialized. Failed workers may be retried.
+    if (state.worker && !state.workerError) return true;
     try {
+      try { state.worker?.terminate?.(); } catch {}
       const worker = bridge.createNativeWorker(WORKER_URL);
       state.worker = worker;
       state.workerReady = false;
       state.workerError = null;
       worker.onmessage = (event) => {
+        if (state.worker !== worker || !state.started) return;
         const msg = event.data || {};
         if (msg.type === 'ready') {
           state.workerReady = true;
@@ -920,6 +925,7 @@
         if (msg.type === 'match-result' || msg.type === 'match-error') onMatchResult(msg);
       };
       worker.onerror = (event) => {
+        if (state.worker !== worker || !state.started) return;
         state.workerReady = false;
         state.workerError = event.message || 'Erreur worker Table State';
         log('table-worker-error', { error: state.workerError });
@@ -935,18 +941,23 @@
 
   async function start() {
     if (state.started && state.workerReady) return getSnapshot();
+    const generation = state.generation;
     state.started = true;
     const refs = bridge.getRefs();
     if (refs?.length) initWorker(refs);
-    else {
+    else if (!state.worker) {
       const deadline = now() + 15000;
-      while (!state.worker && !bridge.getRefs()?.length && now() < deadline) {
+      while (state.started && generation === state.generation && !state.worker && !bridge.getRefs()?.length && now() < deadline) {
         await new Promise(resolve => setTimeout(resolve, 50));
       }
+      // A scope change can stop this wait while a new corpus is being loaded.
+      // Never let the old start consume references captured for the new scope.
+      if (!state.started || generation !== state.generation) return getSnapshot();
       const captured = bridge.getRefs();
       if (!state.worker && captured?.length) initWorker(captured);
       if (!state.worker) state.workerError = 'Références visuelles non interceptées.';
     }
+    if (!state.started || generation !== state.generation) return getSnapshot();
     emitUpdate('start');
     return getSnapshot();
   }
@@ -980,11 +991,16 @@
   }
 
   function stop() {
-    reset('stop');
-    try { state.worker?.terminate?.(); } catch {}
+    const worker = state.worker;
     state.worker = null;
     state.workerReady = false;
     state.started = false;
+    state.workerError = null;
+    state.currentRequest = null;
+    state.workerBusy = false;
+    try { worker?.terminate?.(); } catch {}
+    bridge.releaseRefs();
+    reset('stop');
   }
 
   function stagePoint(event) {

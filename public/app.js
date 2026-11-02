@@ -141,6 +141,9 @@ const state = {
   visionAssetsError: null,
   visionPrepared: false,
   visionPreparing: false,
+  visionContextKey: null,
+  visionPreparationId: 0,
+  visionPreparationPromise: null,
   visionAttachedStreamId: null,
   visionMetricsTimer: null,
   visionResumeToken: 0,
@@ -674,6 +677,7 @@ function setVisionStateStatus(snapshot=null) {
 const VISION_ASSETS = [
   '/game-databases.js',
   '/database-source.js',
+  '/vision-locale.js',
   '/vision-library-integrity.js',
   '/vision-frame-gate.js',
   '/vision-analysis-frame.js',
@@ -1419,7 +1423,10 @@ async function ensureVisionAssets() {
   const startedAt = performance.now();
   logEvent('vision-assets-load-start', { game: state.game });
   try {
-    for (const src of VISION_ASSETS) await loadScript(src);
+    for (const src of VISION_ASSETS) {
+      if (!visionEnabledForCurrentGame()) return false;
+      await loadScript(src);
+    }
     state.visionAssetsLoaded = true;
     logEvent('vision-assets-load-end', { durationMs: Math.round(performance.now() - startedAt), count: VISION_ASSETS.length });
     return true;
@@ -1434,6 +1441,7 @@ async function ensureVisionAssets() {
 
 function applyGameModeUi() {
   const visionEnabled = visionEnabledForCurrentGame();
+  if (state.visionContextKey && state.visionContextKey !== visionPairKey(currentVisionContext())) detachVision();
   screens.game?.classList.toggle('no-vision-mode', !visionEnabled);
   $('lobbyGameLabel').textContent = gameLabel();
   $('gameTitle').textContent = state.game === 'cyberpunk' ? 'Cyberpunk TCG' : 'Sans jeu';
@@ -1447,69 +1455,99 @@ function applyGameModeUi() {
   }
 }
 
+function currentVisionContext() {
+  if (!visionEnabledForCurrentGame()) return null;
+  const playerLocale = window.TCGatePlayerLocale?.getPlayerLocale?.(state.game);
+  return playerLocale ? { gameId: state.game, playerLocale } : null;
+}
+
+function visionPairKey(context) {
+  return context ? JSON.stringify([context.gameId, context.playerLocale]) : null;
+}
+
 async function prepareVision() {
-  if(!visionEnabledForCurrentGame() || state.visionPrepared || state.visionPreparing) return;
-  state.visionPreparing=true;
-  setVisionStatus('Vision : chargement…','warning');
-  logEvent('vision-prepare-start');
-
-  try{
-    await ensureVisionAssets();
-    const [detector,identifier]=await Promise.allSettled([
+  const context = currentVisionContext(), key = visionPairKey(context);
+  if (!context) {
+    if (state.visionContextKey) detachVision();
+    return false;
+  }
+  if (state.visionContextKey === key) {
+    if (state.visionPrepared) return true;
+    if (state.visionPreparationPromise) return state.visionPreparationPromise;
+  } else {
+    detachVision();
+    state.visionContextKey = key;
+  }
+  const generation = state.visionPreparationId;
+  const current = () => generation === state.visionPreparationId && key === visionPairKey(currentVisionContext());
+  state.visionPreparing = true;
+  setVisionStatus('Vision : chargement…', 'warning');
+  logEvent('vision-prepare-start', context);
+  const pending = (async () => {
+    if (!await ensureVisionAssets() || !current()) return false;
+    window.TCGIdentificationLab?.setContext?.(context);
+    const [detector, identifier] = await Promise.allSettled([
       window.TCGVisionEngine?.preload?.(),
-      window.TCGIdentificationLab?.start?.()
+      window.TCGIdentificationLab?.start?.(context)
     ]);
-
-    const detOk=detector.status==='fulfilled' && detector.value?.ready;
-    const idOk=identifier.status==='fulfilled' && identifier.value?.ready;
-    const libraryIntegrity=identifier.status==='fulfilled' ? identifier.value?.integrity || null : null;
-
-    let tableState=null;
-    if(detOk && idOk && window.TCGTableStateEngine){
+    if (!current()) return false;
+    const detOk = detector.status === 'fulfilled' && detector.value?.ready;
+    const idOk = identifier.status === 'fulfilled' && identifier.value?.ready;
+    const libraryIntegrity = identifier.status === 'fulfilled' ? identifier.value?.integrity || null : null;
+    let tableState = null;
+    if (detOk && idOk && window.TCGTableStateEngine) {
       try {
-        tableState=await window.TCGTableStateEngine.start?.();
-        state.visionStateReady=Boolean(tableState?.workerReady);
+        tableState = await window.TCGTableStateEngine.start?.();
+        if (!current()) return false;
+        state.visionStateReady = Boolean(tableState?.workerReady);
         setVisionStateStatus(tableState);
-      } catch(err) {
-        state.visionStateReady=false;
-        setVisionStateStatus({workerError:err?.message||String(err)});
-        logEvent('vision-state-start-error',{name:err?.name||null,message:err?.message||String(err)});
+      } catch (err) {
+        if (!current()) return false;
+        state.visionStateReady = false;
+        setVisionStateStatus({ workerError: err?.message || String(err) });
+        logEvent('vision-state-start-error', { name: err?.name || null, message: err?.message || String(err) });
       }
     }
-
-    state.visionPrepared=Boolean(detOk && idOk);
-
-    logEvent('vision-library-integrity',libraryIntegrity || {
-      sourceReferences:0,
-      loadedReferences:identifier.value?.cards||0,
-      failedReferences:0,
-      cacheStatus:'unknown',
-      degraded:true,
-      reason:'integrity-diagnostics-unavailable'
+    if (!current()) return false;
+    state.visionPrepared = Boolean(detOk && idOk);
+    logEvent('vision-library-integrity', libraryIntegrity || {
+      sourceReferences: 0, loadedReferences: identifier.value?.cards || 0,
+      failedReferences: 0, cacheStatus: 'unknown', degraded: true,
+      reason: 'integrity-diagnostics-unavailable'
     });
-
-    if(state.visionPrepared){
-      setVisionStatus(`Vision : prête · ${identifier.value?.cards || 0} cartes`,'good');
-    }else{
-      setVisionStatus('Vision : préparation partielle','warning');
+    setVisionStatus(state.visionPrepared ? 'Vision : prête' : 'Vision : préparation partielle', state.visionPrepared ? 'good' : 'warning');
+    logEvent('vision-prepare-end', {
+      ...context, detector: detector.status, detectorReady: Boolean(detector.value?.ready),
+      provider: detector.value?.provider || null, identification: identifier.status,
+      identificationReady: Boolean(identifier.value?.ready), cards: identifier.value?.cards || 0,
+      libraryIntegrity, tableStateReady: Boolean(tableState?.workerReady), tableStateVersion: tableState?.version || null
+    });
+    return state.visionPrepared;
+  })().catch(err => {
+    if (current()) {
+      setVisionStatus('Vision : erreur', 'error');
+      logEvent('vision-prepare-error', { name: err?.name || null, message: err?.message || String(err) });
     }
+    return false;
+  }).finally(() => {
+    if (state.visionPreparationPromise === pending) {
+      state.visionPreparing = false;
+      state.visionPreparationPromise = null;
+    }
+  });
+  state.visionPreparationPromise = pending;
+  return pending;
+}
 
-    logEvent('vision-prepare-end',{
-      detector:detector.status,
-      detectorReady:Boolean(detector.value?.ready),
-      provider:detector.value?.provider || null,
-      identification:identifier.status,
-      identificationReady:Boolean(identifier.value?.ready),
-      cards:identifier.value?.cards || 0,
-      libraryIntegrity,
-      tableStateReady:Boolean(tableState?.workerReady),
-      tableStateVersion:tableState?.version || null
+function refreshPersonalVision() {
+  const key = visionPairKey(currentVisionContext());
+  if (key === state.visionContextKey) return;
+  const needed = Boolean(state.visionContextKey || state.opponentPresent || state.gameActive);
+  detachVision();
+  if (needed && key && state.roomCode) {
+    prepareVision().then(ready => {
+      if (ready && state.gameActive && state.remoteStream) attachVisionToRemoteStream(state.remoteStream);
     });
-  }catch(err){
-    setVisionStatus('Vision : erreur','error');
-    logEvent('vision-prepare-error',{name:err?.name||null,message:err?.message||String(err)});
-  }finally{
-    state.visionPreparing=false;
   }
 }
 
@@ -1520,11 +1558,18 @@ async function attachVisionToRemoteStream(stream) {
   const key=`${stream.id}:${videoTrack.id}`;
   if(state.visionAttachedStreamId===key) return;
 
-  state.visionAttachedStreamId=key;
-
+  let generation, contextKey;
+  const current = () => generation === state.visionPreparationId && contextKey === state.visionContextKey &&
+    contextKey === visionPairKey(currentVisionContext()) && state.visionPrepared && visionEnabledForCurrentGame();
   try{
-    await prepareVision();
+    const preparation = prepareVision();
+    generation = state.visionPreparationId;
+    contextKey = state.visionContextKey;
+    if (!await preparation || !current()) return;
+    state.visionAttachedStreamId=key;
     await window.TCGVisionEngine?.attachRemoteStream?.(stream);
+    if (!visionEnabledForCurrentGame()) { window.TCGVisionEngine?.detachRemoteStream?.(); return; }
+    if (!current()) return;
     const remoteCameraOff = state.remoteMediaState.cameraEnabled === false;
     if (remoteCameraOff) {
       window.TCGVisionEngine?.setInputPaused?.(true, 'remote-camera-off');
@@ -1535,9 +1580,11 @@ async function attachVisionToRemoteStream(stream) {
         const before=window.TCGTableStateEngine.getSnapshot?.();
         if(before?.started) window.TCGTableStateEngine.reset?.('restart');
         const table=await window.TCGTableStateEngine.start?.();
+        if (!current()) return;
         state.visionStateReady=Boolean(table?.workerReady);
         setVisionStateStatus(table);
       } catch(err) {
+        if (!current()) return;
         logEvent('vision-state-attach-error',{name:err?.name||null,message:err?.message||String(err)});
       }
     }
@@ -1553,12 +1600,19 @@ async function attachVisionToRemoteStream(stream) {
     startVisionMetricsSampler();
     logEvent('vision-attached',{streamId:stream.id,videoTrack:videoTrack.label||null});
   }catch(err){
+    if (!current()) return;
     setVisionStatus('Vision : erreur','error');
     logEvent('vision-attach-error',{name:err?.name||null,message:err?.message||String(err)});
   }
 }
 
 function detachVision() {
+  state.visionPreparationId += 1;
+  state.visionPrepared = false;
+  state.visionPreparing = false;
+  state.visionPreparationPromise = null;
+  state.visionContextKey = null;
+  window.TCGIdentificationLab?.setContext?.(null);
   state.visionResumeToken += 1;
   clearInterval(state.visionMetricsTimer);
   state.visionMetricsTimer=null;
@@ -1570,7 +1624,8 @@ function detachVision() {
 
   window.TCGVisionCalibration?.stop?.();
   window.TCGVisionEngine?.detachRemoteStream?.();
-  window.TCGTableStateEngine?.reset?.('restart');
+  window.TCGTableStateEngine?.stop?.();
+  window.TCGTableStateBridge?.releaseRefs?.();
   state.visionStateReady=false;
 
   setVisionStatus('Vision : attente');
@@ -1603,6 +1658,10 @@ function startVisionMetricsSampler() {
         filters:detection.filters
       }:null,
       identification:identification?{
+        gameId:identification.gameId,
+        playerLocale:identification.playerLocale,
+        visionReferenceCount:identification.visionReferenceCount,
+        visionIndexKey:identification.visionIndexKey,
         libraryReady:identification.libraryReady,
         librarySize:identification.librarySize,
         libraryIntegrity:identification.libraryIntegrity || null,
@@ -5126,6 +5185,23 @@ window.addEventListener('tcg-vision-geometry',(event)=>{
   },900);
 });
 
+window.addEventListener('tcgate-player-locale-change', refreshPersonalVision);
+window.addEventListener('storage', event => {
+  if (event.key === null || event.key === window.TCGatePlayerLocale?.getStorageKey?.(state.game)) refreshPersonalVision();
+});
+window.addEventListener('tcg-identification-context', () => {
+  window.TCGTableStateEngine?.stop?.();
+  window.TCGTableStateBridge?.releaseRefs?.();
+  state.visionPrepared = false;
+  state.visionStateReady = false;
+  state.currentIdentifiedCard = null;
+  state.lastIdentificationEventKey = null;
+  cancelCardDisplayHide();
+  hideFullscreenIdentifiedCard();
+  hideSideIdentifiedCard();
+  setVisionStateStatus(null);
+});
+
 window.addEventListener('tcg-identification-result',(event)=>{
   syncIdentifiedCardUi(event.detail || {});
 });
@@ -5159,12 +5235,12 @@ window.addEventListener('tcg-calibration-updated',(event)=>{
 
 window.addEventListener('tcg-vision-state',(event)=>{
   const d=event.detail || {};
-  if(d.active) setVisionStatus(`Vision : active · ${d.provider || 'moteur'}`,'good');
+  if(d.active && state.visionPrepared) setVisionStatus(`Vision : active · ${d.provider || 'moteur'}`,'good');
 });
 
 window.addEventListener('tcg-identification-library',(event)=>{
   const d=event.detail || {};
-  if(d.ready) setVisionStatus(`Vision : prête · ${d.cards || 0} cartes`,'good');
+  if(d.ready && state.visionContextKey === visionPairKey(currentVisionContext())) setVisionStatus('Vision : prête','good');
 });
 
 window.addEventListener('tcg-table-state-updated',(event)=>{

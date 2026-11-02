@@ -55,14 +55,15 @@ for(const token of ['resume-session-card','game-device-menu','max-height: 820px'
   if(!css.includes(token)) throw new Error(`Missing current CSS token ${token}`);
 }
 
-// Preserve the frozen no-provider production source hash; verify the explicit Lab-only hook separately.
-const hash=f=>{const bytes=fs.readFileSync(f);return crypto.createHash('sha256').update(f==='public/identification.js'?require('./workspace-production-contract.js').productionIdentification(bytes):bytes).digest('hex');};
+// Freeze detector/model bytes and all pre-Jalon-4 recognition functions/constants.
+// Only corpus adapters and worker lifecycle are covered by the locale-specific tests.
+const hash=f=>{const bytes=fs.readFileSync(f);return crypto.createHash('sha256').update(f==='public/identification.js'?require('./workspace-production-contract.js').productionIdentification(bytes):f==='public/table-state-engine.js'?require('./workspace-production-contract.js').productionTableState(bytes):bytes).digest('hex');};
 const expected={
   'models/card_detector_v53_512.onnx':'2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319',
   'public/detection-worker.js':'19d0e72eeb620f23742a9b8fe321f700c45cbd29ad41b952d115bca5fd983227',
-  'public/table-state-engine.js':'59c7bf98827abb69eba68e685377dde0ef46bff8349d53238a14ba6ea7b4c1f3',
+  'public/table-state-engine.js':'0b7c8c813bac73f528b9938a9cc2aae9c1bd2fcdc81dfc4748d940f2e795fcb3',
   'public/vision-core.js':'f3cbd789476c92f86dd25292a67a0d0e96eee9888584a867c841b3b61e8650d1',
-  'public/identification.js':'fa3b700ffd19f9726e5fe1b24c6f1bc56fd30de7f9ff0a813fdf986920028b15'
+  'public/identification.js':'e5593e42a8dfd60a4d81850fb76c518c4212302906a1cd655fb3901cf9e18071'
 };
 for(const [file,want] of Object.entries(expected)) if(hash(file)!==want) throw new Error(`Vision baseline changed: ${file}`);
 

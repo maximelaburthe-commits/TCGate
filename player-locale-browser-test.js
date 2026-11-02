@@ -173,7 +173,7 @@ async function main() {
     await prod.locator('#playerLocaleSelect').focus(); await prod.keyboard.press('Shift+Tab'); await prod.keyboard.press('Tab');
     check(await prod.locator('#playerLocaleSelect').evaluate(element => document.activeElement === element && getComputedStyle(element).outlineStyle !== 'none' && parseFloat(getComputedStyle(element).outlineWidth) > 0), 'Native language select supports keyboard navigation with a visible focus ring');
     await media(prod); await responsive(prod, 'Production'); await leave(prod);
-    step('Explicit bilingual test fixture: independent Host / Guest and unchanged active corpus');
+    step('Explicit bilingual test fixture: independent Host / Guest and unchanged raw database source');
     const hostFixture = await makeContext(browser, fixture.origin, documents, { value: 'bilingual' }), guestFixture = await makeContext(browser, fixture.origin, documents, { value: 'bilingual' }); contexts.push(hostFixture.ctx, guestFixture.ctx);
     let host = hostFixture.page; const guest = guestFixture.page;
     const code = await create(host); await localeControl(host, 'en', ['en', 'fr']);
@@ -191,7 +191,7 @@ async function main() {
     await guest.locator('#playerLocaleSelect').selectOption('en'); await host.locator('#playerLocaleSelect').selectOption('fr');
     equal(await snapshot(host), roomBefore, 'Locale changes do not mutate shared game, timer, Gig or Ready');
     equal(observations.requests.filter(request => request.method !== 'GET').length, postsBefore, 'Locale changes issue no HTTP mutation');
-    check(await host.evaluate(async () => (await TCGateDatabaseSource.load('cyberpunk')) === window.__localeActiveDatabase && JSON.stringify(window.__localeActiveDatabase) === window.__localeActiveSnapshot), 'Selecting FR neither filters nor mutates the active EN Vision corpus');
+    check(await host.evaluate(async () => (await TCGateDatabaseSource.load('cyberpunk')) === window.__localeActiveDatabase && JSON.stringify(window.__localeActiveDatabase) === window.__localeActiveSnapshot), 'Selecting FR does not mutate the shared raw database source; Vision consumes a separate locale projection');
     await Promise.all([media(host), media(guest)]);
     await responsive(host, 'Host'); await responsive(guest, 'Guest');
     step('Locale changes preserve live media and the opponent Ready state');
@@ -253,7 +253,7 @@ async function main() {
     const signals = observations.requests.filter(request => request.path === '/api/signal').map(request => request.body?.type);
     check(['offer', 'answer', 'candidate'].every(type => signals.includes(type)), 'Real WebRTC offer / answer / ICE crossed the server');
     equal(observations.errors, [], 'No uncaught browser error'); equal(fixture.requests.length, 0, 'No report email is sent');
-    console.log('PLAYER_LOCALE_BROWSER_OK ' + JSON.stringify({ assertions, browser: browser.version(), production: 'EN ONLY', bilingualDescriptor: 'TEST FIXTURE ONLY', persisted: ['F5', 'Lobby reopen', 'new Room'], viewports: [1366, 560, 390], realRoomSseWebRtc: true, syntheticCameraAudio: true, physicalDevicesQualified: false, visionCorpus: '150 / 229 / 83 exact / 146 shared unchanged', visionFiltering: 'NOT IMPLEMENTED', screenshots: observations.screenshots, elapsedSeconds: Math.round((Date.now() - started) / 1000) }));
+    console.log('PLAYER_LOCALE_BROWSER_OK ' + JSON.stringify({ assertions, browser: browser.version(), production: 'EN ONLY', bilingualDescriptor: 'TEST FIXTURE ONLY', persisted: ['F5', 'Lobby reopen', 'new Room'], viewports: [1366, 560, 390], realRoomSseWebRtc: true, syntheticCameraAudio: true, physicalDevicesQualified: false, visionCorpus: '150 / 229 / 83 exact / 146 shared unchanged', visionFiltering: 'COVERED BY VISION LOCALE SUITES', screenshots: observations.screenshots, elapsedSeconds: Math.round((Date.now() - started) / 1000) }));
   } finally { await Promise.allSettled(contexts.map(ctx => ctx.close())); await browser?.close(); await fixture.close(); }
 }
 main().catch(error => { console.error('PLAYER_LOCALE_BROWSER_FAILURE phase=' + phase + '\n' + error.stack); process.exitCode = 1; });
