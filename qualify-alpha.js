@@ -15,6 +15,7 @@ const suites = [
   ['player-locale-test.js'],
   ['vision-locale-test.js'],
   ['cyberpunk-languages-qualification-test.js'],
+  ['vision-qualification-1.0-test.js'],
   ['future-ux-v3.7-test.js'], ['future-ux-room-metadata-test.js'], ['smoke-test-ui-integration.js'],
   ['phone-camera-test.js'], ['phone-camera-diagnostics-test.js'], ['phone-consolidation-1.2c-test.js'],
   ['vision-integrity-test.js'], ['vision-source-provenance-test.js'], ['vision-backpressure-test.js'],
@@ -27,7 +28,7 @@ const suites = [
   ['report-email-browser-test.js'], ['phone-consolidation-1.2c-browser-test.js'],
   ['workspace-browser-test.js'], ['workspace-camera-browser-test.js'],
   ['workspace-cockpit-browser-test.js'], ['workspace-maintenance-journal-browser-test.js'],
-  ['database-locale-core-browser-test.js'], ['site-ui-2.0-browser-test.js'], ['player-locale-browser-test.js'], ['vision-locale-browser-test.js']
+  ['database-locale-core-browser-test.js'], ['site-ui-2.0-browser-test.js'], ['player-locale-browser-test.js'], ['vision-locale-browser-test.js'], ['vision-qualification-1.0-browser-test.js']
 ];
 
 function main() {
@@ -64,6 +65,13 @@ function main() {
   env.TCGATE_ICE_TRANSPORT_POLICY = 'all';
   env.WORKSPACE_SCREENSHOT_DIR = path.join(output, 'screenshots');
   fs.mkdirSync(env.WORKSPACE_SCREENSHOT_DIR);
+  env.VISION_QUALIFICATION_ARTIFACT_DIR = output;
+  delete env.TCGATE_VISION_QUALIFICATION_TEST_MODULE;
+  delete env.TCGATE_VISION_QUALIFICATION_RUNTIME_SCRIPT;
+  delete env.TCGATE_VISION_QUALIFICATION_HARNESS_SCRIPT;
+  delete env.VISION_QUALIFICATION_TEST_ROOT;
+  delete env.VISION_QUALIFICATION_HARNESS_PATH;
+  delete env.VISION_QUALIFICATION_RUNTIME_PATH;
   env.CANDIDATE_GIG_AUDIT_PATH = path.join(output, 'gig-audit.json');
   const preload = path.join(root, 'qualification-assert-count.js').split(path.sep).join('/');
   env.NODE_OPTIONS = '--require="' + preload + '"';
@@ -92,6 +100,7 @@ function main() {
   try {
     for (const suite of manifest) run(suite.file, process.execPath, suite.args, true);
     run('npm run check (node check.js)', process.execPath, ['check.js'], false);
+    run('Vision Qualification pending report', process.execPath, ['qualify-vision-1.0.js', '--template', '--validation-receipt', path.join(output, 'qualification.json'), '--index-input', path.join(output, 'vision-qualification-index-measurements.json'), '--output', path.join(output, 'vision-qualification-1.0.json')], false);
     run('git diff --check HEAD^ HEAD', 'git', ['diff', '--check', 'HEAD^', 'HEAD'], false);
     if (git(['rev-parse', 'HEAD']) !== sha || git(['status', '--porcelain=v1'])) throw Error('Source changed during qualification');
     receipt.status = 'PASS';

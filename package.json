@@ -43,7 +43,9 @@
     "test:project-hygiene": "node project-hygiene-1.2d-test.js",
     "test:turn-cache": "node turn-cache-test.js",
     "test:candidate-15-browser": "node candidate-15-browser-test.js",
-    "qualify:alpha": "node qualify-alpha.js"
+    "qualify:alpha": "node qualify-alpha.js",
+    "qualify:vision": "node qualify-vision-1.0.js",
+    "test:vision-qualification": "node vision-qualification-1.0-test.js && node vision-qualification-1.0-browser-test.js"
   },
   "engines": {
     "node": ">=20"

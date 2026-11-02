@@ -1,0 +1,2903 @@
+{
+  "schemaVersion": "1.0",
+  "status": "RECOMMENDED_SAMPLE_NOT_PHYSICALLY_TESTED",
+  "gameId": "cyberpunk",
+  "locale": "en",
+  "databaseSha": "56402636a77af9c8b5dc4e3b61c509a185f3c834",
+  "productBaselineSha": "7baeb9844ac8a2a68b2c5a38011003514bab5f98",
+  "referenceCount": 229,
+  "canonicalCardCount": 150,
+  "sampleCount": 15,
+  "distinctCanonicalCards": 15,
+  "localeEvidence": "Active legacy Cyberpunk beta scope is normalized as EN by the pinned Locale Core contract. Raw legacy runtime records omit locale; no FR reference is inferred or introduced.",
+  "selectionMethod": {
+    "algorithm": "deterministic-diversity-v1",
+    "steps": [
+      "For Gear, Legend, Program and Unit, choose shortest and longest rulesText, tie-break cardId.",
+      "Choose the darkest remaining Red and Blue representatives and brightest remaining Yellow and Green representatives by central-image luminance.",
+      "Choose the closest cross-card pair among remaining representatives by RGB proxy MSE.",
+      "Choose the remaining card with the largest active printing group, tie-break cardId."
+    ],
+    "representative": "For each card select a standard active printing first, then printingId lexical order. This never substitutes a retail edition outside the active beta scope.",
+    "imageAnalysis": {
+      "source": "Unmodified active source Vision WEBP assets; SHA-256 checked for all 229 profiles.",
+      "decode": "Chromium canvas image decode; no product code or matcher changes.",
+      "resizedMeasurementGrid": {
+        "width": 20,
+        "height": 30
+      },
+      "measuredWindow": {
+        "xStart": 2,
+        "xEndExclusive": 18,
+        "yStart": 5,
+        "yEndExclusive": 20
+      },
+      "luminance": "Mean (0.2126 R + 0.7152 G + 0.0722 B) / 255 in the measured window.",
+      "similarity": "Mean squared difference over RGB values scaled to [0,1] in the same window; a selection proxy only, not a Vision matcher score.",
+      "limitations": "The fixed central-image window is an illustration proxy, not a manually segmented artwork mask. Frame/color labels and text lengths come directly from source records. Physical lighting, glare and recognition performance are unknown."
+    },
+    "profileCutoffs": {
+      "rulesTextCharacters": {
+        "p25": 79,
+        "p75": 144
+      },
+      "centralArtworkLuminance": {
+        "p25": 0.22528595751633987,
+        "p75": 0.3535233692810457
+      }
+    }
+  },
+  "sample": [
+    {
+      "sampleId": "S01",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-mantis-blades",
+      "printingId": "cpp-03290e8752e5e383",
+      "name": "Mantis Blades",
+      "selectionReason": "Shortest rulesText among active Gear cards (66 characters).",
+      "profile": {
+        "type": "Gear",
+        "color": "Red",
+        "textProfile": "LOW",
+        "brightnessProfile": "MID",
+        "cost": 1,
+        "rulesTextCharacters": 66,
+        "centralArtworkLuminance": 0.312755,
+        "centralArtworkMeanRgb": [
+          88.4125,
+          77.083333,
+          80.691667
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "wtnc-beta",
+        "number": "β025",
+        "variantKind": "standard",
+        "referenceId": "cpvi-03290e8752e5e383",
+        "recognitionGroupId": "cprg-d55ce160cf0c0a91",
+        "recognitionMode": "shared",
+        "candidatePrintingIds": [
+          "cpp-03290e8752e5e383",
+          "cpp-4f35243029829892",
+          "cpp-ccf12e0d6e534d86"
+        ],
+        "visionAssetPath": "assets/vision/cpp-03290e8752e5e383.webp",
+        "visionSha256": "bbdf7583c0ecc1270ae704f4412383a39344cc585fdd6be5fb6f9d13f2ff60af"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "type": "Gear",
+          "textWithinType": "LOW",
+          "rulesTextCutoffs": {
+            "p25": 103,
+            "p75": 169
+          }
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-netwatch-netdriver",
+            "printingId": "cpp-7634b1121bed0285",
+            "name": "NetWatch Netdriver",
+            "type": "Gear",
+            "color": "Blue",
+            "rulesTextCharacters": 88,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-sandevistan",
+            "printingId": "cpp-6f91a3cb589a8e82",
+            "name": "Sandevistan",
+            "type": "Gear",
+            "color": "Green",
+            "rulesTextCharacters": 97,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-satori-sword-of-saburo",
+            "printingId": "cpp-6018ea30af7a9b53",
+            "name": "Satori: Sword of Saburo",
+            "type": "Gear",
+            "color": "Red",
+            "rulesTextCharacters": 103,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-the-relic-experimental-biochip",
+            "printingId": "cpp-b0829ed52b2b5105",
+            "name": "The Relic: Experimental Biochip",
+            "type": "Gear",
+            "color": "Yellow",
+            "rulesTextCharacters": 103,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-zetatech-berserk",
+            "printingId": "cpp-dd949a8fa8078e33",
+            "name": "Zetatech Berserk",
+            "type": "Gear",
+            "color": "Green",
+            "rulesTextCharacters": 80,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S02",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-arasaka-emergency-radioport",
+      "printingId": "cpp-bb5b599fe74859d8",
+      "name": "Arasaka Emergency Radioport",
+      "selectionReason": "Longest rulesText among active Gear cards (239 characters).",
+      "profile": {
+        "type": "Gear",
+        "color": "Red",
+        "textProfile": "HIGH",
+        "brightnessProfile": "MID",
+        "cost": 2,
+        "rulesTextCharacters": 239,
+        "centralArtworkLuminance": 0.254771,
+        "centralArtworkMeanRgb": [
+          80.054167,
+          60.025,
+          69.491667
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "wtnc-beta",
+        "number": "β023",
+        "variantKind": "standard",
+        "referenceId": "cpvi-bb5b599fe74859d8",
+        "recognitionGroupId": "cprg-412deeac386344e8",
+        "recognitionMode": "shared",
+        "candidatePrintingIds": [
+          "cpp-bb5b599fe74859d8",
+          "cpp-d5439afadfbc53e0"
+        ],
+        "visionAssetPath": "assets/vision/cpp-bb5b599fe74859d8.webp",
+        "visionSha256": "16de232abba15dacbf81b5730396c1f36267955e3dd263c197259a9341db7bb2"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "type": "Gear",
+          "textWithinType": "HIGH",
+          "rulesTextCutoffs": {
+            "p25": 103,
+            "p75": 169
+          }
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-adrenaline-converter",
+            "printingId": "cpp-847b9c89f75480ec",
+            "name": "Adrenaline Converter",
+            "type": "Gear",
+            "color": "Yellow",
+            "rulesTextCharacters": 169,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-riot-shield",
+            "printingId": "cpp-360da0311dc9267a",
+            "name": "Riot Shield",
+            "type": "Gear",
+            "color": "Green",
+            "rulesTextCharacters": 170,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-tetratronic-rippler",
+            "printingId": "cpp-2d0127808363b0ca",
+            "name": "Tetratronic Rippler",
+            "type": "Gear",
+            "color": "Blue",
+            "rulesTextCharacters": 178,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-zetatech-faceplate",
+            "printingId": "cpp-b3a0a4a14f46206e",
+            "name": "Zetatech Faceplate",
+            "type": "Gear",
+            "color": "Yellow",
+            "rulesTextCharacters": 172,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S03",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-saburo-arasaka-stubborn-patriarch",
+      "printingId": "cpp-08f3a3d838a0b4fb",
+      "name": "Saburo Arasaka: Stubborn Patriarch",
+      "selectionReason": "Shortest rulesText among active Legend cards (100 characters).",
+      "profile": {
+        "type": "Legend",
+        "color": "Green",
+        "textProfile": "MID",
+        "brightnessProfile": "MID",
+        "cost": null,
+        "rulesTextCharacters": 100,
+        "centralArtworkLuminance": 0.255403,
+        "centralArtworkMeanRgb": [
+          79.791667,
+          62.7375,
+          45.625
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "embracing-power-beta",
+        "number": "β013",
+        "variantKind": "standard",
+        "referenceId": "cpvi-08f3a3d838a0b4fb",
+        "recognitionGroupId": "cprg-053400ce40ad9a3a",
+        "recognitionMode": "shared",
+        "candidatePrintingIds": [
+          "cpp-08f3a3d838a0b4fb",
+          "cpp-cbc69702ebbaf489"
+        ],
+        "visionAssetPath": "assets/vision/cpp-08f3a3d838a0b4fb.webp",
+        "visionSha256": "2db7ba6bfd798a0872f99351aaea112e554440d0fd1b64eaf82c1013cd2963c5"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "type": "Legend",
+          "textWithinType": "LOW",
+          "rulesTextCutoffs": {
+            "p25": 124,
+            "p75": 196
+          }
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-alt-cunningham-soulkiller-architect",
+            "printingId": "cpp-92a25d343e3eef9d",
+            "name": "Alt Cunningham: Soulkiller Architect",
+            "type": "Legend",
+            "color": "Blue",
+            "rulesTextCharacters": 105,
+            "brightnessProfile": "LOW",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-dexter-deshawn-off-the-grid",
+            "printingId": "cpp-88020317eb7d199d",
+            "name": "Dexter DeShawn: Off the Grid",
+            "type": "Legend",
+            "color": "Red",
+            "rulesTextCharacters": 113,
+            "brightnessProfile": "LOW",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-hanako-arasaka-daughter-of-the-emperor",
+            "printingId": "cpp-ba1cc3b3a71434af",
+            "name": "Hanako Arasaka: Daughter of the Emperor",
+            "type": "Legend",
+            "color": "Green",
+            "rulesTextCharacters": 117,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-muamar-reyes-el-capitan",
+            "printingId": "cpp-5d7b2b63624ae8d0",
+            "name": "Muamar Reyes: El Capitán",
+            "type": "Legend",
+            "color": "Yellow",
+            "rulesTextCharacters": 119,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-wakako-okada-peace-and-harmony",
+            "printingId": "cpp-aa00bc6d3d741dc6",
+            "name": "Wakako Okada: Peace and Harmony",
+            "type": "Legend",
+            "color": "Blue",
+            "rulesTextCharacters": 110,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-yorinobu-arasaka-embracing-destruction",
+            "printingId": "cpp-74b0f20818534d83",
+            "name": "Yorinobu Arasaka: Embracing Destruction",
+            "type": "Legend",
+            "color": "Red",
+            "rulesTextCharacters": 124,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S04",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-jackie-welles-mama-s-favorite",
+      "printingId": "cpp-94790158e46c6bb8",
+      "name": "Jackie Welles: Mama's Favorite",
+      "selectionReason": "Longest rulesText among active Legend cards (251 characters).",
+      "profile": {
+        "type": "Legend",
+        "color": "Green",
+        "textProfile": "HIGH",
+        "brightnessProfile": "MID",
+        "cost": 6,
+        "rulesTextCharacters": 251,
+        "centralArtworkLuminance": 0.321519,
+        "centralArtworkMeanRgb": [
+          122.779167,
+          74.75,
+          33.5625
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "wtnc-beta",
+        "number": "β073",
+        "variantKind": "standard",
+        "referenceId": "cpvi-94790158e46c6bb8",
+        "recognitionGroupId": "cprg-d6c10325a86aac21",
+        "recognitionMode": "shared",
+        "candidatePrintingIds": [
+          "cpp-71e72a5d41466c21",
+          "cpp-94790158e46c6bb8",
+          "cpp-fedbde99d7cbf053"
+        ],
+        "visionAssetPath": "assets/vision/cpp-94790158e46c6bb8.webp",
+        "visionSha256": "f91ec4ecddbe3c06813065487ffb1de6e8119515e3c67396ef5718ceee2684d8"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "type": "Legend",
+          "textWithinType": "HIGH",
+          "rulesTextCutoffs": {
+            "p25": 124,
+            "p75": 196
+          }
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-goro-takemura-hands-unclean",
+            "printingId": "cpp-3a9ae1f43f810252",
+            "name": "Goro Takemura: Hands Unclean",
+            "type": "Legend",
+            "color": "Green",
+            "rulesTextCharacters": 221,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-goro-takemura-vengeful-bodyguard",
+            "printingId": "cpp-53ac81560c2fd488",
+            "name": "Goro Takemura: Vengeful Bodyguard",
+            "type": "Legend",
+            "color": "Green",
+            "rulesTextCharacters": 228,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-johnny-silverhand-rocking-renegade",
+            "printingId": "cpp-aad91e09ce70f4e7",
+            "name": "Johnny Silverhand: Rocking Renegade",
+            "type": "Legend",
+            "color": "Red",
+            "rulesTextCharacters": 197,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-panam-palmer-nomad-cavalry",
+            "printingId": "cpp-a74310684529d97d",
+            "name": "Panam Palmer: Nomad Cavalry",
+            "type": "Legend",
+            "color": "Green",
+            "rulesTextCharacters": 196,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-rogue-amendiares-preem-solo",
+            "printingId": "cpp-b6e25ec4b5373869",
+            "name": "Rogue Amendiares: Preem Solo",
+            "type": "Legend",
+            "color": "Yellow",
+            "rulesTextCharacters": 244,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-royce-psycho-on-the-edge",
+            "printingId": "cpp-89a834f8afa1dbcd",
+            "name": "Royce: Psycho on the Edge",
+            "type": "Legend",
+            "color": "Red",
+            "rulesTextCharacters": 210,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-v-streetkid",
+            "printingId": "cpp-5e874ee26873a8c1",
+            "name": "V: Streetkid",
+            "type": "Legend",
+            "color": "Red",
+            "rulesTextCharacters": 213,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S05",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-wild-in-the-streets",
+      "printingId": "cpp-dc303c98e28eeed5",
+      "name": "Wild in the Streets",
+      "selectionReason": "Shortest rulesText among active Program cards (20 characters).",
+      "profile": {
+        "type": "Program",
+        "color": "Green",
+        "textProfile": "LOW",
+        "brightnessProfile": "HIGH",
+        "cost": 5,
+        "rulesTextCharacters": 20,
+        "centralArtworkLuminance": 0.369152,
+        "centralArtworkMeanRgb": [
+          97.404167,
+          93.858333,
+          87.233333
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "wtnc-beta",
+        "number": "β105",
+        "variantKind": "standard",
+        "referenceId": "cpvi-dc303c98e28eeed5",
+        "recognitionGroupId": "cprg-224f3889c59867ce",
+        "recognitionMode": "exact",
+        "candidatePrintingIds": [
+          "cpp-dc303c98e28eeed5"
+        ],
+        "visionAssetPath": "assets/vision/cpp-dc303c98e28eeed5.webp",
+        "visionSha256": "d7b8d95274191fe0e60c3384bf424d7bbd2ea7c77a66ee148a37e2533b97925c"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "type": "Program",
+          "textWithinType": "LOW",
+          "rulesTextCutoffs": {
+            "p25": 70,
+            "p75": 130
+          }
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-all-is-lost",
+            "printingId": "cpp-a90b84997c367fca",
+            "name": "All is Lost",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 49,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-corporate-surveillance",
+            "printingId": "cpp-c153cf99d095ad0e",
+            "name": "Corporate Surveillance",
+            "type": "Program",
+            "color": "Green",
+            "rulesTextCharacters": 39,
+            "brightnessProfile": "MID",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-detonate",
+            "printingId": "cpp-62225092172d629f",
+            "name": "Detonate",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 49,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-don-t-fear-the-reaper",
+            "printingId": "cpp-ddb147631cf61283",
+            "name": "(Don't Fear) The Reaper",
+            "type": "Program",
+            "color": "Green",
+            "rulesTextCharacters": 49,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-floor-it",
+            "printingId": "cpp-06e49ee00eb09af2",
+            "name": "Floor It",
+            "type": "Program",
+            "color": "Blue",
+            "rulesTextCharacters": 53,
+            "brightnessProfile": "HIGH",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-industrial-assembly",
+            "printingId": "cpp-0b01ab6398a53131",
+            "name": "Industrial Assembly",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 70,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-live-with-the-aftermath",
+            "printingId": "cpp-fdb2e522620c1831",
+            "name": "Live with the Aftermath",
+            "type": "Program",
+            "color": "Yellow",
+            "rulesTextCharacters": 39,
+            "brightnessProfile": "MID",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-trust-no-one",
+            "printingId": "cpp-a9a171c7e38178ec",
+            "name": "Trust No One",
+            "type": "Program",
+            "color": "Blue",
+            "rulesTextCharacters": 66,
+            "brightnessProfile": "MID",
+            "textProfile": "LOW"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S06",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-gunpoint-diplomacy",
+      "printingId": "cpp-72e0d75d59f262aa",
+      "name": "Gunpoint Diplomacy",
+      "selectionReason": "Longest rulesText among active Program cards (230 characters).",
+      "profile": {
+        "type": "Program",
+        "color": "Red",
+        "textProfile": "HIGH",
+        "brightnessProfile": "MID",
+        "cost": 4,
+        "rulesTextCharacters": 230,
+        "centralArtworkLuminance": 0.269781,
+        "centralArtworkMeanRgb": [
+          65.925,
+          69.7125,
+          68.145833
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "wtnc-beta",
+        "number": "β032",
+        "variantKind": "standard",
+        "referenceId": "cpvi-72e0d75d59f262aa",
+        "recognitionGroupId": "cprg-31121e4f2b7d6ef1",
+        "recognitionMode": "exact",
+        "candidatePrintingIds": [
+          "cpp-72e0d75d59f262aa"
+        ],
+        "visionAssetPath": "assets/vision/cpp-72e0d75d59f262aa.webp",
+        "visionSha256": "169e1bf75344ae5d0a901b01ccba597744b4d3e871936b5795b92f14dd94d8eb"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "type": "Program",
+          "textWithinType": "HIGH",
+          "rulesTextCutoffs": {
+            "p25": 70,
+            "p75": 130
+          }
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-carnage-at-the-colosseum",
+            "printingId": "cpp-2e3c3117220fc4e3",
+            "name": "Carnage at the Colosseum",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 144,
+            "brightnessProfile": "HIGH",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-chrome-reverie",
+            "printingId": "cpp-b53086ed2b56a516",
+            "name": "Chrome Reverie",
+            "type": "Program",
+            "color": "Blue",
+            "rulesTextCharacters": 149,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-cyberpsychosis",
+            "printingId": "cpp-dd60fbd3b8fcda15",
+            "name": "Cyberpsychosis",
+            "type": "Program",
+            "color": "Yellow",
+            "rulesTextCharacters": 146,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-nocturne-op55-n1",
+            "printingId": "cpp-94c7380b71019c41",
+            "name": "Nocturne OP55 N1",
+            "type": "Program",
+            "color": "Blue",
+            "rulesTextCharacters": 210,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-pyramid-song",
+            "printingId": "cpp-892463bb7f74d732",
+            "name": "Pyramid Song",
+            "type": "Program",
+            "color": "Blue",
+            "rulesTextCharacters": 150,
+            "brightnessProfile": "HIGH",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-shattered-memories",
+            "printingId": "cpp-3c982dedac6aa8e1",
+            "name": "Shattered Memories",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 130,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-the-heist",
+            "printingId": "cpp-935a214855b34ce6",
+            "name": "The Heist",
+            "type": "Program",
+            "color": "Yellow",
+            "rulesTextCharacters": 139,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-towerfall",
+            "printingId": "cpp-0d1490726955db0a",
+            "name": "Towerfall",
+            "type": "Program",
+            "color": "Blue",
+            "rulesTextCharacters": 172,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-we-gotta-live-together",
+            "printingId": "cpp-6c55bafd0797ed78",
+            "name": "We Gotta Live Together",
+            "type": "Program",
+            "color": "Green",
+            "rulesTextCharacters": 143,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S07",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-adam-smasher-metal-over-meat",
+      "printingId": "cpp-da46cce396eab392",
+      "name": "Adam Smasher: Metal Over Meat",
+      "selectionReason": "Shortest rulesText among active Unit cards (30 characters).",
+      "profile": {
+        "type": "Unit",
+        "color": "Yellow",
+        "textProfile": "LOW",
+        "brightnessProfile": "MID",
+        "cost": 9,
+        "rulesTextCharacters": 30,
+        "centralArtworkLuminance": 0.244528,
+        "centralArtworkMeanRgb": [
+          93.870833,
+          55.220833,
+          40.216667
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "wtnc-beta",
+        "number": "β041",
+        "variantKind": "standard",
+        "referenceId": "cpvi-da46cce396eab392",
+        "recognitionGroupId": "cprg-d8f4bad2aab7c161",
+        "recognitionMode": "shared",
+        "candidatePrintingIds": [
+          "cpp-d6010bbf2e2db17e",
+          "cpp-da46cce396eab392"
+        ],
+        "visionAssetPath": "assets/vision/cpp-da46cce396eab392.webp",
+        "visionSha256": "e2d527376f622c4cc6f09e5fa0653409c09037f6ed9db8208272b26c592c9a5a"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "type": "Unit",
+          "textWithinType": "LOW",
+          "rulesTextCutoffs": {
+            "p25": 67,
+            "p75": 123
+          }
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-6th-street-recruits",
+            "printingId": "cpp-90f146ec20a44e39",
+            "name": "6th Street Recruits",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 60,
+            "brightnessProfile": "MID",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-animals-wrecker",
+            "printingId": "cpp-a3b00d354871a647",
+            "name": "Animals Wrecker",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 64,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-delamain-rideshare-ai",
+            "printingId": "cpp-d381b3057b88c8b1",
+            "name": "Delamain: Rideshare AI",
+            "type": "Unit",
+            "color": "Blue",
+            "rulesTextCharacters": 53,
+            "brightnessProfile": "MID",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-emergency-atlus",
+            "printingId": "cpp-067773ff49018f26",
+            "name": "Emergency Atlus",
+            "type": "Unit",
+            "color": "Green",
+            "rulesTextCharacters": 63,
+            "brightnessProfile": "MID",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-field-operator",
+            "printingId": "cpp-472e174b010fe873",
+            "name": "Field Operator",
+            "type": "Unit",
+            "color": "Green",
+            "rulesTextCharacters": 57,
+            "brightnessProfile": "MID",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-hacked-corpo",
+            "printingId": "cpp-f3661e44ed34da62",
+            "name": "Hacked Corpo",
+            "type": "Unit",
+            "color": "Blue",
+            "rulesTextCharacters": 59,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-jacked-in-voodoo-boy",
+            "printingId": "cpp-94febaf4f908774c",
+            "name": "Jacked-In Voodoo Boy",
+            "type": "Unit",
+            "color": "Blue",
+            "rulesTextCharacters": 61,
+            "brightnessProfile": "HIGH",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-kerry-eurodyne-the-last-rockerboy",
+            "printingId": "cpp-0cae10822d620d4c",
+            "name": "Kerry Eurodyne: The Last Rockerboy",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 51,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-maelstrom-goons",
+            "printingId": "cpp-b8f89954ac128038",
+            "name": "Maelstrom Goons",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 66,
+            "brightnessProfile": "MID",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-maxtac-av",
+            "printingId": "cpp-76cfb56911184337",
+            "name": "MaxTac AV",
+            "type": "Unit",
+            "color": "Green",
+            "rulesTextCharacters": 52,
+            "brightnessProfile": "HIGH",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-maxtac-suppression-team",
+            "printingId": "cpp-48af99413ee2b9de",
+            "name": "MaxTac Suppression Team",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 49,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-offduty-malfini",
+            "printingId": "cpp-65583317f314b5e9",
+            "name": "Offduty Malfini",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 40,
+            "brightnessProfile": "HIGH",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-psycho-squad",
+            "printingId": "cpp-272727304f25c1f1",
+            "name": "Psycho Squad",
+            "type": "Unit",
+            "color": "Blue",
+            "rulesTextCharacters": 48,
+            "brightnessProfile": "HIGH",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-riding-nomad",
+            "printingId": "cpp-26d2e82dd10ba521",
+            "name": "Riding Nomad",
+            "type": "Unit",
+            "color": "Green",
+            "rulesTextCharacters": 57,
+            "brightnessProfile": "MID",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-rockn-rockerboy",
+            "printingId": "cpp-9579e83a3227bd28",
+            "name": "Rockn' Rockerboy",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 56,
+            "brightnessProfile": "HIGH",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-ruthless-lowlife",
+            "printingId": "cpp-8171f19e24af1017",
+            "name": "Ruthless Lowlife",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 67,
+            "brightnessProfile": "HIGH",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-screw-lovelorn-fool",
+            "printingId": "cpp-10c378f232887a61",
+            "name": "Screw: Lovelorn Fool",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 57,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-swordwise-huscle",
+            "printingId": "cpp-0fa5137e53fee2ef",
+            "name": "Swordwise Huscle",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 43,
+            "brightnessProfile": "HIGH",
+            "textProfile": "LOW"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S08",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-misty-olszewski-mender-of-broken-spirits",
+      "printingId": "cpp-333456f171bbaaf2",
+      "name": "Misty Olszewski: Mender of Broken Spirits",
+      "selectionReason": "Longest rulesText among active Unit cards (239 characters).",
+      "profile": {
+        "type": "Unit",
+        "color": "Blue",
+        "textProfile": "HIGH",
+        "brightnessProfile": "LOW",
+        "cost": 3,
+        "rulesTextCharacters": 239,
+        "centralArtworkLuminance": 0.217595,
+        "centralArtworkMeanRgb": [
+          77.3875,
+          47.854167,
+          66.604167
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "wtnc-beta",
+        "number": "β119",
+        "variantKind": "standard",
+        "referenceId": "cpvi-333456f171bbaaf2",
+        "recognitionGroupId": "cprg-9a66f7b483a9a656",
+        "recognitionMode": "exact",
+        "candidatePrintingIds": [
+          "cpp-333456f171bbaaf2"
+        ],
+        "visionAssetPath": "assets/vision/cpp-333456f171bbaaf2.webp",
+        "visionSha256": "8f6cca4e928d1b6da06235c486b328c85d6c75f7e0c2b680c2adacbfff284e8d"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "type": "Unit",
+          "textWithinType": "HIGH",
+          "rulesTextCutoffs": {
+            "p25": 67,
+            "p75": 123
+          }
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-alt-cunningham-mother-of-daemons",
+            "printingId": "cpp-3fabf6939f81b8ee",
+            "name": "Alt Cunningham: Mother of Daemons",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 182,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-augmented-negotiators",
+            "printingId": "cpp-1c43d2759b58ae15",
+            "name": "Augmented Negotiators",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 135,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-caliber-totentanz-s-top-dog",
+            "printingId": "cpp-3fd49d361a4ef00a",
+            "name": "Caliber: Totentanz's Top Dog",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 161,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-hanako-arasaka-in-a-gilded-cage",
+            "printingId": "cpp-707abeae7389be69",
+            "name": "Hanako Arasaka: In a Gilded Cage",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 162,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-jackie-welles-ride-or-die-choom",
+            "printingId": "cpp-d54896c353c078f7",
+            "name": "Jackie Welles: Ride or Die Choom",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 143,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-la-llorona-ghost-of-the-past",
+            "printingId": "cpp-d6c71eb1e105f1f2",
+            "name": "La Llorona: Ghost of the Past",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 142,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-lizzy-wizzy-delicate-weapon",
+            "printingId": "cpp-726985c2541c8252",
+            "name": "Lizzy Wizzy: Delicate Weapon",
+            "type": "Unit",
+            "color": "Blue",
+            "rulesTextCharacters": 127,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-meredith-stout-stone-cold-corpo",
+            "printingId": "cpp-f8586c8d6af201e1",
+            "name": "Meredith Stout: Stone Cold Corpo",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 161,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-mox-inciters",
+            "printingId": "cpp-50102c200ddc2426",
+            "name": "Mox Inciters",
+            "type": "Unit",
+            "color": "Blue",
+            "rulesTextCharacters": 137,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-rita-wheeler-no-stupid-questions",
+            "printingId": "cpp-6bf00dc7e8bf1208",
+            "name": "Rita Wheeler: No Stupid Questions",
+            "type": "Unit",
+            "color": "Blue",
+            "rulesTextCharacters": 153,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-rogue-amendiares-queen-of-the-afterlife",
+            "printingId": "cpp-b6048a7ce8ad079c",
+            "name": "Rogue Amendiares: Queen of the Afterlife",
+            "type": "Unit",
+            "color": "Blue",
+            "rulesTextCharacters": 193,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-royce-don-t-call-me-simon",
+            "printingId": "cpp-fd103cdef9cf48c5",
+            "name": "Royce: Don't Call Me Simon",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 145,
+            "brightnessProfile": "HIGH",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-secondhand-bombus",
+            "printingId": "cpp-722016bfa4ac8a36",
+            "name": "Secondhand Bombus",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 123,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-sketchy-ripper",
+            "printingId": "cpp-7a3ba4284bbc62e6",
+            "name": "Sketchy Ripper",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 145,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-t-bug-amateur-philosopher",
+            "printingId": "cpp-65fee9959efddf6a",
+            "name": "T-Bug: Amateur Philosopher",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 132,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-v-roamer-of-the-badlands",
+            "printingId": "cpp-cd5033a60300fee0",
+            "name": "V: Roamer of the Badlands",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 130,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-valentino-street-racer",
+            "printingId": "cpp-f59499784035643d",
+            "name": "Valentino Street Racer",
+            "type": "Unit",
+            "color": "Green",
+            "rulesTextCharacters": 135,
+            "brightnessProfile": "MID",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-yorinobu-arasaka-steel-dragon",
+            "printingId": "cpp-c9f566dd49c6240a",
+            "name": "Yorinobu Arasaka: Steel Dragon",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 179,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S09",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-screw-lovelorn-fool",
+      "printingId": "cpp-10c378f232887a61",
+      "name": "Screw: Lovelorn Fool",
+      "selectionReason": "Red source color; lowest measured central-image luminance among remaining Red representatives.",
+      "profile": {
+        "type": "Unit",
+        "color": "Red",
+        "textProfile": "LOW",
+        "brightnessProfile": "LOW",
+        "cost": 5,
+        "rulesTextCharacters": 57,
+        "centralArtworkLuminance": 0.105073,
+        "centralArtworkMeanRgb": [
+          42.920833,
+          22.466667,
+          22.166667
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "wtnc-beta",
+        "number": "β018",
+        "variantKind": "standard",
+        "referenceId": "cpvi-10c378f232887a61",
+        "recognitionGroupId": "cprg-a6b00817eb1149df",
+        "recognitionMode": "exact",
+        "candidatePrintingIds": [
+          "cpp-10c378f232887a61"
+        ],
+        "visionAssetPath": "assets/vision/cpp-10c378f232887a61.webp",
+        "visionSha256": "04f2020555d318f855b22548e8cbf3d0a8360e16d5e85bcebea91e4550e5156b"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "color": "Red",
+          "brightnessWithinColor": "LOW",
+          "luminanceCutoffs": {
+            "p25": 0.21975137254901975,
+            "p75": 0.31275465032679706
+          }
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-all-is-lost",
+            "printingId": "cpp-a90b84997c367fca",
+            "name": "All is Lost",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 49,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-animals-wrecker",
+            "printingId": "cpp-a3b00d354871a647",
+            "name": "Animals Wrecker",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 64,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-appetite-for-destruction",
+            "printingId": "cpp-294fb00e21c65ff1",
+            "name": "Appetite for Destruction",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 87,
+            "brightnessProfile": "LOW",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-deadman-transmitter",
+            "printingId": "cpp-072bd01f8830b9ce",
+            "name": "Deadman Transmitter",
+            "type": "Gear",
+            "color": "Red",
+            "rulesTextCharacters": 119,
+            "brightnessProfile": "LOW",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-detonate",
+            "printingId": "cpp-62225092172d629f",
+            "name": "Detonate",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 49,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-industrial-assembly",
+            "printingId": "cpp-0b01ab6398a53131",
+            "name": "Industrial Assembly",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 70,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-kerry-eurodyne-the-last-rockerboy",
+            "printingId": "cpp-0cae10822d620d4c",
+            "name": "Kerry Eurodyne: The Last Rockerboy",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 51,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-minotaur",
+            "printingId": "cpp-0ae6eb04a549311c",
+            "name": "Minotaur",
+            "type": "Unit",
+            "color": "Red",
+            "rulesTextCharacters": 95,
+            "brightnessProfile": "LOW",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-royce-psycho-on-the-edge",
+            "printingId": "cpp-89a834f8afa1dbcd",
+            "name": "Royce: Psycho on the Edge",
+            "type": "Legend",
+            "color": "Red",
+            "rulesTextCharacters": 210,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S10",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-safety-override",
+      "printingId": "cpp-371ab17cd9e217ec",
+      "name": "Safety Override",
+      "selectionReason": "Yellow source color; highest measured central-image luminance among remaining Yellow representatives.",
+      "profile": {
+        "type": "Program",
+        "color": "Yellow",
+        "textProfile": "MID",
+        "brightnessProfile": "HIGH",
+        "cost": 2,
+        "rulesTextCharacters": 94,
+        "centralArtworkLuminance": 0.647958,
+        "centralArtworkMeanRgb": [
+          200.925,
+          170.4125,
+          8.775
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "wtnc-beta",
+        "number": "β069",
+        "variantKind": "standard",
+        "referenceId": "cpvi-371ab17cd9e217ec",
+        "recognitionGroupId": "cprg-09f8e6783f7c3d0d",
+        "recognitionMode": "exact",
+        "candidatePrintingIds": [
+          "cpp-371ab17cd9e217ec"
+        ],
+        "visionAssetPath": "assets/vision/cpp-371ab17cd9e217ec.webp",
+        "visionSha256": "84c804dec683642ec965dedccb79d55ff51b512645b2124356cd53b345a14ad1"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "color": "Yellow",
+          "brightnessWithinColor": "HIGH",
+          "luminanceCutoffs": {
+            "p25": 0.22793804901960799,
+            "p75": 0.4137479999999999
+          }
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-bootleg-black-sapphire-show",
+            "printingId": "cpp-6284ade0464122b3",
+            "name": "Bootleg Black Sapphire Show",
+            "type": "Program",
+            "color": "Yellow",
+            "rulesTextCharacters": 108,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-gilded-maton",
+            "printingId": "cpp-a55c215000f1e37d",
+            "name": "Gilded Matón",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 90,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-kerry-eurodyne-axe-attitude-audience",
+            "printingId": "cpp-eda70936c81091c0",
+            "name": "Kerry Eurodyne: Axe, Attitude, Audience",
+            "type": "Legend",
+            "color": "Yellow",
+            "rulesTextCharacters": 172,
+            "brightnessProfile": "HIGH",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-muamar-reyes-el-capitan",
+            "printingId": "cpp-5d7b2b63624ae8d0",
+            "name": "Muamar Reyes: El Capitán",
+            "type": "Legend",
+            "color": "Yellow",
+            "rulesTextCharacters": 119,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-offduty-malfini",
+            "printingId": "cpp-65583317f314b5e9",
+            "name": "Offduty Malfini",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 40,
+            "brightnessProfile": "HIGH",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-rockn-rockerboy",
+            "printingId": "cpp-9579e83a3227bd28",
+            "name": "Rockn' Rockerboy",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 56,
+            "brightnessProfile": "HIGH",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-secondhand-bombus",
+            "printingId": "cpp-722016bfa4ac8a36",
+            "name": "Secondhand Bombus",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 123,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-t-bug-amateur-philosopher",
+            "printingId": "cpp-65fee9959efddf6a",
+            "name": "T-Bug: Amateur Philosopher",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 132,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-viktor-vektor-you-might-feel-a-little-pinch",
+            "printingId": "cpp-d9de31d8cbd913d2",
+            "name": "Viktor Vektor: You Might Feel a Little Pinch",
+            "type": "Unit",
+            "color": "Yellow",
+            "rulesTextCharacters": 114,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S11",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-alt-cunningham-soulkiller-architect",
+      "printingId": "cpp-92a25d343e3eef9d",
+      "name": "Alt Cunningham: Soulkiller Architect",
+      "selectionReason": "Blue source color; lowest measured central-image luminance among remaining Blue representatives.",
+      "profile": {
+        "type": "Legend",
+        "color": "Blue",
+        "textProfile": "MID",
+        "brightnessProfile": "LOW",
+        "cost": null,
+        "rulesTextCharacters": 105,
+        "centralArtworkLuminance": 0.120017,
+        "centralArtworkMeanRgb": [
+          35.054167,
+          29.108333,
+          32.320833
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "pre-release-beta",
+        "number": "009",
+        "variantKind": "standard",
+        "referenceId": "cpvi-92a25d343e3eef9d",
+        "recognitionGroupId": "cprg-1eeb7d392dd31cf2",
+        "recognitionMode": "shared",
+        "candidatePrintingIds": [
+          "cpp-32bdcdaf7564468c",
+          "cpp-92a25d343e3eef9d",
+          "cpp-a43c6e72edfd89f2"
+        ],
+        "visionAssetPath": "assets/vision/cpp-92a25d343e3eef9d.webp",
+        "visionSha256": "c166292172de27cdb686bbb747f7ca5101566d82e4a2e6d203a69d71c47a85f9"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "color": "Blue",
+          "brightnessWithinColor": "LOW",
+          "luminanceCutoffs": {
+            "p25": 0.21759491503267986,
+            "p75": 0.31944292156862736
+          }
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-chrome-reverie",
+            "printingId": "cpp-b53086ed2b56a516",
+            "name": "Chrome Reverie",
+            "type": "Program",
+            "color": "Blue",
+            "rulesTextCharacters": 149,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-evelyn-parker-scheming-siren",
+            "printingId": "cpp-62ff44d4600c9b40",
+            "name": "Evelyn Parker: Scheming Siren",
+            "type": "Unit",
+            "color": "Blue",
+            "rulesTextCharacters": 119,
+            "brightnessProfile": "LOW",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-hacked-corpo",
+            "printingId": "cpp-f3661e44ed34da62",
+            "name": "Hacked Corpo",
+            "type": "Unit",
+            "color": "Blue",
+            "rulesTextCharacters": 59,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-maman-brigitte-spirit-of-death",
+            "printingId": "cpp-83bf929bf0cc525a",
+            "name": "Maman Brigitte: Spirit of Death",
+            "type": "Unit",
+            "color": "Blue",
+            "rulesTextCharacters": 82,
+            "brightnessProfile": "LOW",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-misty-olszewski-mender-of-broken-spirits",
+            "printingId": "cpp-333456f171bbaaf2",
+            "name": "Misty Olszewski: Mender of Broken Spirits",
+            "type": "Unit",
+            "color": "Blue",
+            "rulesTextCharacters": 239,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-nocturne-op55-n1",
+            "printingId": "cpp-94c7380b71019c41",
+            "name": "Nocturne OP55 N1",
+            "type": "Program",
+            "color": "Blue",
+            "rulesTextCharacters": 210,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-reboot-optics",
+            "printingId": "cpp-a5bb90c669bb6590",
+            "name": "Reboot Optics",
+            "type": "Program",
+            "color": "Blue",
+            "rulesTextCharacters": 98,
+            "brightnessProfile": "LOW",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-unlikely-bond",
+            "printingId": "cpp-dcdc8d429d5331fd",
+            "name": "Unlikely Bond",
+            "type": "Program",
+            "color": "Blue",
+            "rulesTextCharacters": 77,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-v-corporate-exile",
+            "printingId": "cpp-3131bc9c206414fe",
+            "name": "V: Corporate Exile",
+            "type": "Legend",
+            "color": "Blue",
+            "rulesTextCharacters": 138,
+            "brightnessProfile": "LOW",
+            "textProfile": "MID"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S12",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-padre-man-of-the-cross",
+      "printingId": "cpp-133e0ca1d87fbfcb",
+      "name": "Padre: Man of the Cross",
+      "selectionReason": "Green source color; highest measured central-image luminance among remaining Green representatives.",
+      "profile": {
+        "type": "Legend",
+        "color": "Green",
+        "textProfile": "MID",
+        "brightnessProfile": "HIGH",
+        "cost": null,
+        "rulesTextCharacters": 126,
+        "centralArtworkLuminance": 0.467876,
+        "centralArtworkMeanRgb": [
+          115.654167,
+          119.875,
+          124.454167
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "wtnc-beta",
+        "number": "β074",
+        "variantKind": "standard",
+        "referenceId": "cpvi-133e0ca1d87fbfcb",
+        "recognitionGroupId": "cprg-6f77e056317c4e79",
+        "recognitionMode": "shared",
+        "candidatePrintingIds": [
+          "cpp-133e0ca1d87fbfcb",
+          "cpp-a78f680c0ab895fe"
+        ],
+        "visionAssetPath": "assets/vision/cpp-133e0ca1d87fbfcb.webp",
+        "visionSha256": "16957e940cdbcc27875e3ea07460ead4c74820a2b136b008dcd7a281f3fda35a"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "color": "Green",
+          "brightnessWithinColor": "HIGH",
+          "luminanceCutoffs": {
+            "p25": 0.2619814607843137,
+            "p75": 0.3512084084967319
+          }
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-corpo-security",
+            "printingId": "cpp-0a27bbc4f72ecccf",
+            "name": "Corpo Security",
+            "type": "Unit",
+            "color": "Green",
+            "rulesTextCharacters": 108,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-fool-on-the-hill",
+            "printingId": "cpp-f657b00aad9cc8b5",
+            "name": "Fool on the Hill",
+            "type": "Program",
+            "color": "Green",
+            "rulesTextCharacters": 128,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-maxtac-av",
+            "printingId": "cpp-76cfb56911184337",
+            "name": "MaxTac AV",
+            "type": "Unit",
+            "color": "Green",
+            "rulesTextCharacters": 52,
+            "brightnessProfile": "HIGH",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-maxtac-heavy",
+            "printingId": "cpp-7d9dab7276c9ad19",
+            "name": "MaxTac Heavy",
+            "type": "Unit",
+            "color": "Green",
+            "rulesTextCharacters": 75,
+            "brightnessProfile": "MID",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-nadia-fighting-through-grief",
+            "printingId": "cpp-4f9b21ac443463de",
+            "name": "Nadia: Fighting Through Grief",
+            "type": "Unit",
+            "color": "Green",
+            "rulesTextCharacters": 97,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-overwatch-panam-s-gift",
+            "printingId": "cpp-1c86c74c40d2184c",
+            "name": "Overwatch: Panam's Gift",
+            "type": "Gear",
+            "color": "Green",
+            "rulesTextCharacters": 117,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-pacifica-netrunner",
+            "printingId": "cpp-032722a518003b43",
+            "name": "Pacifica Netrunner",
+            "type": "Unit",
+            "color": "Green",
+            "rulesTextCharacters": 96,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-peace-offering",
+            "printingId": "cpp-5eae5e98367d1823",
+            "name": "Peace Offering",
+            "type": "Program",
+            "color": "Green",
+            "rulesTextCharacters": 97,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-saul-bright-stormrider",
+            "printingId": "cpp-e61841698f774ab9",
+            "name": "Saul Bright: Stormrider",
+            "type": "Unit",
+            "color": "Green",
+            "rulesTextCharacters": 106,
+            "brightnessProfile": "HIGH",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-wild-in-the-streets",
+            "printingId": "cpp-dc303c98e28eeed5",
+            "name": "Wild in the Streets",
+            "type": "Program",
+            "color": "Green",
+            "rulesTextCharacters": 20,
+            "brightnessProfile": "HIGH",
+            "textProfile": "LOW"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S13",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-detonate",
+      "printingId": "cpp-62225092172d629f",
+      "name": "Detonate",
+      "selectionReason": "Member of the closest cross-card pair among remaining representatives using independent RGB proxy MSE 0.013265; not a matcher confidence or physical result.",
+      "profile": {
+        "type": "Program",
+        "color": "Red",
+        "textProfile": "LOW",
+        "brightnessProfile": "LOW",
+        "cost": 1,
+        "rulesTextCharacters": 49,
+        "centralArtworkLuminance": 0.191822,
+        "centralArtworkMeanRgb": [
+          50.891667,
+          47.758333,
+          54.545833
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "wtnc-beta",
+        "number": "β031",
+        "variantKind": "standard",
+        "referenceId": "cpvi-62225092172d629f",
+        "recognitionGroupId": "cprg-0167e81392bfc2b3",
+        "recognitionMode": "exact",
+        "candidatePrintingIds": [
+          "cpp-62225092172d629f"
+        ],
+        "visionAssetPath": "assets/vision/cpp-62225092172d629f.webp",
+        "visionSha256": "44d563e7dcbe63c66675c26d7b35d66d7423fc7d5483c305fa98de62c6a65193"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "type": "Program",
+          "color": "Red",
+          "textProfile": "LOW",
+          "brightnessProfile": "LOW",
+          "pairedReplacementPreferred": true
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-all-is-lost",
+            "printingId": "cpp-a90b84997c367fca",
+            "name": "All is Lost",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 49,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-industrial-assembly",
+            "printingId": "cpp-0b01ab6398a53131",
+            "name": "Industrial Assembly",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 70,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S14",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-industrial-assembly",
+      "printingId": "cpp-0b01ab6398a53131",
+      "name": "Industrial Assembly",
+      "selectionReason": "Other member of the closest cross-card pair among remaining representatives using independent RGB proxy MSE 0.013265; not a matcher confidence or physical result.",
+      "profile": {
+        "type": "Program",
+        "color": "Red",
+        "textProfile": "LOW",
+        "brightnessProfile": "LOW",
+        "cost": 1,
+        "rulesTextCharacters": 70,
+        "centralArtworkLuminance": 0.181318,
+        "centralArtworkMeanRgb": [
+          37.170833,
+          47.9625,
+          55.829167
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "wtnc-beta",
+        "number": "β033",
+        "variantKind": "standard",
+        "referenceId": "cpvi-0b01ab6398a53131",
+        "recognitionGroupId": "cprg-d7fa5d0ca96b0b45",
+        "recognitionMode": "shared",
+        "candidatePrintingIds": [
+          "cpp-0b01ab6398a53131",
+          "cpp-90113f15f99edbec"
+        ],
+        "visionAssetPath": "assets/vision/cpp-0b01ab6398a53131.webp",
+        "visionSha256": "4bcac4e579921ce5e2233e4a82b78a124ba00e91ed687a696f2c1cc2d0350755"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "type": "Program",
+          "color": "Red",
+          "textProfile": "LOW",
+          "brightnessProfile": "LOW",
+          "pairedReplacementPreferred": true
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-all-is-lost",
+            "printingId": "cpp-a90b84997c367fca",
+            "name": "All is Lost",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 49,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-detonate",
+            "printingId": "cpp-62225092172d629f",
+            "name": "Detonate",
+            "type": "Program",
+            "color": "Red",
+            "rulesTextCharacters": 49,
+            "brightnessProfile": "LOW",
+            "textProfile": "LOW"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    },
+    {
+      "sampleId": "S15",
+      "gameId": "cyberpunk",
+      "locale": "en",
+      "cardId": "cp-adam-smasher-ender-of-legends",
+      "printingId": "cpp-0c4d5b62f83947af",
+      "name": "Adam Smasher: Ender of Legends",
+      "selectionReason": "Largest remaining active physical-printing group; audit shared printing ambiguity without promising exact variant recognition.",
+      "profile": {
+        "type": "Legend",
+        "color": "Red",
+        "textProfile": "HIGH",
+        "brightnessProfile": "MID",
+        "cost": 9,
+        "rulesTextCharacters": 164,
+        "centralArtworkLuminance": 0.232406,
+        "centralArtworkMeanRgb": [
+          69.675,
+          57.745833,
+          43.641667
+        ]
+      },
+      "source": {
+        "runtimeScopeId": "cyberpunk-beta-2026",
+        "setId": "pre-release-beta",
+        "number": "001",
+        "variantKind": "standard",
+        "referenceId": "cpvi-0c4d5b62f83947af",
+        "recognitionGroupId": "cprg-0d26ece3e78ec28e",
+        "recognitionMode": "shared",
+        "candidatePrintingIds": [
+          "cpp-0c4d5b62f83947af",
+          "cpp-bec13059d093b5a4",
+          "cpp-fff81bae871b83ec"
+        ],
+        "visionAssetPath": "assets/vision/cpp-0c4d5b62f83947af.webp",
+        "visionSha256": "7472d654bbe44e9688dbdacb78f2952eff641b28f6c3145a08276d5a10f0283f"
+      },
+      "physicalAvailability": "NOT_CHECKED",
+      "substitution": {
+        "requiredProfile": {
+          "recognitionMode": "shared",
+          "minimumActiveCandidatePrintings": 3
+        },
+        "eligibleAlternatives": [
+          {
+            "cardId": "cp-alt-cunningham-soulkiller-architect",
+            "printingId": "cpp-92a25d343e3eef9d",
+            "name": "Alt Cunningham: Soulkiller Architect",
+            "type": "Legend",
+            "color": "Blue",
+            "rulesTextCharacters": 105,
+            "brightnessProfile": "LOW",
+            "textProfile": "MID"
+          },
+          {
+            "cardId": "cp-dum-dum-maelstrom-triggerman",
+            "printingId": "cpp-58499b097b5947b8",
+            "name": "Dum Dum: Maelstrom Triggerman",
+            "type": "Legend",
+            "color": "Yellow",
+            "rulesTextCharacters": 169,
+            "brightnessProfile": "HIGH",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-goro-takemura-vengeful-bodyguard",
+            "printingId": "cpp-53ac81560c2fd488",
+            "name": "Goro Takemura: Vengeful Bodyguard",
+            "type": "Legend",
+            "color": "Green",
+            "rulesTextCharacters": 228,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-jackie-welles-mama-s-favorite",
+            "printingId": "cpp-94790158e46c6bb8",
+            "name": "Jackie Welles: Mama's Favorite",
+            "type": "Legend",
+            "color": "Green",
+            "rulesTextCharacters": 251,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-judy-alvarez-braindance-maestro",
+            "printingId": "cpp-a0fec5f312f39165",
+            "name": "Judy Álvarez: Braindance Maestro",
+            "type": "Legend",
+            "color": "Blue",
+            "rulesTextCharacters": 165,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-mantis-blades",
+            "printingId": "cpp-03290e8752e5e383",
+            "name": "Mantis Blades",
+            "type": "Gear",
+            "color": "Red",
+            "rulesTextCharacters": 66,
+            "brightnessProfile": "MID",
+            "textProfile": "LOW"
+          },
+          {
+            "cardId": "cp-panam-palmer-nomad-cavalry",
+            "printingId": "cpp-a74310684529d97d",
+            "name": "Panam Palmer: Nomad Cavalry",
+            "type": "Legend",
+            "color": "Green",
+            "rulesTextCharacters": 196,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-river-ward-detective-on-the-hunt",
+            "printingId": "cpp-2be7c57127e1193f",
+            "name": "River Ward: Detective on the Hunt",
+            "type": "Legend",
+            "color": "Yellow",
+            "rulesTextCharacters": 164,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-rogue-amendiares-preem-solo",
+            "printingId": "cpp-b6e25ec4b5373869",
+            "name": "Rogue Amendiares: Preem Solo",
+            "type": "Legend",
+            "color": "Yellow",
+            "rulesTextCharacters": 244,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-royce-psycho-on-the-edge",
+            "printingId": "cpp-89a834f8afa1dbcd",
+            "name": "Royce: Psycho on the Edge",
+            "type": "Legend",
+            "color": "Red",
+            "rulesTextCharacters": 210,
+            "brightnessProfile": "LOW",
+            "textProfile": "HIGH"
+          },
+          {
+            "cardId": "cp-v-streetkid",
+            "printingId": "cpp-5e874ee26873a8c1",
+            "name": "V: Streetkid",
+            "type": "Legend",
+            "color": "Red",
+            "rulesTextCharacters": 213,
+            "brightnessProfile": "MID",
+            "textProfile": "HIGH"
+          }
+        ],
+        "recordFields": [
+          "originalSampleId",
+          "originalCardId",
+          "originalPrintingId",
+          "replacementCardId",
+          "replacementPrintingId",
+          "reason"
+        ],
+        "policy": "Use an active EN printing satisfying requiredProfile; these are measured selection criteria, never guessed visual labels. Record the substitution before the trial. Preserve the predeclared 12-15 distinct canonical card IDs; do not reuse another selected card. If no suitable physical substitute exists, report the case unavailable; never silently replace it with a retail edition or FR card."
+      }
+    }
+  ],
+  "similarPairs": [
+    {
+      "pairId": "SIM1",
+      "cardIds": [
+        "cp-detonate",
+        "cp-industrial-assembly"
+      ],
+      "printingIds": [
+        "cpp-62225092172d629f",
+        "cpp-0b01ab6398a53131"
+      ],
+      "proxyRgbMse": 0.013265,
+      "method": "Independent central-image 20x30 RGB pixel proxy, low MSE first; not the production matcher or a physical confidence score.",
+      "physicalStatus": "NOT_TESTED"
+    },
+    {
+      "pairId": "SIM2",
+      "cardIds": [
+        "cp-alt-cunningham-soulkiller-architect",
+        "cp-industrial-assembly"
+      ],
+      "printingIds": [
+        "cpp-92a25d343e3eef9d",
+        "cpp-0b01ab6398a53131"
+      ],
+      "proxyRgbMse": 0.022326,
+      "method": "Independent central-image 20x30 RGB pixel proxy, low MSE first; not the production matcher or a physical confidence score.",
+      "physicalStatus": "NOT_TESTED"
+    },
+    {
+      "pairId": "SIM3",
+      "cardIds": [
+        "cp-alt-cunningham-soulkiller-architect",
+        "cp-detonate"
+      ],
+      "printingIds": [
+        "cpp-92a25d343e3eef9d",
+        "cpp-62225092172d629f"
+      ],
+      "proxyRgbMse": 0.024419,
+      "method": "Independent central-image 20x30 RGB pixel proxy, low MSE first; not the production matcher or a physical confidence score.",
+      "physicalStatus": "NOT_TESTED"
+    }
+  ],
+  "variantCases": [
+    {
+      "caseId": "VAR1",
+      "cardId": "cp-mantis-blades",
+      "name": "Mantis Blades",
+      "recognitionGroupId": "cprg-d55ce160cf0c0a91",
+      "recognitionMode": "shared",
+      "candidatePrintingIds": [
+        "cpp-03290e8752e5e383",
+        "cpp-4f35243029829892",
+        "cpp-ccf12e0d6e534d86"
+      ],
+      "printings": [
+        {
+          "printingId": "cpp-03290e8752e5e383",
+          "setId": "wtnc-beta",
+          "number": "β025",
+          "variantKind": "standard",
+          "referenceId": "cpvi-03290e8752e5e383"
+        },
+        {
+          "printingId": "cpp-4f35243029829892",
+          "setId": "pre-release-beta",
+          "number": "011",
+          "variantKind": "standard",
+          "referenceId": "cpvi-4f35243029829892"
+        },
+        {
+          "printingId": "cpp-ccf12e0d6e534d86",
+          "setId": "embracing-power-beta",
+          "number": "β007",
+          "variantKind": "standard",
+          "referenceId": "cpvi-ccf12e0d6e534d86"
+        }
+      ],
+      "protocol": "If physical variants are available, present each separately in nominal conditions three times and record the actual expectedPrintingId. A correct canonical identity with a null/shared identifiedPrintingId is UNRESOLVED_SHARED_ART, not a wrong canonical card and not exact printing qualification. Record unavailable variants explicitly; do not manufacture a PASS.",
+      "physicalStatus": "NOT_TESTED"
+    },
+    {
+      "caseId": "VAR2",
+      "cardId": "cp-jackie-welles-mama-s-favorite",
+      "name": "Jackie Welles: Mama's Favorite",
+      "recognitionGroupId": "cprg-d6c10325a86aac21",
+      "recognitionMode": "shared",
+      "candidatePrintingIds": [
+        "cpp-71e72a5d41466c21",
+        "cpp-94790158e46c6bb8",
+        "cpp-fedbde99d7cbf053"
+      ],
+      "printings": [
+        {
+          "printingId": "cpp-71e72a5d41466c21",
+          "setId": "wtnc-beta",
+          "number": "β152",
+          "variantKind": "iconic",
+          "referenceId": "cpvi-71e72a5d41466c21"
+        },
+        {
+          "printingId": "cpp-94790158e46c6bb8",
+          "setId": "wtnc-beta",
+          "number": "β073",
+          "variantKind": "standard",
+          "referenceId": "cpvi-94790158e46c6bb8"
+        },
+        {
+          "printingId": "cpp-fedbde99d7cbf053",
+          "setId": "pre-release-beta",
+          "number": "007",
+          "variantKind": "standard",
+          "referenceId": "cpvi-fedbde99d7cbf053"
+        }
+      ],
+      "protocol": "If physical variants are available, present each separately in nominal conditions three times and record the actual expectedPrintingId. A correct canonical identity with a null/shared identifiedPrintingId is UNRESOLVED_SHARED_ART, not a wrong canonical card and not exact printing qualification. Record unavailable variants explicitly; do not manufacture a PASS.",
+      "physicalStatus": "NOT_TESTED"
+    },
+    {
+      "caseId": "VAR3",
+      "cardId": "cp-adam-smasher-ender-of-legends",
+      "name": "Adam Smasher: Ender of Legends",
+      "recognitionGroupId": "cprg-0d26ece3e78ec28e",
+      "recognitionMode": "shared",
+      "candidatePrintingIds": [
+        "cpp-0c4d5b62f83947af",
+        "cpp-bec13059d093b5a4",
+        "cpp-fff81bae871b83ec"
+      ],
+      "printings": [
+        {
+          "printingId": "cpp-0c4d5b62f83947af",
+          "setId": "pre-release-beta",
+          "number": "001",
+          "variantKind": "standard",
+          "referenceId": "cpvi-0c4d5b62f83947af"
+        },
+        {
+          "printingId": "cpp-bec13059d093b5a4",
+          "setId": "wtnc-beta",
+          "number": "β001",
+          "variantKind": "standard",
+          "referenceId": "cpvi-bec13059d093b5a4"
+        },
+        {
+          "printingId": "cpp-fff81bae871b83ec",
+          "setId": "wtnc-beta",
+          "number": "β141",
+          "variantKind": "iconic",
+          "referenceId": "cpvi-fff81bae871b83ec"
+        }
+      ],
+      "protocol": "If physical variants are available, present each separately in nominal conditions three times and record the actual expectedPrintingId. A correct canonical identity with a null/shared identifiedPrintingId is UNRESOLVED_SHARED_ART, not a wrong canonical card and not exact printing qualification. Record unavailable variants explicitly; do not manufacture a PASS.",
+      "physicalStatus": "NOT_TESTED"
+    }
+  ],
+  "plan": {
+    "nominalRepetitions": 3,
+    "nominalExpectedTrials": 45,
+    "requiredConditions": [
+      "NOMINAL",
+      "ANGLE",
+      "LOW_LIGHT",
+      "DISTANCE",
+      "ORIENTATION",
+      "STABILITY",
+      "REMOVAL",
+      "RAPID_SWITCH",
+      "SIMILAR_PRINTINGS"
+    ],
+    "optionalConditions": [
+      "SLEEVE_GLARE"
+    ],
+    "requiredScenes": [
+      {
+        "scene": "EMPTY_TABLE",
+        "durationMs": 30000
+      },
+      {
+        "scene": "PLAYMAT",
+        "durationMs": 30000
+      },
+      {
+        "scene": "VISIBLE_HAND",
+        "durationMs": 30000
+      },
+      {
+        "scene": "CLOSED_DECK",
+        "durationMs": 30000
+      },
+      {
+        "scene": "DESK_OBJECTS",
+        "durationMs": 30000
+      }
+    ],
+    "indexRepetitions": {
+      "cold": 3,
+      "reload": 3
+    },
+    "degradedSampleIds": [
+      "S01",
+      "S04",
+      "S07",
+      "S08",
+      "S09",
+      "S10"
+    ],
+    "stabilitySampleIds": [
+      "S01",
+      "S09",
+      "S10"
+    ],
+    "rapidSwitchPairs": [
+      [
+        "S09",
+        "S10"
+      ],
+      [
+        "S13",
+        "S14"
+      ]
+    ],
+    "similarPairs": [
+      {
+        "pairId": "SIM1",
+        "cardIds": [
+          "cp-detonate",
+          "cp-industrial-assembly"
+        ],
+        "printingIds": [
+          "cpp-62225092172d629f",
+          "cpp-0b01ab6398a53131"
+        ],
+        "proxyRgbMse": 0.013265,
+        "method": "Independent central-image 20x30 RGB pixel proxy, low MSE first; not the production matcher or a physical confidence score.",
+        "physicalStatus": "NOT_TESTED"
+      },
+      {
+        "pairId": "SIM2",
+        "cardIds": [
+          "cp-alt-cunningham-soulkiller-architect",
+          "cp-industrial-assembly"
+        ],
+        "printingIds": [
+          "cpp-92a25d343e3eef9d",
+          "cpp-0b01ab6398a53131"
+        ],
+        "proxyRgbMse": 0.022326,
+        "method": "Independent central-image 20x30 RGB pixel proxy, low MSE first; not the production matcher or a physical confidence score.",
+        "physicalStatus": "NOT_TESTED"
+      },
+      {
+        "pairId": "SIM3",
+        "cardIds": [
+          "cp-alt-cunningham-soulkiller-architect",
+          "cp-detonate"
+        ],
+        "printingIds": [
+          "cpp-92a25d343e3eef9d",
+          "cpp-62225092172d629f"
+        ],
+        "proxyRgbMse": 0.024419,
+        "method": "Independent central-image 20x30 RGB pixel proxy, low MSE first; not the production matcher or a physical confidence score.",
+        "physicalStatus": "NOT_TESTED"
+      }
+    ],
+    "variantCases": [
+      {
+        "caseId": "VAR1",
+        "cardId": "cp-mantis-blades",
+        "name": "Mantis Blades",
+        "recognitionGroupId": "cprg-d55ce160cf0c0a91",
+        "recognitionMode": "shared",
+        "candidatePrintingIds": [
+          "cpp-03290e8752e5e383",
+          "cpp-4f35243029829892",
+          "cpp-ccf12e0d6e534d86"
+        ],
+        "printings": [
+          {
+            "printingId": "cpp-03290e8752e5e383",
+            "setId": "wtnc-beta",
+            "number": "β025",
+            "variantKind": "standard",
+            "referenceId": "cpvi-03290e8752e5e383"
+          },
+          {
+            "printingId": "cpp-4f35243029829892",
+            "setId": "pre-release-beta",
+            "number": "011",
+            "variantKind": "standard",
+            "referenceId": "cpvi-4f35243029829892"
+          },
+          {
+            "printingId": "cpp-ccf12e0d6e534d86",
+            "setId": "embracing-power-beta",
+            "number": "β007",
+            "variantKind": "standard",
+            "referenceId": "cpvi-ccf12e0d6e534d86"
+          }
+        ],
+        "protocol": "If physical variants are available, present each separately in nominal conditions three times and record the actual expectedPrintingId. A correct canonical identity with a null/shared identifiedPrintingId is UNRESOLVED_SHARED_ART, not a wrong canonical card and not exact printing qualification. Record unavailable variants explicitly; do not manufacture a PASS.",
+        "physicalStatus": "NOT_TESTED"
+      },
+      {
+        "caseId": "VAR2",
+        "cardId": "cp-jackie-welles-mama-s-favorite",
+        "name": "Jackie Welles: Mama's Favorite",
+        "recognitionGroupId": "cprg-d6c10325a86aac21",
+        "recognitionMode": "shared",
+        "candidatePrintingIds": [
+          "cpp-71e72a5d41466c21",
+          "cpp-94790158e46c6bb8",
+          "cpp-fedbde99d7cbf053"
+        ],
+        "printings": [
+          {
+            "printingId": "cpp-71e72a5d41466c21",
+            "setId": "wtnc-beta",
+            "number": "β152",
+            "variantKind": "iconic",
+            "referenceId": "cpvi-71e72a5d41466c21"
+          },
+          {
+            "printingId": "cpp-94790158e46c6bb8",
+            "setId": "wtnc-beta",
+            "number": "β073",
+            "variantKind": "standard",
+            "referenceId": "cpvi-94790158e46c6bb8"
+          },
+          {
+            "printingId": "cpp-fedbde99d7cbf053",
+            "setId": "pre-release-beta",
+            "number": "007",
+            "variantKind": "standard",
+            "referenceId": "cpvi-fedbde99d7cbf053"
+          }
+        ],
+        "protocol": "If physical variants are available, present each separately in nominal conditions three times and record the actual expectedPrintingId. A correct canonical identity with a null/shared identifiedPrintingId is UNRESOLVED_SHARED_ART, not a wrong canonical card and not exact printing qualification. Record unavailable variants explicitly; do not manufacture a PASS.",
+        "physicalStatus": "NOT_TESTED"
+      },
+      {
+        "caseId": "VAR3",
+        "cardId": "cp-adam-smasher-ender-of-legends",
+        "name": "Adam Smasher: Ender of Legends",
+        "recognitionGroupId": "cprg-0d26ece3e78ec28e",
+        "recognitionMode": "shared",
+        "candidatePrintingIds": [
+          "cpp-0c4d5b62f83947af",
+          "cpp-bec13059d093b5a4",
+          "cpp-fff81bae871b83ec"
+        ],
+        "printings": [
+          {
+            "printingId": "cpp-0c4d5b62f83947af",
+            "setId": "pre-release-beta",
+            "number": "001",
+            "variantKind": "standard",
+            "referenceId": "cpvi-0c4d5b62f83947af"
+          },
+          {
+            "printingId": "cpp-bec13059d093b5a4",
+            "setId": "wtnc-beta",
+            "number": "β001",
+            "variantKind": "standard",
+            "referenceId": "cpvi-bec13059d093b5a4"
+          },
+          {
+            "printingId": "cpp-fff81bae871b83ec",
+            "setId": "wtnc-beta",
+            "number": "β141",
+            "variantKind": "iconic",
+            "referenceId": "cpvi-fff81bae871b83ec"
+          }
+        ],
+        "protocol": "If physical variants are available, present each separately in nominal conditions three times and record the actual expectedPrintingId. A correct canonical identity with a null/shared identifiedPrintingId is UNRESOLVED_SHARED_ART, not a wrong canonical card and not exact printing qualification. Record unavailable variants explicitly; do not manufacture a PASS.",
+        "physicalStatus": "NOT_TESTED"
+      }
+    ],
+    "matrix": [
+      {
+        "condition": "NOMINAL",
+        "sampleIds": [
+          "S01",
+          "S02",
+          "S03",
+          "S04",
+          "S05",
+          "S06",
+          "S07",
+          "S08",
+          "S09",
+          "S10",
+          "S11",
+          "S12",
+          "S13",
+          "S14",
+          "S15"
+        ],
+        "repetitions": 3,
+        "instructions": "Normal room light, readable card mainly facing the camera, realistic playing distance, ordinary play table. Start each trial before presenting the card; return to an empty scene before the next trial."
+      },
+      {
+        "condition": "ANGLE",
+        "sampleIds": [
+          "S01",
+          "S04",
+          "S07",
+          "S08",
+          "S09",
+          "S10"
+        ],
+        "positions": [
+          "SLIGHT",
+          "MODERATE"
+        ],
+        "repetitionsPerPosition": 1,
+        "instructions": "Use two realistic tabletop angles, with an operator description; no geometric angle measurement required."
+      },
+      {
+        "condition": "LOW_LIGHT",
+        "sampleIds": [
+          "S01",
+          "S04",
+          "S07",
+          "S08",
+          "S09",
+          "S10"
+        ],
+        "repetitions": 1,
+        "instructions": "Lower room lighting that remains playable. Keep nominal distance and position; record an approximate non-sensitive lighting description."
+      },
+      {
+        "condition": "DISTANCE",
+        "sampleIds": [
+          "S01",
+          "S04",
+          "S07",
+          "S08",
+          "S09",
+          "S10"
+        ],
+        "positions": [
+          "SLIGHTLY_CLOSER",
+          "SLIGHTLY_FARTHER"
+        ],
+        "repetitionsPerPosition": 1,
+        "instructions": "Compare nearby realistic play distances with the same normal lighting. Record an approximate distance description; no search for a theoretical maximum."
+      },
+      {
+        "condition": "ORIENTATION",
+        "sampleIds": [
+          "S01",
+          "S04",
+          "S07",
+          "S08",
+          "S09",
+          "S10"
+        ],
+        "positions": [
+          "SLIGHTLY_ROTATED"
+        ],
+        "repetitionsPerPosition": 1,
+        "instructions": "Compare slight in-plane rotation with the upright nominal control. Strong rotation is optional and separately labelled."
+      },
+      {
+        "condition": "SLEEVE_GLARE",
+        "sampleIds": [
+          "S01",
+          "S04",
+          "S07",
+          "S08",
+          "S09",
+          "S10"
+        ],
+        "repetitions": 1,
+        "optional": true,
+        "unavailablePolicy": "Record NOT_TESTED and the absence of an actual game sleeve, never an inferred sleeve PASS.",
+        "instructions": "Only use a real game sleeve if available. Describe visible reflections and compare with the matching nominal case."
+      },
+      {
+        "condition": "STABILITY",
+        "sampleIds": [
+          "S01",
+          "S09",
+          "S10"
+        ],
+        "durationMs": 10000,
+        "repetitions": 1,
+        "instructions": "After presentation keep the same card continuously visible for ten seconds. Count true identity transitions and intervals without identification; no physical stability claim from fixtures."
+      },
+      {
+        "condition": "REMOVAL",
+        "sampleIds": [
+          "S01",
+          "S09",
+          "S10"
+        ],
+        "repetitions": 1,
+        "instructions": "Present until identified, mark removal immediately before physically removing the card, then measure until no identity is visible. If never identified, record the failed precondition and an invalid removal observation."
+      },
+      {
+        "condition": "RAPID_SWITCH",
+        "pairs": [
+          [
+            "S09",
+            "S10"
+          ],
+          [
+            "S13",
+            "S14"
+          ]
+        ],
+        "repetitions": 1,
+        "instructions": "Present A, mark removal and remove A, then start a new trial and present B. Measure clearance of A and first stable correct B separately; preserve the linked trial IDs."
+      },
+      {
+        "condition": "SIMILAR_PRINTINGS",
+        "pairs": [
+          {
+            "pairId": "SIM1",
+            "cardIds": [
+              "cp-detonate",
+              "cp-industrial-assembly"
+            ],
+            "printingIds": [
+              "cpp-62225092172d629f",
+              "cpp-0b01ab6398a53131"
+            ],
+            "proxyRgbMse": 0.013265,
+            "method": "Independent central-image 20x30 RGB pixel proxy, low MSE first; not the production matcher or a physical confidence score.",
+            "physicalStatus": "NOT_TESTED"
+          },
+          {
+            "pairId": "SIM2",
+            "cardIds": [
+              "cp-alt-cunningham-soulkiller-architect",
+              "cp-industrial-assembly"
+            ],
+            "printingIds": [
+              "cpp-92a25d343e3eef9d",
+              "cpp-0b01ab6398a53131"
+            ],
+            "proxyRgbMse": 0.022326,
+            "method": "Independent central-image 20x30 RGB pixel proxy, low MSE first; not the production matcher or a physical confidence score.",
+            "physicalStatus": "NOT_TESTED"
+          },
+          {
+            "pairId": "SIM3",
+            "cardIds": [
+              "cp-alt-cunningham-soulkiller-architect",
+              "cp-detonate"
+            ],
+            "printingIds": [
+              "cpp-92a25d343e3eef9d",
+              "cpp-62225092172d629f"
+            ],
+            "proxyRgbMse": 0.024419,
+            "method": "Independent central-image 20x30 RGB pixel proxy, low MSE first; not the production matcher or a physical confidence score.",
+            "physicalStatus": "NOT_TESTED"
+          }
+        ],
+        "variantCases": [
+          {
+            "caseId": "VAR1",
+            "cardId": "cp-mantis-blades",
+            "name": "Mantis Blades",
+            "recognitionGroupId": "cprg-d55ce160cf0c0a91",
+            "recognitionMode": "shared",
+            "candidatePrintingIds": [
+              "cpp-03290e8752e5e383",
+              "cpp-4f35243029829892",
+              "cpp-ccf12e0d6e534d86"
+            ],
+            "printings": [
+              {
+                "printingId": "cpp-03290e8752e5e383",
+                "setId": "wtnc-beta",
+                "number": "β025",
+                "variantKind": "standard",
+                "referenceId": "cpvi-03290e8752e5e383"
+              },
+              {
+                "printingId": "cpp-4f35243029829892",
+                "setId": "pre-release-beta",
+                "number": "011",
+                "variantKind": "standard",
+                "referenceId": "cpvi-4f35243029829892"
+              },
+              {
+                "printingId": "cpp-ccf12e0d6e534d86",
+                "setId": "embracing-power-beta",
+                "number": "β007",
+                "variantKind": "standard",
+                "referenceId": "cpvi-ccf12e0d6e534d86"
+              }
+            ],
+            "protocol": "If physical variants are available, present each separately in nominal conditions three times and record the actual expectedPrintingId. A correct canonical identity with a null/shared identifiedPrintingId is UNRESOLVED_SHARED_ART, not a wrong canonical card and not exact printing qualification. Record unavailable variants explicitly; do not manufacture a PASS.",
+            "physicalStatus": "NOT_TESTED"
+          },
+          {
+            "caseId": "VAR2",
+            "cardId": "cp-jackie-welles-mama-s-favorite",
+            "name": "Jackie Welles: Mama's Favorite",
+            "recognitionGroupId": "cprg-d6c10325a86aac21",
+            "recognitionMode": "shared",
+            "candidatePrintingIds": [
+              "cpp-71e72a5d41466c21",
+              "cpp-94790158e46c6bb8",
+              "cpp-fedbde99d7cbf053"
+            ],
+            "printings": [
+              {
+                "printingId": "cpp-71e72a5d41466c21",
+                "setId": "wtnc-beta",
+                "number": "β152",
+                "variantKind": "iconic",
+                "referenceId": "cpvi-71e72a5d41466c21"
+              },
+              {
+                "printingId": "cpp-94790158e46c6bb8",
+                "setId": "wtnc-beta",
+                "number": "β073",
+                "variantKind": "standard",
+                "referenceId": "cpvi-94790158e46c6bb8"
+              },
+              {
+                "printingId": "cpp-fedbde99d7cbf053",
+                "setId": "pre-release-beta",
+                "number": "007",
+                "variantKind": "standard",
+                "referenceId": "cpvi-fedbde99d7cbf053"
+              }
+            ],
+            "protocol": "If physical variants are available, present each separately in nominal conditions three times and record the actual expectedPrintingId. A correct canonical identity with a null/shared identifiedPrintingId is UNRESOLVED_SHARED_ART, not a wrong canonical card and not exact printing qualification. Record unavailable variants explicitly; do not manufacture a PASS.",
+            "physicalStatus": "NOT_TESTED"
+          },
+          {
+            "caseId": "VAR3",
+            "cardId": "cp-adam-smasher-ender-of-legends",
+            "name": "Adam Smasher: Ender of Legends",
+            "recognitionGroupId": "cprg-0d26ece3e78ec28e",
+            "recognitionMode": "shared",
+            "candidatePrintingIds": [
+              "cpp-0c4d5b62f83947af",
+              "cpp-bec13059d093b5a4",
+              "cpp-fff81bae871b83ec"
+            ],
+            "printings": [
+              {
+                "printingId": "cpp-0c4d5b62f83947af",
+                "setId": "pre-release-beta",
+                "number": "001",
+                "variantKind": "standard",
+                "referenceId": "cpvi-0c4d5b62f83947af"
+              },
+              {
+                "printingId": "cpp-bec13059d093b5a4",
+                "setId": "wtnc-beta",
+                "number": "β001",
+                "variantKind": "standard",
+                "referenceId": "cpvi-bec13059d093b5a4"
+              },
+              {
+                "printingId": "cpp-fff81bae871b83ec",
+                "setId": "wtnc-beta",
+                "number": "β141",
+                "variantKind": "iconic",
+                "referenceId": "cpvi-fff81bae871b83ec"
+              }
+            ],
+            "protocol": "If physical variants are available, present each separately in nominal conditions three times and record the actual expectedPrintingId. A correct canonical identity with a null/shared identifiedPrintingId is UNRESOLVED_SHARED_ART, not a wrong canonical card and not exact printing qualification. Record unavailable variants explicitly; do not manufacture a PASS.",
+            "physicalStatus": "NOT_TESTED"
+          }
+        ],
+        "repetitionsPerPrinting": 3,
+        "instructions": "Present each printing separately in the same nominal setup. Do not treat similarity-proxy rankings as physical test results. Report canonical correctness and physical-printing resolution separately."
+      }
+    ],
+    "trialPolicy": {
+      "recommendedPositiveObservationWindowMs": 10000,
+      "note": "A protocol observation window, not an engine latency threshold or an automatic product failure. Use the same window for comparisons and report early stops as invalid.",
+      "stabilityHoldMs": 10000,
+      "negativeSceneObservationWindowMs": 30000
+    },
+    "substitutionPolicy": "Record actual physical availability and every substitution before trials. This prepared plan recommends 15 distinct canonical cards and three trials each (45 nominal trials). Any adjusted 12-15-card plan requires a documented protocol revision before trials, preserving intended diversity; never remove failed trials retroactively. Keep the same measured profile and active 229 EN scope; availability gaps remain explicit.",
+    "privacy": "Store results and non-sensitive categorical setup metadata only. No webcam video, screenshots, faces, audio, SDP, ICE candidates or raw device IDs. Free notes must be manually checked for privacy before export."
+  }
+}

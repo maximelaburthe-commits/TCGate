@@ -1,0 +1,919 @@
+{
+  "schemaVersion": "1.0.0",
+  "productSha": "7baeb9844ac8a2a68b2c5a38011003514bab5f98",
+  "policy": "Every existing public and model file is frozen. Developer qualification scripts are additional opt-in files, never included by normal pages.",
+  "files": [
+    {
+      "path": "models/card_detector_v53_512.onnx",
+      "gitBlob": "d856dfcaae78bddec793d8b12cb47d889cf8f3d2"
+    },
+    {
+      "path": "public/app.js",
+      "gitBlob": "e0b1265d1ab70162830e90ad5466cf2b73f94a22"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-02d159a15874e78e.webp",
+      "gitBlob": "3f40330eba2a6cfc9a042083b8a4b4e9cfc1bbfd"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-03d6b09216a6137e.webp",
+      "gitBlob": "cc8c27dede7cb8406b11c8cf4bb0119789130d1e"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-03ee5f74a55d9337.webp",
+      "gitBlob": "4bf5ee0e26dacc30e7d0c5a6f4ce23c19cfe423b"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-0673c7af57068c54.webp",
+      "gitBlob": "6c4af25a195e35c6c07e989e8ca0c4ec7c88f09e"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-077861a5ffc1f7a5.webp",
+      "gitBlob": "0a0bae7980a2c0c7eda7477b6eaef687c049c119"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-0eb986c8459d91ca.webp",
+      "gitBlob": "d00e4027cbe4f8452b1a53f6ed2ddbb4f462be26"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-1346a40a4077a2b6.webp",
+      "gitBlob": "8b5f922c759de5811044d161db58f76166aa04c3"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-1420fbeaffbd172a.webp",
+      "gitBlob": "448b924f88a693650acf41e935013191ed10c809"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-1446fc47d35b5bc5.webp",
+      "gitBlob": "5d7f2fb93be9fbec7e6d1c6ef90dcb474a1ed280"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-162f9e74580f40b5.webp",
+      "gitBlob": "3e847c415e9eb785b984fb8e4d67202f970460ca"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-180078d05370e589.webp",
+      "gitBlob": "306e5cb43118ebdb00687825f10cee317769ecda"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-1cfd280cecba09ea.webp",
+      "gitBlob": "b7a8b504304233c70979042a2ab41cf53419db9d"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-1de57a6c7c72c9bf.webp",
+      "gitBlob": "06a5f2620d517345f503246cfc4f260e72c136b6"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-1ee9ad55bb635df7.webp",
+      "gitBlob": "d554269d03e7f47591489db80ae7519a5edf33dc"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-2017c7a126decd71.webp",
+      "gitBlob": "b3dda4d12843739db11fc8612d394693b22c2cb1"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-23c628bffab6b601.webp",
+      "gitBlob": "62bcd4ce971739142987a357adf39a3aaed7aadd"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-240f8ed0f0318360.webp",
+      "gitBlob": "a897aefe026f2a3ddf2b506efa0febe42e8b086c"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-260ed0642b12771c.webp",
+      "gitBlob": "95bd3279d8985cae0c00553c36486bb0a249002d"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-287bf6c21babb8a4.webp",
+      "gitBlob": "0f6e36faa5894fd341fe03b35ae2efe3515505a7"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-28f8c3c44fa5753c.webp",
+      "gitBlob": "bdb0f768b566aa17de98c91b1673cb984610b35d"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-2fd333942ecb0bbb.webp",
+      "gitBlob": "b0ab14ca92ad619792e8712aad39da4ed87f7a09"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-308271ebca6ee75d.webp",
+      "gitBlob": "1cada0b5f6c36874a5514abeca16d9915bc4cd81"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-3150a39e0e47e6d4.webp",
+      "gitBlob": "2c7d5eb37d08252f1b45ebec2bf68b79e58ec8d9"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-3269c7ee898bb9bb.webp",
+      "gitBlob": "a0e63857ecb8038c6fb13635eff1fa4c7c4dc306"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-356554cd5d18c511.webp",
+      "gitBlob": "0f9c6e145254bfbebb43c2858f3fae557796c9ae"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-3b2f06e67090625e.webp",
+      "gitBlob": "2fc0fa426d47d297317779c4356503f039c976de"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-3b7b4695442558ee.webp",
+      "gitBlob": "f9b2da763457c9d7b4e938b9a4f87b50a950ebb9"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-3c17ceaf89588407.webp",
+      "gitBlob": "7cbebf8ebb4d535ae3cdd4cf452096daf4defacb"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-3dbb1307e69c7bf8.webp",
+      "gitBlob": "040ae9c373cea6cacaf447caab4b8bf97d457a35"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-3fed8313a78d0ff6.webp",
+      "gitBlob": "a6955613362f563d26465e035f09943c25e00a43"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-461b090f895195ca.webp",
+      "gitBlob": "61bebb9373bd0c55301856173efcbaf894603ee6"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-47d6c78571ac9ca8.webp",
+      "gitBlob": "8c409f02b8e2bb359e63e2a63d211e0fc0d97ed9"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-483ef8669d87edce.webp",
+      "gitBlob": "bf5856632c214b30d8595a132b8ac499260efc63"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-4e759abae11a4428.webp",
+      "gitBlob": "9b6e3beacd877c7062084fc61ef30dc05fb9f46b"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-4f8d00888c1b1f59.webp",
+      "gitBlob": "786bf1d06571973855613161024a0141ea2bb706"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-509f743f75700687.webp",
+      "gitBlob": "8e33cc13e9b8dbf0efc499d9d7d96bd48a7f5c2d"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-514cdefe2f534dc6.webp",
+      "gitBlob": "76db22c3d9d86aa31d9056a45f33dd4f13ce4720"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-58580f561e8e0eb1.webp",
+      "gitBlob": "a95c5e9dc54c5ee881752b2fb938000c86fc5c21"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-58674b48782a968f.webp",
+      "gitBlob": "0063952924037aeed774570c021856a8afd69a48"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-58ee257b9e125fdc.webp",
+      "gitBlob": "e15e59d65d069c68b8d6a081b1109fb6b3c54c6e"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-598a837abe28a565.webp",
+      "gitBlob": "c09cad4c3edd43f35a241f8275d6599e36897c38"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-59c021d8a29b8aaa.webp",
+      "gitBlob": "1324b1c198d2d130ea650e00285df79de980deac"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-60c0459645904c37.webp",
+      "gitBlob": "a8e3b00d8bc196d69feb952c9121367ce9c53020"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-60c0b05d9f2c81fb.webp",
+      "gitBlob": "9c5cde2805f1b896fc60567e2c70ea3c1656cafd"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-62251b0366bdde8b.webp",
+      "gitBlob": "2305de9bbc487b60710b248a0389e4da02d3d96e"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-62372dd2f034bacd.webp",
+      "gitBlob": "295bb9e162028a37ac6afb5d84bd7606cf55b5e2"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-6263ba43e331461f.webp",
+      "gitBlob": "390097a5237a3d1aafc093f1aa877edf44a91740"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-635676a1780a1b99.webp",
+      "gitBlob": "5366c0710f5ca6e25d3995b36fe0aec7721c7e86"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-64215c21382171c0.webp",
+      "gitBlob": "e773c270471c4e441966816b09136def59065b64"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-6442a83577ad7411.webp",
+      "gitBlob": "a23ab22e18abc9632f7b21e02e2665bfde2811fe"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-69585b6cb2f147a5.webp",
+      "gitBlob": "c6c575895940be588873f93248e30bc9194a3fcc"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-69799b909712a523.webp",
+      "gitBlob": "01e7f65e65a16cee73f94e4019a59d97fc6d7710"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-6d213cfa534078a1.webp",
+      "gitBlob": "4b1d9bcf1c78469df786a092b415dc0d9c363f57"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-6e4d31bea8587fcc.webp",
+      "gitBlob": "6629480de2008c5e141a3757567a87ef792e59f8"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-71f174b24ca73d47.webp",
+      "gitBlob": "beff67d6c583f56f0f8b54583a1864620b429512"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-734552d1189ae641.webp",
+      "gitBlob": "1d77600f865e22bc95ca77a6bdaaeaba20ab45cb"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-739b8ee7632725c1.webp",
+      "gitBlob": "f6561267b7ffedc610224383fb0dc49fa15f0fbc"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-73a918a4ee46230a.webp",
+      "gitBlob": "c353d518a3e83b5d45ac26c16c74c0d776e78cbd"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-766de3be28b8a7c3.webp",
+      "gitBlob": "5cd22dbd9e7533f828af1c68e681f2c07ad6f074"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-7a54bfb2657fdf82.webp",
+      "gitBlob": "51f2ec539bc3475b8fb6e89f2d84c82c43b1d35d"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-7f11fb70f2dffbd8.webp",
+      "gitBlob": "efb14c051883b7ccbfc93cb600050b814eace150"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-7f907cb8cc7810eb.webp",
+      "gitBlob": "9ed5f24bae68015a57711c50470c5fe3910e98e2"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-8214425ccd0d0ad3.webp",
+      "gitBlob": "1c79e07f81648196ee76b3a7c063cfa1248115c4"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-86d902ed5c1d1f2e.webp",
+      "gitBlob": "6616bc98fb80ed459dc4dd68edb0d0f422c4e918"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-87bdebc840a44aa4.webp",
+      "gitBlob": "16980c19f1427d53f68c55a446594b1136c814fc"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-881d3f2ece459583.webp",
+      "gitBlob": "47a4b8614393cc5a067e8cd7ae8660f632ccdc12"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-8930003633e80a21.webp",
+      "gitBlob": "f60b26e27479127652eb126292c3e713344b1ed3"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-898b21a61328fa44.webp",
+      "gitBlob": "d484ff44e9991b3fec8b59f6d565ff2e5188b115"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-8b51b3dce986e893.webp",
+      "gitBlob": "4d816e9950ba8231420edd90580c4e33205ff1d9"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-8df637e8d88eef07.webp",
+      "gitBlob": "cca3a86c66528462b52c21b01e8874083dba9e41"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-93310c51e1ab876e.webp",
+      "gitBlob": "89a93888489176ff915a2a8b9dde157fd6fb7894"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-951ddf4214118162.webp",
+      "gitBlob": "4822fe0f82079866a8a4cab00e1ebed2891d2bd0"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-9547b93680cbb8b7.webp",
+      "gitBlob": "8a9bb5d8c3dac2ccf6fe38ff876609fd80878c8b"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-994b0d73889d38c6.webp",
+      "gitBlob": "baa3d5cc24416ec641124d3075c5688baae48f6b"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-9a22a72ffdb28768.webp",
+      "gitBlob": "e6e2d4dacc371b4fdfa36fffe9cd4fff9cc0de5f"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-9be3dc9a666eea6d.webp",
+      "gitBlob": "0b4f092bd6a2dbf88f045fecd935507de04663cf"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-a1e87522d2bc9270.webp",
+      "gitBlob": "a1497a29b42742aaa6230ed576874f90d587ffca"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-a5255cfc741c10d2.webp",
+      "gitBlob": "0fb904de0e40ae8ea54ab7332c00a3ad0d524473"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-a5aa543f8af65490.webp",
+      "gitBlob": "24161d0219c2481eae4cb29a688ec2580e607429"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-a7beea5591205534.webp",
+      "gitBlob": "3e7e2889d2e28017c4528f4a0c5f05fd4d61ad4f"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ab5751a90bce12ac.webp",
+      "gitBlob": "9f13fbe5a3b17ae155c1336d18cd8e4d93daee9a"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ac0d5e2e42a90758.webp",
+      "gitBlob": "2f756f1473ba79196c15584a5d674ab90ee8b666"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ad4c12d992ca2eb8.webp",
+      "gitBlob": "643ef977ab04b40b1fe16fb558041e0407b5d4d1"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ae887fe7ad55acd8.webp",
+      "gitBlob": "183b629673c2a2be5c4520c3b0d722ef66d1b788"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-af335bd1350da2dd.webp",
+      "gitBlob": "ce65e3c182965b86b799111e3b81e5fcd262f235"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-af82a28bed35b8ad.webp",
+      "gitBlob": "8c9bd766ad3fc08b4bde258c1df3160a567058ce"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-afc6a9bf446b9e3f.webp",
+      "gitBlob": "d16d37013c87d0f60f122d897f1e90611b225586"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-b3672ca0b4ccc812.webp",
+      "gitBlob": "a26c48be86f44f3f3983d32d4c5a61758aa425bf"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-b3d58c9c658a53d9.webp",
+      "gitBlob": "056fe0a1bd6ebf0e03b051898ef5b31a2c6cef62"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-b7acab3fc10ef1bb.webp",
+      "gitBlob": "abec73891c90bd0f3e29883e07758849eeda29d6"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ba93bbe4c9d589d5.webp",
+      "gitBlob": "c588bebb46641444050dc6d72c937e12dec29c0f"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-bb5a3a3a08ff7cc3.webp",
+      "gitBlob": "3f60c7f99b1166d0dafa5a0fbec1e460427f7235"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-bbbab68f92a3d3ed.webp",
+      "gitBlob": "978a74fb8b635f607cb88de6479f00cc52e2b112"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-bc221071b29f2a98.webp",
+      "gitBlob": "8adf9c0136533a2a3200426bbe4dc09ac365aeb9"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-bca4c8ccddf27e99.webp",
+      "gitBlob": "d2165e1d8f766ecaa8c2ae4993a32e9f227f31e2"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-bd0ab6102f763890.webp",
+      "gitBlob": "f61c81c8a5788e180bd0705b228dbb8afd58eee8"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-bebee8ba9212f0bc.webp",
+      "gitBlob": "b1586a6347226bbf1db679a42dd58bc031a479ee"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-c16f37f3b7592e1c.webp",
+      "gitBlob": "a57dd76b4809e0b556fce501425f9e8bcd56f522"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-c2e8bf355b238fd6.webp",
+      "gitBlob": "32ff789dafb0d097337c52f9900a649ca2d62f9d"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-c2ef667cfaab84ad.webp",
+      "gitBlob": "df268e30190c89bc128c3b86d15d74206c9d79a8"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-c46bb2b72d5b6957.webp",
+      "gitBlob": "537ca824c087f783e949297ae945422f24b94be2"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-c6f6801f7e5aa26d.webp",
+      "gitBlob": "525739fb17063ffd15ce62a5f5b2c58a2bb31463"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ca62ce901d6f65fa.webp",
+      "gitBlob": "bf79d9aa1ec6032521142fd5f7c03c7fe090236b"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-cb07e6320cc04c2f.webp",
+      "gitBlob": "7fdfb2df0a3c9d8a3e1f8a96f77c6fe783518dd9"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-cb2f33bbe78fcdfb.webp",
+      "gitBlob": "7065bf04d419c4205450476cd4d66c95761ec843"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-cb443df51c7db098.webp",
+      "gitBlob": "193fff469c0bc7b7ea03da7855b39a3b57e50911"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-cb7cd38e6925a981.webp",
+      "gitBlob": "b912c01262daaa00095aa387802a270859d1d5dc"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-cce6c481df036fda.webp",
+      "gitBlob": "a0db10b12fd79b4f578dc4d890a341b5003c3ead"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ce261182dfe0b79c.webp",
+      "gitBlob": "fcc5189fc977d09ec08d1e279999ce4c9d6c5257"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ceab0ea9b2c9af4d.webp",
+      "gitBlob": "575f567ac97c1f92063b96b9b17c08732ee960ab"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-d37d525dfa3c04b5.webp",
+      "gitBlob": "1a1b2ca22ec3cafd7c11060be8e240a14ca19def"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-d4161a4649d4ccce.webp",
+      "gitBlob": "96aaf405a045accbc6a8b18c6d3af7a50760efea"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-d7bb62380163393b.webp",
+      "gitBlob": "a565af3a4ad1042a9b4e91683fe2f192bec12049"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-d7d5b94aa52225d3.webp",
+      "gitBlob": "7a7e731e9ef3fc0457ba3f7aa2483556344aa0b4"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-d86914fe7d5e9235.webp",
+      "gitBlob": "3ba34589a7d264dd57d45ae73519dc6ab75899db"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-d89087b7af84e213.webp",
+      "gitBlob": "69993cc8a7602c4b8f180443b8fccfa195c559fa"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-d8c8d0b83dfce7f0.webp",
+      "gitBlob": "b1845ca435372e17af9937b58654a8ec9894fc7d"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-da12d9d3784fe46e.webp",
+      "gitBlob": "7ddb5cf87b08727db27f09eae6f7c2ad3b543e13"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-da388f8d51ce318c.webp",
+      "gitBlob": "aa144d95de145b551c8059a7d02d1bf0139f115a"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-dad875e1132131df.webp",
+      "gitBlob": "541e86e1c12ba731d2d7a8c426d8bb025ca93ca2"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-dbeb59958d4314a6.webp",
+      "gitBlob": "3cf43fd9ac76614aca50ecf79393ec79fc5bc5b7"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-dcef0ee6e8b00ca4.webp",
+      "gitBlob": "6c747eecf8c6552b062409312794e35fad5d45e9"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ddcc6a14f47e78d4.webp",
+      "gitBlob": "cf056341d2c08e02599585c26b69394cb2ebe57d"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-e1574af3d4bb03ee.webp",
+      "gitBlob": "5a449dc56f470c4b02011dd38e4df65a3b22db7d"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-e390a3303b82fc1e.webp",
+      "gitBlob": "0095e6d950df4543d92b0eae2b1d65e2f5371d1f"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-e3be2ed0c1eec7dc.webp",
+      "gitBlob": "a50ba87d0970c7acb3026fbaaf00fb431f1df339"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-e410e6b99e9f357c.webp",
+      "gitBlob": "211cf791b5bb8d44cc7e6aa81cc68b13152bf384"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-e630fb858f7b542c.webp",
+      "gitBlob": "ee74dcda7cfd6c52f636fe37a5c1e5b0b3952482"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-eaf7a58af5b99b55.webp",
+      "gitBlob": "e091694042e63598036b5e71b8bb484a4cda5a87"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-eb439ced9c26677a.webp",
+      "gitBlob": "ce126b3397f4325e9db40805dad0cbb9a3a9085a"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-eb65600a3e6706c1.webp",
+      "gitBlob": "0ab97509939e479948026e45095fd1f3b94379e1"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-eb8e45f0acc3a525.webp",
+      "gitBlob": "5fbedff28fb473992c14668e72875c2b593fbdf1"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ed4be6ed4eac2b57.webp",
+      "gitBlob": "bc8d581bbe9059307f8d70610b3765d4211599ce"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-eef8f1d28001db6f.webp",
+      "gitBlob": "3a3dcd71fe5116eb57f964a0f17fbf3e126bd2eb"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ef35751db3ce602a.webp",
+      "gitBlob": "493629967eeaf8f61031be19a9b44db27ee6831c"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ef5a1a8db9b52808.webp",
+      "gitBlob": "82bac5519b5526f6394f3c8d58dca72b81b073d7"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-f017c200a38d3bd4.webp",
+      "gitBlob": "743437397844d6eb875e9eeb36e4a20b8cdc27dd"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-f1cc59a0c16f7ddb.webp",
+      "gitBlob": "51ceb88c5055ee5bd8703725b6355a4ef04014b7"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-f4c94a39c5c19477.webp",
+      "gitBlob": "911e5ad429c885982a806ab823c07d00e38163ab"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-f7d8397b82cecdfb.webp",
+      "gitBlob": "7a0527afe807a25d2d63c625189cb5efecf222a4"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-fb6579c1aa399ca9.webp",
+      "gitBlob": "526cb7b04f29e1a23af19344fbf22c85d864faba"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-fd8cbfd1e939ef45.webp",
+      "gitBlob": "9cbf90228504551b7fe43840eac0318e3424ae64"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-fda2bd51e9b0c9ac.webp",
+      "gitBlob": "6d6fe7f6ee809682841c8029694455878f656bab"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-fedb842e7045d811.webp",
+      "gitBlob": "2bb329837295436d888def249973528dc96c16c0"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ff4e1430790eceab.webp",
+      "gitBlob": "d471a57f3a9c2bf3ac55df2c8b9a1b322e24bf4d"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-ffe2a50f1865e83d.webp",
+      "gitBlob": "3f3aa32f319c7e4939a92c0cd266d393f91791b6"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/assets/vision/cpp-fff0889dad6834ee.webp",
+      "gitBlob": "0ded739c847a741957385bf3c3201599f03c4b9c"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/canonical-vision-index.json",
+      "gitBlob": "c5ef21cb99cbb4b97c322fd33e828949d41771aa"
+    },
+    {
+      "path": "public/assets/card-db/cyberpunk/0.7.0-6d3a296/vision-source-manifest.json",
+      "gitBlob": "900ec36302925d733fcc53a1ec30c42bf4221c5f"
+    },
+    {
+      "path": "public/assets/dice/D10.svg",
+      "gitBlob": "7c7f4cb0084d11dfb10a9386d69cedd4fd117112"
+    },
+    {
+      "path": "public/assets/dice/D12.svg",
+      "gitBlob": "f348767956b0d3981449c66bd7d87b54b70d1eee"
+    },
+    {
+      "path": "public/assets/dice/D20.svg",
+      "gitBlob": "e9133526c0f08b8d603dc0b91f922fce65d7fa8c"
+    },
+    {
+      "path": "public/assets/dice/D4.svg",
+      "gitBlob": "d692abcd99ff32228c9da9477cd29c4283b5de50"
+    },
+    {
+      "path": "public/assets/dice/D6.svg",
+      "gitBlob": "5871c1e66a6842eec9f660f9552949781e5c393b"
+    },
+    {
+      "path": "public/assets/dice/D8.svg",
+      "gitBlob": "6ce714a89453f520ed50af0681897ab8f0ed65ef"
+    },
+    {
+      "path": "public/assets/dice/opponent/D10.svg",
+      "gitBlob": "eb0ce6ee8cff0d6559153b58933cafc63ef6f071"
+    },
+    {
+      "path": "public/assets/dice/opponent/D12.svg",
+      "gitBlob": "d8db5e7ee2993341c48909c62ae22e0430a81f5f"
+    },
+    {
+      "path": "public/assets/dice/opponent/D20.svg",
+      "gitBlob": "07e4d2fd37a06ecee2bca93aba38ad71697db794"
+    },
+    {
+      "path": "public/assets/dice/opponent/D4.svg",
+      "gitBlob": "3034f891fc2a602d55a80fdcd9c3cf3b55149e74"
+    },
+    {
+      "path": "public/assets/dice/opponent/D6.svg",
+      "gitBlob": "a58e886fe2a698f94259cba33903cb1a3f2e4f77"
+    },
+    {
+      "path": "public/assets/dice/opponent/D8.svg",
+      "gitBlob": "44ab63b417b5970b3789a233d7f81343f37574d4"
+    },
+    {
+      "path": "public/assets/dice/self/D10.svg",
+      "gitBlob": "e193357ec2eae2def9c014fb5ebf1ee6ed9a2463"
+    },
+    {
+      "path": "public/assets/dice/self/D12.svg",
+      "gitBlob": "9bcaf12d77d51197d6fb4434788e4f44931253c9"
+    },
+    {
+      "path": "public/assets/dice/self/D20.svg",
+      "gitBlob": "d6156c1fe1f1395f9cf5d08f6e9f59d45ca76f2e"
+    },
+    {
+      "path": "public/assets/dice/self/D4.svg",
+      "gitBlob": "dbd0954a3c94c5fa115680a5de6df79551fa256b"
+    },
+    {
+      "path": "public/assets/dice/self/D6.svg",
+      "gitBlob": "587f94c63db6f7f711a650024e9983ae3a274917"
+    },
+    {
+      "path": "public/assets/dice/self/D8.svg",
+      "gitBlob": "8e15f200d48c98a603a0e388cefd2f54c927b568"
+    },
+    {
+      "path": "public/assets/home-alpha-orbit-hero-approved.webp",
+      "gitBlob": "3ea25268b552d9462dc241c1d5747a3e7f3f26c8"
+    },
+    {
+      "path": "public/assets/home-alpha-orbit-hero.svg",
+      "gitBlob": "f4b50c5ca55a1a252e0e4aab7d22e6000e090e07"
+    },
+    {
+      "path": "public/assets/home-portal-art-crop.png",
+      "gitBlob": "0e94361ed2edf6e493d2e8b0173131255d9451c0"
+    },
+    {
+      "path": "public/assets/tcgate-logo-final.png",
+      "gitBlob": "44df38d2c7322b494387c0104552f19a675f8807"
+    },
+    {
+      "path": "public/assets/tcgate-mark.svg",
+      "gitBlob": "9f4dc149c2cebf8074a0e4dcde171d4167041469"
+    },
+    {
+      "path": "public/assets/tcgate-product-preview.png",
+      "gitBlob": "03f701fc875318d0fd6b798c9b2e2949d2b18eb6"
+    },
+    {
+      "path": "public/cards-fallback.json",
+      "gitBlob": "d444d22e13ef94322c530fc67b2cedfd3b18bbc5"
+    },
+    {
+      "path": "public/database-locale-core.js",
+      "gitBlob": "5f0c87108faa4b371640089da1db30fe43d0a162"
+    },
+    {
+      "path": "public/database-source.js",
+      "gitBlob": "8d67239f05995dd8f832cf4479f5f50665e94afc"
+    },
+    {
+      "path": "public/detection-worker.js",
+      "gitBlob": "3bfd0e94dabc2acdec5f7d5e8cba27ceaecc4214"
+    },
+    {
+      "path": "public/future-ux-v3.7.css",
+      "gitBlob": "d25fab571cf1d64bc7fb888a60308e2c2b7066fc"
+    },
+    {
+      "path": "public/future-ux-v3.7.js",
+      "gitBlob": "086919a159aa34bec827b963d7b91e2926251e16"
+    },
+    {
+      "path": "public/game-databases.js",
+      "gitBlob": "9308ec3b55d1fd13d1a56bd2a3c44417a2fd5008"
+    },
+    {
+      "path": "public/identification-worker.js",
+      "gitBlob": "f59e741ef0467df6d83bd5fba7e50b97fc5c7824"
+    },
+    {
+      "path": "public/identification.js",
+      "gitBlob": "9c70af2c663ebcdfa2aab3e8d30d43905d74bb1f"
+    },
+    {
+      "path": "public/index.html",
+      "gitBlob": "fc043fe5ef18669d07ff171d673caeb6ab4acef3"
+    },
+    {
+      "path": "public/media-recovery.js",
+      "gitBlob": "39001b58ab524b85e978edc990efd5f5ee3f0e13"
+    },
+    {
+      "path": "public/offer-delivery-retry.js",
+      "gitBlob": "d7d5477c3b6dd323915528ac5d298e132011764c"
+    },
+    {
+      "path": "public/phone-camera-client.js",
+      "gitBlob": "f42252a95c25efdf604b2071c395cf25c5d97e95"
+    },
+    {
+      "path": "public/phone-camera-control.js",
+      "gitBlob": "feb44b58892b2e356b79453602ec16228632ac6c"
+    },
+    {
+      "path": "public/phone-camera-devices.js",
+      "gitBlob": "223334b99431f788bff69c1465901593c408b242"
+    },
+    {
+      "path": "public/phone-camera-diagnostics.js",
+      "gitBlob": "c0a38e0993dc60f5b275ad3efcd875617bb89180"
+    },
+    {
+      "path": "public/phone-camera-privacy.js",
+      "gitBlob": "8a667cf58b5324bc2a072a506b55a759d5127eed"
+    },
+    {
+      "path": "public/phone-camera-settings.css",
+      "gitBlob": "5cfe8e261b5e5b76057cc023a622596942d4bdfa"
+    },
+    {
+      "path": "public/phone-camera-settings.js",
+      "gitBlob": "c84322875f1a4841d61cdda9b2a30492c92bb733"
+    },
+    {
+      "path": "public/phone-camera.css",
+      "gitBlob": "6fe383e463d74ff53a3aed3165f52cdb996e4b04"
+    },
+    {
+      "path": "public/phone-camera.js",
+      "gitBlob": "0c1890be19c71a5c555bbd29fa9429dd2352932d"
+    },
+    {
+      "path": "public/phone.html",
+      "gitBlob": "37327bd563d1ae49a1faa072a989d86c64d96269"
+    },
+    {
+      "path": "public/player-locale.js",
+      "gitBlob": "0341ccb07a7bbf86e4b6942effcf67c079d49d3b"
+    },
+    {
+      "path": "public/report-diagnostics-v2.js",
+      "gitBlob": "aeb293e05b3101601d0488ccc1a1e62be501b5b8"
+    },
+    {
+      "path": "public/report-mail-ui.js",
+      "gitBlob": "30a98b40eaddd73502d1179847fc2422ed1997a7"
+    },
+    {
+      "path": "public/report-mail.css",
+      "gitBlob": "dc42e11dbc2f453b81d894880ad0f09c62fa2818"
+    },
+    {
+      "path": "public/styles.css",
+      "gitBlob": "d7c27d73fb02010727d77f532a45e119b7f91b79"
+    },
+    {
+      "path": "public/table-state-bridge.js",
+      "gitBlob": "9e10b601234973d05553a55631dcb8ec6e6f6971"
+    },
+    {
+      "path": "public/table-state-engine.js",
+      "gitBlob": "a11874b5a0a7cf645cd7210f41bbac80aa6db79a"
+    },
+    {
+      "path": "public/tcgate-alpha-ui-1.0.5.css",
+      "gitBlob": "d1779226adc86a0d5bbd3ef7bf088372c33f38cc"
+    },
+    {
+      "path": "public/tcgate-alpha.css",
+      "gitBlob": "81ad8cb20ec40f134fb6528b7cc866225f302866"
+    },
+    {
+      "path": "public/tcgate-ui-1.2.css",
+      "gitBlob": "2bd53d9ca9c8d176aea9f5c43a96d5f5096f186a"
+    },
+    {
+      "path": "public/tcgate-ui-1.2.js",
+      "gitBlob": "a3edb49195fcbe8dd8595a6bf179a1fa724e9099"
+    },
+    {
+      "path": "public/vision-analysis-frame.js",
+      "gitBlob": "75f11448cc03a2a16a4b60ad116a71aabff6f456"
+    },
+    {
+      "path": "public/vision-appearance-sampler.js",
+      "gitBlob": "3459a193d98a01488b6d8c21be9a507fa1cfd776"
+    },
+    {
+      "path": "public/vision-calibration.js",
+      "gitBlob": "9c3a70cec4ab8000905cca7d2a2273cccb21c647"
+    },
+    {
+      "path": "public/vision-core.js",
+      "gitBlob": "2ab5a8aa0fe5bd22489f3ecb44d2a5710334f091"
+    },
+    {
+      "path": "public/vision-frame-gate.js",
+      "gitBlob": "e6e15b1cf249a0f6e8c3d1d155c2ad78bda0f149"
+    },
+    {
+      "path": "public/vision-library-integrity.js",
+      "gitBlob": "c7b16c8c21d8380c70cc3e4fb8f03e8212b04e79"
+    },
+    {
+      "path": "public/vision-locale.js",
+      "gitBlob": "ec7ba984e1711be12ce747fe0fd290332d2b68d9"
+    },
+    {
+      "path": "public/workspace-camera-status.js",
+      "gitBlob": "c4de99c0b27d6f48c0be35a85ff2bf567e550bb1"
+    },
+    {
+      "path": "public/workspace-candidate-lab.js",
+      "gitBlob": "a4d24138d9fbbb3903b78997c54c3af825fbde1b"
+    },
+    {
+      "path": "public/workspace-cockpit-model.js",
+      "gitBlob": "69c0b475d6fdf279484850c2950e0a0750b29506"
+    },
+    {
+      "path": "public/workspace-cockpit.js",
+      "gitBlob": "4aeac3da67bd455aeb2d3b47059aca8ae0f79230"
+    },
+    {
+      "path": "public/workspace-database-maintenance-model.js",
+      "gitBlob": "f3277a082d708cea3e2535ff6706bceb9c141dc5"
+    },
+    {
+      "path": "public/workspace-database-maintenance.js",
+      "gitBlob": "32d0f6a007461052477024322298d87f98a83991"
+    },
+    {
+      "path": "public/workspace-databases.js",
+      "gitBlob": "05b00dcbc147822d0cdf182613f8eab13bad9962"
+    },
+    {
+      "path": "public/workspace-journal-model.js",
+      "gitBlob": "a3d65a02370266a78e59ae242bb1ac2ce05af26b"
+    },
+    {
+      "path": "public/workspace-journal.js",
+      "gitBlob": "a8b050d079817cd1c823f0b9597bf25e22793150"
+    },
+    {
+      "path": "public/workspace-lab-provider.js",
+      "gitBlob": "f81ffcd6434ca503390ae1e6921e2ee9293cb061"
+    },
+    {
+      "path": "public/workspace.css",
+      "gitBlob": "fac9e1f2781b456a4694df59189b805abe690122"
+    },
+    {
+      "path": "public/workspace.html",
+      "gitBlob": "68b7d97efd63dcd8ea86a0e186f7997ffd92f0a5"
+    },
+    {
+      "path": "public/workspace.js",
+      "gitBlob": "89bd031f87548bbda02bdee05ee4d9daf8253eab"
+    }
+  ]
+}

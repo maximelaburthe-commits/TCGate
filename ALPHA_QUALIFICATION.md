@@ -6,7 +6,7 @@ Un seul workflow de qualification complète :
 npm run qualify:alpha
 ```
 
-Il exécute 46 suites distinctes, dont douze suites navigateur, puis le contrôle syntaxique correspondant à `npm run check` et `git diff --check HEAD^ HEAD`. Les 45 suites précédentes sont conservées ; Cyberpunk Languages Qualification ajoute sa suite de qualification structurelle et ses contre-exemples. Cette suite exige les deux snapshots réels indiqués par `TCGATE_CYBERPUNK_MAIN_ROOT` et `TCGATE_CYBERPUNK_DEVELOP_ROOT`, et ne remplace jamais une passe physique. Les empreintes de 79 fonctions d'identification, de 47 fonctions Table State et des constantes de reconnaissance restent identiques à la baseline pré-Jalon-4. Détecteur, worker de reconnaissance et modèle gardent leurs empreintes complètes. Aucune suite navigateur n'est facultative. Aucun package npm runtime externe n'est déclaré ; le workflow C14 historique appelant le forwarder retiré n'est pas restauré.
+Il exécute 48 suites distinctes, dont treize suites navigateur, puis le contrôle syntaxique correspondant à `npm run check` et `git diff --check HEAD^ HEAD`. Les 46 suites du Jalon 5 sont conservées ; Vision Qualification ajoute la suite du harness et sa suite navigateur, sans modifier le moteur. Cyberpunk Languages Qualification exige toujours les deux snapshots réels indiqués par `TCGATE_CYBERPUNK_MAIN_ROOT` et `TCGATE_CYBERPUNK_DEVELOP_ROOT`, et ne remplace jamais une passe physique. Les empreintes de 79 fonctions d'identification, de 47 fonctions Table State et des constantes de reconnaissance restent identiques à la baseline pré-Jalon-4. Détecteur, worker de reconnaissance et modèle gardent leurs empreintes complètes. Aucune suite navigateur n'est facultative. Aucun package npm runtime externe n'est déclaré ; le workflow C14 historique appelant le forwarder retiré n'est pas restauré.
 
 ## Préconditions et preuves
 
@@ -33,6 +33,7 @@ Comptage : appels aux API Node `assert` des processus de test instrumentés, y c
 | Player Locale 1.0 | `player-locale-test.js`, `player-locale-browser-test.js` : déclarations Core, préférence personnelle par TCG, persistance, normalisation, Host/Guest indépendants, absence de partage réseau, mobile et snapshot DB brut inchangé |
 | Vision Locale 1.0 | `vision-locale-test.js`, `vision-locale-browser-test.js` : vrai corpus EN 229 via Core, fixture EN/FR isolée et même cardId, caches par jeu/langue/source, remplacement des workers et mémoires, rejets sans fallback, F5, Ready, Sans jeu et absence de partage réseau |
 | Cyberpunk Languages Qualification 1.0 | `cyberpunk-languages-qualification-test.js` : snapshots main/développement, images et empreintes réelles, couverture avec dénominateurs officiels, refus des images EN en FR, doublons/orphelins, reçu déterministe, historique EN distinct d'une nouvelle passe physique et FR non activée |
+| Vision Qualification 1.0 Phase A | `vision-qualification-1.0-test.js`, `vision-qualification-1.0-browser-test.js` : classifications, taux, confidentialité, locale et observation du runtime existant, trois initialisations froides et trois F5 ; aucune preuve physique déduite |
 | Timer ON/OFF et synchronisation | Room/UI tests + C15 browser start/pause/reset et temps dérivé côté deux joueurs |
 | Gig Dice ON/OFF, gating jeu, hover et zoom | Room/client/UI tests + C15 browser, 12 dés × 5 points × 3 largeurs |
 | Sans jeu : pas Vision/Gig, webcam/audio conservés | C15 browser, vrais RTP locaux et frames après Start/F5 |
@@ -42,7 +43,7 @@ Comptage : appels aux API Node `assert` des processus de test instrumentés, y c
 | Workspace, BDD maintenance et Journal | contrats et quatre suites navigateur Workspace existantes |
 | Hygiène projet | `project-hygiene-1.2d-test.js`, aucune réintroduction CC/volume persistant/Phone standalone/runtime SWU |
 
-Le test synthétique de performance historique ne lance pas le futur benchmark de qualité Vision. Aucune nouvelle campagne par carte ou BDD n'est construite dans Candidate 15.
+Le test synthétique de performance historique reste distinct de Vision Qualification. Le Jalon 6 Phase A prépare le protocole par carte et mesure des initialisations automatiques réelles ; les essais physiques restent NOT TESTED. Le workflow produit aussi `vision-qualification-1.0.json` au SHA exact, hors dépôt, avec PHYSICAL QUALIFICATION PENDING. Le benchmark n'enregistre aucun média ; les captures historiques des autres suites concernent leurs fixtures automatisées.
 
 ## Qualification humaine et distante
 
