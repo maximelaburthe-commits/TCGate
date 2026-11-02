@@ -7,6 +7,14 @@
 
   const databases = Object.freeze({
     cyberpunk: Object.freeze({
+      gameId: 'cyberpunk-tcg',
+      databaseVersion: '1.1.0',
+      locales: Object.freeze({
+        en: Object.freeze({ code: 'en', label: 'English', dataReady: true, visionReady: true })
+      }),
+      defaultLocale: 'en',
+      visionReadyLocales: Object.freeze(['en']),
+      legacyLocale: 'en', // Only the pinned, qualified beta corpus below; never a visual fallback.
       manifestUrl: 'https://raw.githubusercontent.com/maximelaburthe-commits/tcgate_db_cyberpunk/56402636a77af9c8b5dc4e3b61c509a185f3c834/manifest.json',
       expectedGame: 'cyberpunk-tcg',
       expectedVersion: '1.1.0',

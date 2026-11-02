@@ -1,9 +1,20 @@
 (function initDatabaseSource(root, factory) {
   const configApi = root?.TCGateGameDatabases || (typeof require === 'function' ? require('./game-databases.js') : null);
-  const api = factory(configApi);
+  let localeCorePromise;
+  function loadLocaleCore() {
+    if (root?.TCGateDatabaseLocaleCore) return Promise.resolve(root.TCGateDatabaseLocaleCore);
+    if (typeof module === 'object' && module.exports && typeof require === 'function') return Promise.resolve(require('./database-locale-core.js'));
+    // Opt-in API only: the active loader and matcher do not import this module.
+    if (!localeCorePromise) localeCorePromise = import('./database-locale-core.js').then(() => {
+      if (!root?.TCGateDatabaseLocaleCore) throw new Error('Locale Core indisponible');
+      return root.TCGateDatabaseLocaleCore;
+    }).catch(error => { localeCorePromise = null; throw error; });
+    return localeCorePromise;
+  }
+  const api = factory(configApi, loadLocaleCore);
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.TCGateDatabaseSource = api;
-})(typeof window !== 'undefined' ? window : globalThis, function createDatabaseSource(configApi) {
+})(typeof window !== 'undefined' ? window : globalThis, function createDatabaseSource(configApi, loadLocaleCore) {
   'use strict';
 
   const sessionCache = new Map();
@@ -92,5 +103,30 @@
     return sessionCache.get(key);
   }
   function clear(game){if(game==null)sessionCache.clear();else sessionCache.delete(String(game));}
-  return Object.freeze({load,clear,validate,resolveUrl});
+
+  const localeViews = new WeakMap();
+  async function getLocaleDatabase(gameId, options = {}) {
+    const entry = Object.entries(configApi?.databases || {}).find(([key, config]) => key === gameId || config.gameId === gameId);
+    if (!entry) throw new Error(`DB inconnue : ${gameId}`);
+    const [key, config] = entry;
+    const database = await load(key, options);
+    if (!localeViews.has(database)) {
+      const core = await loadLocaleCore();
+      // Independent snapshots: locale projections cannot mutate the active corpus.
+      if (!localeViews.has(database)) localeViews.set(database, core.createDatabaseView({
+        descriptor: config,
+        cards: database.cards,
+        printings: database.printings,
+        references: database.references,
+        sourceManifestUrl: config.manifestUrl,
+        legacyLocale: config.legacyLocale
+      }));
+    }
+    return localeViews.get(database);
+  }
+  async function getVisionReferences(gameId, locale, options = {}) {
+    const database = await getLocaleDatabase(gameId, options);
+    return database.getVisionReferences(locale);
+  }
+  return Object.freeze({load,clear,validate,resolveUrl,getLocaleDatabase,getVisionReferences});
 });

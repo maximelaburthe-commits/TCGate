@@ -16,12 +16,14 @@ const suites = [
   ['vision-integrity-test.js'], ['vision-source-provenance-test.js'], ['vision-backpressure-test.js'],
   ['vision-analysis-resolution-test.js'], ['vision-appearance-batch-test.js'],
   ['cyberpunk-db-integration-test.js'], ['cyberpunk-db-performance-test.js', '--expose-gc'],
+  ['database-locale-core-test.js'],
   ['workspace-test.js'], ['workspace-camera-test.js'], ['workspace-cockpit-test.js'],
   ['workspace-journal-test.js'], ['workspace-database-maintenance-test.js'], ['project-hygiene-1.2d-test.js'],
   ['tcgate-ui-1.2-browser-test.js'], ['candidate-15-browser-test.js'],
   ['report-email-browser-test.js'], ['phone-consolidation-1.2c-browser-test.js'],
   ['workspace-browser-test.js'], ['workspace-camera-browser-test.js'],
-  ['workspace-cockpit-browser-test.js'], ['workspace-maintenance-journal-browser-test.js']
+  ['workspace-cockpit-browser-test.js'], ['workspace-maintenance-journal-browser-test.js'],
+  ['database-locale-core-browser-test.js']
 ];
 
 function main() {

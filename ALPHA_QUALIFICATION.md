@@ -6,7 +6,7 @@ Un seul workflow de qualification complète :
 npm run qualify:alpha
 ```
 
-Il exécute 37 suites distinctes, dont huit suites navigateur, puis le contrôle syntaxique correspondant à `npm run check` et `git diff --check HEAD^ HEAD`. Aucune suite navigateur n'est facultative. Aucun package npm runtime externe n'est déclaré ; le workflow C14 historique appelant le forwarder retiré n'est pas restauré.
+Il exécute 39 suites distinctes, dont neuf suites navigateur, puis le contrôle syntaxique correspondant à `npm run check` et `git diff --check HEAD^ HEAD`. Les 37 suites C15 sont conservées ; Locale Core ajoute ses contrats purs et son chargement navigateur opt-in. Aucune suite navigateur n'est facultative. Aucun package npm runtime externe n'est déclaré ; le workflow C14 historique appelant le forwarder retiré n'est pas restauré.
 
 ## Préconditions et preuves
 
@@ -34,6 +34,7 @@ Comptage : appels aux API Node `assert` des processus de test instrumentés, y c
 | Sans jeu : pas Vision/Gig, webcam/audio conservés | C15 browser, vrais RTP locaux et frames après Start/F5 |
 | Phone : pairing, changement source, PC micro, recovery, diagnostics, privacy et retour webcam | tests Phone actuels, consolidation 1.2C et smoke Chrome avec appareils factices |
 | Vision : intégrité, provenance, backpressure et contrats BDD | cinq suites Vision existantes, intégration Cyberpunk publique immuable ; test de performance synthétique historique conservé |
+| BDD Locale Core 1.0 | `database-locale-core-test.js`, `database-locale-core-browser-test.js` : identités, readiness explicite, séparation physique des langues, compatibilité du corpus EN et import opt-in sans modifier le matcher |
 | Workspace, BDD maintenance et Journal | contrats et quatre suites navigateur Workspace existantes |
 | Hygiène projet | `project-hygiene-1.2d-test.js`, aucune réintroduction CC/volume persistant/Phone standalone/runtime SWU |
 
@@ -41,9 +42,9 @@ Le test synthétique de performance historique ne lance pas le futur benchmark d
 
 ## Qualification humaine et distante
 
-[Checklist Q0–Q16](CANDIDATE_15_BROWSER_CHECKLIST.md). Le workflow local ne remplace ni le relay WAN réel, ni la réception d'un vrai mail, ni les cartes physiques. Phone 1.2C est **PHYSICAL QUALIFICATION PASS** selon déclaration du propriétaire, consignée séparément. Vision Q16 est **NOT TESTED** ; quelques cartes seulement lors de la passe humaine suivante.
+[Checklist Q0–Q16](CANDIDATE_15_BROWSER_CHECKLIST.md), conservée comme reçu historique de la préparation C15. Le workflow local ne remplace ni le relay WAN réel, ni la réception d'un vrai mail, ni les cartes physiques. Phone 1.2C est **PHYSICAL QUALIFICATION PASS** selon déclaration du propriétaire. Avant la promotion C15, le propriétaire a ensuite confirmé Q14 Resend, Q15 TURN relay et Q16 Cyberpunk physique **PASS** ; il ne s'agit pas de résultats produits par ce workflow, ni d'une qualification FR.
 
-Une régression Gig reproduite reste **INTERMÉDIAIRE** avec follow-up séparé ; ne pas corriger le produit pendant la qualification. Aucune source Railway Production n'est changée ici ; sa migration vers main appartient à la promotion ultérieure.
+Une régression Gig reproduite reste **INTERMÉDIAIRE** avec follow-up séparé ; ne pas corriger le produit pendant la qualification. Baseline Git du Jalon 1 Locale Core : C15 `e26b2e09579be53452c1e631b1dc5230191d0250`, déjà promue sur main. Aucune configuration Railway ni source de déploiement n'est modifiée par ce jalon.
 
 ## Suites historiques exclues
 

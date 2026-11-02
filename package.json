@@ -10,6 +10,7 @@
     "test:vision-integrity": "node vision-integrity-test.js",
     "test:vision-source": "node vision-source-provenance-test.js",
     "test:cyberpunk-db": "node cyberpunk-db-integration-test.js",
+    "test:database-locale-core": "node database-locale-core-test.js && node database-locale-core-browser-test.js",
     "test:cyberpunk-db-performance": "node --expose-gc cyberpunk-db-performance-test.js",
     "test:phone-diagnostics": "node phone-camera-diagnostics-test.js",
     "test:future-ux": "node future-ux-v3.7-test.js && node future-ux-room-metadata-test.js",
