@@ -63,7 +63,7 @@ async function createPair(browser,errors,signals,requests,suffix,options={}){
   const hostContext=await makeContext(browser),guestContext=await makeContext(browser);
   const host=await hostContext.newPage(),guest=await guestContext.newPage();
   observe(host,'host-'+suffix,errors,signals,requests);observe(guest,'guest-'+suffix,errors,signals,requests);
-  await host.goto(origin+'/');await host.locator('#goCreate').click();const code=await waitRoom(host);
+  await host.goto(origin+'/');await host.locator('#goCreate').click();await host.locator('#setupContinue').click();const code=await waitRoom(host);
   check(await host.locator('#ui12-lobby-session').isVisible(),'Creating immediately opens the connected Session tab');
   await host.locator('#playerName').fill('Host UI12 '+suffix);
   await guest.goto(options.invite?origin+'/?room='+code:origin+'/');

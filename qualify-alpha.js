@@ -11,6 +11,7 @@ const suites = [
   ['smoke-test.js'], ['smoke-test-c11.js'], ['integration-test-c11.js'], ['offer-delivery-retry-test.js'],
   ['turn-cache-test.js'], ['report-schema-v2-test.js'], ['report-email-bridge-test.js'],
   ['tcgate-ui-1.2-test.js'], ['tcgate-ui-1.2-client-test.js'], ['tcgate-ui-1.2-room-test.js'],
+  ['site-ui-2.0-test.js'],
   ['future-ux-v3.7-test.js'], ['future-ux-room-metadata-test.js'], ['smoke-test-ui-integration.js'],
   ['phone-camera-test.js'], ['phone-camera-diagnostics-test.js'], ['phone-consolidation-1.2c-test.js'],
   ['vision-integrity-test.js'], ['vision-source-provenance-test.js'], ['vision-backpressure-test.js'],
@@ -23,7 +24,7 @@ const suites = [
   ['report-email-browser-test.js'], ['phone-consolidation-1.2c-browser-test.js'],
   ['workspace-browser-test.js'], ['workspace-camera-browser-test.js'],
   ['workspace-cockpit-browser-test.js'], ['workspace-maintenance-journal-browser-test.js'],
-  ['database-locale-core-browser-test.js']
+  ['database-locale-core-browser-test.js'], ['site-ui-2.0-browser-test.js']
 ];
 
 function main() {

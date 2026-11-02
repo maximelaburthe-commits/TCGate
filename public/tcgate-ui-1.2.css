@@ -1,39 +1,337 @@
-/* UI 1.2 presentation is scoped to Home and Lobby. No screenGame styling. */
-#screenHome,#screenLobby{--bg:#070b13;--panel:#0d1420;--panel-2:#111a29;--line:#27324a;--line-soft:#1b2436;--text:#f4f6fb;--muted:#8f9bb0;--accent:#7c5cff;--accent-2:#9b86ff;--good:#67d9a2;--danger:#f06a75;color:var(--text);background:#070b13}
-#screenHome [hidden],#screenLobby [hidden]{display:none!important}
-#screenHome button:focus-visible,#screenLobby button:focus-visible,#screenLobby select:focus-visible,#screenLobby input:focus-visible{outline:2px solid #9b86ff;outline-offset:4px}
-#screenHome .tcgate-home-shell{width:min(1220px,calc(100% - 80px));margin:0 auto;padding:26px 0 30px;min-height:100dvh;display:flex;flex-direction:column;justify-content:flex-start;gap:0}
-#screenHome .tcgate-home-header{display:flex;align-items:center;justify-content:space-between;gap:20px;width:100%;padding:0 0 20px;margin:0;border-bottom:1px solid #1b2436}
-#screenHome .tcgate-home-logo{display:block;width:210px;height:auto;max-height:72px;object-fit:contain;object-position:left center;filter:none}
-#screenHome .ui12-brand-home{display:block;line-height:0}#screenHome .tcgate-home-alpha-badge{font-size:11px;letter-spacing:.14em;border-color:#39305a;background:rgba(124,92,255,.08);color:#b8a8ff;box-shadow:none}
-#screenHome .ui12-home-nav{display:flex;gap:8px;margin:18px 0 26px;padding:0 0 8px;overflow-x:auto;scrollbar-width:thin;flex-shrink:0}
-#screenHome .ui12-home-nav button{background:transparent;border:1px solid transparent;border-radius:9px;color:#8f9bb0;font-size:14px;padding:10px 16px;white-space:nowrap;flex-shrink:0}
-#screenHome .ui12-home-nav button:hover{color:#f4f6fb;background:#0d1420}#screenHome .ui12-home-nav button[aria-selected=true]{color:#ede8ff;border-color:#40325f;background:#19152d}
-#screenHome .tcgate-home-hero{display:block;position:relative;min-height:0;padding:12px 0 26px;margin:0;background:none;grid-template-columns:none;gap:0}
-#screenHome .tcgate-home-copy{width:min(900px,100%);max-width:none;padding:0}
-#screenHome .ui12-eyebrow{font-size:10px;font-weight:750;letter-spacing:.17em;color:#9b86ff;display:block;margin:0 0 18px}
-#screenHome h1{font-size:clamp(38px,4.2vw,66px);font-weight:700;line-height:1.08;letter-spacing:-.045em;margin:0 0 22px;max-width:960px;text-wrap:balance;color:#f4f6fb}
-#screenHome .tcgate-home-copy>p,#screenHome .ui12-page-heading>p{font-size:17px;line-height:1.65;max-width:690px;margin:0 0 24px;color:#a8b3c5}
-#screenHome .tcgate-home-benefits{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 26px}#screenHome .tcgate-home-benefit{border:1px solid #27324a;background:#0d1420;color:#c6cfdf;font-size:12px;padding:7px 10px;border-radius:7px;box-shadow:none}
-#screenHome .tcgate-home-actions{display:block;margin:0;max-width:760px}#screenHome .ui12-home-primary-actions{display:flex;gap:12px;flex-wrap:wrap}#screenHome .ui12-home-primary-actions button{min-width:220px;min-height:52px;padding:13px 22px;font-size:15px;border-radius:10px;box-shadow:none}#screenHome .ui12-home-primary-actions .primary{background:linear-gradient(135deg,#7c5cff,#7053e7);border:1px solid #9b86ff}#screenHome .ui12-home-primary-actions .secondary{background:#111a29;border:1px solid #34415e;color:#e2e8f5}
-#screenHome .resume-session-card{margin-bottom:18px;max-width:570px;background:#111a29;border-color:#59477e;border-radius:12px;padding:16px}#screenHome .resume-session-card strong,#screenHome .resume-session-card small{display:block;margin:6px 0 10px}
-#screenHome .tcgate-home-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border:1px solid #27324a;border-radius:12px;overflow:hidden;background:#0d1420;padding:0;margin:20px 0 0;box-shadow:none;width:100%}
-#screenHome .tcgate-step-item{padding:17px 20px;gap:12px;display:flex;align-items:center;border:0;border-right:1px solid #27324a;background:none;box-shadow:none;min-width:0}#screenHome .tcgate-step-item:last-child{border-right:0}#screenHome .tcgate-step-index{width:30px;height:30px;border:1px solid #514174;background:#19182d;color:#bbaaff;border-radius:9px;display:grid;place-items:center;flex:none;font-size:12px}#screenHome .tcgate-step-item strong{font-size:14px}#screenHome .tcgate-step-item p{margin:4px 0 0;font-size:12px;color:#8f9bb0}
-#screenHome .ui12-page-heading{padding:12px 0 10px}#screenHome .ui12-page-heading h1{font-size:clamp(36px,3.5vw,52px);line-height:1.12;max-width:900px}#screenHome .ui12-info-grid,#screenHome .ui12-game-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:14px}#screenHome .ui12-game-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#screenHome .ui12-feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
-#screenHome .ui12-info-card{min-width:0;border:1px solid #27324a;border-radius:12px;background:linear-gradient(150deg,#111a29,#0d1420);padding:22px}#screenHome .ui12-info-card h2{font-size:17px;line-height:1.35;margin:0 0 10px}#screenHome .ui12-info-card p,#screenHome .ui12-info-card li{font-size:14px;line-height:1.6;color:#9ba9bd;margin:0}#screenHome .ui12-info-card ul{padding-left:18px;margin:14px 0 0}#screenHome .ui12-card-index{font-size:12px;color:#9b86ff;font-weight:750;display:block;margin-bottom:20px}#screenHome .ui12-principle{border-left:2px solid #7c5cff;padding:12px 16px;margin:24px 0 0;color:#d4c9f5;background:rgba(124,92,255,.045);font-size:14px}#screenHome .ui12-status-pill{display:inline-block;padding:5px 9px;font-size:11px;color:#67d9a2;background:rgba(103,217,162,.06);border:1px solid #294d43;border-radius:6px;margin-bottom:20px}#screenHome .muted-pill{color:#bdc4da;border-color:#36415c;background:#131b2b}
-#screenLobby.future-hub-mounted{background:#070b13;min-height:100dvh;overflow:visible}#screenLobby.future-hub-mounted .ui12-lobby-shell{width:min(1240px,calc(100% - 64px));padding:24px 0 112px;margin:0 auto;position:relative}
-#screenLobby .ui12-lobby-header{display:flex;justify-content:space-between;align-items:center;gap:20px;border-bottom:1px solid #1b2436;margin:0 0 18px;padding:0 0 20px}#screenLobby .ui12-lobby-header .lobby-title-wrap{display:flex;align-items:center;gap:24px}#screenLobby .ui12-lobby-header .tcgate-wordmark{width:160px;max-height:58px;height:auto;filter:none}#screenLobby .ui12-lobby-header h2{font-size:17px;margin:4px 0 0}#screenLobby .ui12-lobby-header .eyebrow{font-size:10px;color:#8f9bb0;letter-spacing:.12em}#screenLobby .header-actions{display:flex;gap:8px;flex-shrink:0}#screenLobby .header-actions button{background:#0d1420;color:#cbd5e8;border:1px solid #27324a;padding:9px 13px;border-radius:8px;font-size:12px}#screenLobby .ui12-lobby-connection{margin-left:auto}#screenLobby .network-state-line{font-size:12px;margin:0}#screenLobby .network-dot{width:7px;height:7px}
-#screenLobby .ui12-lobby-tabs{display:flex;gap:6px;align-items:center;border:1px solid #27324a;background:#0d1420;border-radius:10px;padding:5px;margin-bottom:22px;max-width:600px}#screenLobby .ui12-lobby-tabs button{flex:1;white-space:nowrap;padding:11px 15px;border:1px solid transparent;border-radius:7px;background:transparent;color:#8f9bb0;font-size:13px;font-weight:600}#screenLobby .ui12-lobby-tabs button[aria-selected=true]{background:#221c39;color:#e3d9ff;border-color:#4a386b}
-#screenLobby .ui12-lobby-pane{padding:0}#screenLobby .ui12-session-heading{margin-bottom:18px}#screenLobby .ui12-session-heading h3{font-size:17px;margin:0 0 5px}#screenLobby .ui12-session-heading p{color:#8f9bb0;font-size:13px;margin:0;max-width:740px;line-height:1.55}
-#screenLobby .ui12-session-grid{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:20px;align-items:start}#screenLobby .ui12-installation-layout{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.25fr);gap:22px;align-items:start}#screenLobby .future-hub-zone{grid-column:auto;grid-row:auto;display:block;min-width:0}
-#screenLobby .form-card,#screenLobby .invite-card,#screenLobby .equipment-card,#screenLobby .ui12-context-card,#screenLobby .players-card{border:1px solid #27324a!important;border-radius:13px;background:#0d1420!important;box-shadow:none!important;padding:22px!important;margin:0!important;min-width:0}#screenLobby .ui12-session-sidebar{display:grid;gap:16px}#screenLobby .ui12-context-card h3{font-size:14px;margin:0 0 16px}#screenLobby .ui12-context-card p{font-size:12px;color:#8f9bb0;line-height:1.55}#screenLobby .ui12-context-card dl{display:grid;grid-template-columns:80px minmax(0,1fr);gap:12px;font-size:13px}#screenLobby .ui12-context-card dt{color:#8f9bb0}#screenLobby .ui12-context-card dd{margin:0;overflow-wrap:anywhere}
-#screenLobby .future-hub-form{display:grid;gap:16px}#screenLobby .form-card>label>span,#screenLobby .device-selectors label>span{font-size:12px;color:#aab6cc;margin-bottom:7px}#screenLobby input,#screenLobby select{width:100%;background:#111a29;color:#f4f6fb;border:1px solid #2d3a54;border-radius:8px;padding:11px 12px;min-width:0}#screenLobby button:disabled,#screenLobby input:disabled,#screenLobby select:disabled{opacity:.55;cursor:default}#screenLobby .form-card label{min-width:0}#screenLobby .form-card>label,#screenLobby .device-selectors label{display:grid;gap:0}#screenLobby .field-help{font-size:12px;line-height:1.5;color:#8f9bb0}
-#screenLobby #timerHubConfig,#screenLobby #gigDiceHubConfig{display:grid;gap:12px;border-top:1px solid #1b2436;padding-top:16px}#screenLobby .toggle-row{padding:0;border:0;display:flex;align-items:center;justify-content:space-between;gap:18px}#screenLobby .toggle-row strong{font-size:13px}#screenLobby .toggle-row .sub{font-size:12px;color:#8f9bb0;margin-top:5px}#screenLobby .toggle{width:44px;height:25px;min-width:44px;padding:3px;flex:none;background:#263149;border:1px solid #34415e;border-radius:999px}#screenLobby .toggle .knob{width:17px;height:17px;background:#a6b0c3;border-radius:50%;transition:transform .16s}#screenLobby .toggle.on{background:#6550c8;border-color:#9b86ff}#screenLobby .toggle.on .knob{transform:translateX(18px);background:#f4f6fb}#screenLobby #timerCfg{display:grid;grid-template-columns:minmax(0,1fr) 100px;gap:12px;align-items:center;font-size:12px;color:#8f9bb0}#screenLobby .summary-line{font-size:12px;padding:0;border:0;display:flex;justify-content:space-between;color:#8f9bb0}#screenLobby #sumTimer,#screenLobby #gigDiceSettingStatus{font-size:12px;color:#bdb0ef}
-#screenLobby .room-code-row{display:flex;justify-content:space-between;gap:12px;align-items:center}#screenLobby #lobbyCode{font-size:30px;letter-spacing:.12em;color:#eee8ff}#screenLobby .invite-card>.label{font-size:11px;color:#8f9bb0}#screenLobby .lobby-game-label{font-size:12px;margin:10px 0}#screenLobby .invite-card>p{font-size:12px;color:#8f9bb0}#screenLobby #copyLink,#screenLobby #copyCode{background:#171c2c;border:1px solid #3d3858;color:#ddd4f7;border-radius:8px;padding:10px 12px}#screenLobby #copyLink{font-size:12px;margin-top:12px}
-#screenLobby .equipment-card-live{display:block;grid-template-columns:none}#screenLobby .equipment-copy h3{font-size:17px;margin:8px 0}#screenLobby .equipment-copy>p{font-size:13px;color:#8f9bb0;line-height:1.55}#screenLobby .device-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0}#screenLobby .device-actions .primary{background:#7c5cff;border:1px solid #9b86ff;border-radius:8px;padding:11px 14px;font-size:12px}#screenLobby .media-status{font-size:12px;color:#8f9bb0}#screenLobby .device-selectors{display:grid;gap:14px;grid-template-columns:1fr;margin:18px 0}#screenLobby .phone-camera-entry{border-top:1px solid #1b2436;padding-top:18px;margin-top:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}#screenLobby .phone-camera-entry button{font-size:12px;padding:10px 12px;border:1px solid #3d3858;border-radius:8px;background:#171c2c;color:#ddd4f7}#screenLobby .phone-camera-panel{margin-top:16px;max-width:100%;grid-template-columns:100px minmax(0,1fr);gap:12px}#screenLobby .phone-camera-panel img{max-width:100%;height:auto}#screenLobby .phone-camera-panel p{font-size:12px;overflow-wrap:anywhere}
-#screenLobby .future-hub-camera .lobby-preview-wrap{position:static;display:grid;gap:12px;width:100%;max-width:none}#screenLobby .lobby-preview-shell{width:100%;max-height:none;aspect-ratio:16/10;min-height:260px;border-radius:13px;border:1px solid #27324a;background:#040810;overflow:hidden;box-shadow:none}#screenLobby #lobbyPreview{width:100%;height:100%;object-fit:contain;background:#040810}#screenLobby .media-toggle-row{display:flex;gap:10px}#screenLobby .media-toggle-row button{border:1px solid #27324a;background:#0d1420;color:#b8c4d8;font-size:12px;padding:10px 18px;border-radius:8px}
-#screenLobby .ui12-players-card{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;border:0!important;background:transparent!important;padding:0!important}#screenLobby .ui12-player-card{display:block;border:1px solid #27324a;background:#0d1420;padding:22px;border-radius:13px;margin:0;min-width:0}#screenLobby .ui12-player-card-head{display:flex;align-items:center;gap:12px;margin-bottom:22px}#screenLobby .ui12-player-card-head strong{font-size:17px;display:block}#screenLobby .ui12-player-card-head #lobbyOwnStatus,#screenLobby .ui12-player-card-head #opponentWaitingText{font-size:12px;display:block;color:#8f9bb0;margin-top:5px}#screenLobby .ui12-player-card dl{display:grid;grid-template-columns:130px minmax(0,1fr);gap:14px;font-size:13px}#screenLobby .ui12-player-card dt{color:#8f9bb0}#screenLobby .ui12-player-card dd{margin:0;color:#dae3f2}#screenLobby .ui12-player-card .status-dot,#screenLobby .ui12-player-card .loader-dot{margin-left:auto}
-#screenLobby #ui12LobbyReady{position:fixed;bottom:0;left:0;right:0;z-index:35;background:rgba(7,11,19,.96);border-top:1px solid #27324a;backdrop-filter:blur(12px);padding:14px 32px}#screenLobby #ui12LobbyReady .lobby-bottom{width:min(1240px,100%);margin:0 auto!important;background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0;padding:0!important;display:flex;gap:20px;align-items:center;justify-content:space-between}#screenLobby .ui12-ready-hint{font-size:12px;color:#8f9bb0;margin:0}#screenLobby #startGame{min-width:240px;padding:13px 24px;background:#7c5cff;border:1px solid #9b86ff;border-radius:9px;font-size:14px;min-height:46px}
-@media(max-width:1400px){#screenHome .tcgate-home-shell{width:calc(100% - 64px);padding-top:20px}#screenHome .tcgate-home-logo{width:185px}#screenHome .ui12-home-nav{margin:14px 0 18px}#screenHome .tcgate-home-hero{padding:8px 0 16px}#screenHome h1{font-size:54px}#screenHome .tcgate-home-copy>p{font-size:16px;margin-bottom:20px}#screenHome .tcgate-home-steps{margin-top:16px}#screenHome .ui12-home-header{padding-bottom:14px}#screenHome .ui12-page-heading h1{font-size:46px}}
-@media(max-width:1000px){#screenHome .ui12-info-grid,#screenHome .ui12-feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#screenLobby .ui12-lobby-header{flex-wrap:wrap;gap:14px}#screenLobby .ui12-lobby-header .lobby-title-wrap{flex:1}#screenLobby .ui12-lobby-connection{order:3;margin-left:0;width:100%}#screenLobby .ui12-installation-layout{grid-template-columns:1fr 1.15fr}#screenLobby.future-hub-mounted .ui12-lobby-shell{width:calc(100% - 40px)}#screenLobby .form-card,#screenLobby .invite-card,#screenLobby .equipment-card,#screenLobby .ui12-context-card{padding:18px!important}#screenLobby .ui12-player-card dl{grid-template-columns:110px 1fr}}
-@media(max-width:700px){#screenHome .tcgate-home-shell{width:calc(100% - 32px);padding:18px 0 24px}#screenHome .tcgate-home-logo{width:160px;max-height:58px}#screenHome .ui12-home-nav{gap:2px;margin:12px 0 20px}#screenHome .ui12-home-nav button{padding:9px 12px;font-size:12px}#screenHome h1{font-size:40px;line-height:1.13;letter-spacing:-.035em}#screenHome .ui12-page-heading h1{font-size:36px}#screenHome .ui12-eyebrow{font-size:9px;line-height:1.6;margin-bottom:14px}#screenHome .tcgate-home-copy>p,#screenHome .ui12-page-heading>p{font-size:15px}#screenHome .ui12-home-primary-actions{flex-direction:column}#screenHome .ui12-home-primary-actions button{width:100%;min-width:0}#screenHome .tcgate-home-steps,#screenHome .ui12-info-grid,#screenHome .ui12-feature-grid,#screenHome .ui12-game-grid{grid-template-columns:1fr}#screenHome .tcgate-step-item{border-right:0;border-bottom:1px solid #27324a;padding:14px 16px}#screenHome .tcgate-step-item:last-child{border-bottom:0}#screenHome .ui12-info-card{padding:20px}#screenLobby.future-hub-mounted .ui12-lobby-shell{width:calc(100% - 28px);padding:18px 0 116px}#screenLobby .ui12-lobby-header .tcgate-wordmark{width:122px;max-height:48px}#screenLobby .ui12-lobby-header .lobby-title-wrap{gap:12px}#screenLobby .ui12-lobby-header h2{font-size:14px}#screenLobby .header-actions button{font-size:11px;padding:8px 10px}#screenLobby .ui12-lobby-tabs{max-width:none;margin-bottom:18px}#screenLobby .ui12-lobby-tabs button{font-size:12px;padding:10px 8px}#screenLobby .ui12-session-grid,#screenLobby .ui12-installation-layout,#screenLobby .ui12-players-card{grid-template-columns:1fr}#screenLobby .ui12-session-heading p{font-size:12px}#screenLobby .lobby-preview-shell{min-height:260px}#screenLobby #ui12LobbyReady{padding:12px 14px}#screenLobby #ui12LobbyReady .lobby-bottom{gap:12px}#screenLobby #startGame{min-width:175px;padding:12px 14px;font-size:12px}#screenLobby .ui12-ready-hint{font-size:11px;max-width:180px}#screenLobby input,#screenLobby select{font-size:16px}}
+/* TCGate Site UI 2.0. This existing stylesheet is the Home/Lobby reference.
+   Room, media, game controls and table presentation keep their existing owners. */
+#screenHome,
+#screenLobby {
+  --bg: #070b13;
+  --panel: #0d1420;
+  --panel-2: #111a29;
+  --line: #27324a;
+  --line-soft: #1b2436;
+  --text: #f4f6fb;
+  --muted: #8f9bb0;
+  --accent: #7c5cff;
+  --accent-2: #9b86ff;
+  --good: #67d9a2;
+  --danger: #f06a75;
+  color: var(--text);
+  background: var(--bg);
+}
+#screenHome [hidden], #screenLobby [hidden] { display: none !important; }
+#screenHome :is(button, a):focus-visible,
+#screenLobby :is(button, a, select, input):focus-visible { outline: 2px solid var(--accent-2); outline-offset: 4px; }
+#screenHome button, #screenLobby button { transition: background-color .16s, border-color .16s, color .16s; }
+#screenHome button:disabled, #screenLobby :is(button, input, select):disabled { opacity: .5; cursor: default; }
+
+/* Compact identity and the five existing internal pages. */
+#screenHome .tcgate-home-shell { width: min(1440px, calc(100% - 112px)); min-height: 100dvh; display: block; margin: 0 auto; padding: 0 0 30px; }
+#screenHome .tcgate-home-header { min-height: 82px; display: flex; align-items: center; justify-content: space-between; gap: 30px; margin: 0; padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+#screenHome .ui12-brand-home { display: block; flex: none; line-height: 0; }
+#screenHome .tcgate-home-logo { display: block; width: 150px; height: auto; max-height: 50px; object-fit: contain; object-position: left center; filter: none; }
+#screenHome .ui12-home-nav { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; margin: 0 auto; padding: 0; }
+#screenHome .ui12-home-nav button { position: relative; border: 0; border-radius: 6px; padding: 10px 12px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 550; white-space: nowrap; }
+#screenHome .ui12-home-nav button:hover { color: var(--text); background: var(--panel); }
+#screenHome .ui12-home-nav button[aria-selected=true] { color: var(--text); background: var(--panel-2); }
+#screenHome .tcgate-home-alpha-badge { flex: none; padding: 6px 9px; border-color: var(--line); border-radius: 5px; color: var(--muted); background: transparent; box-shadow: none; font-size: 9px; letter-spacing: .14em; }
+#screenHome .tcgate-home-alpha-badge i { width: 4px; height: 4px; background: var(--accent-2); box-shadow: none; }
+
+/* A real product capture is secondary to the two room actions. */
+#screenHome .tcgate-home-hero { position: relative; display: grid; grid-template-columns: minmax(0, .96fr) minmax(0, 1.04fr); align-items: center; gap: 58px; min-height: 0; overflow: visible; padding: 76px 0 66px; margin: 0; background: none; }
+#screenHome .tcgate-home-copy { width: 100%; max-width: none; align-self: center; padding: 0 !important; }
+#screenHome .ui12-eyebrow,
+#screenLobby .ui12-eyebrow { display: block; margin: 0 0 20px; color: var(--accent-2); font-size: 10px; font-weight: 700; letter-spacing: .15em; line-height: 1.5; }
+#screenHome h1 { max-width: 720px; margin: 0 0 24px; color: var(--text); font-size: clamp(48px, 4.9vw, 74px); line-height: 1.08; font-weight: 650; letter-spacing: -.055em; text-wrap: balance; }
+#screenHome .tcgate-home-copy > p,
+#screenHome .ui12-page-heading > p { max-width: 490px; margin: 0 0 23px; color: #aab5c8; font-size: 17px; line-height: 1.7; }
+#screenHome .tcgate-home-benefits { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 28px; }
+#screenHome .tcgate-home-benefit { min-height: 0; display: inline-flex; padding: 6px 9px; border: 1px solid var(--line-soft); border-radius: 5px; background: transparent; color: #aab5c8; font-size: 11px; font-weight: 500; letter-spacing: 0; box-shadow: none; backdrop-filter: none; }
+#screenHome .tcgate-home-benefit::before { display: none; }
+#screenHome .tcgate-home-actions { display: block; max-width: none; margin: 0; }
+#screenHome .ui12-home-primary-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+#screenHome .ui12-home-primary-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 20px; min-width: 0; min-height: 50px; padding: 13px 20px; border-radius: 7px; font-size: 14px; font-weight: 650; box-shadow: none; }
+#screenHome .ui12-home-primary-actions .primary { border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+#screenHome .ui12-home-primary-actions .primary:hover { background: #896cff; border-color: var(--accent-2); }
+#screenHome .ui12-home-primary-actions .secondary { border: 1px solid #34415b; background: transparent; color: var(--text); }
+#screenHome .ui12-home-primary-actions .secondary:hover { border-color: #69748e; background: var(--panel); }
+#screenHome .tcgate-home-copy > .site-hero-note { margin: 17px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+#screenHome .resume-session-card { max-width: 470px; margin: 0 0 18px; padding: 16px; background: var(--panel); border: 1px solid #65508c; border-radius: 9px; }
+#screenHome .resume-session-card strong, #screenHome .resume-session-card small { display: block; margin: 6px 0 10px; }
+#screenHome .resume-session-card button { min-height: 42px; background: var(--accent); border-color: var(--accent); }
+#screenHome .site-product-preview { min-width: 0; margin: 0; }
+#screenHome .site-product-frame { overflow: hidden; border: 1px solid #34405a; border-radius: 10px; background: var(--panel); box-shadow: 0 26px 70px rgba(0, 0, 0, .3); }
+#screenHome .site-product-frame img { display: block; width: 100%; height: auto; aspect-ratio: 1280 / 800; object-fit: contain; }
+#screenHome .site-product-preview figcaption { display: flex; justify-content: space-between; gap: 14px; padding: 14px 1px 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+#screenHome .site-product-preview figcaption span:first-child { color: #b9c4d7; font-size: 9px; letter-spacing: .13em; }
+
+/* Three steps, followed by the two modes available today. */
+#screenHome .tcgate-home-steps { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; align-items: center; margin: 0; padding: 22px 0; border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line-soft); border-radius: 0; background: transparent; box-shadow: none; }
+#screenHome .tcgate-step-item { position: relative; min-width: 0; display: flex; align-items: center; gap: 18px; padding: 5px 30px; border: 0; border-right: 1px solid var(--line-soft); background: transparent; box-shadow: none; }
+#screenHome .tcgate-step-item:first-child { padding-left: 0; }
+#screenHome .tcgate-step-item:last-child { border-right: 0; }
+#screenHome .tcgate-step-index { width: auto; height: auto; flex: none; display: block; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--accent-2); font-size: 13px; font-weight: 600; }
+#screenHome .tcgate-step-item strong { display: block; font-size: 14px; font-weight: 600; }
+#screenHome .tcgate-step-item p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+#screenHome .site-step-arrow { margin-left: auto; color: #56637c; font-size: 18px; }
+#screenHome .site-games-available { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; padding: 23px 0 0; font-size: 11px; line-height: 1.6; }
+#screenHome .site-games-available > span:first-child { margin-right: 5px; color: var(--muted); }
+#screenHome .site-games-available strong { color: #d7deeb; font-weight: 500; }
+#screenHome .site-game-divider { color: #43516b; }
+#screenHome .site-games-description { margin-left: auto; color: var(--muted); }
+
+/* Existing information pages keep their navigation and product facts. */
+#screenHome .ui12-page-heading { padding: 64px 0 25px; }
+#screenHome .ui12-page-heading h1 { max-width: 900px; font-size: clamp(38px, 3.5vw, 56px); line-height: 1.12; }
+#screenHome .ui12-page-heading > p { max-width: 700px; }
+#screenHome .ui12-info-grid, #screenHome .ui12-feature-grid, #screenHome .ui12-game-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; margin-top: 12px; }
+#screenHome .ui12-game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#screenHome .ui12-info-card { min-width: 0; padding: 23px 0; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: transparent; }
+#screenHome .ui12-info-card h2 { margin: 0 0 12px; color: var(--text); font-size: 17px; line-height: 1.4; }
+#screenHome .ui12-info-card p, #screenHome .ui12-info-card li { margin: 0; color: #a2afc3; font-size: 14px; line-height: 1.75; }
+#screenHome .ui12-info-card ul { margin: 14px 0 0; padding-left: 18px; }
+#screenHome .ui12-card-index { display: block; margin-bottom: 22px; color: var(--accent-2); font-size: 12px; }
+#screenHome .ui12-principle { margin: 32px 0; padding: 0 0 0 15px; border-left: 2px solid var(--accent); color: #c9c4dc; font-size: 14px; line-height: 1.7; }
+#screenHome .ui12-status-pill { display: inline-flex; align-items: center; margin-bottom: 20px; padding: 5px 9px; border: 1px solid #294d43; border-radius: 5px; color: var(--good); background: rgba(103, 217, 162, .05); font-size: 11px; }
+#screenHome .muted-pill { border-color: var(--line); color: #c2cce0; background: var(--panel); }
+
+/* Lobby: shared Session, personal Installation, and two real players. */
+#screenLobby.future-hub-mounted { min-height: 100dvh; overflow: visible; background: var(--bg); }
+#screenLobby.future-hub-mounted .ui12-lobby-shell { position: relative; width: min(1180px, calc(100% - 96px)); margin: 0 auto; padding: 20px 0 calc(var(--site-ready-height, 148px) + 28px); }
+#screenLobby .ui12-lobby-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 0 0 18px; padding: 0 0 20px; border-bottom: 1px solid var(--line-soft); }
+#screenLobby .ui12-lobby-header .lobby-title-wrap { display: flex; align-items: center; gap: 25px; min-width: 0; }
+#screenLobby .ui12-lobby-header .tcgate-wordmark { width: 142px; height: auto; max-height: 48px; object-fit: contain; filter: none; }
+#screenLobby .ui12-lobby-header h2 { margin: 4px 0 0; font-size: 15px; line-height: 1.5; font-weight: 550; }
+#screenLobby .ui12-lobby-header .eyebrow { color: var(--muted); font-size: 9px; letter-spacing: .12em; }
+#screenLobby .ui12-lobby-connection { margin-left: auto; }
+#screenLobby .network-state-line { margin: 0; font-size: 11px; }
+#screenLobby .network-dot { width: 6px; height: 6px; }
+#screenLobby .header-actions { display: flex; flex: none; gap: 8px; }
+#screenLobby .header-actions button { padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: #c8d2e5; font-size: 11px; }
+#screenLobby .header-actions button:hover { background: var(--panel-2); border-color: #52617b; }
+#screenLobby .ui12-lobby-tabs { display: flex; align-items: center; gap: 28px; max-width: none; margin: 0 0 34px; padding: 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; }
+#screenLobby .ui12-lobby-tabs button { position: relative; flex: none; padding: 14px 1px 16px; border: 0; border-radius: 0; background: transparent; color: var(--muted); font-size: 13px; font-weight: 550; white-space: nowrap; }
+#screenLobby .ui12-lobby-tabs button:hover { color: var(--text); }
+#screenLobby .ui12-lobby-tabs button[aria-selected=true] { color: var(--text); background: transparent; }
+#screenLobby .ui12-lobby-tabs button[aria-selected=true]::after { position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; background: var(--accent-2); content: ''; }
+#screenLobby .ui12-lobby-pane { padding: 0; }
+#screenLobby .ui12-session-heading { margin-bottom: 28px; }
+#screenLobby .ui12-session-heading .ui12-eyebrow { margin-bottom: 10px; font-size: 9px; }
+#screenLobby .ui12-session-heading h3 { margin: 0 0 10px; font-size: 25px; font-weight: 550; letter-spacing: -.025em; line-height: 1.3; }
+#screenLobby .ui12-session-heading p { max-width: 660px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+#screenLobby .ui12-session-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); align-items: start; gap: 64px; }
+#screenLobby .ui12-installation-layout { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); align-items: start; gap: 36px; }
+#screenLobby .future-hub-zone { display: block; grid-column: auto; grid-row: auto; min-width: 0; }
+#screenLobby .form-card, #screenLobby .equipment-card, #screenLobby .players-card { min-width: 0; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none !important; }
+#screenLobby .future-hub-form { display: grid; gap: 20px; }
+#screenLobby .form-card > label, #screenLobby .device-selectors label { display: grid; min-width: 0; gap: 7px; }
+#screenLobby .form-card > label > span, #screenLobby .device-selectors label > span { margin: 0; color: #bdc7d9; font-size: 12px; }
+#screenLobby input, #screenLobby select { width: 100%; min-width: 0; min-height: 44px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 6px; color: var(--text); background: var(--panel); font-size: 13px; }
+#screenLobby input:hover, #screenLobby select:hover { border-color: #485774; }
+#screenLobby .field-help { color: var(--muted); font-size: 11px; line-height: 1.6; }
+#screenLobby .future-hub-readonly { padding: 12px 14px; border-color: var(--line); border-radius: 6px; background: var(--panel); }
+#screenLobby .future-hub-readonly span { color: var(--muted); }
+#screenLobby #timerHubConfig, #screenLobby #gigDiceHubConfig { display: grid; gap: 12px; padding-top: 20px; border-top: 1px solid var(--line-soft); }
+#screenLobby .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0; border: 0; }
+#screenLobby .toggle-row strong { font-size: 13px; font-weight: 600; }
+#screenLobby .toggle-row .sub { margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+#screenLobby .toggle { flex: none; width: 44px; min-width: 44px; height: 25px; padding: 3px; border: 1px solid #34415e; border-radius: 999px; background: #263149; }
+#screenLobby .toggle .knob { width: 17px; height: 17px; border-radius: 50%; background: #a6b0c3; transition: transform .16s; }
+#screenLobby .toggle.on { border-color: var(--accent-2); background: #6550c8; }
+#screenLobby .toggle.on .knob { transform: translateX(18px); background: var(--text); }
+#screenLobby #timerCfg { display: grid; grid-template-columns: minmax(0, 1fr) 100px; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; }
+#screenLobby .summary-line { display: flex; justify-content: space-between; padding: 0; border: 0; color: var(--muted); font-size: 11px; }
+#screenLobby #sumTimer, #screenLobby #gigDiceSettingStatus { color: #c5b9ec; font-size: 11px; }
+#screenLobby #setupContinue { min-height: 46px; padding: 12px 18px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent); color: #fff; font-size: 14px; }
+#screenLobby .ui12-session-sidebar { display: grid; gap: 26px; }
+#screenLobby .invite-card { min-width: 0; margin: 0 !important; padding: 24px !important; border: 1px solid var(--line) !important; border-radius: 9px; background: var(--panel) !important; box-shadow: none !important; }
+#screenLobby .invite-card > .label { color: var(--muted); font-size: 10px; }
+#screenLobby .lobby-game-label { margin: 10px 0 14px; color: #bec8da; font-size: 11px; line-height: 1.5; }
+#screenLobby .room-code-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#screenLobby #lobbyCode { color: var(--text); font-size: 32px; font-weight: 550; letter-spacing: .1em; }
+#screenLobby .invite-card > p { margin: 18px 0 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+#screenLobby #copyLink, #screenLobby #copyCode { padding: 10px 12px; border: 1px solid #34415b; border-radius: 6px; background: transparent; color: #ded8f5; font-size: 11px; }
+#screenLobby #copyLink { margin-top: 18px; }
+#screenLobby #copyLink:hover, #screenLobby #copyCode:hover { border-color: var(--accent-2); background: var(--panel-2); }
+#screenLobby .ui12-context-card { min-width: 0; padding: 0 0 0 2px; border: 0; background: transparent; }
+#screenLobby .ui12-context-card h3 { margin: 0 0 18px; font-size: 13px; font-weight: 550; }
+#screenLobby .ui12-context-card dl { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 13px; margin: 0; font-size: 12px; }
+#screenLobby .ui12-context-card dt { color: var(--muted); }
+#screenLobby .ui12-context-card dd { margin: 0; overflow-wrap: anywhere; }
+#screenLobby .ui12-context-card p { margin: 20px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+
+/* Personal devices and Phone controls are the existing functional components. */
+#screenLobby .equipment-card-live { display: block; grid-template-columns: none; }
+#screenLobby .equipment-copy .eyebrow { color: var(--muted); font-size: 9px; }
+#screenLobby .equipment-copy h3 { margin: 8px 0 12px; font-size: 17px; font-weight: 550; }
+#screenLobby .equipment-copy > p { color: var(--muted); font-size: 13px; line-height: 1.7; }
+#screenLobby .device-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 22px 0; }
+#screenLobby .device-actions .primary { min-height: 42px; padding: 11px 14px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent); color: #fff; font-size: 12px; }
+#screenLobby .media-status { color: var(--muted); font-size: 11px; }
+#screenLobby .device-selectors { display: grid; grid-template-columns: 1fr; gap: 17px; margin: 20px 0; }
+#screenLobby .phone-camera-entry { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--line-soft); }
+#screenLobby .phone-camera-entry button { min-height: 40px; padding: 10px 12px; border: 1px solid #34415b; border-radius: 6px; background: transparent; color: #ded8f5; font-size: 12px; }
+#screenLobby .phone-camera-panel { grid-template-columns: 100px minmax(0, 1fr); gap: 12px; max-width: 100%; margin-top: 18px; border-color: var(--line); border-radius: 8px; background: var(--panel); }
+#screenLobby .phone-camera-panel img { width: 100%; height: auto; max-width: 100%; }
+#screenLobby .phone-camera-panel p { overflow-wrap: anywhere; font-size: 12px; line-height: 1.6; }
+#screenLobby .future-hub-camera .lobby-preview-wrap { position: static; display: grid; gap: 13px; width: 100%; max-width: none; }
+#screenLobby .lobby-preview-shell { width: 100%; min-height: 260px; max-height: none; aspect-ratio: 16 / 10; overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: #040810; box-shadow: none; }
+#screenLobby #lobbyPreview { width: 100%; height: 100%; background: #040810; object-fit: contain; }
+#screenLobby .media-toggle-row { display: flex; gap: 10px; }
+#screenLobby .media-toggle-row button { min-height: 40px; padding: 10px 18px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: #b8c4d8; font-size: 12px; }
+
+/* The same two peer records, with explicit local/adversary labels. */
+#screenLobby .ui12-players-card { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+#screenLobby .ui12-player-card { display: block; min-width: 0; margin: 0; padding: 24px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); }
+#screenLobby .ui12-player-card-head { display: flex; align-items: center; gap: 13px; margin-bottom: 24px; }
+#screenLobby .ui12-player-card-head strong { display: block; overflow-wrap: anywhere; font-size: 18px; font-weight: 550; }
+#screenLobby .site-player-identity { display: block; margin-bottom: 4px; color: var(--muted); font-size: 10px; }
+#screenLobby .ui12-player-card-head :is(#lobbyOwnStatus, #opponentWaitingText) { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; }
+#screenLobby .ui12-player-card .avatar { width: 42px; height: 42px; min-width: 42px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); color: #d9d0ff; font-size: 12px; }
+#screenLobby .ui12-player-card dl { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 15px; margin: 0; font-size: 12px; line-height: 1.5; }
+#screenLobby .ui12-player-card dt { color: var(--muted); }
+#screenLobby .ui12-player-card dd { margin: 0; color: #dae3f2; overflow-wrap: anywhere; }
+#screenLobby .ui12-player-card :is(.status-dot, .loader-dot) { margin-left: auto; }
+
+/* Ready stays prominent and reachable from every Lobby tab. */
+#screenLobby #ui12LobbyReady { position: fixed; inset: auto 0 0; z-index: 35; padding: 17px 48px; border-top: 1px solid var(--line); background: rgba(7, 11, 19, .97); backdrop-filter: blur(12px); }
+#screenLobby #ui12LobbyReady .lobby-bottom { width: min(1180px, 100%); display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 0 auto !important; padding: 0 !important; border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none !important; }
+#screenLobby .ui12-ready-hint { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+#screenLobby .ui12-ready-hint strong { display: block; margin-bottom: 3px; color: #e0e5f0; font-size: 13px; font-weight: 500; }
+#screenLobby .ui12-ready-hint span { display: block; }
+#screenLobby #startGame { flex: none; width: auto; min-width: 245px; min-height: 48px; padding: 13px 24px; border: 1px solid var(--accent); border-radius: 7px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 650; }
+#screenLobby #startGame:hover:enabled { border-color: var(--accent-2); background: #896cff; }
+
+/* Before a real room exists, show only the short create/join preparation. */
+#screenLobby.hub-preconnect :is(.ui12-lobby-tabs, .ui12-session-sidebar, .ui12-lobby-connection, #ui12LobbyReady, #timerHubConfig, #gigDiceHubConfig) { display: none; }
+#screenLobby.hub-preconnect .ui12-lobby-pane { width: min(520px, 100%); margin: 44px auto 0; }
+#screenLobby.hub-preconnect .ui12-session-grid { display: block; }
+#screenLobby.hub-preconnect .form-card > #gameField { order: -3; }
+#screenLobby.hub-preconnect .form-card > #roomCodeField { order: -2; }
+#screenLobby.hub-preconnect .form-card > label:has(#playerName) { order: -1; }
+#screenLobby:not(.hub-preconnect) #siteCreateOptions { display: none; }
+#screenLobby #siteCreateOptions { display: grid; gap: 16px; margin: 0; padding: 20px 0 0; border: 0; border-top: 1px solid var(--line-soft); }
+#screenLobby #siteCreateOptions fieldset { display: grid; gap: 14px; min-width: 0; margin: 0; padding: 0; border: 0; }
+#screenLobby #siteCreateOptions legend { margin-bottom: 14px; padding: 0; color: #bdc7d9; font-size: 12px; font-weight: 600; }
+#screenLobby #siteCreateOptions label { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: #cbd5e6; font-size: 12px; line-height: 1.6; }
+#screenLobby #siteCreateOptions input[type=checkbox] { flex: none; width: 18px; height: 18px; min-height: 0; padding: 0; accent-color: var(--accent); }
+#screenLobby #siteCreateMinutes { width: 94px; }
+#screenLobby #siteCreateOptions small { color: var(--muted); font-size: 11px; line-height: 1.6; }
+
+@media (max-width: 1400px) {
+  #screenHome .tcgate-home-shell { width: calc(100% - 80px); }
+  #screenHome .tcgate-home-hero { gap: 42px; padding: 60px 0 54px; }
+  #screenHome h1 { font-size: 60px; }
+  #screenHome .tcgate-home-copy > p { font-size: 16px; }
+  #screenHome .ui12-home-primary-actions button { padding-inline: 16px; font-size: 13px; }
+  #screenHome .tcgate-step-item { padding-inline: 24px; }
+}
+@media (max-width: 1050px) {
+  #screenHome .tcgate-home-shell { width: calc(100% - 64px); }
+  #screenHome .tcgate-home-header { gap: 20px; }
+  #screenHome .tcgate-home-logo { width: 132px; }
+  #screenHome .ui12-home-nav button { padding-inline: 9px; font-size: 12px; }
+  #screenHome .tcgate-home-hero { gap: 32px; padding: 48px 0; }
+  #screenHome h1 { font-size: 49px; }
+  #screenHome .tcgate-home-copy > p { font-size: 15px; }
+  #screenHome .tcgate-home-benefits { gap: 5px; margin-bottom: 22px; }
+  #screenHome .tcgate-home-benefit { padding: 5px 7px; font-size: 10px; }
+  #screenHome .ui12-home-primary-actions { gap: 8px; }
+  #screenHome .ui12-home-primary-actions button { min-height: 46px; padding: 12px; font-size: 12px; gap: 12px; }
+  #screenHome .tcgate-step-item { gap: 12px; padding-inline: 18px; }
+  #screenHome .tcgate-step-item p { font-size: 11px; }
+  #screenHome .site-games-description { flex-basis: 100%; margin-left: 0; }
+  #screenLobby.future-hub-mounted .ui12-lobby-shell { width: calc(100% - 56px); }
+  #screenLobby .ui12-lobby-header { flex-wrap: wrap; gap: 14px; }
+  #screenLobby .ui12-lobby-header .lobby-title-wrap { flex: 1; }
+  #screenLobby .ui12-lobby-connection { order: 3; width: 100%; margin-left: 0; }
+  #screenLobby .ui12-session-grid { gap: 32px; }
+  #screenLobby .ui12-installation-layout { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 24px; }
+  #screenLobby #ui12LobbyReady { padding-inline: 28px; }
+}
+@media (max-width: 900px) {
+  #screenHome .tcgate-home-hero { grid-template-columns: 1fr; gap: 36px; padding: 48px 0 42px; }
+  #screenHome .tcgate-home-copy { max-width: 660px; }
+  #screenHome h1 { max-width: 650px; font-size: 62px; }
+  #screenHome .tcgate-home-copy > p { max-width: 560px; font-size: 17px; }
+  #screenHome .tcgate-home-benefit { padding: 6px 9px; font-size: 11px; }
+  #screenHome .ui12-home-primary-actions button { min-height: 50px; padding: 13px 21px; font-size: 14px; }
+  #screenHome .site-product-preview { width: min(100%, 760px); }
+  #screenHome .ui12-info-grid, #screenHome .ui12-feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #screenLobby .ui12-session-grid { grid-template-columns: minmax(0, 1fr) minmax(0, .92fr); }
+  #screenLobby .ui12-session-heading h3 { font-size: 23px; }
+  #screenLobby .ui12-player-card { padding: 20px; }
+  #screenLobby .ui12-player-card dl { grid-template-columns: 110px minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  #screenHome .tcgate-home-shell { width: calc(100% - 40px); padding-bottom: 24px; }
+  #screenHome .tcgate-home-header { min-height: 0; flex-wrap: wrap; gap: 10px 16px; padding: 14px 0 10px; }
+  #screenHome .tcgate-home-logo { width: 132px; max-height: 44px; }
+  #screenHome .tcgate-home-alpha-badge { margin-left: auto; }
+  #screenHome .ui12-home-nav { order: 3; width: 100%; justify-content: space-between; gap: 2px; margin-top: 3px; }
+  #screenHome .ui12-home-nav button { padding: 9px 7px; font-size: 11px; }
+  #screenHome .tcgate-home-hero { gap: 30px; padding: 36px 0 30px; }
+  #screenHome h1 { max-width: 530px; margin-bottom: 20px; font-size: 53px; line-height: 1.09; }
+  #screenHome .ui12-eyebrow { margin-bottom: 16px; font-size: 9px; }
+  #screenHome .tcgate-home-copy > p { margin-bottom: 20px; font-size: 15px; }
+  #screenHome .tcgate-home-benefits { margin-bottom: 24px; }
+  #screenHome .ui12-home-primary-actions { gap: 10px; }
+  #screenHome .ui12-home-primary-actions button { min-height: 48px; padding-inline: 16px; font-size: 13px; }
+  #screenHome .site-product-preview figcaption { padding-top: 11px; font-size: 9px; }
+  #screenHome .site-product-preview figcaption span:first-child { font-size: 8px; }
+  #screenHome .tcgate-home-steps { grid-template-columns: 1fr; gap: 0; padding: 0; }
+  #screenHome .tcgate-step-item, #screenHome .tcgate-step-item:first-child { min-height: 77px; padding: 18px 0; border-right: 0; border-bottom: 1px solid var(--line-soft); gap: 18px; }
+  #screenHome .tcgate-step-item:last-child { border-bottom: 0; }
+  #screenHome .tcgate-step-index { width: 24px; }
+  #screenHome .tcgate-step-item p { margin-top: 4px; font-size: 12px; }
+  #screenHome .site-step-arrow { display: none; }
+  #screenHome .site-games-available { gap: 9px 12px; padding-top: 22px; }
+  #screenHome .site-games-available > span:first-child { flex-basis: 100%; }
+  #screenHome .site-games-description { font-size: 10px; }
+  #screenHome .ui12-page-heading { padding-top: 38px; }
+  #screenHome .ui12-page-heading h1 { font-size: 36px; }
+  #screenHome .ui12-info-grid, #screenHome .ui12-feature-grid, #screenHome .ui12-game-grid { grid-template-columns: 1fr; gap: 0; }
+  #screenHome .ui12-info-card { padding: 23px 0; }
+  #screenLobby.future-hub-mounted .ui12-lobby-shell { width: calc(100% - 40px); padding-top: 18px; }
+  #screenLobby .ui12-lobby-header { margin-bottom: 9px; padding-bottom: 18px; gap: 12px; }
+  #screenLobby .ui12-lobby-header .lobby-title-wrap { gap: 16px; }
+  #screenLobby .ui12-lobby-header .tcgate-wordmark { width: 114px; max-height: 40px; }
+  #screenLobby .ui12-lobby-header h2 { font-size: 13px; }
+  #screenLobby .ui12-lobby-header .eyebrow { font-size: 8px; }
+  #screenLobby .header-actions button { min-height: 36px; padding: 8px 10px; font-size: 10px; }
+  #screenLobby .ui12-lobby-tabs { gap: 28px; margin-bottom: 28px; }
+  #screenLobby .ui12-lobby-tabs button { padding-top: 13px; padding-bottom: 14px; font-size: 12px; }
+  #screenLobby .ui12-session-heading { margin-bottom: 25px; }
+  #screenLobby .ui12-session-heading h3 { max-width: 430px; font-size: 24px; }
+  #screenLobby .ui12-session-heading p { font-size: 12px; }
+  #screenLobby .ui12-session-grid, #screenLobby .ui12-installation-layout, #screenLobby .ui12-players-card { grid-template-columns: 1fr; gap: 28px; }
+  #screenLobby .ui12-session-sidebar { padding-top: 4px; }
+  #screenLobby .invite-card { padding: 22px !important; }
+  #screenLobby .ui12-context-card { padding: 0; }
+  #screenLobby .lobby-preview-shell { min-height: 260px; }
+  #screenLobby input, #screenLobby select { font-size: 16px; }
+  #screenLobby #ui12LobbyReady { padding: 14px 20px; }
+  #screenLobby #ui12LobbyReady .lobby-bottom { gap: 18px; }
+  #screenLobby .ui12-ready-hint { max-width: 240px; font-size: 10px; }
+  #screenLobby .ui12-ready-hint strong { font-size: 12px; }
+  #screenLobby #startGame { min-width: 170px; min-height: 46px; padding: 12px 16px; font-size: 12px; }
+}
+@media (max-width: 440px) {
+  #screenHome .tcgate-home-shell { width: calc(100% - 36px); }
+  #screenHome .ui12-home-nav button { padding-inline: 6px; font-size: 11px; }
+  #screenHome h1 { max-width: 360px; font-size: 44px; }
+  #screenHome .tcgate-home-hero { padding-top: 30px; gap: 28px; }
+  #screenHome .ui12-home-primary-actions { display: grid; grid-template-columns: 1fr; }
+  #screenHome .ui12-home-primary-actions button { width: 100%; min-height: 48px; font-size: 14px; }
+  #screenHome .tcgate-home-copy > .site-hero-note { font-size: 10px; }
+  #screenLobby .ui12-lobby-header .lobby-title-wrap { flex-basis: 100%; justify-content: space-between; }
+  #screenLobby .ui12-lobby-connection { order: initial; width: auto; margin-right: auto; }
+  #screenLobby .ui12-lobby-tabs { justify-content: space-between; gap: 12px; }
+  #screenLobby.hub-preconnect .ui12-lobby-pane { margin-top: 28px; }
+  #screenLobby .ui12-ready-hint strong { margin: 0; }
+  #screenLobby .ui12-ready-hint span { max-width: 150px; }
+  #screenLobby #startGame { min-width: 154px; padding-inline: 12px; }
+  #screenLobby .ui12-player-card dl { grid-template-columns: 115px minmax(0, 1fr); }
+  #screenLobby .phone-camera-panel { grid-template-columns: 1fr; }
+  #screenLobby .phone-camera-panel img { width: 120px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #screenHome *, #screenLobby * { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

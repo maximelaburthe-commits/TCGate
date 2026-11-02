@@ -55,7 +55,7 @@ async function createPair(browser, origin, name, game, observations) {
       }
     });
   }
-  await host.goto(origin + '/'); await host.locator('#goCreate').click();
+  await host.goto(origin + '/'); await host.locator('#goCreate').click(); await host.locator('#setupContinue').click();
   await host.waitForFunction(() => /^[A-Z0-9]{6}$/.test(document.querySelector('#lobbyCode').textContent.trim()));
   const code = (await host.locator('#lobbyCode').innerText()).trim();
   if (game !== 'cyberpunk') await host.locator('#gameSelect').selectOption(game);

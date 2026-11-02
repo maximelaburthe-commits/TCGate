@@ -67,7 +67,7 @@ async function run(){
     const contexts=await Promise.all([1,2].map(()=>browser.newContext({viewport:{width:1366,height:768},permissions:['camera','microphone']})));
     const [host,guest]=await Promise.all(contexts.map(c=>c.newPage()));
     for(const page of [host,guest])page.on('pageerror',e=>errors.push(e.message));
-    await host.goto(fixture.origin+'/');await host.locator('#goCreate').click();const code=await waitRoom(host);
+    await host.goto(fixture.origin+'/');await host.locator('#goCreate').click();await host.locator('#setupContinue').click();const code=await waitRoom(host);
     await host.locator('#gameSelect').selectOption('no-game');
     await host.locator('#playerName').fill('Report Host');await host.locator('#playerName').press('Tab');
     await guest.goto(fixture.origin+'/');await guest.locator('#goJoin').click();await guest.locator('#playerName').fill('Report Guest');await guest.locator('#roomCodeInput').fill(code);await guest.locator('#setupContinue').click();

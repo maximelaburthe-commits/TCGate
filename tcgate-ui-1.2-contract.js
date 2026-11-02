@@ -5,9 +5,9 @@ function section(html,id){const start=html.indexOf('<section id="'+id+'"');asser
 function assertHome(html){
  const home=section(html,'screenHome');for(const id of ['goCreate','goJoin','resumeSessionCard','resumeSessionButton'])assert(home.includes('id="'+id+'"'),'Missing Home action '+id);
  for(const page of ['accueil','fonctionnement','fonctions','jeux','alpha']){assert(home.includes('data-home-page="'+page+'"'),'Missing internal page '+page);assert(home.includes('id="ui12-home-'+page+'"'),'Missing internal panel '+page);}
- assert(!home.includes('home-alpha-orbit-hero-approved.webp'),'Orbit is not used in Home');assert(!home.includes('tcgate-home-visual'),'No decorative right illustration');
- assert(home.includes('La plateforme webcam pensée pour les TCG'));assert(home.includes('TCGate assiste la partie, il ne la remplace pas.'));assert(!/SWU|Neuroscape|Hellbreak/.test(home));
- const images=[...home.matchAll(/<img[^>]+src="([^"]+)"/g)].map(m=>m[1]);assert(images.every(src=>src==='/assets/tcgate-logo-final.png'),'Only the approved identity asset is used on Home');
+ assert(!home.includes('home-alpha-orbit-hero-approved.webp'),'Orbit is not used in Home');assert(home.includes('site-product-preview')&&home.includes('/assets/tcgate-product-preview.png'),'Site UI 2.0 uses the real product visual');
+ assert(home.includes('Votre table, pas de frontière.'));assert(home.includes('TCGate assiste la partie, il ne la remplace pas.'));assert(!/SWU|Neuroscape|Hellbreak/.test(home));
+ const images=[...home.matchAll(/<img[^>]+src="([^"]+)"/g)].map(m=>m[1]);assert(images.every(src=>['/assets/tcgate-logo-final.png','/assets/tcgate-product-preview.png'].includes(src)),'Only approved identity and real product reference assets are used on Home');
 }
 function withoutGigAdoption(source){let value=lf(source);const adopt='  const previousGigDiceEnabled = state.gigDiceEnabled;\n  state.gigDiceEnabled = gigDiceEnabledFromSnapshot(snapshot);\n';assert(value.includes(adopt),'Missing authoritative room bool adoption');value=value.replace(adopt,'');const render='  } else if (previousGigDiceEnabled !== state.gigDiceEnabled) {\n    renderGigDicePanel();\n  }\n  syncHubSessionControls();';assert(value.includes(render),'Unexpected room adoption scope');return value.replace(render,'  }');}
 function assertGame(html,ux){

@@ -10,7 +10,7 @@ const screens = {
   game: $('screenGame')
 };
 
-const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 15 · UI 1.2.0';
+const PRODUCT_VERSION = 'TCGate Alpha 0.1 Candidate 15 · UI 2.0.0';
 const VISION_PROFILE = 'Vision FaceWebcam 0.3.1 · State 0.1.6';
 
 const state = {
@@ -1817,6 +1817,14 @@ function configureSetup(mode) {
   syncHubSessionControls();
   showScreen('lobby');
   setTimeout(() => (create ? $('playerName') : $('roomCodeInput')).focus(), 0);
+}
+
+function openCreateSetup() {
+  state.game = 'cyberpunk';
+  $('gameSelect').value = 'cyberpunk';
+  configureSetup('create');
+  if (!$('playerName').value.trim()) $('playerName').value = 'Joueur';
+  window.TCGateSiteUi20?.resetCreateOptions();
 }
 
 async function openCreateHub() {
@@ -5280,11 +5288,11 @@ $('gameSelect').addEventListener('change', () => {
 
 $('playerName').addEventListener('input', scheduleHubNameUpdate);
 
-$('goCreate').addEventListener('click', openCreateHub);
+$('goCreate').addEventListener('click', openCreateSetup);
 $('goJoin').addEventListener('click', () => configureSetup('join'));
 $('resumeSessionButton').addEventListener('click', recoverPersistentSession);
 $('setupBack').addEventListener('click', () => showScreen('home'));
-$('setupContinue').addEventListener('click', enterLobby);
+$('setupContinue').addEventListener('click', event => window.TCGateSiteUi20?.submitSetup ? window.TCGateSiteUi20.submitSetup(event) : enterLobby());
 $('roomCodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') enterLobby(); });
 
 $('copyCode').addEventListener('click', async () => {

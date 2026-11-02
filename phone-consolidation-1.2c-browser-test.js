@@ -40,7 +40,7 @@ async function run(){
     function observe(page,role){page.on('pageerror',error=>errors.push(role+': '+error.message));page.on('request',request=>{const pathname=new URL(request.url()).pathname;requests.push({role,method:request.method(),pathname});if(request.method()==='POST'&&/\/api\/phone\/pairs\/[^/]+\/signal$/.test(pathname)){try{const body=request.postDataJSON();signals.push({role,type:body.type,action:body.payload?.action});}catch{}}});}
     pc=await pcContext.newPage();phone=await phoneContext.newPage();observe(pc,'pc');observe(phone,'phone');
     step('PC room and webcam');
-    await pc.goto(origin+'/');await pc.locator('#goCreate').click();
+    await pc.goto(origin+'/');await pc.locator('#goCreate').click();await pc.locator('#setupContinue').click();
     await pc.waitForFunction(()=>document.querySelector('#screenLobby').classList.contains('active')&&/^[A-Z0-9]{6}$/.test(document.querySelector('#lobbyCode').textContent.trim()));
     await pc.locator('#gameSelect').selectOption('no-game');
     await pc.locator('[data-lobby-page="installation"]').click();await pc.locator('#enableMedia').click();

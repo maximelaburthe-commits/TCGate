@@ -63,9 +63,11 @@ assert(ux.includes('installationZone.append(equipment)'), 'Candidate media contr
 assert(ux.includes('playersZone.append(players)') && ux.includes('readyZone.append(ready)'), 'Candidate players and Ready are not mounted in the Hub');
 assert(!/cloneNode|replaceWith|insertAdjacentHTML|\.innerHTML\s*=/.test(ux), 'Hub rebuilds Candidate controls destructively');
 assert(!app.includes("showScreen('setup')"), 'Legacy Setup remains in the visible navigation path');
-assert(app.includes("$('goCreate').addEventListener('click', openCreateHub)"), 'Create does not use immediate room creation');
-assert(app.includes('await enterLobby({ provisional: true })'), 'Host room is not created immediately');
-assert(!app.includes("'Créer le salon'"), 'Legacy create-room action remains');
+assert(app.includes("$('goCreate').addEventListener('click', openCreateSetup)"), 'Create must first open the Site UI 2.0 session configuration');
+const createSetupPresentation = between(app, 'function openCreateSetup(', 'async function openCreateHub(');
+assert(createSetupPresentation.includes("configureSetup('create')") && !/enterLobby|\bapi\(/.test(createSetupPresentation), 'Opening the new Create presentation must not create a Room');
+assert(app.includes('await enterLobby({ provisional: true })'), 'The existing post-game Hub room lifecycle remains available');
+assert(html.includes('id="siteCreateOptions"'), 'Pre-connect session choices are missing');
 assert(app.includes("$('copyCode').addEventListener('click'"), 'Candidate copy-code action is missing');
 assert(app.includes("$('copyLink').addEventListener('click'"), 'Candidate copy-link action is missing');
 
