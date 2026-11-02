@@ -29,11 +29,11 @@
     },
     "development": {
       "branch": "update/next",
-      "sha": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b",
+      "sha": "217b0c476a6f615c97b608932b09c5623e675dec",
       "sync": "ahead",
-      "ahead": 3,
+      "ahead": 4,
       "behind": 0,
-      "note": "Site UI 2.0 implémenté et vérifié techniquement au SHA exact. main reste sur Candidate 15 ; BDD Locale Core 1.0 et sa qualification historique restent inchangés. Comparaison Git fournie par le contrôle CLI local séparé de l’appelant. Aucun déploiement Railway Production actuel vérifié ici.",
+      "note": "Player Locale 1.0 implémenté et vérifié techniquement au SHA exact. BDD Locale Core 1.0 et Site UI 2.0 restent prêts avec leurs reçus historiques inchangés. Comptes main/update fournis par le contrôle Git CLI local séparé. main reste Candidate 15 ; aucune mutation Railway, aucune nouvelle observation Production.",
       "comparisonWithCandidate14": {
         "status": "diverged",
         "ahead": 22,
@@ -42,9 +42,9 @@
         "updateShaAtObservation": "e26b2e09579be53452c1e631b1dc5230191d0250",
         "note": "Comparaison historique conservée ; non recalculée pour Locale Core."
       },
-      "baselineSha": "0844876eb75a6bcac80fe75f605811f5dee1e9a0"
+      "baselineSha": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b"
     },
-    "principle": "Workspace = source de vérité produit, roadmap et historique ; GitHub = vérité technique. main = baseline stable Git Candidate 15 ; update/next = Site UI 2.0 après BDD Locale Core 1.0. Production : dernière observation historique conservée, déploiement actuel non vérifié dans ce jalon.",
+    "principle": "Workspace = source de vérité produit, roadmap et historique ; GitHub = vérité technique. main = baseline stable Git Candidate 15 ; update/next = Player Locale 1.0 après BDD Locale Core 1.0 et Site UI 2.0. Vision Locale et Vision Qualification 1.0 restent futurs. Production : dernière observation historique conservée, déploiement actuel non vérifié dans ce jalon.",
     "history": [
       {
         "date": "2026-11-01",
@@ -169,6 +169,64 @@
             "baselineSha": "e26b2e09579be53452c1e631b1dc5230191d0250"
           },
           "principle": "Workspace = source de vérité produit, roadmap et historique ; GitHub = vérité technique. main = baseline stable Git Candidate 15 ; update/next = BDD Locale Core 1.0. Production : dernière observation historique conservée, déploiement actuel non vérifié dans ce jalon.",
+          "stable": {
+            "label": "Baseline Git stable · main · Candidate 15 promue",
+            "branch": "main",
+            "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+            "note": "Candidate 15 promue par fast-forward sur main. Cette référence Git ne confirme aucun déploiement Railway Production actuel."
+          }
+        }
+      },
+      {
+        "date": "2026-11-02",
+        "sha": "217b0c476a6f615c97b608932b09c5623e675dec",
+        "text": "Player Locale 1.0 : métadonnées Git précédentes archivées avant actualisation de update/next ; main, Candidate 15 et dernière observation Production conservés.",
+        "before": {
+          "workspaceVersion": "3.0",
+          "generatedAt": "2026-11-02",
+          "project": "TCGate",
+          "production": {
+            "label": "Production · dernière observation historique conservée",
+            "branch": "candidate/alpha-0.1-c14",
+            "sha": "c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3",
+            "source": "État Production confirmé par le propriétaire pour Candidate 15 ; aucune mutation Railway par ce script.",
+            "observationRecordedAt": "2026-11-01",
+            "currentDeploymentConfirmed": false,
+            "note": "Valeurs de branche et SHA conservées depuis le dernier état enregistré, historique du 2026-11-01. Production non interrogée dans ce jalon ; aucun état Railway actuel déduit de la promotion Git."
+          },
+          "candidate": {
+            "label": "Alpha 0.1 Candidate 15 · promue sur main",
+            "branch": "main",
+            "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+            "note": "Le propriétaire a confirmé Q14 livraison Resend réelle, Q15 TURN relay réel et Q16 Vision physique Cyberpunk PASS dans sa demande de promotion. Promotion Git fast-forward réalisée séparément ; aucun nouveau test humain par Codex et aucune confirmation Railway Production dans Locale Core.",
+            "status": "promoted",
+            "humanQualification": {
+              "status": "PASS",
+              "q14": "PASS",
+              "q15": "PASS",
+              "q16": "PASS",
+              "source": "Confirmation explicite du propriétaire dans la demande de promotion Candidate 15",
+              "performedByCodex": false
+            }
+          },
+          "development": {
+            "branch": "update/next",
+            "sha": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b",
+            "sync": "ahead",
+            "ahead": 3,
+            "behind": 0,
+            "note": "Site UI 2.0 implémenté et vérifié techniquement au SHA exact. main reste sur Candidate 15 ; BDD Locale Core 1.0 et sa qualification historique restent inchangés. Comparaison Git fournie par le contrôle CLI local séparé de l’appelant. Aucun déploiement Railway Production actuel vérifié ici.",
+            "comparisonWithCandidate14": {
+              "status": "diverged",
+              "ahead": 22,
+              "behind": 1,
+              "observedAt": "2026-11-01",
+              "updateShaAtObservation": "e26b2e09579be53452c1e631b1dc5230191d0250",
+              "note": "Comparaison historique conservée ; non recalculée pour Locale Core."
+            },
+            "baselineSha": "0844876eb75a6bcac80fe75f605811f5dee1e9a0"
+          },
+          "principle": "Workspace = source de vérité produit, roadmap et historique ; GitHub = vérité technique. main = baseline stable Git Candidate 15 ; update/next = Site UI 2.0 après BDD Locale Core 1.0. Production : dernière observation historique conservée, déploiement actuel non vérifié dans ce jalon.",
           "stable": {
             "label": "Baseline Git stable · main · Candidate 15 promue",
             "branch": "main",
@@ -1390,16 +1448,16 @@
     {
       "id": "db-player-locales",
       "category": "bdd",
-      "name": "Langue physique personnelle par joueur",
-      "summary": "Décision d’architecture post-Candidate 15, sans implémentation.",
-      "status": "planned",
-      "maturity": "Décision enregistrée · non implémentée",
-      "track": "post-Candidate-15",
-      "version": "Concept uniquement",
-      "dbState": "Futur",
-      "coverage": "cardId canonique → printing → locale → index Vision par locale",
+      "name": "Player Locale 1.0 · Langue de mes cartes",
+      "summary": "Player Locale 1.0 livré techniquement dans Lobby → Mon installation : « Langue de mes cartes », source BDD Locale Core, locales dataReady=true et visionReady=true, défaut valide et préférence personnelle persistée par TCG. Host et Guest indépendants ; aucune synchronisation Room/WebRTC/SSE, aucune logique Ready supplémentaire. Cyberpunk EN sélectionnable ; FR non sélectionnable sans qualification. Sans jeu : contrôle absent. Matcher et corpus Vision inchangés ; aucun filtrage Vision par langue dans Jalon 3. 43 suites PASS au SHA exact, dont 11 navigateur ; résultat technique reported, aucune validation humaine déduite.",
+      "status": "active",
+      "maturity": "Implémenté et vérifié techniquement · reported",
+      "track": "update/next",
+      "version": "1.0",
+      "dbState": "Cyberpunk EN sélectionnable ; FR non qualifié et non sélectionnable",
+      "coverage": "Choix personnel local dans Mon installation ; persistance par TCG ; indépendance Host/Guest ; aucune synchronisation de la langue",
       "architecture": {
-        "implemented": false,
+        "implemented": true,
         "model": [
           "TCG",
           "cardId canonique",
@@ -1410,18 +1468,30 @@
         "sharedRoomChoice": "TCG",
         "personalChoice": "Langue des cartes physiques dans Mon installation",
         "example": {
+          "status": "FUTURE EXAMPLE · FR NOT QUALIFIED",
           "host": "Cyberpunk / FR",
           "guest": "Cyberpunk / EN"
         },
         "sameCanonicalCardId": true,
-        "visionRule": "selected locale → load only that locale qualified Vision references",
+        "visionRule": "FUTURE · selected locale → only explicitly qualified Vision references ; NOT IMPLEMENTED IN PLAYER LOCALE 1.0",
         "visionReadyRequired": true,
-        "crossLocaleVisualFallback": false
+        "crossLocaleVisualFallback": false,
+        "storage": "Préférence navigateur personnelle persistée par TCG",
+        "selectableRule": "dataReady=true AND visionReady=true pour un TCG utilisant Vision",
+        "defaultRule": "defaultLocale seulement si sélectionnable, sinon première locale valide déclarée ; aucune langue arbitraire",
+        "unavailablePreferenceRule": "Normalisée automatiquement vers une locale valide ; aucune règle Ready supplémentaire",
+        "visionLocaleImplemented": false,
+        "visionFilteringImplemented": false,
+        "sharedLocaleState": false,
+        "roomSchemaChanged": false,
+        "reportSchemaChanged": false,
+        "activeVisionMatcherChanged": false,
+        "activeVisionCorpusChanged": false
       },
-      "progress": 0,
+      "progress": 100,
       "roadmap": false,
       "weight": 0,
-      "notes": "[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Chaque BDD déclarera ses langues physiques disponibles. TCG commun à la room, langue physique personnelle dans Mon installation. Même cardId canonique, corpus Vision par locale ; proposer Vision seulement si visionReady=true ; aucun fallback visuel EN lorsque FR est choisie. Fonction future, pas implémentée dans C15.\n[2026-11-02 · 0844876eb75a6bcac80fe75f605811f5dee1e9a0] FUTURE — NOT IMPLEMENTED IN JALON 1. Choix personnel de la langue physique dans Mon installation ; Host FR et Guest EN pour le même TCG. La livraison technique BDD Locale Core 1.0 ne vaut ni qualification physique FR ni activation de cette fonction.",
+      "notes": "[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Chaque BDD déclarera ses langues physiques disponibles. TCG commun à la room, langue physique personnelle dans Mon installation. Même cardId canonique, corpus Vision par locale ; proposer Vision seulement si visionReady=true ; aucun fallback visuel EN lorsque FR est choisie. Fonction future, pas implémentée dans C15.\n[2026-11-02 · 0844876eb75a6bcac80fe75f605811f5dee1e9a0] FUTURE — NOT IMPLEMENTED IN JALON 1. Choix personnel de la langue physique dans Mon installation ; Host FR et Guest EN pour le même TCG. La livraison technique BDD Locale Core 1.0 ne vaut ni qualification physique FR ni activation de cette fonction.\n[2026-11-02 · 217b0c476a6f615c97b608932b09c5623e675dec] Player Locale 1.0 livré techniquement dans Lobby → Mon installation : « Langue de mes cartes », source BDD Locale Core, locales dataReady=true et visionReady=true, défaut valide et préférence personnelle persistée par TCG. Host et Guest indépendants ; aucune synchronisation Room/WebRTC/SSE, aucune logique Ready supplémentaire. Cyberpunk EN sélectionnable ; FR non sélectionnable sans qualification. Sans jeu : contrôle absent. Matcher et corpus Vision inchangés ; aucun filtrage Vision par langue dans Jalon 3. 43 suites PASS au SHA exact, dont 11 navigateur ; résultat technique reported, aucune validation humaine déduite.",
       "history": [
         {
           "date": "2026-11-01",
@@ -1468,8 +1538,135 @@
             "weight": 0,
             "notes": "[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Chaque BDD déclarera ses langues physiques disponibles. TCG commun à la room, langue physique personnelle dans Mon installation. Même cardId canonique, corpus Vision par locale ; proposer Vision seulement si visionReady=true ; aucun fallback visuel EN lorsque FR est choisie. Fonction future, pas implémentée dans C15."
           }
+        },
+        {
+          "date": "2026-11-02",
+          "sha": "217b0c476a6f615c97b608932b09c5623e675dec",
+          "text": "Player Locale 1.0 : état conceptuel précédent complet archivé ; seul le choix personnel est implémenté, le branchement Vision reste futur.",
+          "before": {
+            "id": "db-player-locales",
+            "category": "bdd",
+            "name": "Langue physique personnelle par joueur",
+            "summary": "Décision d’architecture post-Candidate 15, sans implémentation.",
+            "status": "planned",
+            "maturity": "Décision enregistrée · non implémentée",
+            "track": "post-Candidate-15",
+            "version": "Concept uniquement",
+            "dbState": "Futur",
+            "coverage": "cardId canonique → printing → locale → index Vision par locale",
+            "architecture": {
+              "implemented": false,
+              "model": [
+                "TCG",
+                "cardId canonique",
+                "printing",
+                "locale",
+                "Vision index par locale"
+              ],
+              "sharedRoomChoice": "TCG",
+              "personalChoice": "Langue des cartes physiques dans Mon installation",
+              "example": {
+                "host": "Cyberpunk / FR",
+                "guest": "Cyberpunk / EN"
+              },
+              "sameCanonicalCardId": true,
+              "visionRule": "selected locale → load only that locale qualified Vision references",
+              "visionReadyRequired": true,
+              "crossLocaleVisualFallback": false
+            },
+            "progress": 0,
+            "roadmap": false,
+            "weight": 0,
+            "notes": "[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Chaque BDD déclarera ses langues physiques disponibles. TCG commun à la room, langue physique personnelle dans Mon installation. Même cardId canonique, corpus Vision par locale ; proposer Vision seulement si visionReady=true ; aucun fallback visuel EN lorsque FR est choisie. Fonction future, pas implémentée dans C15.\n[2026-11-02 · 0844876eb75a6bcac80fe75f605811f5dee1e9a0] FUTURE — NOT IMPLEMENTED IN JALON 1. Choix personnel de la langue physique dans Mon installation ; Host FR et Guest EN pour le même TCG. La livraison technique BDD Locale Core 1.0 ne vaut ni qualification physique FR ni activation de cette fonction."
+          }
+        },
+        {
+          "date": "2026-11-02",
+          "sha": "217b0c476a6f615c97b608932b09c5623e675dec",
+          "text": "Player Locale 1.0 livré techniquement dans Lobby → Mon installation : « Langue de mes cartes », source BDD Locale Core, locales dataReady=true et visionReady=true, défaut valide et préférence personnelle persistée par TCG. Host et Guest indépendants ; aucune synchronisation Room/WebRTC/SSE, aucune logique Ready supplémentaire. Cyberpunk EN sélectionnable ; FR non sélectionnable sans qualification. Sans jeu : contrôle absent. Matcher et corpus Vision inchangés ; aucun filtrage Vision par langue dans Jalon 3. 43 suites PASS au SHA exact, dont 11 navigateur ; résultat technique reported, aucune validation humaine déduite."
         }
-      ]
+      ],
+      "technicalStatus": "reported",
+      "qualification": {
+        "status": "reported",
+        "automatedStatus": "PASS",
+        "sha": "217b0c476a6f615c97b608932b09c5623e675dec",
+        "suites": 43,
+        "browserSuites": 11,
+        "nodeAssertionCalls": 4926,
+        "assertionCounting": "Node assert calls in instrumented test processes, including expected negative cases; custom throw-only checks are additional and are not counted.",
+        "startedAt": "2026-11-02T19:36:20.656Z",
+        "finishedAt": "2026-11-02T19:40:31.734Z",
+        "sourceTree": "bcb0a0ed2a0ed7432e0b537ccc93cfd32b742f91",
+        "receipt": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\qualification.json",
+        "receiptSha256": "8c932f3083952080e58bd36fec0b4ce4292fd4054256afac3a3e4f54f02adf1f",
+        "syntaxCheck": "PASS",
+        "whitespaceCheck": "PASS",
+        "performedBy": "Codex",
+        "physicalQualification": "NOT PERFORMED IN THIS MILESTONE",
+        "humanVisualValidation": "NOT INFERRED FROM AUTOMATED QUALIFICATION",
+        "responsiveWidths": [
+          1366,
+          560,
+          390
+        ],
+        "baselineMain": "e26b2e09579be53452c1e631b1dc5230191d0250",
+        "baselineProduct": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b",
+        "workspaceSourceSha": "68746f3fc6c085299075768238e4e4fff8439ed7",
+        "playerLocaleImplemented": true,
+        "visionLocaleImplemented": false,
+        "frenchVisionQualified": false,
+        "activeVisionMatcherChanged": false,
+        "activeVisionCorpusChanged": false,
+        "roomSchemaChanged": false,
+        "reportSchemaChanged": false,
+        "railwayMutation": false,
+        "screenshots": [
+          {
+            "name": "player-locale-guest-1366.png",
+            "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\screenshots\\player-locale-guest-1366.png",
+            "sha256": "6a7a4555754c4aa020a30c6bada1d670641339ffa906c37c3d4b413faaf7e8d4",
+            "bytes": 47702
+          },
+          {
+            "name": "player-locale-guest-390.png",
+            "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\screenshots\\player-locale-guest-390.png",
+            "sha256": "2adea345b0e912d018ad579e850e59d41ad645c0774de6e6392317a1dafef7c0",
+            "bytes": 45882
+          },
+          {
+            "name": "player-locale-host-1366.png",
+            "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\screenshots\\player-locale-host-1366.png",
+            "sha256": "db53c278a21bfa250ca874612da62bb8aba46fe9e4022177f39fe76fcebd30b5",
+            "bytes": 48819
+          },
+          {
+            "name": "player-locale-host-390.png",
+            "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\screenshots\\player-locale-host-390.png",
+            "sha256": "62645d04b913c1b687253e48aea8edb4cbf10e8793fcd05b37c539a1dc272e9d",
+            "bytes": 46054
+          },
+          {
+            "name": "player-locale-production-1366.png",
+            "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\screenshots\\player-locale-production-1366.png",
+            "sha256": "1cb62dba78c524651671bf5c1e53e8b0f7008494c07b4f6b7d35c074b2e4a002",
+            "bytes": 47908
+          },
+          {
+            "name": "player-locale-production-390.png",
+            "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\screenshots\\player-locale-production-390.png",
+            "sha256": "65bd67492706945d9f696a083184eef8c9a0462eca4a60a6b95da3b2a52db62f",
+            "bytes": 44962
+          }
+        ]
+      },
+      "readiness": "READY",
+      "future": {
+        "visionLocale": "FUTURE",
+        "visionFiltering": "NOT IMPLEMENTED IN PLAYER LOCALE 1.0",
+        "visionQualification10": "FUTURE",
+        "frenchVisionQualification": "FUTURE"
+      }
     },
     {
       "id": "db-locale-core",
@@ -1715,6 +1912,14 @@
         "technicalStatus": "reported",
         "sha": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b",
         "detail": "Site UI 2.0 livré techniquement : Home sobre à deux colonnes et capture réelle du produit avec média de démonstration, navigation compacte, création/rejoindre courte, Lobby Session / Mon installation / Joueurs et Ready prioritaire. Responsive vérifié à 1920, 1366, 900, 560 et 390 px. Les protocoles Room, WebRTC, Phone, Timer, Gig Dice, Reports, Vision et BDD Locale Core restent couverts par la non-régression. Aucun Player Locale ni Vision Locale implémenté. 41 suites PASS au SHA exact ; résultat technique reported, aucune validation humaine déduite."
+      },
+      {
+        "title": "Player Locale 1.0",
+        "status": "reported",
+        "technicalStatus": "reported",
+        "readiness": "READY",
+        "sha": "217b0c476a6f615c97b608932b09c5623e675dec",
+        "detail": "Player Locale 1.0 livré techniquement dans Lobby → Mon installation : « Langue de mes cartes », source BDD Locale Core, locales dataReady=true et visionReady=true, défaut valide et préférence personnelle persistée par TCG. Host et Guest indépendants ; aucune synchronisation Room/WebRTC/SSE, aucune logique Ready supplémentaire. Cyberpunk EN sélectionnable ; FR non sélectionnable sans qualification. Sans jeu : contrôle absent. Matcher et corpus Vision inchangés ; aucun filtrage Vision par langue dans Jalon 3. 43 suites PASS au SHA exact, dont 11 navigateur ; résultat technique reported, aucune validation humaine déduite."
       }
     ],
     "priorities": [
@@ -1746,10 +1951,17 @@
         "detail": "Définir un protocole commun de tests par carte/BBD : bonnes identifications, erreurs, NI, faux positifs et conditions de capture."
       },
       {
-        "title": "Player Locale / Vision Locale / qualification FR",
+        "title": "Vision Locale / Vision Qualification 1.0 / qualification FR",
         "status": "later",
-        "sha": "0844876eb75a6bcac80fe75f605811f5dee1e9a0",
-        "detail": "Chantiers futurs distincts. Aucun choix personnel, aucun branchement du matcher et aucune qualification FR ou activation SWU dans Jalon 1."
+        "sha": "217b0c476a6f615c97b608932b09c5623e675dec",
+        "detail": "Player Locale 1.0 est prêt techniquement ; sa préférence personnelle ne filtre encore aucun corpus Vision. Branchement Vision Locale, qualification mesurée Vision Qualification 1.0 et qualification FR restent des chantiers futurs séparés. Aucun fallback visuel ni activation SWU."
+      },
+      {
+        "title": "Player Locale 1.0",
+        "status": "reported",
+        "readiness": "READY",
+        "sha": "217b0c476a6f615c97b608932b09c5623e675dec",
+        "detail": "Choix personnel livré dans Mon installation, persistance par TCG et Host/Guest indépendants ; qualification automatisée complète PASS, aucune validation humaine déduite."
       }
     ],
     "decisions": [
@@ -1776,7 +1988,7 @@
         "detail": "Concept cardId/printing/locale/index Vision par locale adopté ; choix personnel Mon installation, visionReady uniquement, aucun fallback visuel inter-langue. Implémentation différée."
       }
     ],
-    "notes": "Le Control Center n'est plus le centre de pilotage. Les rapports techniques utiles restent dans TCGate, mais le suivi produit et la reprise de travail passent par ce workspace.\nWorkspace permanent : l'état partagé est publié sur la branche GitHub workspace-state dans tcgate_workspace_state.json. Le HTML se synchronise automatiquement à l'ouverture.\nRailway Test : validation du propriétaire sur be40bf6405… ; le nouveau lot maintenance BDD et Journal reste à tester. Le Journal constitue l’inbox opérationnel du projet : consulter ses entrées ouvertes avec l’état canonique du Workspace avant de préparer les prochains jalons.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Préparation Candidate 15 au SHA e26b2e09579be53452c1e631b1dc5230191d0250. Phone 1.2C qualifié selon déclaration du propriétaire ; Vision physique NOT TESTED. Production réellement C14, main stable distinct. Test sans /data SUCCESS observé à 30e553f2c287101b162a995abf368ad9c4ac22de. Report qualification service supprimé/env vide ; Phone standalone SAFE TO DELETE ; aucune suppression infrastructure faite. Le Journal reste l’inbox opérationnel et les Hubs restent en pause.\n[2026-11-02 · 0844876eb75a6bcac80fe75f605811f5dee1e9a0] Contrat TCG → carte canonique → printing physique → locale → référence Vision implémenté. cardId indépendant de la langue ; sélection des références par locale et visionReady, sans fallback visuel inter-langue. Compatibilité EN limitée au runtime Cyberpunk immuable vérifié. SWU non activé, FR non qualifié, matcher Vision actif et interface inchangés. 39 suites PASS au SHA exact ; résultat technique reported. Candidate 15 est désormais la baseline Git main ; les anciennes entrées C15 restent des observations historiques. Aucun déploiement Production actuel vérifié ici.\n[2026-11-02 · fa5ab9f38f8c541f5ca688befba7d1040c8a558b] Site UI 2.0 livré techniquement : Home sobre à deux colonnes et capture réelle du produit avec média de démonstration, navigation compacte, création/rejoindre courte, Lobby Session / Mon installation / Joueurs et Ready prioritaire. Responsive vérifié à 1920, 1366, 900, 560 et 390 px. Les protocoles Room, WebRTC, Phone, Timer, Gig Dice, Reports, Vision et BDD Locale Core restent couverts par la non-régression. Aucun Player Locale ni Vision Locale implémenté. 41 suites PASS au SHA exact ; résultat technique reported, aucune validation humaine déduite. BDD Locale Core 1.0 reste ready techniquement avec son reçu original ; Player Locale, Vision Locale et Vision Qualification 1.0 restent futurs. Aucun état Railway Production actuel observé.",
+    "notes": "Le Control Center n'est plus le centre de pilotage. Les rapports techniques utiles restent dans TCGate, mais le suivi produit et la reprise de travail passent par ce workspace.\nWorkspace permanent : l'état partagé est publié sur la branche GitHub workspace-state dans tcgate_workspace_state.json. Le HTML se synchronise automatiquement à l'ouverture.\nRailway Test : validation du propriétaire sur be40bf6405… ; le nouveau lot maintenance BDD et Journal reste à tester. Le Journal constitue l’inbox opérationnel du projet : consulter ses entrées ouvertes avec l’état canonique du Workspace avant de préparer les prochains jalons.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Préparation Candidate 15 au SHA e26b2e09579be53452c1e631b1dc5230191d0250. Phone 1.2C qualifié selon déclaration du propriétaire ; Vision physique NOT TESTED. Production réellement C14, main stable distinct. Test sans /data SUCCESS observé à 30e553f2c287101b162a995abf368ad9c4ac22de. Report qualification service supprimé/env vide ; Phone standalone SAFE TO DELETE ; aucune suppression infrastructure faite. Le Journal reste l’inbox opérationnel et les Hubs restent en pause.\n[2026-11-02 · 0844876eb75a6bcac80fe75f605811f5dee1e9a0] Contrat TCG → carte canonique → printing physique → locale → référence Vision implémenté. cardId indépendant de la langue ; sélection des références par locale et visionReady, sans fallback visuel inter-langue. Compatibilité EN limitée au runtime Cyberpunk immuable vérifié. SWU non activé, FR non qualifié, matcher Vision actif et interface inchangés. 39 suites PASS au SHA exact ; résultat technique reported. Candidate 15 est désormais la baseline Git main ; les anciennes entrées C15 restent des observations historiques. Aucun déploiement Production actuel vérifié ici.\n[2026-11-02 · fa5ab9f38f8c541f5ca688befba7d1040c8a558b] Site UI 2.0 livré techniquement : Home sobre à deux colonnes et capture réelle du produit avec média de démonstration, navigation compacte, création/rejoindre courte, Lobby Session / Mon installation / Joueurs et Ready prioritaire. Responsive vérifié à 1920, 1366, 900, 560 et 390 px. Les protocoles Room, WebRTC, Phone, Timer, Gig Dice, Reports, Vision et BDD Locale Core restent couverts par la non-régression. Aucun Player Locale ni Vision Locale implémenté. 41 suites PASS au SHA exact ; résultat technique reported, aucune validation humaine déduite. BDD Locale Core 1.0 reste ready techniquement avec son reçu original ; Player Locale, Vision Locale et Vision Qualification 1.0 restent futurs. Aucun état Railway Production actuel observé.\n[2026-11-02 · 217b0c476a6f615c97b608932b09c5623e675dec] Player Locale 1.0 livré techniquement dans Lobby → Mon installation : « Langue de mes cartes », source BDD Locale Core, locales dataReady=true et visionReady=true, défaut valide et préférence personnelle persistée par TCG. Host et Guest indépendants ; aucune synchronisation Room/WebRTC/SSE, aucune logique Ready supplémentaire. Cyberpunk EN sélectionnable ; FR non sélectionnable sans qualification. Sans jeu : contrôle absent. Matcher et corpus Vision inchangés ; aucun filtrage Vision par langue dans Jalon 3. 43 suites PASS au SHA exact, dont 11 navigateur ; résultat technique reported, aucune validation humaine déduite. BDD Locale Core 1.0 et Site UI 2.0 restent READY avec leurs reçus d’origine ; Vision Locale et Vision Qualification 1.0 restent FUTURE. Aucun état Railway Production actuel observé.",
     "history": [
       {
         "date": "2026-11-01",
@@ -2016,22 +2228,126 @@
           ],
           "notes": "Le Control Center n'est plus le centre de pilotage. Les rapports techniques utiles restent dans TCGate, mais le suivi produit et la reprise de travail passent par ce workspace.\nWorkspace permanent : l'état partagé est publié sur la branche GitHub workspace-state dans tcgate_workspace_state.json. Le HTML se synchronise automatiquement à l'ouverture.\nRailway Test : validation du propriétaire sur be40bf6405… ; le nouveau lot maintenance BDD et Journal reste à tester. Le Journal constitue l’inbox opérationnel du projet : consulter ses entrées ouvertes avec l’état canonique du Workspace avant de préparer les prochains jalons.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Préparation Candidate 15 au SHA e26b2e09579be53452c1e631b1dc5230191d0250. Phone 1.2C qualifié selon déclaration du propriétaire ; Vision physique NOT TESTED. Production réellement C14, main stable distinct. Test sans /data SUCCESS observé à 30e553f2c287101b162a995abf368ad9c4ac22de. Report qualification service supprimé/env vide ; Phone standalone SAFE TO DELETE ; aucune suppression infrastructure faite. Le Journal reste l’inbox opérationnel et les Hubs restent en pause.\n[2026-11-02 · 0844876eb75a6bcac80fe75f605811f5dee1e9a0] Contrat TCG → carte canonique → printing physique → locale → référence Vision implémenté. cardId indépendant de la langue ; sélection des références par locale et visionReady, sans fallback visuel inter-langue. Compatibilité EN limitée au runtime Cyberpunk immuable vérifié. SWU non activé, FR non qualifié, matcher Vision actif et interface inchangés. 39 suites PASS au SHA exact ; résultat technique reported. Candidate 15 est désormais la baseline Git main ; les anciennes entrées C15 restent des observations historiques. Aucun déploiement Production actuel vérifié ici."
         }
+      },
+      {
+        "date": "2026-11-02",
+        "sha": "217b0c476a6f615c97b608932b09c5623e675dec",
+        "text": "Player Locale 1.0 : session de pilotage précédente complète conservée ; Locale Core et Site UI 2.0 restent des livraisons historiques prêtes, Vision Locale/Qualification futurs.",
+        "before": {
+          "activeWork": [
+            {
+              "title": "Candidate 15 · réconciliation, gel et qualification",
+              "status": "reference",
+              "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+              "detail": "Candidate 15 au SHA e26b2e09579be53452c1e631b1dc5230191d0250 promue par fast-forward sur main. Q14 livraison Resend réelle, Q15 TURN relay réel et Q16 Vision physique Cyberpunk : PASS confirmés explicitement par le propriétaire dans sa demande de promotion, sans nouveau test réalisé par Codex. Les réserves antérieures sont conservées dans session.history. Aucun état Railway Production actuel confirmé ici.",
+              "completed": true
+            },
+            {
+              "title": "Workspace de pilotage + chat TCGate unique",
+              "status": "reported",
+              "detail": "État canonique actualisé pour UI 1.2, maintenances 1.2A–D et Candidate 15. Publication séparée sur workspace-state ; aucune fusion de branches."
+            },
+            {
+              "title": "Hubs événementiels",
+              "status": "paused",
+              "detail": "SPEC produit commencée, registre « Après les tests ». Ne pas implémenter tant que le chantier n'est pas explicitement repris."
+            },
+            {
+              "title": "Vision Lab comme laboratoire Vision + BDD",
+              "status": "active",
+              "detail": "Observation historique du 2026-11-01 : Lab et campagnes conservés ; Q16 physique NOT TESTED. Vision Qualification 1.0 reste future et séparée ; ne pas lancer de benchmark dans Candidate 15.\nActualisation consignée le 2026-11-02 : Q16 Vision physique Cyberpunk C15 PASS déclaré par le propriétaire lors de la promotion du SHA e26b2e09579be53452c1e631b1dc5230191d0250. Cette déclaration ne crée aucune campagne Vision Lab, aucune qualification FR et aucun nouveau résultat mesuré par Codex ; Vision Qualification 1.0 reste future."
+            },
+            {
+              "title": "BDD Locale Core 1.0",
+              "status": "reported",
+              "sha": "0844876eb75a6bcac80fe75f605811f5dee1e9a0",
+              "detail": "Contrat TCG → carte canonique → printing physique → locale → référence Vision implémenté. cardId indépendant de la langue ; sélection des références par locale et visionReady, sans fallback visuel inter-langue. Compatibilité EN limitée au runtime Cyberpunk immuable vérifié. SWU non activé, FR non qualifié, matcher Vision actif et interface inchangés. 39 suites PASS au SHA exact ; résultat technique reported."
+            },
+            {
+              "title": "Site UI 2.0",
+              "status": "reported",
+              "technicalStatus": "reported",
+              "sha": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b",
+              "detail": "Site UI 2.0 livré techniquement : Home sobre à deux colonnes et capture réelle du produit avec média de démonstration, navigation compacte, création/rejoindre courte, Lobby Session / Mon installation / Joueurs et Ready prioritaire. Responsive vérifié à 1920, 1366, 900, 560 et 390 px. Les protocoles Room, WebRTC, Phone, Timer, Gig Dice, Reports, Vision et BDD Locale Core restent couverts par la non-régression. Aucun Player Locale ni Vision Locale implémenté. 41 suites PASS au SHA exact ; résultat technique reported, aucune validation humaine déduite."
+            }
+          ],
+          "priorities": [
+            {
+              "title": "Qualifier Candidate 15 au SHA exact",
+              "status": "reference",
+              "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+              "detail": "Candidate 15 au SHA e26b2e09579be53452c1e631b1dc5230191d0250 promue par fast-forward sur main. Q14 livraison Resend réelle, Q15 TURN relay réel et Q16 Vision physique Cyberpunk : PASS confirmés explicitement par le propriétaire dans sa demande de promotion, sans nouveau test réalisé par Codex. Les réserves antérieures sont conservées dans session.history. Aucun état Railway Production actuel confirmé ici.",
+              "completed": true
+            },
+            {
+              "title": "Stabiliser le mode de travail autour de main / update/next / Test",
+              "status": "next",
+              "detail": "Éviter le retour à une multiplication de branches et d'environnements."
+            },
+            {
+              "title": "Consolider l'état réel des fonctions dans le workspace",
+              "status": "next",
+              "detail": "Après chaque qualification, correctif important ou changement de roadmap, mettre à jour le workspace."
+            },
+            {
+              "title": "Mesurer plus objectivement l'efficacité Vision",
+              "status": "later",
+              "detail": "Construire un benchmark reproductible plutôt qu'un simple ressenti qualitatif."
+            },
+            {
+              "title": "Formaliser une campagne Vision Lab reproductible",
+              "status": "later",
+              "detail": "Définir un protocole commun de tests par carte/BBD : bonnes identifications, erreurs, NI, faux positifs et conditions de capture."
+            },
+            {
+              "title": "Player Locale / Vision Locale / qualification FR",
+              "status": "later",
+              "sha": "0844876eb75a6bcac80fe75f605811f5dee1e9a0",
+              "detail": "Chantiers futurs distincts. Aucun choix personnel, aucun branchement du matcher et aucune qualification FR ou activation SWU dans Jalon 1."
+            }
+          ],
+          "decisions": [
+            {
+              "title": "Promotion éventuelle de Candidate 14 sur main",
+              "status": "superseded",
+              "detail": "C14 n’est pas mergée/promue dans ce jalon ; ses correctifs utiles sont portés manuellement vers Candidate 15. Production reste sur C14 jusqu’à promotion Candidate 15 contrôlée vers main."
+            },
+            {
+              "title": "Moment de reprise des Hubs événementiels",
+              "status": "deferred",
+              "detail": "Le concept produit existe mais reste hors Alpha figée."
+            },
+            {
+              "title": "Promotion Candidate 15 et source Production",
+              "status": "open",
+              "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+              "detail": "Après qualification, décider la promotion contrôlée vers main et réaligner Railway Production → main. Aucune modification Production dans ce jalon. Données CC/volumes préservées jusqu’à décision explicite."
+            },
+            {
+              "title": "BDD multilingue personnelle · post-Candidate 15",
+              "status": "decided",
+              "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+              "detail": "Concept cardId/printing/locale/index Vision par locale adopté ; choix personnel Mon installation, visionReady uniquement, aucun fallback visuel inter-langue. Implémentation différée."
+            }
+          ],
+          "notes": "Le Control Center n'est plus le centre de pilotage. Les rapports techniques utiles restent dans TCGate, mais le suivi produit et la reprise de travail passent par ce workspace.\nWorkspace permanent : l'état partagé est publié sur la branche GitHub workspace-state dans tcgate_workspace_state.json. Le HTML se synchronise automatiquement à l'ouverture.\nRailway Test : validation du propriétaire sur be40bf6405… ; le nouveau lot maintenance BDD et Journal reste à tester. Le Journal constitue l’inbox opérationnel du projet : consulter ses entrées ouvertes avec l’état canonique du Workspace avant de préparer les prochains jalons.\n[2026-11-01 · e26b2e09579be53452c1e631b1dc5230191d0250] Préparation Candidate 15 au SHA e26b2e09579be53452c1e631b1dc5230191d0250. Phone 1.2C qualifié selon déclaration du propriétaire ; Vision physique NOT TESTED. Production réellement C14, main stable distinct. Test sans /data SUCCESS observé à 30e553f2c287101b162a995abf368ad9c4ac22de. Report qualification service supprimé/env vide ; Phone standalone SAFE TO DELETE ; aucune suppression infrastructure faite. Le Journal reste l’inbox opérationnel et les Hubs restent en pause.\n[2026-11-02 · 0844876eb75a6bcac80fe75f605811f5dee1e9a0] Contrat TCG → carte canonique → printing physique → locale → référence Vision implémenté. cardId indépendant de la langue ; sélection des références par locale et visionReady, sans fallback visuel inter-langue. Compatibilité EN limitée au runtime Cyberpunk immuable vérifié. SWU non activé, FR non qualifié, matcher Vision actif et interface inchangés. 39 suites PASS au SHA exact ; résultat technique reported. Candidate 15 est désormais la baseline Git main ; les anciennes entrées C15 restent des observations historiques. Aucun déploiement Production actuel vérifié ici.\n[2026-11-02 · fa5ab9f38f8c541f5ca688befba7d1040c8a558b] Site UI 2.0 livré techniquement : Home sobre à deux colonnes et capture réelle du produit avec média de démonstration, navigation compacte, création/rejoindre courte, Lobby Session / Mon installation / Joueurs et Ready prioritaire. Responsive vérifié à 1920, 1366, 900, 560 et 390 px. Les protocoles Room, WebRTC, Phone, Timer, Gig Dice, Reports, Vision et BDD Locale Core restent couverts par la non-régression. Aucun Player Locale ni Vision Locale implémenté. 41 suites PASS au SHA exact ; résultat technique reported, aucune validation humaine déduite. BDD Locale Core 1.0 reste ready techniquement avec son reçu original ; Player Locale, Vision Locale et Vision Qualification 1.0 restent futurs. Aucun état Railway Production actuel observé."
+        }
       }
     ]
   },
   "verification": {
     "verifiedAt": "2026-11-02",
-    "source": "Références Git fournies par le contrôle CLI local séparé ; reçu automatisé Site UI 2.0 vérifié au SHA exact. Aucun constat Railway, aucune campagne Vision ni nouvelle qualification physique. Les qualifications et observations historiques restent conservées.",
+    "source": "Références Git et comparaisons fournies par contrôle Git CLI local séparé ; reçu automatisé Player Locale 1.0 vérifié au SHA produit exact. Aucun constat Railway, aucune campagne Vision ni nouvelle qualification physique ; résultats historiques conservés.",
     "main": "e26b2e09579be53452c1e631b1dc5230191d0250",
     "candidate14": "c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3",
-    "updateNext": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b",
+    "updateNext": "217b0c476a6f615c97b608932b09c5623e675dec",
     "updateVsMain": {
       "status": "ahead",
-      "ahead": 3,
+      "ahead": 4,
       "behind": 0,
       "mainSha": "e26b2e09579be53452c1e631b1dc5230191d0250",
-      "updateSha": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b",
-      "note": "Comptes mesurés par Git CLI local et explicitement fournis par l’appelant ; aucune inférence sur le déploiement Production."
+      "updateSha": "217b0c476a6f615c97b608932b09c5623e675dec",
+      "note": "Comptes mesurés par Git CLI local puis fournis explicitement ; aucune inférence sur le déploiement Production."
     },
     "candidate14VsMain": {
       "status": "ahead",
@@ -2281,9 +2597,196 @@
             "activeVisionMatcherChanged": false
           }
         }
+      },
+      {
+        "date": "2026-11-02",
+        "sha": "217b0c476a6f615c97b608932b09c5623e675dec",
+        "text": "Player Locale 1.0 : vérifications précédentes complètes archivées ; nouveau reçu au SHA exact ajouté séparément, qualifications historiques et constats Railway conservés.",
+        "before": {
+          "verifiedAt": "2026-11-02",
+          "source": "Références Git fournies par le contrôle CLI local séparé ; reçu automatisé Site UI 2.0 vérifié au SHA exact. Aucun constat Railway, aucune campagne Vision ni nouvelle qualification physique. Les qualifications et observations historiques restent conservées.",
+          "main": "e26b2e09579be53452c1e631b1dc5230191d0250",
+          "candidate14": "c4adb95bacfe137d9f3f07cae0d3540e1aabf5c3",
+          "updateNext": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b",
+          "updateVsMain": {
+            "status": "ahead",
+            "ahead": 3,
+            "behind": 0,
+            "mainSha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+            "updateSha": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b",
+            "note": "Comptes mesurés par Git CLI local et explicitement fournis par l’appelant ; aucune inférence sur le déploiement Production."
+          },
+          "candidate14VsMain": {
+            "status": "ahead",
+            "ahead": 1,
+            "behind": 0,
+            "observedAt": "2026-11-01",
+            "mainShaAtObservation": "f5f2ba00e178f58c011c87f788c9c56064d8c32a",
+            "updateShaAtObservation": "e26b2e09579be53452c1e631b1dc5230191d0250",
+            "note": "Comparaison historique conservée, non recalculée dans le script de préparation Locale Core."
+          },
+          "railwayTest": {
+            "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+            "status": "SUCCESS",
+            "source": "Railway describe_environment en lecture seule + GET health public, même SHA Candidate 15 et aucun volume monté",
+            "note": "Déploiement automatique après push update/next ; health confirme Candidate 15 au SHA final. Pas de nouvelle qualification physique ou humaine déduite du health.",
+            "deploymentId": "839b458e-0d20-4023-abee-8d37a596fb21",
+            "noVolumeRedeployReference": "30e553f2c287101b162a995abf368ad9c4ac22de"
+          },
+          "workspaceStateBefore": "3550843cb77152c74c436d1704771a6711902f63",
+          "updateVsCandidate14": {
+            "status": "diverged",
+            "ahead": 22,
+            "behind": 1,
+            "observedAt": "2026-11-01",
+            "mainShaAtObservation": "f5f2ba00e178f58c011c87f788c9c56064d8c32a",
+            "updateShaAtObservation": "e26b2e09579be53452c1e631b1dc5230191d0250",
+            "note": "Comparaison historique conservée, non recalculée dans le script de préparation Locale Core."
+          },
+          "candidate15": {
+            "status": "preparation",
+            "productSha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+            "previewOnly": false,
+            "candidate14Merged": false,
+            "privacyPort": "PRESENT_AT_SHA",
+            "turnCachePort": "PRESENT_AT_SHA",
+            "automatedQualification": {
+              "status": "PASS",
+              "sha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+              "suites": 37,
+              "browserSuites": 8,
+              "nodeAssertionCalls": 3358,
+              "counting": "Node assert calls in instrumented test processes, including expected negative cases; custom throw-only checks are additional and are not counted.",
+              "startedAt": "2026-11-01T14:24:26.513Z",
+              "finishedAt": "2026-11-01T14:28:34.080Z",
+              "sourceTree": "626c576140c20fb08267cf7ecc4524f1f5685642",
+              "receipt": "CANDIDATE_15_VALIDATION.txt et reçu externe qualification-final/qualification.json au même SHA final",
+              "previousFrozenSha": "91fea9d695c2dc83135a125436be1ae3a57463f5",
+              "initialFailedCampaignPreserved": true
+            },
+            "gigDiceSoftware": {
+              "status": "PASS",
+              "probes": 180,
+              "scope": "Vrais événements souris, centres/bords, hit-test et zoom navigateur local, appareils simulés",
+              "observedSha": "e26b2e09579be53452c1e631b1dc5230191d0250",
+              "newPhysicalQualification": false
+            },
+            "physical": {
+              "phone": {
+                "status": "PASS",
+                "source": "Déclaration explicite du propriétaire pour Phone intégré 1.2C",
+                "performedByCodex": false,
+                "hardwareDetails": "Non fournis ; non inventés"
+              },
+              "visionQ16": {
+                "status": "NOT TESTED",
+                "source": "Réponse explicite du propriétaire dans cette session"
+              },
+              "turnRelayWanQ15": {
+                "status": "NOT TESTED",
+                "scope": "Configuration/cache/policy mockés distincts du relay distant"
+              },
+              "realResendDelivery": {
+                "status": "NOT TESTED",
+                "scope": "ZIP et transport vers Resend mocké couverts séparément"
+              }
+            }
+          },
+          "localeCore": {
+            "status": "reported",
+            "automatedStatus": "PASS",
+            "sha": "0844876eb75a6bcac80fe75f605811f5dee1e9a0",
+            "suites": 39,
+            "browserSuites": 9,
+            "nodeAssertionCalls": 3705,
+            "assertionCounting": "Node assert calls in instrumented test processes, including expected negative cases; custom throw-only checks are additional and are not counted.",
+            "startedAt": "2026-11-02T17:46:23.261Z",
+            "finishedAt": "2026-11-02T17:50:12.400Z",
+            "sourceTree": "f0c3e7f1f87674c271618e843120b35f80d3249a",
+            "receipt": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-locale-core-integration-539ba41307db484c923119231fd37d31\\qualification-final-windows\\qualification.json",
+            "syntaxCheck": "PASS",
+            "whitespaceCheck": "PASS",
+            "performedBy": "Codex",
+            "physicalQualification": "NOT PERFORMED IN THIS MILESTONE",
+            "baselineMain": "e26b2e09579be53452c1e631b1dc5230191d0250",
+            "workspaceSourceSha": "3550843cb77152c74c436d1704771a6711902f63",
+            "frenchVisionQualified": false,
+            "swuActivated": false,
+            "activeVisionMatcherChanged": false
+          },
+          "siteUi20": {
+            "status": "reported",
+            "automatedStatus": "PASS",
+            "sha": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b",
+            "suites": 41,
+            "browserSuites": 10,
+            "nodeAssertionCalls": 4508,
+            "assertionCounting": "Node assert calls in instrumented test processes, including expected negative cases; custom throw-only checks are additional and are not counted.",
+            "startedAt": "2026-11-02T18:24:32.611Z",
+            "finishedAt": "2026-11-02T18:27:33.329Z",
+            "sourceTree": "d8da0df4e5ebd78792100097ef62c72e849f7c87",
+            "receipt": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\\qualification-final\\qualification.json",
+            "receiptSha256": "142ff4817740b097af0e11cc253cb8030c821976a9e70481c0df9bbd7b2db229",
+            "syntaxCheck": "PASS",
+            "whitespaceCheck": "PASS",
+            "performedBy": "Codex",
+            "physicalQualification": "NOT PERFORMED IN THIS MILESTONE",
+            "humanVisualValidation": "NOT INFERRED FROM AUTOMATED QUALIFICATION",
+            "responsiveWidths": [
+              1920,
+              1366,
+              900,
+              560,
+              390
+            ],
+            "screenshots": [
+              {
+                "name": "site-ui-2.0-home-desktop.png",
+                "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\\qualification-final\\screenshots\\site-ui-2.0-home-desktop.png",
+                "sha256": "473870364838efbaf8af28645c7ceea3091c85660688e43345810a61f2267b32",
+                "bytes": 246301
+              },
+              {
+                "name": "site-ui-2.0-home-mobile.png",
+                "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\\qualification-final\\screenshots\\site-ui-2.0-home-mobile.png",
+                "sha256": "feecff390316799002cb2a59a22a6dfb2db2699eb7b578fe481fa95335a30ed1",
+                "bytes": 100204
+              },
+              {
+                "name": "site-ui-2.0-lobby-host-desktop.png",
+                "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\\qualification-final\\screenshots\\site-ui-2.0-lobby-host-desktop.png",
+                "sha256": "9f7f5e63a2d36aeb8edc048278eb48b9d360d918a9b05d014a6b29058a247ebc",
+                "bytes": 66057
+              },
+              {
+                "name": "site-ui-2.0-lobby-guest-desktop.png",
+                "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\\qualification-final\\screenshots\\site-ui-2.0-lobby-guest-desktop.png",
+                "sha256": "cbd0a4778e6d4c9a7d507c2204be67a9e17f03f01ce87270b3e9b3907c117d1f",
+                "bytes": 63938
+              },
+              {
+                "name": "site-ui-2.0-lobby-mobile.png",
+                "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\\qualification-final\\screenshots\\site-ui-2.0-lobby-mobile.png",
+                "sha256": "2dae89a4294c9635c891aef4442a2e19d57630ed08b3fb92481cc73bb533c8c3",
+                "bytes": 39685
+              }
+            ],
+            "campaignLimits": [
+              "Browser media are synthetic.",
+              "Remote TURN relay, real Resend delivery and physical Cyberpunk cards are not certified by this workflow.",
+              "Phone physical PASS is a separate owner declaration."
+            ],
+            "baselineMain": "e26b2e09579be53452c1e631b1dc5230191d0250",
+            "baselineProduct": "0844876eb75a6bcac80fe75f605811f5dee1e9a0",
+            "workspaceSourceSha": "9907c0f29cfd6f398114754119512d358f0d6796",
+            "playerLocaleImplemented": false,
+            "visionLocaleImplemented": false,
+            "railwayMutation": false
+          }
+        }
       }
     ],
-    "workspaceStateBefore": "3550843cb77152c74c436d1704771a6711902f63",
+    "workspaceStateBefore": "68746f3fc6c085299075768238e4e4fff8439ed7",
     "updateVsCandidate14": {
       "status": "diverged",
       "ahead": 22,
@@ -2432,6 +2935,99 @@
       "playerLocaleImplemented": false,
       "visionLocaleImplemented": false,
       "railwayMutation": false
+    },
+    "playerLocale10": {
+      "status": "reported",
+      "automatedStatus": "PASS",
+      "sha": "217b0c476a6f615c97b608932b09c5623e675dec",
+      "suites": 43,
+      "browserSuites": 11,
+      "nodeAssertionCalls": 4926,
+      "assertionCounting": "Node assert calls in instrumented test processes, including expected negative cases; custom throw-only checks are additional and are not counted.",
+      "startedAt": "2026-11-02T19:36:20.656Z",
+      "finishedAt": "2026-11-02T19:40:31.734Z",
+      "sourceTree": "bcb0a0ed2a0ed7432e0b537ccc93cfd32b742f91",
+      "receipt": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\qualification.json",
+      "receiptSha256": "8c932f3083952080e58bd36fec0b4ce4292fd4054256afac3a3e4f54f02adf1f",
+      "syntaxCheck": "PASS",
+      "whitespaceCheck": "PASS",
+      "performedBy": "Codex",
+      "physicalQualification": "NOT PERFORMED IN THIS MILESTONE",
+      "humanVisualValidation": "NOT INFERRED FROM AUTOMATED QUALIFICATION",
+      "responsiveWidths": [
+        1366,
+        560,
+        390
+      ],
+      "baselineMain": "e26b2e09579be53452c1e631b1dc5230191d0250",
+      "baselineProduct": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b",
+      "workspaceSourceSha": "68746f3fc6c085299075768238e4e4fff8439ed7",
+      "playerLocaleImplemented": true,
+      "visionLocaleImplemented": false,
+      "frenchVisionQualified": false,
+      "activeVisionMatcherChanged": false,
+      "activeVisionCorpusChanged": false,
+      "roomSchemaChanged": false,
+      "reportSchemaChanged": false,
+      "railwayMutation": false,
+      "screenshots": [
+        {
+          "name": "player-locale-guest-1366.png",
+          "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\screenshots\\player-locale-guest-1366.png",
+          "sha256": "6a7a4555754c4aa020a30c6bada1d670641339ffa906c37c3d4b413faaf7e8d4",
+          "bytes": 47702
+        },
+        {
+          "name": "player-locale-guest-390.png",
+          "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\screenshots\\player-locale-guest-390.png",
+          "sha256": "2adea345b0e912d018ad579e850e59d41ad645c0774de6e6392317a1dafef7c0",
+          "bytes": 45882
+        },
+        {
+          "name": "player-locale-host-1366.png",
+          "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\screenshots\\player-locale-host-1366.png",
+          "sha256": "db53c278a21bfa250ca874612da62bb8aba46fe9e4022177f39fe76fcebd30b5",
+          "bytes": 48819
+        },
+        {
+          "name": "player-locale-host-390.png",
+          "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\screenshots\\player-locale-host-390.png",
+          "sha256": "62645d04b913c1b687253e48aea8edb4cbf10e8793fcd05b37c539a1dc272e9d",
+          "bytes": 46054
+        },
+        {
+          "name": "player-locale-production-1366.png",
+          "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\screenshots\\player-locale-production-1366.png",
+          "sha256": "1cb62dba78c524651671bf5c1e53e8b0f7008494c07b4f6b7d35c074b2e4a002",
+          "bytes": 47908
+        },
+        {
+          "name": "player-locale-production-390.png",
+          "path": "C:\\Users\\maxim\\AppData\\Local\\Temp\\tcgate-player-locale-f854d52e960343efbe5fe7dcecb4e50f\\qualification-final\\screenshots\\player-locale-production-390.png",
+          "sha256": "65bd67492706945d9f696a083184eef8c9a0462eca4a60a6b95da3b2a52db62f",
+          "bytes": 44962
+        }
+      ]
+    },
+    "currentMilestoneReadiness": {
+      "bddLocaleCore10": {
+        "status": "READY",
+        "sha": "0844876eb75a6bcac80fe75f605811f5dee1e9a0",
+        "result": "reported · reçu historique conservé"
+      },
+      "siteUi20": {
+        "status": "READY",
+        "sha": "fa5ab9f38f8c541f5ca688befba7d1040c8a558b",
+        "result": "reported · reçu historique conservé"
+      },
+      "playerLocale10": {
+        "status": "READY",
+        "sha": "217b0c476a6f615c97b608932b09c5623e675dec",
+        "result": "reported · automatisation PASS"
+      },
+      "visionLocale": "FUTURE",
+      "visionQualification10": "FUTURE",
+      "frenchVisionQualification": "FUTURE"
     }
   },
   "visionLab": {
