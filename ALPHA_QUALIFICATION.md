@@ -6,7 +6,7 @@ Un seul workflow de qualification complète :
 npm run qualify:alpha
 ```
 
-Il exécute 41 suites distinctes, dont dix suites navigateur, puis le contrôle syntaxique correspondant à `npm run check` et `git diff --check HEAD^ HEAD`. Les 39 suites précédentes sont conservées ; Site UI 2.0 ajoute ses contrats et sa qualification navigateur. Les attentes de présentation Home et l'étape explicite de création sont actualisées dans les tests historiques, avec leurs contrôles fonctionnels conservés. Aucune suite navigateur n'est facultative. Aucun package npm runtime externe n'est déclaré ; le workflow C14 historique appelant le forwarder retiré n'est pas restauré.
+Il exécute 43 suites distinctes, dont onze suites navigateur, puis le contrôle syntaxique correspondant à `npm run check` et `git diff --check HEAD^ HEAD`. Les 41 suites précédentes sont conservées ; Player Locale ajoute ses helpers et sa qualification navigateur. Les deux attentes Site UI sur l'absence du sélecteur deviennent des protections de son emplacement personnel ; tous les contrôles fonctionnels antérieurs sont conservés. Aucune suite navigateur n'est facultative. Aucun package npm runtime externe n'est déclaré ; le workflow C14 historique appelant le forwarder retiré n'est pas restauré.
 
 ## Préconditions et preuves
 
@@ -30,6 +30,7 @@ Comptage : appels aux API Node `assert` des processus de test instrumentés, y c
 | Report V2, privacy, ZIP et transport Resend | `report-schema-v2-test.js`, `report-email-bridge-test.js`, `report-email-browser-test.js` |
 | Home/Lobby 1.2, Game Table, logo et responsive | contrats UI 1.2, smokes UI courants, UI browser |
 | Site UI 2.0 | `site-ui-2.0-test.js`, `site-ui-2.0-browser-test.js` : Home, navigation, création explicite, erreurs, Host/Guest, Ready, Sans jeu, 1920/1366/900/560/390 et captures de référence |
+| Player Locale 1.0 | `player-locale-test.js`, `player-locale-browser-test.js` : déclarations Core, préférence personnelle par TCG, persistance, normalisation, Host/Guest indépendants, absence de partage réseau, mobile et Vision inchangée |
 | Timer ON/OFF et synchronisation | Room/UI tests + C15 browser start/pause/reset et temps dérivé côté deux joueurs |
 | Gig Dice ON/OFF, gating jeu, hover et zoom | Room/client/UI tests + C15 browser, 12 dés × 5 points × 3 largeurs |
 | Sans jeu : pas Vision/Gig, webcam/audio conservés | C15 browser, vrais RTP locaux et frames après Start/F5 |

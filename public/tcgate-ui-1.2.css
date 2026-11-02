@@ -126,6 +126,9 @@
 #screenLobby input, #screenLobby select { width: 100%; min-width: 0; min-height: 44px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 6px; color: var(--text); background: var(--panel); font-size: 13px; }
 #screenLobby input:hover, #screenLobby select:hover { border-color: #485774; }
 #screenLobby .field-help { color: var(--muted); font-size: 11px; line-height: 1.6; }
+#screenLobby .player-locale-field { display: grid; gap: 8px; min-width: 0; margin: 0 0 26px; padding-bottom: 24px; border-bottom: 1px solid var(--line-soft); }
+#screenLobby .player-locale-field > label { color: #cbd5e6; font-size: 13px; font-weight: 600; }
+#screenLobby .player-locale-field > select { width: 100%; min-width: 0; }
 #screenLobby .future-hub-readonly { padding: 12px 14px; border-color: var(--line); border-radius: 6px; background: var(--panel); }
 #screenLobby .future-hub-readonly span { color: var(--muted); }
 #screenLobby #timerHubConfig, #screenLobby #gigDiceHubConfig { display: grid; gap: 12px; padding-top: 20px; border-top: 1px solid var(--line-soft); }

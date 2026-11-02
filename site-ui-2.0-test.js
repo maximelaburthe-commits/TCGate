@@ -38,7 +38,8 @@ for (const name of ['session', 'installation', 'players']) {
 }
 for (const id of ['startGame', 'enableMedia', 'cameraSelect', 'microSelect', 'usePhoneCamera', 'phoneCameraPanel', 'timerToggle', 'timerMinutes', 'gigDiceToggle', 'gameSelect', 'setupContinue']) equal(ids.filter(value => value === id).length, 1, 'Single existing functional control ' + id);
 check(lobby.includes('Moi') && lobby.includes('Adversaire'), 'Players distinguish local and opposing player');
-check(!/<(?:select|input)\b[^>]*(?:id|name)="[^"]*(?:locale|language|langue)/i.test(html), 'Player Locale has no active form field');
+check(contract.section(html, 'ui12-lobby-installation').includes('id="playerLocaleSelect"'), 'Player Locale is a personal installation control');
+check(!contract.section(html, 'ui12-lobby-session').includes('id="playerLocaleSelect"'), 'Player Locale never becomes a shared Session control');
 for (const color of ['#070b13', '#0d1420', '#111a29', '#27324a', '#1b2436', '#f4f6fb', '#8f9bb0', '#7c5cff', '#9b86ff', '#67d9a2', '#f06a75']) check(css.includes(color), 'Approved token ' + color);
 check(css.includes('prefers-reduced-motion'), 'Design system respects reduced motion');
 check(css.includes(':focus-visible'), 'Keyboard focus has a visible treatment');
@@ -67,4 +68,4 @@ const baselineApp = original('public/app.js');
 for (const name of ['api', 'enterLobby', 'setReady', 'enterNetworkGame', 'applyRoomState', 'connectEventStream', 'loadRtcConfig', 'startLocalMedia', 'pairPhoneCamera', 'sendTimerAction', 'applySharedTimer', 'applyRemoteGigState', 'changeDieValue', 'prepareVision', 'attachVisionToRemoteStream']) equal(functionBody(app, name), functionBody(baselineApp, name), 'Existing ' + name + ' mechanism is unchanged');
 const readyHandler = source => lf(source.slice(source.indexOf("$('startGame').addEventListener"), source.indexOf("$('leaveLobby').addEventListener")));
 equal(readyHandler(app), readyHandler(baselineApp), 'Ready/Start listener remains unchanged');
-console.log('SITE_UI_2_0_CONTRACT_OK ' + JSON.stringify({ assertions, baseline, protectedProductMechanisms: true, playerLocale: 'NOT IMPLEMENTED', visionLocale: 'NOT IMPLEMENTED' }));
+console.log('SITE_UI_2_0_CONTRACT_OK ' + JSON.stringify({ assertions, baseline, protectedProductMechanisms: true, playerLocale: 'PERSONAL (JALON 3)', visionLocale: 'NOT IMPLEMENTED' }));

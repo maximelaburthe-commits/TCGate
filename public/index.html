@@ -136,6 +136,11 @@
           </div><article class="ui12-context-card"><h3>La session en un regard</h3><dl><dt>Host</dt><dd id="ui12HostName">En attente…</dd><dt>État</dt><dd id="ui12RoomState">Configuration</dd><dt>Vision</dt><dd id="ui12VisionStatus">Selon le jeu sélectionné</dd></dl><p>Les options partagées restent visibles pour les deux joueurs.</p></article></div></div></section>
         <section id="ui12-lobby-installation" class="ui12-lobby-pane" data-lobby-panel="installation" role="tabpanel" aria-labelledby="ui12-lobby-tab-installation" hidden><div class="ui12-session-heading"><span class="ui12-eyebrow">02 · DE VOTRE CÔTÉ</span><h3>Cadrez. Écoutez. Vous y êtes.</h3><p>Votre caméra, votre micro et votre aperçu restent vos réglages personnels.</p></div><div class="ui12-installation-layout"><section id="ui12InstallationControls" class="future-hub-zone future-hub-installation"><div class="equipment-card equipment-card-live">
           <div class="equipment-copy">
+            <div id="playerLocaleField" class="player-locale-field" hidden>
+              <label for="playerLocaleSelect">Langue de mes cartes</label>
+              <select id="playerLocaleSelect" aria-describedby="playerLocaleHelp" disabled></select>
+              <small id="playerLocaleHelp" class="field-help">La langue imprimée sur vos cartes. Ce choix reste personnel.</small>
+            </div>
             <span class="eyebrow">Préparation</span>
             <h3>Caméra et micro</h3>
             <p>Activez vos périphériques, puis vérifiez que vos cartes et votre voix sont bien présentes.</p>
@@ -608,6 +613,10 @@
   <script src="/phone-camera-settings.js"></script>
   <script src="/future-ux-v3.7.js"></script>
   <script src="/report-diagnostics-v2.js"></script>
+  <!-- Local database metadata only; no Vision corpus is requested by Player Locale. -->
+  <script src="/game-databases.js"></script>
+  <script src="/database-locale-core.js"></script>
+  <script src="/player-locale.js"></script>
   <script src="/app.js"></script>
   <script src="/report-mail-ui.js"></script>
   <script src="/tcgate-ui-1.2.js"></script>

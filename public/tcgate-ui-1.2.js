@@ -2,6 +2,25 @@
 // Site UI 2.0 owns navigation and setup presentation; existing controllers own Room/media/game actions.
 (()=>{
  const $=id=>document.getElementById(id);
+ let playerLocaleSignature='';
+ function playerLocaleGame(){return typeof state==='undefined'?null:state.game;}
+ function presentPlayerLocale(){
+  const field=$('playerLocaleField'),select=$('playerLocaleSelect'),api=window.TCGatePlayerLocale,game=playerLocaleGame();
+  if(!field||!select)return;
+  const registered=Object.entries(window.TCGateGameDatabases?.databases||{}).some(([key,descriptor])=>key===game||descriptor?.gameId===game);
+  const connected=typeof state!=='undefined'&&Boolean(state.roomCode&&state.peerId&&state.authToken);
+  field.hidden=!connected||!registered||game==='no-game';
+  if(field.hidden||!api){select.disabled=true;playerLocaleSignature='';return;}
+  const available=api.getAvailablePlayerLocales(game),selected=api.getPlayerLocale(game);
+  const signature=JSON.stringify([game,available,selected]);
+  if(signature!==playerLocaleSignature){
+   const options=available.map(locale=>{const option=document.createElement('option');option.value=locale.code;option.textContent=locale.label;return option;});
+   if(!options.length){const option=document.createElement('option');option.value='';option.textContent='Aucune langue disponible';options.push(option);}
+   select.replaceChildren(...options);select.value=selected||'';playerLocaleSignature=signature;
+  }
+  select.disabled=available.length===0;
+  $('playerLocaleHelp').textContent=available.length?'La langue imprimée sur vos cartes. Ce choix reste personnel.':'Aucune langue de cartes disponible pour ce jeu.';
+ }
  function tabs(buttonSelector,panelSelector,key){
   const buttons=[...document.querySelectorAll(buttonSelector)],panels=[...document.querySelectorAll(panelSelector)];
   function activate(value,focus=false){buttons.forEach(button=>{const active=button.dataset[key]===value;button.classList.toggle('ui12-active',active);button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;if(active&&focus)button.focus();});panels.forEach(panel=>panel.hidden=panel.dataset[key==='homePage'?'homePanel':'lobbyPanel']!==value);}
@@ -14,6 +33,7 @@
  function presentLobby(){
   // state is the existing app.js owner, read directly without caching or modifying it.
   if(typeof state==='undefined')return;
+  presentPlayerLocale();
   const connected=Boolean(state.roomCode&&state.peerId&&state.authToken),creating=state.mode==='create';
   const title=document.querySelector('.ui12-lobby-header h2');
   if(title)title.textContent=connected?'Votre salon de jeu':creating?'Créer une partie':'Rejoindre une partie';
@@ -38,6 +58,13 @@
  for(const id of ['lobbyPlayerName','lobbyOpponentName','lobbyOwnStatus','opponentWaitingText','networkStatus','lobbyGameLabel','mediaStatus']){const node=$(id);if(node)new MutationObserver(schedule).observe(node,{childList:true,subtree:true,characterData:true});}
  let visible=$('screenLobby').classList.contains('active');new MutationObserver(()=>{const next=$('screenLobby').classList.contains('active');if(next&&!visible)lobby('session');visible=next;schedule();}).observe($('screenLobby'),{attributes:true,attributeFilter:['class']});
  presentLobby();
+ $('playerLocaleSelect')?.addEventListener('change',()=>{
+  window.TCGatePlayerLocale?.setPlayerLocale(playerLocaleGame(),$('playerLocaleSelect').value);
+  playerLocaleSignature='';presentPlayerLocale();
+ });
+ window.addEventListener('storage',event=>{
+  if(event.key===null||event.key===window.TCGatePlayerLocale?.getStorageKey(playerLocaleGame())){playerLocaleSignature='';presentPlayerLocale();}
+ });
  let setupPending=false;
  function feedback(message=''){
   const node=$('siteSetupFeedback');if(node){node.textContent=message;node.hidden=!message;}

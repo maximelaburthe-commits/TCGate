@@ -88,7 +88,10 @@ async function activateMedia(page) {
   await page.waitForFunction(() => document.querySelector('#cameraSelect').options.length && document.querySelector('#microSelect').options.length);
   await accessibleControl(page, '#cameraSelect', 'Existing camera selector'); await accessibleControl(page, '#microSelect', 'Existing microphone selector');
   check(await page.locator('#usePhoneCamera').isVisible(), 'Existing Phone Camera entry remains available');
-  check(!await page.locator('select[id*="locale" i],input[id*="locale" i]').count(), 'Personal media area has no active Player Locale setting');
+  if (await page.evaluate(() => state.game === 'cyberpunk')) {
+    check(await page.locator('#playerLocaleSelect').isVisible(), 'Player Locale is available in personal installation');
+    check(await page.locator('#playerLocaleSelect').isEnabled(), 'Player Locale is personal for Host and Guest');
+  } else check(!await page.locator('#playerLocaleField').isVisible(), 'Sans jeu hides Player Locale while preserving media');
 }
 async function responsiveLobby(page, role) {
   for (const viewport of viewports) {
@@ -243,6 +246,6 @@ async function responsiveLobby(page, role) {
       check(noGameSignals.every(signal => signal.type !== 'gig-state'), 'Sans jeu emits no Gig state');
     } finally { await Promise.all([noHostContext.close(), noGuestContext.close()]); }
     equal(observations.errors, [], 'No uncaught browser errors'); equal(fixture.requests.length, 0, 'UI qualification sends no report email');
-    console.log('SITE_UI_2_0_BROWSER_OK ' + JSON.stringify({ assertions, viewports: viewports.map(viewport => viewport.width + 'x' + viewport.height), browser: browser.version(), screenshots, realRoomSseWebRtc: true, syntheticCameraAudio: true, physicalDevicesQualified: false, playerLocale: 'NOT IMPLEMENTED', visionLocale: 'NOT IMPLEMENTED', elapsedSeconds: Math.round((Date.now() - started) / 1000) }));
+    console.log('SITE_UI_2_0_BROWSER_OK ' + JSON.stringify({ assertions, viewports: viewports.map(viewport => viewport.width + 'x' + viewport.height), browser: browser.version(), screenshots, realRoomSseWebRtc: true, syntheticCameraAudio: true, physicalDevicesQualified: false, playerLocale: 'PERSONAL (JALON 3)', visionLocale: 'NOT IMPLEMENTED', elapsedSeconds: Math.round((Date.now() - started) / 1000) }));
   } finally { await browser?.close(); await fixture.close(); }
 })().catch(error => { console.error('SITE_UI_2_0_BROWSER_FAILURE phase=' + phase + '\n' + error.stack); process.exitCode = 1; });
