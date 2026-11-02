@@ -34,6 +34,8 @@
     "test:site-ui-2.0": "node site-ui-2.0-test.js && node site-ui-2.0-browser-test.js",
     "test:player-locale": "node player-locale-test.js && node player-locale-browser-test.js",
     "test:vision-locale": "node vision-locale-test.js && node vision-locale-browser-test.js",
+    "test:cyberpunk-languages": "node cyberpunk-languages-qualification-test.js",
+    "qualify:cyberpunk-locales": "node qualify-cyberpunk-locales.js",
     "test:project-cleanup": "node report-email-bridge-test.js",
     "test:report-email-browser": "node report-email-browser-test.js",
     "test:phone-consolidation": "node phone-consolidation-1.2c-test.js",

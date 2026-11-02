@@ -6,7 +6,7 @@ Un seul workflow de qualification complète :
 npm run qualify:alpha
 ```
 
-Il exécute 45 suites distinctes, dont douze suites navigateur, puis le contrôle syntaxique correspondant à `npm run check` et `git diff --check HEAD^ HEAD`. Les 43 suites précédentes sont conservées ; Vision Locale ajoute sa suite d'isolation et sa qualification navigateur. Les anciens contrats de corpus global sont actualisés explicitement : les empreintes de 79 fonctions d'identification, de 47 fonctions Table State et des constantes de reconnaissance restent identiques à la baseline pré-Jalon-4. Détecteur, worker de reconnaissance et modèle gardent leurs empreintes complètes. Aucune suite navigateur n'est facultative. Aucun package npm runtime externe n'est déclaré ; le workflow C14 historique appelant le forwarder retiré n'est pas restauré.
+Il exécute 46 suites distinctes, dont douze suites navigateur, puis le contrôle syntaxique correspondant à `npm run check` et `git diff --check HEAD^ HEAD`. Les 45 suites précédentes sont conservées ; Cyberpunk Languages Qualification ajoute sa suite de qualification structurelle et ses contre-exemples. Cette suite exige les deux snapshots réels indiqués par `TCGATE_CYBERPUNK_MAIN_ROOT` et `TCGATE_CYBERPUNK_DEVELOP_ROOT`, et ne remplace jamais une passe physique. Les empreintes de 79 fonctions d'identification, de 47 fonctions Table State et des constantes de reconnaissance restent identiques à la baseline pré-Jalon-4. Détecteur, worker de reconnaissance et modèle gardent leurs empreintes complètes. Aucune suite navigateur n'est facultative. Aucun package npm runtime externe n'est déclaré ; le workflow C14 historique appelant le forwarder retiré n'est pas restauré.
 
 ## Préconditions et preuves
 
@@ -32,6 +32,7 @@ Comptage : appels aux API Node `assert` des processus de test instrumentés, y c
 | Site UI 2.0 | `site-ui-2.0-test.js`, `site-ui-2.0-browser-test.js` : Home, navigation, création explicite, erreurs, Host/Guest, Ready, Sans jeu, 1920/1366/900/560/390 et captures de référence |
 | Player Locale 1.0 | `player-locale-test.js`, `player-locale-browser-test.js` : déclarations Core, préférence personnelle par TCG, persistance, normalisation, Host/Guest indépendants, absence de partage réseau, mobile et snapshot DB brut inchangé |
 | Vision Locale 1.0 | `vision-locale-test.js`, `vision-locale-browser-test.js` : vrai corpus EN 229 via Core, fixture EN/FR isolée et même cardId, caches par jeu/langue/source, remplacement des workers et mémoires, rejets sans fallback, F5, Ready, Sans jeu et absence de partage réseau |
+| Cyberpunk Languages Qualification 1.0 | `cyberpunk-languages-qualification-test.js` : snapshots main/développement, images et empreintes réelles, couverture avec dénominateurs officiels, refus des images EN en FR, doublons/orphelins, reçu déterministe, historique EN distinct d'une nouvelle passe physique et FR non activée |
 | Timer ON/OFF et synchronisation | Room/UI tests + C15 browser start/pause/reset et temps dérivé côté deux joueurs |
 | Gig Dice ON/OFF, gating jeu, hover et zoom | Room/client/UI tests + C15 browser, 12 dés × 5 points × 3 largeurs |
 | Sans jeu : pas Vision/Gig, webcam/audio conservés | C15 browser, vrais RTP locaux et frames après Start/F5 |
