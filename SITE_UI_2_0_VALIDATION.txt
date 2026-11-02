@@ -1,0 +1,87 @@
+TCGATE — SITE UI 2.0 — VALIDATION
+Date : 2026-11-02 (Europe/Paris)
+
+BASELINE_SHA: 0844876eb75a6bcac80fe75f605811f5dee1e9a0
+MAIN_UNCHANGED: e26b2e09579be53452c1e631b1dc5230191d0250
+IMPLEMENTATION_SHA: 763c83cb08535663a3013d5c6e5a622c7e129fe5
+IMPLEMENTATION_TREE: 71ebd20fae470768bf6535fe1617afab99929109
+BRANCH: update/next
+
+Ce reçu conserve le SHA exact du gel de l’implémentation. Le commit suivant
+ajoute uniquement ce fichier documentaire. Une campagne complète sur le SHA
+final est enregistrée séparément dans le reçu externe ci-dessous, qui évite
+une auto-référence impossible du SHA dans son propre commit :
+C:\Users\maxim\AppData\Local\Temp\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\qualification-final\qualification.json
+
+CAMPAGNE AU GEL IMPLEMENTATION: PASS
+COMMAND: npm run qualify:alpha -- --output-dir <qualification-implementation>
+SUITES: 41 / 41 PASS, dont 10 navigateur
+NODE_ASSERT_CALLS: 4508
+COMPTAGE: Node assert calls in instrumented test processes, including expected negative cases; custom throw-only checks are additional and are not counted.
+CHECK: npm run check (node check.js), 96 fichiers JavaScript, exit 0
+DIFF_CHECK: git diff --check HEAD^ HEAD, exit 0
+STARTED_AT_UTC: 2026-11-02T18:19:39.557Z
+FINISHED_AT_UTC: 2026-11-02T18:24:06.540Z
+RECEIPT: C:\Users\maxim\AppData\Local\Temp\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\qualification-implementation\qualification.json
+
+NOUVELLES SUITES:
+- site-ui-2.0-test.js : 110 contrôles explicites et assertions auxiliaires
+  de découpage DOM ; comparaison aux sources/fonctions qualifiées de baseline.
+- site-ui-2.0-browser-test.js : 685 contrôles explicites ; navigation,
+  création différée, défauts historiques Timer/Gig, durée invalide, échec503
+  simulé, Join vide/404 réel, Host/Guest, Ready, Phone QR mobile, Sans jeu,
+  vidéo/audio WebRTC réels et dégagement du dernier élément devant Ready.
+- Les 39 suites précédentes restent dans le workflow. Six adaptations de
+  présentation/parcours conservent les contrôles fonctionnels historiques.
+
+NAVIGATEUR: Google Chrome 156.0.8078.79 via Playwright, headless.
+VIEWPORTS: 1920x1080, 1366x768, 900x900, 560x900, 390x844.
+EMULATION: périphériques caméra/micro factices, reduced-motion, tailles
+d’écran et deux contextes joueurs indépendants. Aucun appareil physique,
+Safari/Firefox, TURN distant ou livraison réelle Resend nouvellement qualifié.
+
+SCREENSHOTS DU GEL IMPLEMENTATION:
+C:\Users\maxim\AppData\Local\Temp\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\qualification-implementation\screenshots\site-ui-2.0-home-desktop.png
+C:\Users\maxim\AppData\Local\Temp\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\qualification-implementation\screenshots\site-ui-2.0-home-mobile.png
+C:\Users\maxim\AppData\Local\Temp\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\qualification-implementation\screenshots\site-ui-2.0-lobby-host-desktop.png
+C:\Users\maxim\AppData\Local\Temp\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\qualification-implementation\screenshots\site-ui-2.0-lobby-guest-desktop.png
+C:\Users\maxim\AppData\Local\Temp\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\qualification-implementation\screenshots\site-ui-2.0-lobby-mobile.png
+
+SCREENSHOTS DE LA CAMPAGNE FINALE:
+C:\Users\maxim\AppData\Local\Temp\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\qualification-final\screenshots\site-ui-2.0-home-desktop.png
+C:\Users\maxim\AppData\Local\Temp\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\qualification-final\screenshots\site-ui-2.0-home-mobile.png
+C:\Users\maxim\AppData\Local\Temp\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\qualification-final\screenshots\site-ui-2.0-lobby-host-desktop.png
+C:\Users\maxim\AppData\Local\Temp\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\qualification-final\screenshots\site-ui-2.0-lobby-guest-desktop.png
+C:\Users\maxim\AppData\Local\Temp\tcgate-site-ui-2-ca71b5ef887340e9a3d568d592b9f181\qualification-final\screenshots\site-ui-2.0-lobby-mobile.png
+Home : pages complètes. Lobby : viewport réel avec Ready fixe, pour éviter
+les artefacts de footer au milieu des captures artificiellement longues.
+
+VISUEL PRODUIT DU HERO:
+public/assets/tcgate-product-preview.png : capture brute 1280x800 du véritable
+Game Table baseline avec Room/WebRTC et média de démonstration composé des
+assets Cyberpunk déjà embarqués. Pas de fausse interface ni qualification
+physique ; légende explicite. Logo officiel conservé au SHA256 approuvé.
+
+DEFAUTS OBSERVES:
+MAJEUR : aucun observé dans les cas exécutés.
+INTERMEDIAIRE : aucun observé dans les cas exécutés.
+MINEUR CORRIGE : dernier statut Joueurs partiellement recouvert à560px
+(1,17px). Réservation de la hauteur réelle du footer ; contrôle permanent
+par défilement + hit-test. Probe après correction : 49,83px de dégagement.
+MINEUR / REVUE VISUELLE : certains textes annexes sont discrets (9–11px).
+Aucun texte critique tronqué ni bouton hors écran constaté. La revue
+automatisée et technique ne constitue pas une validation esthétique joueur.
+
+NON-REGRESSION:
+Room serveur, WebRTC/recovery, Phone Camera, Timer, logique Gig Dice,
+Reports, Vision active et BDD Locale Core couverts ; leurs contrôleurs
+protégés conservent la baseline. HTML Game Table inchangé.
+Player Locale NOT IMPLEMENTED.
+Vision Locale NOT IMPLEMENTED.
+Vision Qualification 1.0 FUTURE ; qualification FR FUTURE.
+main UNCHANGED ; aucune intervention Railway Production.
+Aucune fusion, aucune BDD reconstruite ou activée, aucun force push.
+
+Workspace actualisé séparément après qualification du SHA produit final.
+Le reçu externe final contient son SHA exact et les résultats de cette
+dernière campagne. Les preuves précédentes restent conservées.
