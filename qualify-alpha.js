@@ -15,7 +15,7 @@ const suites = [
   ['player-locale-test.js'],
   ['vision-locale-test.js'],
   ['cyberpunk-languages-qualification-test.js'],
-  ['vision-qualification-1.0-test.js'],
+  ['vision-qualification-1.0-test.js'], ['workspace-vision-qualification-test.js'],
   ['future-ux-v3.7-test.js'], ['future-ux-room-metadata-test.js'], ['smoke-test-ui-integration.js'],
   ['phone-camera-test.js'], ['phone-camera-diagnostics-test.js'], ['phone-consolidation-1.2c-test.js'],
   ['vision-integrity-test.js'], ['vision-source-provenance-test.js'], ['vision-backpressure-test.js'],
@@ -28,7 +28,7 @@ const suites = [
   ['report-email-browser-test.js'], ['phone-consolidation-1.2c-browser-test.js'],
   ['workspace-browser-test.js'], ['workspace-camera-browser-test.js'],
   ['workspace-cockpit-browser-test.js'], ['workspace-maintenance-journal-browser-test.js'],
-  ['database-locale-core-browser-test.js'], ['site-ui-2.0-browser-test.js'], ['player-locale-browser-test.js'], ['vision-locale-browser-test.js'], ['vision-qualification-1.0-browser-test.js']
+  ['database-locale-core-browser-test.js'], ['site-ui-2.0-browser-test.js'], ['player-locale-browser-test.js'], ['vision-locale-browser-test.js'], ['vision-qualification-1.0-browser-test.js'], ['workspace-vision-qualification-browser-test.js']
 ];
 
 function main() {
@@ -72,6 +72,8 @@ function main() {
   delete env.VISION_QUALIFICATION_TEST_ROOT;
   delete env.VISION_QUALIFICATION_HARNESS_PATH;
   delete env.VISION_QUALIFICATION_RUNTIME_PATH;
+  for (const key of ['WORKSPACE_VISION_QUALIFICATION_TEST_ROOT', 'WORKSPACE_VISION_QUALIFICATION_UI_STAGE', 'WORKSPACE_VISION_QUALIFICATION_SHARED_STAGE', 'TCGATE_QUALIFICATION_WORKSPACE_TEST_ROOT', 'TCGATE_VISION_QUALIFICATION_REPORT_MODULE']) delete env[key];
+  env.WORKSPACE_VISION_QUALIFICATION_ARTIFACT_DIR = path.join(output, 'workspace-qualification-ux');
   env.CANDIDATE_GIG_AUDIT_PATH = path.join(output, 'gig-audit.json');
   const preload = path.join(root, 'qualification-assert-count.js').split(path.sep).join('/');
   env.NODE_OPTIONS = '--require="' + preload + '"';

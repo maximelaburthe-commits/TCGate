@@ -8,6 +8,7 @@ const { execFileSync } = require('node:child_process');
 async function main() {
   const root = __dirname;
   const harness = require('./public/vision-qualification-harness.js');
+  const canonical = require('./public/vision-qualification-report.js');
   const source = require('./public/database-source.js');
   const registry = require('./public/game-databases.js').get('cyberpunk');
   const baseline = JSON.parse(fs.readFileSync(path.join(root, 'VISION_QUALIFICATION_ENGINE_BASELINE.json'), 'utf8'));
@@ -52,7 +53,11 @@ async function main() {
   }
   // Git applies its normal text filters, so Windows CRLF checkout conversion
   // cannot masquerade as an engine change or require rewriting source files.
-  execFileSync('git', ['diff', '--quiet', baseline.productSha, '--', ...baseline.files.map(file => file.path)], { cwd: root, stdio: 'ignore' });
+  // Jalon 6A.1 authorises only these three original Workspace presentation
+  // files to change. The complete historical 228-file manifest is still
+  // authenticated above; the other 225 engine/Locale/model files stay frozen.
+  const workspaceUxExceptions = new Set(['public/workspace.html', 'public/workspace.js', 'public/workspace.css']);
+  execFileSync('git', ['diff', '--quiet', baseline.productSha, '--', ...baseline.files.filter(file => !workspaceUxExceptions.has(file.path)).map(file => file.path)], { cwd: root, stdio: 'ignore' });
   let fetchImpl = globalThis.fetch;
   if (fixtureRoot) {
     const dbRoot = fs.realpathSync(fixtureRoot), prefix = registry.manifestUrl.slice(0, registry.manifestUrl.lastIndexOf('/') + 1);
@@ -70,30 +75,11 @@ async function main() {
   const context = { productSha, databaseSha: '56402636a77af9c8b5dc4e3b61c509a185f3c834', gameId: 'cyberpunk-tcg', locale: 'en', referenceCount: 229, references };
   const checked = harness.validateContext(context);
   if (!checked.valid) throw Error('Invalid authentic corpus: ' + checked.errors.join(', '));
-  const plan = { ...sample.plan, sample: sample.sample };
-  let session = { context, plan, trials: [], scenes: [], indexMeasurements: [], environment: { execution: 'LOCAL_TEST' } };
-  let declarationKey = null;
-  for (const inputFile of args.inputs) {
-    const captured = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
-    if (captured.context?.productSha !== productSha || captured.context?.databaseSha !== context.databaseSha || captured.context?.locale !== 'en' || captured.context?.referenceCount !== 229 || !['cyberpunk', 'cyberpunk-tcg'].includes(captured.context?.gameId)) throw Error('Session does not match this exact product/corpus');
-    if (captured.environment?.execution === 'AUTOMATED' && [...(captured.trials || []), ...(captured.scenes || [])].some(value => value?.provenance === 'physical')) throw Error('An automated session cannot supply physical evidence');
-    const declarations = { substitutions: captured.plan?.substitutions || [], variantAvailability: captured.plan?.variantAvailability || [],
-      sleeveAvailability: captured.plan?.sleeveAvailability || null, sleeveSkipReason: captured.plan?.sleeveSkipReason || null };
-    const nextKey = harness.stableStringify(declarations);
-    if (declarationKey !== null && nextKey !== declarationKey) throw Error('Sessions have conflicting predeclared availability/substitutions');
-    declarationKey = nextKey;
-    // The caller cannot replace the reference corpus or weaken the trial plan.
-    session = { context, plan: { ...plan, ...declarations }, environment: captured.environment || {},
-      trials: [...session.trials, ...(captured.trials || [])], scenes: [...session.scenes, ...(captured.scenes || [])],
-      indexMeasurements: [...session.indexMeasurements, ...(captured.indexMeasurements || [])] };
-  }
-  for (const inputFile of args.indexes) {
-    const measurements = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
-    if (!Array.isArray(measurements.indexMeasurements)) throw Error('Index measurement array required');
-    const measuredContext = measurements.context || measurements;
-    if (measuredContext.productSha !== productSha || measuredContext.databaseSha !== context.databaseSha || measuredContext.referenceCount !== 229 || measuredContext.locale !== 'en' || !['cyberpunk', 'cyberpunk-tcg'].includes(measuredContext.gameId)) throw Error('Index measurements do not match this exact product/corpus');
-    session.indexMeasurements = [...(session.indexMeasurements || []), ...measurements.indexMeasurements];
-  }
+  // This exact pure generator is also loaded by the Workspace. Git, local
+  // paths, source freezing and validation receipts remain Node-only guards.
+  const sessions = args.inputs.map(file => JSON.parse(fs.readFileSync(file, 'utf8')));
+  const indexInputs = args.indexes.map(file => JSON.parse(fs.readFileSync(file, 'utf8')));
+  let automatedHarnessValidation = 'NOT RUN';
   if (args['validation-receipt']) {
     const receipt = JSON.parse(fs.readFileSync(args['validation-receipt'], 'utf8'));
     if (receipt.sha !== productSha || !['RUNNING', 'PASS'].includes(receipt.status)) throw Error('Wrong automated validation receipt');
@@ -103,10 +89,11 @@ async function main() {
       const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex');
       if (!suite || suite.exit !== 0 || suite.error || suite.signal || manifest?.sha256 !== hash) throw Error('Harness validation not completed for frozen source');
     }
-    session.automatedHarnessValidation = 'PASS';
+    automatedHarnessValidation = 'PASS';
   }
-  const report = harness.buildReport(session);
-  const bytes = harness.stableStringify(report);
+  const report = canonical.generate({ productSha, sampleProductSha: productSha, references, sampleDocument: sample,
+    sessions, indexInputs, automatedHarnessValidation });
+  const bytes = canonical.stableStringify(report);
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, bytes, { flag: 'wx' });
   console.log(JSON.stringify({ output, productSha, json: 'VALID', sha256: crypto.createHash('sha256').update(bytes).digest('hex'), engine: 'UNCHANGED', trialCount: report.trials?.length || 0, verdict: report.verdict, physicalQualification: report.physicalQualification }, null, 2));

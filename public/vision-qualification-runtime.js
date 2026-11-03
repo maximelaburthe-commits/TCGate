@@ -11,6 +11,12 @@
   const EVENTS = ['tcg-tracks-updated', 'tcg-identification-result', 'tcg-table-state-updated', 'tcg-identification-context', 'tcg-identification-visible'];
   function copy(value) { return JSON.parse(JSON.stringify(value)); }
   function finite(value) { return typeof value === 'number' && Number.isFinite(value); }
+  function detectorRunning(snapshot) {
+    if (!snapshot?.modelReady) return false;
+    if (snapshot.active === true) return true;
+    const local = root.TCGDetectionLab?.state;
+    return local?.detecting === true && Boolean(local.stream?.getVideoTracks?.().some(track => track.readyState === 'live'));
+  }
   function reference(ref) {
     return {
       refId: ref.refId, cardId: ref.cardId, printingId: ref.printingId || null,
@@ -20,9 +26,17 @@
     };
   }
 
-  // Loaded explicitly from the developer console. This module never starts
-  // cameras, workers, engines, a Room, matching, or a media capture.
+  const observerKey = Symbol.for('tcgate.vision.qualification.observer');
+  // Workspace orchestration only. This observer never starts cameras, workers,
+  // engines, a Room, matching, or any media capture.
   async function attach(options = {}) {
+    if (root[observerKey]) throw Error('A qualification observer is already attached or preparing');
+    const reservation = {};
+    root[observerKey] = reservation;
+    try { return await attachObserver(options, reservation); }
+    catch (error) { if (root[observerKey] === reservation) delete root[observerKey]; throw error; }
+  }
+  async function attachObserver(options, reservation) {
     const harness = root.TCGateVisionQualification;
     if (!harness?.buildReport || !harness?.validateContext) throw Error('Load vision-qualification-harness.js first');
     if (!/^[a-f0-9]{40}$/i.test(options.productSha || '')) throw Error('Supply the exact tested product SHA');
@@ -65,18 +79,24 @@
       }
     }
     const environment = harness.sanitizeEnvironment(options.environment || {});
+    const shared = root.TCGVisionQualificationReport;
+    const sampleDocument = options.sampleDocument ? copy(options.sampleDocument) : null;
+    if (sampleDocument && !shared?.generate) throw Error('Load vision-qualification-report.js before guided qualification');
+    const canonicalPlan = sampleDocument ? shared.canonicalPlan(sampleDocument, context) : null;
+    const requestedPlan = canonicalPlan ? { ...canonicalPlan, ...shared.declarations(options.plan, canonicalPlan) } : options.plan;
     const plan = {
-      sample: (options.plan?.sample || []).map(item => ({ cardId: item.cardId, printingId: item.printingId || null })),
-      substitutions: (options.plan?.substitutions || []).map(item => ({ originalCardId: item.originalCardId, replacementCardId: item.replacementCardId, replacementPrintingId: item.replacementPrintingId, reason: item.reason === 'PHYSICAL_CARD_UNAVAILABLE' ? item.reason : null })),
-      variantAvailability: (options.plan?.variantAvailability || []).map(item => ({ caseId: item.caseId, printingId: item.printingId, availability: ['AVAILABLE', 'UNAVAILABLE'].includes(item.availability) ? item.availability : null, ...(item.reason === 'PHYSICAL_VARIANT_UNAVAILABLE' ? { reason: item.reason } : {}) })),
-      ...(options.plan?.sleeveAvailability === 'UNAVAILABLE' && options.plan?.sleeveSkipReason === 'NO_GAME_SLEEVE_AVAILABLE' ? { sleeveAvailability: 'UNAVAILABLE', sleeveSkipReason: 'NO_GAME_SLEEVE_AVAILABLE' } : {})
+      sample: (requestedPlan?.sample || []).map(item => ({ cardId: item.cardId, printingId: item.printingId || null })),
+      substitutions: (requestedPlan?.substitutions || []).map(item => ({ originalCardId: item.originalCardId, ...(item.originalPrintingId ? { originalPrintingId: item.originalPrintingId } : {}), replacementCardId: item.replacementCardId, replacementPrintingId: item.replacementPrintingId, reason: item.reason === 'PHYSICAL_CARD_UNAVAILABLE' ? item.reason : null })),
+      variantAvailability: (requestedPlan?.variantAvailability || []).map(item => ({ caseId: item.caseId, printingId: item.printingId, availability: ['AVAILABLE', 'UNAVAILABLE'].includes(item.availability) ? item.availability : null, ...(item.reason === 'PHYSICAL_VARIANT_UNAVAILABLE' ? { reason: item.reason } : {}) })),
+      ...(requestedPlan?.sleeveAvailability === 'AVAILABLE' ? { sleeveAvailability: 'AVAILABLE' } : {}),
+      ...(requestedPlan?.sleeveAvailability === 'UNAVAILABLE' && requestedPlan?.sleeveSkipReason === 'NO_GAME_SLEEVE_AVAILABLE' ? { sleeveAvailability: 'UNAVAILABLE', sleeveSkipReason: 'NO_GAME_SLEEVE_AVAILABLE' } : {})
     };
     function knownCard(cardId) { return context.references.some(ref => ref.cardId === cardId); }
     function knownPrinting(cardId, printingId) { return context.references.some(ref => ref.cardId === cardId && (ref.printingId === printingId || ref.referencePrintingId === printingId || ref.candidatePrintingIds.includes(printingId))); }
     if (plan.sample.some(item => !knownCard(item.cardId) || (item.printingId && !knownPrinting(item.cardId, item.printingId))) ||
         plan.substitutions.some(item => !knownCard(item.originalCardId) || !knownCard(item.replacementCardId) || !knownPrinting(item.replacementCardId, item.replacementPrintingId) || !item.reason) ||
         plan.variantAvailability.some(item => !/^[a-zA-Z0-9][a-zA-Z0-9:_.-]{0,79}$/.test(item.caseId) || !context.references.some(ref => knownPrinting(ref.cardId, item.printingId)) || !item.availability)) throw Error('Plan fields must contain known corpus identities and controlled availability values');
-    const trials = [], scenes = [], indexMeasurements = [];
+    const trials = [], scenes = [], indexMeasurements = [], trialAnnotations = [], declarationEvents = [];
     const recordedIndexIds = new Set();
     const nonce = [...root.crypto.getRandomValues(new Uint32Array(2))].map(value => value.toString(16).padStart(8, '0')).join('');
     const sessionId = 'q6-' + Date.now().toString(36) + '-' + nonce;
@@ -84,6 +104,57 @@
     let lastForegroundEvent = null;
     const now = () => root.performance.now();
     function requireOpen() { if (disposed) throw Error('Qualification observer is detached'); }
+    function safeSession() { return copy({ context, trials, scenes, indexMeasurements, environment, plan, trialAnnotations, declarationEvents }); }
+    function requireCanonicalPlan() {
+      requireOpen();
+      if (!canonicalPlan) throw Error('The canonical build sample is required for guided declarations');
+    }
+    function recordDeclaration(action, values) {
+      declarationEvents.push({ sequence: declarationEvents.length + 1, action, ...values });
+    }
+    function setSubstitution(originalCardId, replacementCardId, replacementPrintingId) {
+      requireCanonicalPlan();
+      const original = canonicalPlan.sample.find(item => item.cardId === originalCardId);
+      if (!original) throw Error('Unknown original canonical sample card');
+      if (plan.substitutions.some(value => value.originalCardId === originalCardId)) throw Error('This sample slot already has an immutable substitution');
+      const involved = new Set([originalCardId, replacementCardId]);
+      if ([...trials, ...(active && !active.scene ? [active] : [])].some(value => involved.has(value.expectedCardId))) throw Error('Declare a substitution before either card has been tested');
+      const value = { originalCardId, originalPrintingId: original.printingId, replacementCardId, replacementPrintingId, reason: 'PHYSICAL_CARD_UNAVAILABLE' };
+      const checked = shared.declarations({ ...plan, substitutions: [...plan.substitutions, value] }, canonicalPlan);
+      plan.substitutions = checked.substitutions;
+      recordDeclaration('SUBSTITUTE', value);
+      return copy(value);
+    }
+    function setSleeveAvailability(availability) {
+      requireCanonicalPlan();
+      if (!['AVAILABLE', 'UNAVAILABLE'].includes(availability)) throw Error('Choose controlled sleeve availability');
+      if ([...trials, ...(active && !active.scene ? [active] : [])].some(value => value.condition === 'SLEEVE_GLARE')) throw Error('Declare sleeve availability before sleeve trials');
+      if (plan.sleeveAvailability !== undefined) throw Error('Sleeve availability is already declared');
+      plan.sleeveAvailability = availability;
+      if (availability === 'UNAVAILABLE') plan.sleeveSkipReason = 'NO_GAME_SLEEVE_AVAILABLE';
+      recordDeclaration('SLEEVE_AVAILABILITY', { availability });
+      return copy({ sleeveAvailability: availability, ...(plan.sleeveSkipReason ? { sleeveSkipReason: plan.sleeveSkipReason } : {}) });
+    }
+    function setVariantAvailability(caseId, printingId, availability) {
+      requireCanonicalPlan();
+      if (plan.variantAvailability.some(value => value.caseId === caseId && value.printingId === printingId)) throw Error('Variant availability is already declared');
+      const observed = [...trials, ...(active && !active.scene ? [active] : [])].filter(value => value.expectedPrintingId === printingId);
+      if (observed.some(value => value.condition === 'SIMILAR_PRINTINGS') || (availability === 'UNAVAILABLE' && observed.length)) throw Error('Declare variant availability before variant trials; an observed printing cannot be unavailable');
+      const value = { caseId, printingId, availability, ...(availability === 'UNAVAILABLE' ? { reason: 'PHYSICAL_VARIANT_UNAVAILABLE' } : {}) };
+      const checked = shared.declarations({ ...plan, variantAvailability: [...plan.variantAvailability, value] }, canonicalPlan);
+      plan.variantAvailability = checked.variantAvailability;
+      recordDeclaration('VARIANT_AVAILABILITY', value);
+      return copy(value);
+    }
+    function invalidateTrial(trialId, reason = 'OPERATOR_PROTOCOL_ERROR') {
+      requireCanonicalPlan();
+      if (!shared.INVALIDATION_REASONS.includes(reason)) throw Error('Use a controlled protocol invalidation reason');
+      if (!trials.some(value => value.trialId === trialId)) throw Error('Only a completed trial can be annotated');
+      if (trialAnnotations.some(value => value.trialId === trialId)) throw Error('This trial already has an append-only invalidation');
+      const annotation = { trialId, action: 'INVALIDATE', reason, sequence: trialAnnotations.length + 1 };
+      trialAnnotations.push(annotation);
+      return copy(annotation);
+    }
     function contextErrors(snapshot) {
       const current = root.TCGTableStateBridge.getRefs();
       if (snapshot?.playerLocale !== 'en' || snapshot?.visionLocales?.some(locale => locale !== 'en') ||
@@ -110,7 +181,7 @@
       const detection = root.TCGVisionEngine.getSnapshot();
       const table = root.TCGTableStateEngine?.getSnapshot?.();
       const errors = contextErrors(snapshot);
-      if (active?.provenance === 'physical' && (!detection.active || !detection.modelReady)) errors.push('MISSING_RUNTIME_STATE');
+      if (active?.provenance === 'physical' && !detectorRunning(detection)) errors.push('MISSING_RUNTIME_STATE');
       const candidateRefs = [];
       for (const candidate of snapshot.identification?.candidates || []) {
         const ref = resolve(candidate, errors); if (ref) candidateRefs.push(ref);
@@ -178,7 +249,7 @@
       if (mode === 'physical' && spec.physicalConfirmation !== PHYSICAL_CONFIRMATION) throw Error('Physical capture requires explicit real-card operator confirmation');
       if (mode === 'physical') {
         const detector = root.TCGVisionEngine.getSnapshot();
-        if (!detector.active || !detector.modelReady) throw Error('Physical capture requires the existing camera-fed Vision detector to be running');
+        if (!detectorRunning(detector)) throw Error('Physical capture requires the existing camera-fed Vision detector to be running');
       }
       return {
         provenance: mode,
@@ -192,6 +263,11 @@
       const errors = contextErrors(root.TCGIdentificationLab.getSnapshot());
       if (errors.length) throw Error('Qualification context changed: ' + errors.join(','));
       const evidence = provenance(spec);
+      if (!scene && canonicalPlan) {
+        if (plan.substitutions.some(value => value.originalCardId === spec.expectedCardId)) throw Error('Use the declared substitute for this canonical slot');
+        if (spec.condition === 'SLEEVE_GLARE' && plan.sleeveAvailability === 'UNAVAILABLE') throw Error('Sleeves are declared unavailable');
+        if (plan.variantAvailability.some(value => value.availability === 'UNAVAILABLE' && value.printingId === spec.expectedPrintingId)) throw Error('This physical variant is declared unavailable');
+      }
       if (scene && !harness.SCENES.includes(spec.scene)) throw Error('Unknown qualification scene');
       if (!scene && spec.condition !== undefined && !harness.CONDITIONS.includes(spec.condition)) throw Error('Unknown qualification condition');
       if (!Array.isArray(spec.notes || []) || (spec.notes || []).some(note => !harness.NOTE_CODES.includes(note))) throw Error('Use only controlled observation note codes');
@@ -264,6 +340,8 @@
     function exportReport() {
       requireOpen();
       if (active) throw Error('End the active observation before exporting');
+      if (sampleDocument) return shared.generate({ productSha: context.productSha, sampleProductSha: context.productSha,
+        references: context.references, sampleDocument, sessions: [safeSession()] });
       return harness.buildReport({ context: copy(context), trials: copy(trials), scenes: copy(scenes),
         indexMeasurements: copy(indexMeasurements), environment, plan });
     }
@@ -288,16 +366,21 @@
         active.notes.push('CARD_REMOVED'); sample(); return copy(active.removal);
       },
       recordIndexMeasurement,
+      setSubstitution, setSleeveAvailability, setVariantAvailability, invalidateTrial,
+      getProgress() { requireOpen(); return { ...safeSession(), active: active ? copy(active) : null }; },
+      // Live UI polling must not clone the immutable 229-reference context or
+      // every completed trial. This copy contains controlled observer data only.
+      getActiveObservation() { requireOpen(); return active ? copy(active) : null; },
       getSession() {
         requireOpen();
         if (active) throw Error('End the active observation before exporting');
-        return copy({ context, trials, scenes, indexMeasurements, environment, plan });
+        return safeSession();
       },
       getRawResults: () => copy({ context, trials, scenes, indexMeasurements }),
       saveSession() {
         requireOpen();
         if (active) throw Error('End the active observation before exporting');
-        const session = copy({ context, trials, scenes, indexMeasurements, environment, plan });
+        const session = safeSession();
         const json = harness.stableStringify(session);
         const url = root.URL.createObjectURL(new root.Blob([json], { type: 'application/json' }));
         const anchor = root.document.createElement('a');
@@ -306,11 +389,12 @@
       },
       exportReport,
       exportJson() { return harness.stableStringify(exportReport()); },
-      downloadReport() {
+      downloadReport(filename = 'vision-qualification-1.0.json') {
+        if (!['vision-qualification-1.0.json', 'vision-qualification-reading.json'].includes(filename)) throw Error('Use a controlled qualification report filename');
         const json = harness.stableStringify(exportReport());
         const url = root.URL.createObjectURL(new root.Blob([json], { type: 'application/json' }));
         const anchor = root.document.createElement('a');
-        anchor.href = url; anchor.download = 'vision-qualification-1.0.json';
+        anchor.href = url; anchor.download = filename;
         anchor.click(); root.setTimeout(() => root.URL.revokeObjectURL(url), 0);
       },
       detach() {
@@ -318,6 +402,7 @@
         if (active) throw Error('End the active observation before detaching');
         for (const event of EVENTS) root.removeEventListener(event, eventSample);
         root.clearInterval(timer); disposed = true;
+        if (root[observerKey] === reservation) delete root[observerKey];
       }
     });
   }

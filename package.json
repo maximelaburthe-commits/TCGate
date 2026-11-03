@@ -45,7 +45,8 @@
     "test:candidate-15-browser": "node candidate-15-browser-test.js",
     "qualify:alpha": "node qualify-alpha.js",
     "qualify:vision": "node qualify-vision-1.0.js",
-    "test:vision-qualification": "node vision-qualification-1.0-test.js && node vision-qualification-1.0-browser-test.js"
+    "test:vision-qualification": "node vision-qualification-1.0-test.js && node vision-qualification-1.0-browser-test.js",
+    "test:workspace-vision-qualification": "node workspace-vision-qualification-test.js && node workspace-vision-qualification-browser-test.js"
   },
   "engines": {
     "node": ">=20"

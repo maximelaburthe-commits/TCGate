@@ -32,7 +32,7 @@
   });
   // Camera/tracking has no dependency on a manifest, corpus, or matcher.
   const detectionScripts=['/vision-frame-gate.js','/vision-analysis-frame.js','/vision-appearance-sampler.js','/vision-core.js'];
-  const identificationScripts=['/database-locale-core.js','/player-locale.js','/vision-locale.js','/vision-library-integrity.js','/identification.js'];
+  const identificationScripts=['/table-state-bridge.js','/database-locale-core.js','/player-locale.js','/vision-locale.js','/vision-library-integrity.js','/identification.js'];
   const scriptLoads=new Map();
   function loadScript(src){
     if(!scriptLoads.has(src))scriptLoads.set(src,new Promise((resolve,reject)=>{
