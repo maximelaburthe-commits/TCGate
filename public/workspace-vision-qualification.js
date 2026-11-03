@@ -88,6 +88,11 @@
     if (state.active) return jobs.find(job => matches(state.active, job)) || null;
     return jobs.find(job => job.condition === selection && !completed(job, state) && !unavailable(job, state)) || null;
   }
+  function retrySwitchJob(job, state, jobs = buildJobs(state)) {
+    if (!job || job.phase !== 'B' || state.active) return null;
+    const previous = state.trials.filter(raw => raw.trialId.startsWith(job.previousKey + '-attempt-')).at(-1);
+    return previous?.removal?.clearAtMs != null ? null : jobs.find(candidate => candidate.key === job.previousKey) || null;
+  }
   function nominalProgress(state) {
     const jobs = buildJobs(state).filter(job => job.condition === 'NOMINAL');
     const count = jobs.filter(job => completed(job, state)).length;
@@ -194,6 +199,7 @@
     if (!q) return;
     const state = session(), jobs = buildJobs(state), nominal = nominalProgress(state), active = state.active;
     const nextJob = currentJob(state);
+    const retryJob = pendingAdvance ? null : retrySwitchJob(nextJob, state, jobs);
     $('vqStatus').textContent = active ? 'Qualification en cours' : records(state).length ? 'Qualification en cours · observation terminée' : 'Qualification prête';
     $('vqProgress').textContent = 'Nominal · ' + nominal.count + ' / ' + nominal.total + ' essais — Cartes terminées · ' + nominal.cards + ' / ' + documentSample.sample.length;
     $('vqOverallProgress').value = nominal.count; $('vqOverallProgress').max = nominal.total;
@@ -209,14 +215,17 @@
     const remaining = jobs.filter(item => item.condition === selection && !unavailable(item, state)).length;
     const finished = jobs.filter(item => item.condition === selection && completed(item, state)).length;
     $('vqSectionProgress').textContent = LABEL[selection] + ' · ' + finished + ' / ' + remaining + ' observations';
-    $('vqStart').hidden = Boolean(active) || pendingAdvance || !nextJob;
+    $('vqStart').hidden = Boolean(active) || pendingAdvance || !nextJob || Boolean(retryJob);
     $('vqStart').textContent = nextJob?.scene ? 'Démarrer les 30 secondes' : 'Démarrer l’essai';
+    $('vqRetrySwitch').hidden = !retryJob;
+    $('vqRetrySwitch').textContent = retryJob ? 'Recommencer A : ' + retryJob.card.name + ' — nouvel essai' : 'Nouvelle tentative A → B';
+    $('vqRetrySwitchExplanation').hidden = !retryJob;
     $('vqEnd').hidden = !active || Boolean(active.scene);
     $('vqEnd').textContent = nextJob?.phase === 'A' ? 'Terminer A sans changement' : 'Terminer l’essai';
     $('vqNext').hidden = Boolean(active) || !pendingAdvance;
     const lastRaw = records(state).find(record => record.trialId === lastResultId || record.sceneId === lastResultId);
     const previousJob = lastRaw && jobs.find(item => matches(lastRaw, item));
-    const job = pendingAdvance && previousJob ? previousJob : nextJob;
+    const job = pendingAdvance && previousJob ? previousJob : retryJob || nextJob;
     $('vqNext').textContent = previousJob?.condition === 'NOMINAL' && previousJob.repetition === previousJob.total ? 'Carte suivante' : 'Essai suivant';
     $('vqCurrent').hidden = !job;
     $('vqComplete').hidden = Boolean(job) || pendingAdvance;
@@ -290,7 +299,7 @@
     if (job.condition === 'SLEEVE_GLARE' && state.plan.sleeveAvailability !== 'AVAILABLE') throw Error('Indiquez si vous possédez une vraie sleeve avant cet essai.');
     if (job.phase === 'B') {
       const previous = state.trials.filter(raw => raw.trialId.startsWith(job.previousKey + '-attempt-')).at(-1);
-      if (!previous?.removal) throw Error('Le changement A → B exige un retrait de A enregistré. Si vous avez terminé A sans effectuer le retrait prévu, cliquez « Marquer cet essai invalide » sur A, puis « Essai suivant » pour recommencer A. Si A n’a pas été identifiée, conservez cet échec et passez à une autre section : ce changement reste incomplet.');
+      if (previous?.removal?.clearAtMs == null) throw Error('Le changement A → B exige un retrait de A puis un retour réel à l’état vide. Utilisez « Recommencer A » pour ajouter une nouvelle tentative en conservant le résultat précédent, ou choisissez une autre section.');
       q.startTrial({ ...spec(job, state), previousTrialId: previous.trialId });
     } else if (job.scene) q.startScene(spec(job, state));
     else q.startTrial(spec(job, state));
@@ -309,6 +318,14 @@
     const b = buildJobs(state).find(job => job.previousKey === a.key);
     const result = q.switchTrial(spec(b, state));
     lastResultId = result.previous.trialId; pendingAdvance = false; armTimer(b);
+  }
+  function retrySwitch() {
+    const state = session();
+    if (state.active || pendingAdvance) return;
+    const a = retrySwitchJob(currentJob(state), state);
+    if (!a) throw Error('Une nouvelle tentative de A est proposée seulement quand son retrait ou son retour à l’état vide manque.');
+    q.startTrial(spec(a, state));
+    pendingAdvance = false; $('vqResultPanel').hidden = true; armTimer(a);
   }
   function tick() {
     if (!q) return;
@@ -382,6 +399,7 @@
   $('vqSleeveAvailability').addEventListener('change', () => action(() => { if ($('vqSleeveAvailability').value === 'UNCONFIRMED') throw Error('Choisissez disponible ou indisponible.'); q.setSleeveAvailability($('vqSleeveAvailability').value); render(); }));
   $('vqRemoval').addEventListener('click', () => action(() => { q.markRemoval(); render(); }));
   $('vqSwitch').addEventListener('click', () => action(rapidSwitch));
+  $('vqRetrySwitch').addEventListener('click', () => action(retrySwitch));
   $('vqInvalidate').addEventListener('click', () => action(() => { q.invalidateTrial(lastResultId, 'OPERATOR_PROTOCOL_ERROR'); pendingAdvance = true; render(); }));
   $('vqExportSession').addEventListener('click', () => action(() => q.saveSession()));
   $('vqReadingReport').addEventListener('click', () => action(() => download('vision-qualification-reading-report.json', q.exportJson())));

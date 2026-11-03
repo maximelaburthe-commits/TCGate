@@ -333,16 +333,63 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
     await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 1500);
     await page.click('#vqRemoval'); await setIdentity(page, null); await advance(page, 9000); await page.click('#vqEnd');
     check((await state(page)).session.trials.at(-1).removal?.clearAtMs != null, 'Removal marker and clearing time are measured through real observer');
-    // Rapid switch links the two actual trial IDs and actual marker.
+    // A measured failure never disappears or requires a false protocol
+    // invalidation to unlock B. Repeating A appends a fresh bounded attempt.
     await page.selectOption('#vqCondition', 'RAPID_SWITCH'); snapshot = await state(page);
-    await page.click('#vqStart'); await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 10000);
+    const firstPair = snapshot.currentJob.pairIndex;
+    await setIdentity(page, null); await page.click('#vqStart'); await advance(page, 10250); await page.click('#vqEnd');
+    snapshot = await state(page);
+    const failedA = snapshot.session.trials.at(-1), failedABytes = JSON.stringify(failedA);
+    const annotationsBeforeRetry = JSON.stringify(snapshot.session.trialAnnotations);
+    check(/Non détectée/.test(await page.locator('#vqResult').textContent()), 'A valid no-detection A outcome remains visible');
+    check(!snapshot.session.trialAnnotations.some(value => value.trialId === failedA.trialId), 'No-detection A is a measured failure, not an invalid protocol');
+    await page.click('#vqNext'); snapshot = await state(page);
+    equal(snapshot.currentJob.phase, 'B', 'The derived next rapid-switch job remains B after failed A');
+    check(await page.locator('#vqRetrySwitch').isVisible(), 'Failed A exposes an explicit new-A attempt button');
+    check(!(await page.locator('#vqStart').isVisible()) || await page.locator('#vqStart').isDisabled(), 'B cannot start without a cleared prior A');
+    const beforeRetryCount = snapshot.session.trials.length;
+    await page.click('#vqRetrySwitch'); snapshot = await state(page);
+    equal(snapshot.currentJob.phase, 'A', 'Retry starts a fresh A rather than changing the expected B identity');
+    equal(snapshot.currentJob.pairIndex, firstPair, 'Retry stays in the same actual switch pair');
+    const retriedAId = snapshot.session.active.trialId;
+    check(retriedAId !== failedA.trialId, 'Retried A has a distinct attempt ID');
+    equal(snapshot.session.trials.length, beforeRetryCount, 'Starting new A never deletes or replaces a completed record');
+    equal(JSON.stringify(snapshot.session.trials.find(trial => trial.trialId === failedA.trialId)), failedABytes, 'Failed A observations remain byte identical during retry');
+    equal(JSON.stringify(snapshot.session.trialAnnotations), annotationsBeforeRetry, 'New A requires no false invalidation or annotation');
+    // Successful A now supplies the actual removal marker for its own linked B.
+    await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 10000);
     await page.click('#vqRemoval'); await setIdentity(page, null); await advance(page, 500);
     await page.click('#vqSwitch'); snapshot = await state(page);
     await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 10250); await page.click('#vqEnd');
     snapshot = await state(page);
     const switched = snapshot.session.trials.at(-1), prior = snapshot.session.trials.at(-2);
     equal(switched.previousTrialId, prior.trialId, 'Rapid switch preserves linked observer trial IDs');
+    equal(switched.previousTrialId, retriedAId, 'B is linked to the new successful A, never the earlier failed A');
     check(prior.removal != null, 'Rapid switch retains previous actual removal marker');
+    equal(JSON.stringify(snapshot.session.trials.find(trial => trial.trialId === failedA.trialId)), failedABytes, 'Original no-detection A remains intact after successful B');
+    // The second planned pair is reachable. A detected identity which never
+    // clears is also a retained measured failure with the same honest recovery.
+    await page.click('#vqNext'); snapshot = await state(page);
+    equal(snapshot.currentJob.pairIndex, firstPair + 1, 'Completing B unlocks the second planned rapid-switch pair');
+    equal(snapshot.currentJob.phase, 'A', 'Second pair begins with its real A card');
+    await setIdentity(page, null); await page.click('#vqStart');
+    await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 10000);
+    await page.click('#vqRemoval'); await advance(page, 500); await page.click('#vqEnd');
+    snapshot = await state(page);
+    const unclearedA = snapshot.session.trials.at(-1), unclearedABytes = JSON.stringify(unclearedA);
+    equal(unclearedA.removal.clearAtMs, null, 'The failed clearing observation is preserved as actually measured');
+    await page.click('#vqNext');
+    check(await page.locator('#vqRetrySwitch').isVisible(), 'An uncleared A exposes the same append-only recovery');
+    await page.click('#vqRetrySwitch'); snapshot = await state(page);
+    const retriedSecondA = snapshot.session.active.trialId;
+    check(retriedSecondA !== unclearedA.trialId, 'An uncleared A retry is a new trial');
+    await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 10000);
+    await page.click('#vqRemoval'); await setIdentity(page, null); await advance(page, 500); await page.click('#vqSwitch');
+    snapshot = await state(page); await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 10250); await page.click('#vqEnd');
+    snapshot = await state(page);
+    equal(snapshot.session.trials.at(-1).previousTrialId, retriedSecondA, 'Second B links to its successful retry A');
+    equal(JSON.stringify(snapshot.session.trials.find(trial => trial.trialId === unclearedA.trialId)), unclearedABytes, 'Uncleared A observations stay byte identical');
+    check(!snapshot.session.trialAnnotations.some(value => value.trialId === failedA.trialId || value.trialId === unclearedA.trialId), 'Both measured rapid-switch failures remain unannotated evidence');
     // All five no-target scenes: no early finish; countdown automatic at 30s.
     await page.selectOption('#vqCondition', 'NEGATIVE');
     for (const scene of sampleDocument.plan.requiredScenes) {

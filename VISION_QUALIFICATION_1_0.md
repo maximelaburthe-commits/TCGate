@@ -62,6 +62,10 @@ précéder tout essai de la carte concernée. Ne pas remplacer silencieusement u
 | Cartes proches / variantes | Couples et impressions proposés séparément, disponibilité explicite |
 | Faux positifs | Table vide, playmat, main visible, paquet/pile, objets de bureau ; cinq scènes de trente secondes avec arrêt automatique |
 
+Si A se termine sans retrait suivi du retour réel à l'état vide, le bouton
+**Recommencer A** ajoute une nouvelle présentation avant B. Le premier résultat
+reste intact, sans invalidation automatique ; B est lié au nouvel essai de A.
+
 L'UI affiche détection, identification et catégorie de résultat. Une identité
 canonique correcte avec art partagé reste **UNRESOLVED_SHARED_ART** :
 « Carte correctement reconnue · impression exacte non résolue ». Elle ne devient
