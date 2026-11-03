@@ -2199,6 +2199,14 @@ function applyQualityGuard(result,quality) {
 
     const temporal=temporalIdentityGuard(track,result);
 
+    // Qualification-only scalar diagnostics; absent outside the Workspace workflow.
+    window.TCGVisionQualificationDiagnostics?.observeAttempt({
+      result,temporal,temporalEntry:state.identityStability.tracks.get(track.uid),
+      visibleIdentityBeforeRender:state.visibleIdentity,references:state.refs,
+      track,requestStartedAtMs:cropStarted,activeTrackCount:lab.activeTracks().length,
+      thresholds:{normalScore:NORMAL_ACCEPT,normalMargin:NORMAL_MARGIN,lowScore:LOW_ACCEPT,lowMargin:LOW_MARGIN}
+    });
+
     if(temporal.action==='hold') {
       // Keep the current accepted HD card untouched while the new observation is
       // being validated. Do not dispatch a rejection to the product UI.

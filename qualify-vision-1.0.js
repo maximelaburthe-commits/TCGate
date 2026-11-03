@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
+const { stripQualificationDiagnostics } = require('./workspace-production-contract.js');
 
 async function main() {
   const root = __dirname;
@@ -55,9 +56,18 @@ async function main() {
   // cannot masquerade as an engine change or require rewriting source files.
   // Jalon 6A.1 authorises only these three original Workspace presentation
   // files to change. The complete historical 228-file manifest is still
-  // authenticated above; the other 225 engine/Locale/model files stay frozen.
+  // authenticated above. Jalon 6B keeps 224 engine/Locale/model files frozen
+  // byte-for-byte under Git text filters. Identification accepts only its exact
+  // optional diagnostics tap, with every other byte compared to the original.
   const workspaceUxExceptions = new Set(['public/workspace.html', 'public/workspace.js', 'public/workspace.css']);
-  execFileSync('git', ['diff', '--quiet', baseline.productSha, '--', ...baseline.files.filter(file => !workspaceUxExceptions.has(file.path)).map(file => file.path)], { cwd: root, stdio: 'ignore' });
+  const identificationPath = 'public/identification.js';
+  const strictlyFrozenPaths = baseline.files.filter(file => !workspaceUxExceptions.has(file.path) && file.path !== identificationPath).map(file => file.path);
+  if (strictlyFrozenPaths.length !== 224) throw Error('Unexpected strict engine source count');
+  execFileSync('git', ['diff', '--quiet', baseline.productSha, '--', ...strictlyFrozenPaths], { cwd: root, stdio: 'ignore' });
+  const originalIdentification = execFileSync('git', ['show', baseline.productSha + ':' + identificationPath], { cwd: root });
+  const normalizedOriginalIdentification = Buffer.from(originalIdentification.toString('utf8').replace(/\r\n/g, '\n'));
+  const normalizedWorkingIdentification = stripQualificationDiagnostics(fs.readFileSync(path.join(root, identificationPath)));
+  if (!normalizedWorkingIdentification.equals(normalizedOriginalIdentification)) throw Error('Identification changed beyond the exact qualification diagnostics tap');
   let fetchImpl = globalThis.fetch;
   if (fixtureRoot) {
     const dbRoot = fs.realpathSync(fixtureRoot), prefix = registry.manifestUrl.slice(0, registry.manifestUrl.lastIndexOf('/') + 1);

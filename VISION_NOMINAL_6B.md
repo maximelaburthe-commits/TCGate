@@ -78,6 +78,10 @@ puis carte suivante. Entre les essais, attendre « Prêt pour l'essai suivant »
 Le message de retrait reste visible tant que Vision n'est pas neutre.
 Espace actionne le bouton visible uniquement hors champs de saisie, sans
 répétition de touche ni combinaison modificatrice.
+Pendant l'observation, conserver le pointeur sur la carte dans l'aperçu : le
+matcher foreground existant fonctionne au survol de cette carte. Espace permet
+de terminer sans quitter l'aperçu. Les états scalaires du pointeur et des tracks
+aident à distinguer une sortie de survol d'un refus de reconnaissance.
 
 Ne pas recharger la page pendant la session. Exporter les nouveaux fichiers dans
 un autre dossier : ne jamais remplacer les trois exports de baseline.

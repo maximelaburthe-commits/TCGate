@@ -15,7 +15,7 @@ const suites = [
   ['player-locale-test.js'],
   ['vision-locale-test.js'],
   ['cyberpunk-languages-qualification-test.js'],
-  ['vision-qualification-1.0-test.js'], ['workspace-vision-qualification-test.js'], ['vision-qualification-neutral-test.js'], ['vision-nominal-6b-test.js'],
+  ['vision-qualification-1.0-test.js'], ['workspace-vision-qualification-test.js'], ['vision-qualification-neutral-test.js'], ['vision-nominal-6b-test.js'], ['vision-nominal-diagnostics-test.js'],
   ['future-ux-v3.7-test.js'], ['future-ux-room-metadata-test.js'], ['smoke-test-ui-integration.js'],
   ['phone-camera-test.js'], ['phone-camera-diagnostics-test.js'], ['phone-consolidation-1.2c-test.js'],
   ['vision-integrity-test.js'], ['vision-source-provenance-test.js'], ['vision-backpressure-test.js'],

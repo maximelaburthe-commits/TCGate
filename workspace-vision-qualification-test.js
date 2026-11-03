@@ -112,12 +112,48 @@ async function main() {
   const privacy = session({ trials: [{ ...trial(), video: secret, notes: [secret, 'MANUAL_T0'], observations: trial().observations.map(value => ({ ...value, screenshot: secret, sdp: secret, deviceId: secret })) }], environment: { execution: 'AUTOMATED', deviceId: secret, sdp: secret }, media: secret });
   const privateJson = report.stableStringify(report.generate({ ...options, sessions: [privacy] }));
   check(!privateJson.includes(secret)); equal(JSON.parse(privateJson).privacy.mediaRecorded, false);
+  const diagnosticPath = path.join(root, 'public/vision-qualification-diagnostics.js');
+  const diagnosticRef = refFor(selected.cardId);
+  const diagnosticRaw = trial({ neutralBoundary: { requiredMs: 750, confirmedForMs: 1000, deviceId: secret }, attemptDiagnostics: [{
+    attemptId: 1, atMs: 1000, requestStartedAtMs: 500, trackUid: 100, expectedCardId: secret,
+    candidates: [{ rank: 1, cardId: diagnosticRef.cardId, printingId: diagnosticRef.printingId, refId: diagnosticRef.refId, matcherScore: .78, imageUrl: secret }],
+    bestScore: .78, secondScore: .64, margin: .14, matcherAccepted: true, finalAccepted: true,
+    rejectionReason: null, mode: 'normal', quality: { risk: 'normal', clippedFraction: .01, image: secret },
+    temporal: { action: 'render', stableCardId: selected.cardId, pendingCount: 0 }, video: secret, deviceId: secret
+  }] });
+  diagnosticRaw.observations[1].runtimeState = { pointerInsideStage: true, hoveredTrackUid: 42,
+    activeTrackUids: [42], activeTrackCount: 1, matcherBusy: false, matcherQueued: false,
+    temporalEventType: 'stable-established', visibleSource: 'VISIBLE', image: secret, pointer: { x: secret }, deviceId: secret };
+  const diagnosticSession = session({ trials: [diagnosticRaw] });
+  const diagnosticBytes = JSON.stringify(diagnosticSession);
+  const diagnosticReport = report.generate({ ...options, sessions: [diagnosticSession] });
+  equal(diagnosticReport.trials[0].identificationDiagnostics.recorded, 1);
+  equal(diagnosticReport.trials[0].identificationDiagnostics.states.length, 1);
+  same(diagnosticReport.trials[0].identificationDiagnostics.states[0], { atMs: diagnosticRaw.observations[1].atMs,
+    pointerInsideStage: true, hoveredTrackUid: 42, activeTrackUids: [42], activeTrackCount: 1,
+    matcherBusy: false, matcherQueued: false, temporalEventType: 'stable-established', visibleSource: 'VISIBLE' });
+  equal(diagnosticReport.trials[0].identificationDiagnostics.attempts[0].expectedCardId, selected.cardId);
+  equal(diagnosticReport.trials[0].identificationDiagnostics.attempts[0].expectedScore, .78);
+  same(diagnosticReport.trials[0].neutralBoundary, { requiredMs: 750, confirmedForMs: 1000 });
+  equal(diagnosticReport.trials[0].category, 'CORRECT', 'Diagnostics never change the original classifier');
+  equal(diagnosticReport.physicalQualification, 'NOT TESTED');
+  check(!report.stableStringify(diagnosticReport).includes(secret), 'Canonical report cannot export diagnostic media or device data');
+  equal(JSON.stringify(diagnosticSession), diagnosticBytes, 'Reporting never rewrites the source session');
+  const staleDiagnostic = copy(diagnosticRaw); staleDiagnostic.attemptDiagnostics[0].requestStartedAtMs = -1;
+  const staleReport = report.generate({ ...options, sessions: [session({ trials: [staleDiagnostic] })] });
+  equal(staleReport.trials[0].identificationDiagnostics.recorded, 0);
+  equal(staleReport.trials[0].identificationDiagnostics.rejected, 1, 'A stale or invalid request is excluded from the next trial diagnostics');
   const browser = { window: {} }; vm.createContext(browser);
   vm.runInContext(fs.readFileSync(hPath, 'utf8'), browser);
+  vm.runInContext(fs.readFileSync(diagnosticPath, 'utf8'), browser);
+  browser.window.TCGVisionQualificationDiagnostics = browser.TCGVisionQualificationDiagnostics;
   vm.runInContext(fs.readFileSync(reportPath, 'utf8'), browser);
   browser.input = copy({ ...options, sessions: [markedSession] });
   const browserJson = vm.runInContext('window.TCGVisionQualificationReport.stableStringify(window.TCGVisionQualificationReport.generate(input))', browser);
   equal(browserJson, report.stableStringify(marked), 'Browser and Node invoke one pure generator with byte-identical output');
+  browser.input = copy({ ...options, sessions: [diagnosticSession] });
+  equal(vm.runInContext('window.TCGVisionQualificationReport.stableStringify(window.TCGVisionQualificationReport.generate(input))', browser),
+    report.stableStringify(diagnosticReport), 'Diagnostic reports remain byte identical between browser and Node');
   await runtimeContract();
   console.log('WORKSPACE_VISION_QUALIFICATION_ASSERTIONS ' + assertions);
   console.log('WORKSPACE_VISION_QUALIFICATION_TEST PASS');
@@ -142,7 +178,7 @@ async function runtimeContract() {
   vm.runInContext(fs.readFileSync(runtimePath, 'utf8'), sandbox);
   const runtime = window.TCGVisionQualificationRuntime;
   const q = await runtime.attach({ productSha, sampleDocument: sample, environment: { execution: 'AUTOMATED', deviceId: 'private-runtime-secret' } });
-  equal(events.size, 9); equal(intervals.size, 1);
+  equal(events.size, 10); equal(intervals.size, 1);
   await rejects(() => runtime.attach({ productSha, sampleDocument: sample }), /already attached/);
   let p = q.getProgress(); equal(p.active, null); equal(p.trials.length, 0); equal(p.plan.sample.length, 15);
   p.plan.sample[0].cardId = 'mutated'; equal(q.getProgress().plan.sample[0].cardId, selected.cardId);

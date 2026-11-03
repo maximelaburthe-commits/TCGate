@@ -136,7 +136,7 @@
       const detector = root.TCGVisionEngine?.getSnapshot?.();
       if (!runtime?.libraryReady || !runtime.matcherWorker?.ready || !detectorRunning(detector)) throw Error('Démarrez la caméra, la détection et l’identification dans ce Vision Lab avant la qualification.');
       if (runtime.gameId !== 'cyberpunk' || runtime.playerLocale !== 'en' || runtime.visionReferenceCount !== 229 || runtime.librarySize !== 229 || runtime.visionLocales?.length !== 1 || runtime.visionLocales[0] !== 'en') throw Error('Qualification réservée au corpus actif Cyberpunk EN · 229 références.');
-      for (const src of ['/vision-qualification-harness.js', '/vision-qualification-report.js', '/vision-qualification-runtime.js']) await loadScript(src);
+      for (const src of ['/vision-qualification-harness.js', '/vision-qualification-diagnostics.js', '/vision-qualification-report.js', '/vision-qualification-runtime.js']) await loadScript(src);
       sampleUrl = RAW_ROOT + productSha + '/VISION_QUALIFICATION_SAMPLE.json';
       let fetched;
       try { const response = await root.fetch(sampleUrl, { cache: 'no-store', redirect: 'error', credentials: 'omit' }); if (!response.ok) throw Error('Sample absent'); fetched = await response.json(); }

@@ -6,7 +6,8 @@ Ouvrir `/workspace.html` sur Railway Test, puis **Vision Lab**. Démarrer la
 caméra et la détection, inspecter la source Production Cyberpunk EN et démarrer
 l'identification. Attendre les **229 références** prêtes. Le matcher du Lab
 existant s'active au survol de la zone caméra : conserver le pointeur dans cette
-zone pendant la présentation des cartes.
+zone, sur la carte, pendant sa présentation. Espace permet de terminer sans
+quitter cet aperçu.
 
 Ouvrir **Qualification Vision 1.0**, lire l'avertissement de rechargement,
 confirmer l'utilisation de vraies cartes, puis cliquer **Préparer la
@@ -26,9 +27,12 @@ versionné. Les identifiants restent dans les diagnostics repliables.
 1. Cliquer **Démarrer l'essai**, puis présenter la carte proposée.
 2. Observer la fenêtre conseillée de dix secondes et cliquer **Terminer
    l'essai**. Revenir à une scène vide entre les essais.
-3. Cliquer **Essai suivant** ; après trois essais, **Carte suivante**.
-4. Une fois les 45 essais nominaux enregistrés, choisir les sections
-   complémentaires. Chaque sous-échantillon est proposé automatiquement.
+3. Attendre la remise à zéro confirmée de Vision, puis cliquer **Essai suivant** ;
+   après trois essais, **Carte suivante**. La mémoire du moteur expire naturellement.
+4. Pour le Jalon 6B, refaire uniquement les **45 essais nominaux physiques**.
+   Les sections complémentaires restent bloquées tant que les quinze cartes
+   n'ont pas chacune trois essais valides et que le nominal ne satisfait pas
+   correct ≥95 % et wrong ≤1 %. Aucun essai automatisé ne débloque ce gate.
 5. Terminer l'observation active, puis exporter la session et les rapports.
 
 Un mauvais résultat reste enregistré. **Marquer cet essai invalide** ajoute
@@ -133,9 +137,14 @@ Baseline moteur : `7baeb9844ac8a2a68b2c5a38011003514bab5f98`.
 `VISION_QUALIFICATION_ENGINE_BASELINE.json` conserve les 228 fichiers originaux
 publics/modèles et leurs objets Git authentifiés. Le Jalon 6A.1 autorise seulement
 trois exceptions de présentation : workspace.html, workspace.js et workspace.css.
-Les **225 autres fichiers originaux restent gelés**. Les modules de qualification
-sont distincts ; aucune modification de détection, scoring, seuils, ranking,
-matcher, preprocessing, smoothing, backpressure, corpus, cache ou Locale.
+Le Jalon 6B conserve **224 autres fichiers originaux strictement gelés** et
+autorise dans identification.js un seul point d'observation optionnel exact.
+Le fichier complet après retrait de ce seul point reste identique à la baseline ;
+les 79 fonctions protégées et constantes gardent leurs empreintes.
+Les modules de qualification sont distincts ; aucune modification de détection,
+scoring, seuils, ranking, matcher, preprocessing, smoothing, backpressure, corpus,
+cache ou Locale. Les diagnostics ne contiennent que des valeurs scalaires,
+les candidats existants et les états runtime disponibles, sans média.
 Le Workspace charge le pont d'observation déjà existant avant l'identification,
 afin de lire les références du worker sans reconstruire l'index.
 
@@ -169,6 +178,11 @@ Le Jalon 6A.1 livre son orchestration Workspace. Les tests navigateur utilisent
 des appareils synthétiques, des identités fixtures et une horloge accélérée :
 ils restent AUTOMATED et ne certifient pas la reconnaissance de cartes physiques.
 
-**PHYSICAL QUALIFICATION: NOT TESTED.**
+Le premier passage physique de Vision Qualification 1.0 est conservé comme
+baseline nominale FAIL : 45 essais, 43 valides, 11 corrects et 7 comportant une
+mauvaise identité. Voir [Vision 6B](VISION_NOMINAL_6B.md) pour les empreintes,
+le diagnostic et la comparaison. Les trois exports d'origine restent intacts.
+
+**NOUVELLE CAMPAGNE NOMINALE 6B : NOT TESTED.**
 
 **TCGATE VISION QUALIFICATION 1.0 NOT YET QUALIFIED**

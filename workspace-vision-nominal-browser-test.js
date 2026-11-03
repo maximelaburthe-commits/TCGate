@@ -2,6 +2,7 @@
 // UI-only synthetic observations remain AUTOMATED; they never qualify cards.
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const fs = require('node:fs');
 const { chromium } = require(process.env.WORKSPACE_PLAYWRIGHT_PATH || 'playwright');
 const helper = require('./workspace-vision-qualification-browser-test.js');
 const { startBridgeFixture } = require(path.join(helper.root, 'report-email-bridge-fixture.js'));
@@ -30,6 +31,10 @@ async function viewportCase(browser, fixture, pinned, actualContext, width, heig
     await page.waitForFunction(() => window.TCGWorkspaceVisionQualification.getState().prepared);
     await helper.advance(page, 1250);
     let layout = await geometry(page), initial = await helper.state(page);
+    if (process.env.WORKSPACE_SCREENSHOT_DIR) {
+      fs.mkdirSync(process.env.WORKSPACE_SCREENSHOT_DIR, { recursive: true });
+      await page.screenshot({ path: path.join(process.env.WORKSPACE_SCREENSHOT_DIR, 'vision-6b-console-' + width + '.png') });
+    }
     equal(layout.count, 1, width + ': exactly one existing camera element');
     check(await videoHandle.evaluate(video => video === document.querySelector('#vqCameraMount #remoteVideo')), width + ': original live video node is reused');
     for (const key of ['console', 'camera', 'card', 'action', 'bar']) check(inside(layout[key], layout.viewport), width + ': ' + key + ' is visible within viewport');

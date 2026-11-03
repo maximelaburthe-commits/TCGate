@@ -1,10 +1,11 @@
 ﻿(function initQualificationReport(root, factory) {
   'use strict';
   const harness = typeof module === 'object' && module.exports ? require('./vision-qualification-harness.js') : root.TCGateVisionQualification;
-  const api = factory(harness);
+  const diagnostics = typeof module === 'object' && module.exports ? require('./vision-qualification-diagnostics.js') : root.TCGVisionQualificationDiagnostics;
+  const api = factory(harness, diagnostics);
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.TCGVisionQualificationReport = api;
-})(typeof window !== 'undefined' ? window : globalThis, function createQualificationReport(harness) {
+})(typeof window !== 'undefined' ? window : globalThis, function createQualificationReport(harness, diagnostics) {
   'use strict';
   // Shared canonical orchestration only. All classifications, metrics, gates,
   // corpus checks and sanitisation remain in the existing pure harness.
@@ -213,6 +214,16 @@
     // the session. The legacy harness intentionally omits ancillary plan fields.
     report.substitutions = copy(declared.substitutions);
     if (environments.length > 1) report.sessionEnvironments = environments;
+    for (const trial of report.trials) {
+      const raw = trials.find(value => value.trialId === trial.trialId);
+      if (list(raw.attemptDiagnostics).length && !diagnostics?.sanitizeTrialDiagnostics) throw Error('Load the shared qualification diagnostics before reporting attempts');
+      trial.identificationDiagnostics = diagnostics?.sanitizeTrialDiagnostics(raw, context) ||
+        { attempts: [], states: [], recorded: 0, rejected: 0, truncated: false, dropped: 0 };
+      const boundary = raw.neutralBoundary;
+      if (boundary?.requiredMs === 750 && Number.isFinite(boundary.confirmedForMs) && boundary.confirmedForMs >= 750) {
+        trial.neutralBoundary = { requiredMs: 750, confirmedForMs: boundary.confirmedForMs };
+      }
+    }
     report.nominalQualification = nominalGate(report);
     return report;
   }

@@ -12,9 +12,27 @@
   const NEUTRAL_WINDOW_MS = 750;
   const NEUTRAL_MAX_GAP_MS = 750;
   const RESET_EVENTS = ['tcg-camera-state', 'tcg-vision-state', 'tcg-vision-input-state', 'tcg-vision-geometry'];
-  const EVENTS = ['tcg-tracks-updated', 'tcg-identification-result', 'tcg-table-state-updated', 'tcg-identification-context', 'tcg-identification-visible'];
+  const EVENTS = ['tcg-tracks-updated', 'tcg-identification-result', 'tcg-table-state-updated', 'tcg-identification-context', 'tcg-identification-visible', 'tcg-identification-attempt'];
+  const MAX_ATTEMPT_DIAGNOSTICS = 2000;
+  const TEMPORAL_EVENT_TYPES = ['stable-established', 'stable-held', 'hold-expired', 'switch-confirmed', 'switch-expired', 'switch-pending'];
   function copy(value) { return JSON.parse(JSON.stringify(value)); }
   function finite(value) { return typeof value === 'number' && Number.isFinite(value); }
+  function trackUid(value) { return Number.isSafeInteger(value) && value >= 0 ? value : null; }
+  function nullableBoolean(value) { return typeof value === 'boolean' ? value : null; }
+  function runtimeState(snapshot, detection, chosen) {
+    // Observation-only scalars. Never spread an engine snapshot into an export:
+    // native snapshots can contain media, names, geometry and image locations.
+    const tracks = Array.isArray(detection.tracking?.activeTracks) ? detection.tracking.activeTracks : null;
+    return {
+      pointerInsideStage: nullableBoolean(snapshot.pointerInsideStage),
+      hoveredTrackUid: trackUid(snapshot.hoveredTrack?.uid),
+      activeTrackUids: tracks ? [...new Set(tracks.map(track => trackUid(track?.uid)).filter(value => value !== null))].sort((a, b) => a - b).slice(0, 32) : null,
+      activeTrackCount: Number.isSafeInteger(detection.activeCards) && detection.activeCards >= 0 ? detection.activeCards : null,
+      matcherBusy: nullableBoolean(snapshot.matcherWorker?.busy), matcherQueued: nullableBoolean(snapshot.matcherWorker?.queued),
+      temporalEventType: TEMPORAL_EVENT_TYPES.includes(snapshot.identityStability?.last?.type) ? snapshot.identityStability.last.type : null,
+      visibleSource: ['VISIBLE', 'FOREGROUND', 'TABLE_MEMORY'].includes(chosen?.source) ? chosen.source : null
+    };
+  }
   function detectorRunning(snapshot) {
     if (!snapshot?.modelReady) return false;
     if (snapshot.active === true) return true;
@@ -303,6 +321,7 @@
         candidateIds: [...new Set(candidateRefs.map(ref => ref.refId))].sort(),
         locale: 'en', candidatePrintingIds: chosen ? [...chosen.ref.candidatePrintingIds] : [],
         recognitionMode: chosen?.ref.recognitionMode || null,
+        runtimeState: runtimeState(snapshot, detection, chosen),
         validityErrors: [...new Set(errors)].sort()
       };
       if (acceptedBest && finite(best.matcherScore)) { out.score = best.matcherScore; out.scoreKind = 'matcherScore'; }
@@ -371,7 +390,9 @@
           stableWindowMs: spec.stableWindowMs ?? 1000,
           maxObservationGapMs: spec.maxObservationGapMs ?? 1000
         }),
-        t0Ms: now(), observations: [], neutralBoundary, notes: ['MANUAL_T0', ...(spec.notes || [])]
+        t0Ms: now(), observations: [], neutralBoundary,
+        ...(!scene ? { attemptDiagnostics: [], attemptDiagnosticsDropped: 0, attemptDiagnosticsTruncated: false } : {}),
+        notes: ['MANUAL_T0', ...(spec.notes || [])]
       };
       neutralSince = null;
       sample();
@@ -387,8 +408,24 @@
       return copy(result);
     }
     function eventSample(event) {
-      if (event?.type === 'tcg-identification-result') lastForegroundEvent = event.detail || null;
+      if (event?.type === 'tcg-identification-result' && (!active || !finite(event.detail?.at) || event.detail.at >= active.t0Ms)) lastForegroundEvent = event.detail || null;
       if (disposed) return;
+      if (event?.type === 'tcg-identification-attempt' && active && !active.scene) {
+        const input = event.detail;
+        const sanitizer = root.TCGVisionQualificationDiagnostics?.sanitizeAttempt;
+        // Completion time alone cannot associate a request with B. Reject an
+        // A-origin request even when its asynchronous completion arrives later.
+        const stale = !finite(input?.requestStartedAtMs) || input.requestStartedAtMs < active.t0Ms || boundaryTrackUids.has(String(input.trackUid));
+        const value = !stale && sanitizer ? sanitizer(input, { expectedCardId: active.expectedCardId,
+          references: context.references, t0Ms: active.t0Ms, endMs: now() }) : null;
+        if (!value) active.attemptDiagnosticsDropped++;
+        else if (active.attemptDiagnostics.length >= MAX_ATTEMPT_DIAGNOSTICS) {
+          active.attemptDiagnosticsTruncated = true; active.attemptDiagnosticsDropped++;
+        } else if (!active.attemptDiagnostics.some(previous => previous.attemptId === value.attemptId &&
+            previous.requestStartedAtMs === value.requestStartedAtMs && previous.trackUid === value.trackUid)) {
+          active.attemptDiagnostics.push(value);
+        }
+      }
       if (!active) { getNeutralState(); return; }
       if (queued) return;
       queued = true;

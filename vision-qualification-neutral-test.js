@@ -25,6 +25,7 @@ async function main() {
   const detector = { active: true, modelReady: true, activeCards: 0, rawDetections: 0, tracking: { activeTracks: [] } };
   const table = { entries: [], workerBusy: false };
   const window = { TCGateVisionQualification: harness,
+    TCGVisionQualificationDiagnostics: require(process.env.VISION_QUALIFICATION_DIAGNOSTICS_PATH || path.join(root, 'public/vision-qualification-diagnostics.js')),
     TCGIdentificationLab: { getSnapshot: () => copy(state), clearVisibleForHandoff: () => { state.visibleIdentity = null; clears++; } },
     TCGVisionEngine: { getSnapshot: () => copy(detector) }, TCGDetectionLab: { state: local }, TCGTableStateEngine: { getSnapshot: () => copy(table) },
     TCGTableStateBridge: { getRefs: () => refs.map(ref => ({ ...ref, image: ref.refId })) },
@@ -61,17 +62,56 @@ async function main() {
   equal(local.identityMemoryMs, originalMemoryMs); equal(JSON.stringify(local.lostTracks), JSON.stringify(originalMemory), 'Observer never mutates lost identities');
   const b = q.startTrial(spec(1));
   equal(b.observations[0].identifiedCardId, null, 'B T0 has no identity'); equal(b.neutralBoundary.requiredMs, 750);
+  const initialRuntimeState = b.observations[0].runtimeState;
+  equal(initialRuntimeState.pointerInsideStage, null, 'Absent pointer API remains unknown');
+  equal(initialRuntimeState.hoveredTrackUid, null); equal(initialRuntimeState.activeTrackUids.length, 0);
+  equal(initialRuntimeState.matcherBusy, false); equal(initialRuntimeState.temporalEventType, null); equal(initialRuntimeState.visibleSource, null);
+  const attempt = extra => listeners.get('tcg-identification-attempt')({ type: 'tcg-identification-attempt', detail: { attemptId: 1,
+    atMs: clock, requestStartedAtMs: clock, trackUid: 2, matcherAccepted: true, finalAccepted: true,
+    candidates: [{ ...refs[1], matcherScore: .7 }], bestScore: .7, secondScore: .4, margin: .3,
+    quality: { risk: 'normal' }, temporal: { action: 'render' }, media: 'private-media-token', ...extra } });
+  attempt({ requestStartedAtMs: b.t0Ms - 1 });
+  attempt({ trackUid: 1 });
+  equal(q.getActiveObservation().attemptDiagnostics.length, 0, 'Late A-origin diagnostics do not become B attempts');
+  equal(q.getActiveObservation().attemptDiagnosticsDropped, 2);
+  attempt();
+  const capturedAttempt = q.getActiveObservation().attemptDiagnostics[0];
+  equal(capturedAttempt.expectedCardId, refs[1].cardId); equal(capturedAttempt.expectedRank, 1); equal(capturedAttempt.expectedScore, .7);
+  check(!JSON.stringify(capturedAttempt).includes('private-media-token'), 'Attempt diagnostics contain no arbitrary media fields');
   // A late retained display update from UID 1 must never become a B identity.
   visible(0, 1); tick();
   equal(q.getActiveObservation().observations.at(-1).identifiedCardId, null, 'Pre-boundary A UID cannot be attributed to B');
   empty(); visible(1, 2); detector.activeCards = 1; detector.tracking.activeTracks = [{ uid: 2 }]; local.tracks = [{ uid: 2 }];
-  tick(5); const finished = q.endTrial();
+  state.pointerInsideStage = true; state.identityStability = { last: { type: 'stable-established', imageUrl: 'private-runtime-state-token' } };
+  state.hoveredTrack.image = 'private-runtime-state-token'; detector.tracking.activeTracks[0].crop = 'private-runtime-state-token';
+  tick(5);
+  const runtimeState = q.getActiveObservation().observations.at(-1).runtimeState;
+  equal(runtimeState.pointerInsideStage, true); equal(runtimeState.hoveredTrackUid, 2);
+  equal(JSON.stringify(runtimeState.activeTrackUids), '[2]'); equal(runtimeState.activeTrackCount, 1);
+  equal(runtimeState.temporalEventType, 'stable-established'); equal(runtimeState.visibleSource, 'VISIBLE');
+  check(!JSON.stringify(runtimeState).includes('private-runtime-state-token'), 'Runtime-state export never copies raw track, geometry or image fields');
+  detector.tracking.activeTracks = [...Array.from({ length: 40 }, (_, index) => ({ uid: 140 - index })), { uid: 2 }, { uid: 2 }, { uid: 'private-runtime-state-token' }];
+  clock += 100; q.sample();
+  const boundedTracks = q.getActiveObservation().observations.at(-1).runtimeState.activeTrackUids;
+  equal(boundedTracks.length, 32); equal(boundedTracks[0], 2); equal(boundedTracks[1], 101);
+  check(boundedTracks.every((uid, index) => Number.isSafeInteger(uid) && (index === 0 || uid > boundedTracks[index - 1])), 'Track diagnostics are bounded, deduplicated and numerically sorted');
+  detector.tracking.activeTracks = [{ uid: 2 }];
+  const oldTracking = detector.tracking; delete detector.tracking;
+  delete state.matcherWorker.busy; delete state.matcherWorker.queued; state.pointerInsideStage = 'private-runtime-state-token';
+  state.identityStability.last.type = 'private-runtime-state-token'; clock += 100; q.sample();
+  const missingRuntimeState = q.getActiveObservation().observations.at(-1).runtimeState;
+  equal(missingRuntimeState.activeTrackUids, null); equal(missingRuntimeState.matcherBusy, null); equal(missingRuntimeState.matcherQueued, null);
+  equal(missingRuntimeState.pointerInsideStage, null); equal(missingRuntimeState.temporalEventType, null);
+  detector.tracking = oldTracking; state.matcherWorker.busy = false; state.matcherWorker.queued = false;
+  const finished = q.endTrial();
   equal(finished.expectedCardId, refs[1].cardId);
   equal(finished.observations.filter(item => item.identifiedCardId === refs[0].cardId).length, 0);
   const result = q.exportReport().trials[0]; equal(result.category, 'CORRECT'); equal(result.wrongCardEvents, 0);
   throws(() => q.startTrial(spec(2)), /confirmed neutral/);
   empty(); state.visibleIdentity = null; local.lostTracks = []; tick(4);
   q.startTrial(spec(2));
+  attempt({ attemptId: 2, trackUid: 40, candidates: [{ ...refs[0], matcherScore: .7 }] });
+  equal(q.getActiveObservation().attemptDiagnostics[0].candidates[0].cardId, refs[0].cardId, 'Fresh wrong-A matcher result is preserved rather than blacklisted by card ID');
   visible(0, 40); detector.activeCards = 1; local.tracks = [{ uid: 40 }]; tick(5); q.endTrial();
   equal(q.exportReport().trials[1].category, 'WRONG_IDENTIFICATION', 'Fresh B-origin wrongly matched to card A remains a real wrong identification');
   empty(); state.visibleIdentity = null; local.lostTracks = [];
