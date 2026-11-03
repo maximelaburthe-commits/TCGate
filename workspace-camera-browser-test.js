@@ -55,7 +55,9 @@ async function run(){
   await page.evaluate(()=>window.__previousStream=window.TCGDetectionLab.state.stream);await page.selectOption('#visionCameraSelect',devices[1].id);
   await page.waitForFunction(id=>window.TCGDetectionLab.state.stream?.getVideoTracks()[0].getSettings().deviceId===id,devices[1].id);
   assert(await page.evaluate(()=>window.__previousStream.getTracks().every(t=>t.readyState==='ended')));assert.equal(await page.evaluate(()=>window.__cameraCalls.at(-1).video.deviceId.exact),devices[1].id);
-  await page.selectOption('#visionResolutionSelect','640x480');await page.waitForFunction(()=>document.querySelector('#remoteVideo').videoWidth===640);await checkGeometry();
+  // startCamera awaits video.play() before syncStageSize; videoWidth can update before that promise settles.
+  // Wait for the actual geometry update, then keep every original strict geometry assertion.
+  await page.selectOption('#visionResolutionSelect','640x480');await page.waitForFunction(()=>{const v=document.querySelector('#remoteVideo'),o=document.querySelector('#visionOverlay');return v.videoWidth===640&&v.videoHeight>0&&o.width===v.videoWidth&&o.height===v.videoHeight;},null,{timeout:10000});await checkGeometry();
   await page.evaluate(()=>window.__lastStream=window.TCGDetectionLab.state.stream);await page.click('#visionCameraButton');await page.waitForFunction(()=>!window.TCGDetectionLab.state.stream);
   assert(await page.evaluate(()=>window.__lastStream.getTracks().every(t=>t.readyState==='ended')));
   // Browser camera failure paths pass through the real Core handler, with actionable UI messages.
