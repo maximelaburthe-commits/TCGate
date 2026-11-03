@@ -16,6 +16,40 @@
   const id = value => typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9:_.-]{0,179}$/.test(value);
   const stableStringify = harness.stableStringify;
   const lexical = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+  const NOMINAL_BASELINE = Object.freeze({
+    productSha: '062d6089fdfe5d778d65014642d909e8273fcc9a',
+    label: 'PHYSICAL NOMINAL FAIL — ORIGINAL EXPORTS PRESERVED',
+    trials: 45, valid: 43, invalid: 2, correct: 11, wrong: 7, detected: 43,
+    correctIdentificationRate: 100 * 11 / 43, wrongIdentificationRate: 100 * 7 / 43, detectionRate: 100,
+    categories: Object.freeze({ CORRECT: 11, NOT_IDENTIFIED: 18, UNSTABLE: 10, WRONG_IDENTIFICATION: 4, INVALID_TEST: 2, NO_DETECTION: 0 }),
+    exports: Object.freeze([
+      Object.freeze({ name: 'vision-qualification-session.json', sha256: '49f6c00a09ae40db4f6fa6d7b62827956b67af4f992b74161b9f69a98f0fa5f9' }),
+      Object.freeze({ name: 'vision-qualification-reading-report.json', sha256: '593ee46ae23585e88a2d015aecee1088b040680832a873f927a28a3264c39541' }),
+      Object.freeze({ name: 'vision-qualification-1.0.json', sha256: '593ee46ae23585e88a2d015aecee1088b040680832a873f927a28a3264c39541' })
+    ])
+  });
+  // A separate nominal gate never promotes the full qualification verdict.
+  // Counts and rates come from the existing harness, including every failure.
+  function nominalGate(report) {
+    const metrics = report?.conditions?.NOMINAL?.physical;
+    const expected = list(report?.actualSample);
+    const trials = list(report?.trials).filter(trial => trial.condition === 'NOMINAL' && trial.provenance === 'physical' &&
+      trial.evidence === 'OPERATOR_DECLARED_REAL_CARDS' && trial.category !== 'INVALID_TEST');
+    const coverage = expected.map(card => ({ cardId: card.cardId, printingId: card.printingId,
+      valid: trials.filter(trial => trial.expectedCardId === card.cardId && trial.expectedPrintingId === card.printingId).length }));
+    const sampleValid = coverage.length === 15 && new Set(coverage.map(card => card.cardId)).size === 15;
+    const complete = sampleValid && coverage.every(card => card.valid === 3) && trials.length === 45 && metrics?.valid === 45;
+    const correct = metrics?.correct || 0, wrong = metrics?.wrongIdentification || 0, valid = metrics?.valid || 0;
+    const correctIdentificationRate = valid ? metrics.correctIdentificationRate : null;
+    const wrongIdentificationRate = valid ? metrics.wrongIdentificationRate : null;
+    const ready = complete && correctIdentificationRate >= 95 && wrongIdentificationRate <= 1;
+    return { ready, status: ready ? 'VISION NOMINAL READY FOR FULL QUALIFICATION' : complete ? 'FAIL' : 'PENDING',
+      requiredValid: 45, valid, correct, wrong, invalid: metrics?.invalid || 0, total: metrics?.total || 0,
+      correctIdentificationRate, wrongIdentificationRate, minimumCorrectPercent: 95, maximumWrongPercent: 1,
+      completedCards: coverage.filter(card => card.valid === 3).length, coverage,
+      baseline: copy(NOMINAL_BASELINE), currentProductSha: report?.productSha || null,
+      fullQualificationVerdict: report?.verdict || 'NOT YET QUALIFIED' };
+  }
   function normalizedReferences(input) {
     return list(input).map(ref => ({ refId: ref.refId, cardId: ref.cardId, printingId: ref.printingId || null,
       referencePrintingId: ref.referencePrintingId || null, candidatePrintingIds: [...list(ref.candidatePrintingIds)].sort(),
@@ -179,7 +213,8 @@
     // the session. The legacy harness intentionally omits ancillary plan fields.
     report.substitutions = copy(declared.substitutions);
     if (environments.length > 1) report.sessionEnvironments = environments;
+    report.nominalQualification = nominalGate(report);
     return report;
   }
-  return Object.freeze({ generate, canonicalContext, canonicalPlan, declarations, sameReferences, stableStringify, INVALIDATION_REASONS });
+  return Object.freeze({ generate, canonicalContext, canonicalPlan, declarations, sameReferences, stableStringify, INVALIDATION_REASONS, nominalGate, NOMINAL_BASELINE });
 });

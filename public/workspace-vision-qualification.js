@@ -10,12 +10,29 @@
   const SCENE = { EMPTY_TABLE: 'Table vide', PLAYMAT: 'Playmat', VISIBLE_HAND: 'Main visible', CLOSED_DECK: 'Paquet / pile', DESK_OBJECTS: 'Objets de bureau' };
   const RESULT = { CORRECT: 'Correct', NO_DETECTION: 'Non détectée', NOT_IDENTIFIED: 'Non identifiée', WRONG_IDENTIFICATION: 'Mauvaise identification', UNSTABLE: 'Instable', INVALID_TEST: 'Essai invalide' };
   let q = null, documentSample = null, productSha = null, sampleUrl = null, preparing = null, runPrefix = null;
-  let immutableContext = null, activeJob = null;
+  let immutableContext = null, activeJob = null, operating = false, cameraHome = null, cachedNominalGate = { ready: false, status: 'PENDING' };
   const importedSessions = [], importedIndexes = [];
   let selection = 'NOMINAL', pendingAdvance = false, lastResultId = null, activeDeadline = null, autoStop = null, lastError = '';
   const scriptLoads = new Map();
   const empty = () => ({ active: null, trials: [], scenes: [], plan: { substitutions: [], variantAvailability: [] } });
   const session = () => q ? q.getProgress() : empty();
+  function neutralState() {
+    return q?.getNeutralState?.() || { ready: false, reason: 'NEUTRAL_GUARD_UNAVAILABLE', remainingMs: 750 };
+  }
+  function setOperating(value) {
+    operating = Boolean(value && q && !$('panel-lab').hidden);
+    const feed = $('opponentFeed');
+    if (operating && feed) {
+      if (!cameraHome) { cameraHome = root.document.createComment('Vision Lab camera home'); feed.before(cameraHome); }
+      $('vqCameraMount').append(feed);
+    } else if (cameraHome && feed) cameraHome.after(feed);
+    root.document.body.classList.toggle('qualification-operating', operating);
+    root.document.documentElement.classList.toggle('qualification-operating', operating);
+    $('vqWorkflow').hidden = !operating;
+    $('vqResume').hidden = !q || operating;
+    if (operating) { $('vqWorkflow').tabIndex = -1; $('vqWorkflow').focus({ preventScroll: true }); }
+    root.dispatchEvent(new root.Event('resize'));
+  }
   function detectorRunning(snapshot) {
     if (!snapshot?.modelReady) return false;
     if (snapshot.active === true) return true;
@@ -23,8 +40,8 @@
     return local?.detecting === true && Boolean(local.stream?.getVideoTracks?.().some(track => track.readyState === 'live'));
   }
   const node = (tag, value, parent) => { const e = root.document.createElement(tag); if (value != null) e.textContent = String(value); if (parent) parent.append(e); return e; };
-  function fail(error) { lastError = error?.message || String(error); $('vqError').textContent = lastError; }
-  function clearError() { lastError = ''; $('vqError').textContent = ''; }
+  function fail(error) { lastError = error?.message || String(error); $('vqError').textContent = lastError; $('vqConsoleError').textContent = lastError; }
+  function clearError() { lastError = ''; $('vqError').textContent = ''; $('vqConsoleError').textContent = ''; }
   function loadScript(src) {
     if (!scriptLoads.has(src)) scriptLoads.set(src, new Promise((resolve, reject) => {
       const s = root.document.createElement('script'); s.src = src;
@@ -99,8 +116,9 @@
     const cards = documentSample.sample.filter(card => jobs.filter(job => job.sampleId === card.sampleId).every(job => completed(job, state))).length;
     return { count, total: jobs.length, cards };
   }
+  function nominalGate() { return cachedNominalGate; }
   function setReady(ready) {
-    $('vqWorkflow').hidden = !ready; $('vqPrepare').disabled = ready || Boolean(preparing);
+    $('vqWorkflow').hidden = !ready || !operating; $('vqPrepare').disabled = ready || Boolean(preparing);
     $('vqPhysicalConfirm').disabled = ready || Boolean(preparing);
   }
   async function prepare() {
@@ -132,7 +150,7 @@
       runPrefix = 'vq-' + [...root.crypto.getRandomValues(new Uint32Array(2))].map(value => value.toString(16).padStart(8, '0')).join('');
       buildSampleList(); buildConditions(); buildVariantAvailability();
       $('vqStatus').textContent = 'Qualification prête'; $('vqCorpus').textContent = 'Cyberpunk · EN · 150 cartes · 229 références';
-      setReady(true); render(); return q;
+      setReady(true); setOperating(true); render(); return q;
     })();
     try { return await preparing; }
     catch (error) { fail(error); $('vqStatus').textContent = 'Qualification indisponible'; throw error; }
@@ -191,13 +209,37 @@
     $('vqPrintingResult').textContent = value.printingAssessment === 'UNRESOLVED_SHARED_ART' ? (value.category === 'CORRECT' ? 'Carte correctement reconnue · impression exacte non résolue (art partagé).' : 'Impression exacte non résolue (art partagé).') : value.printingAssessment === 'UNRESOLVED_PRINTING' ? 'Impression exacte non résolue.' : '';
     const ms = n => typeof n === 'number' ? Math.round(n) + ' ms' : 'non observée';
     $('vqLatency').textContent = raw.scene ? 'Durée : ' + (value.durationMs / 1000).toFixed(1) + ' s' : 'Détection : ' + ms(value.detectionLatency) + ' · Identification : ' + ms(value.identificationLatency);
-    $('vqResultDiagnostic').textContent = JSON.stringify(value, null, 2);
+    const diagnostic = showAttemptDiagnostic(raw);
+    $('vqResultDiagnostic').textContent = JSON.stringify({ ...value, identificationAttempts: diagnostic }, null, 2);
     $('vqInvalidate').disabled = Boolean(raw.scene || invalidated(raw, state));
     $('vqResultPanel').hidden = false;
+    $('vqCompactResult').textContent = $('vqResult').textContent + ' · ' + $('vqLatency').textContent;
+  }
+  function showAttemptDiagnostic(raw) {
+    const diagnostic = root.TCGVisionQualificationDiagnostics?.sanitizeTrialDiagnostics(raw, immutableContext) || { attempts: [] };
+    const last = diagnostic.attempts.at(-1), score = value => typeof value === 'number' ? value.toFixed(3) : '—';
+    $('vqCompactDiagnostic').textContent = last ? 'Score ' + score(last.bestScore) + ' · attendu ' + (last.expectedRank || 'hors candidats') + ' / ' + score(last.expectedScore) + ' · marge ' + score(last.margin) + ' · ' + (last.rejectionReason || (last.finalAccepted ? 'accepté' : 'en attente')) + (last.temporal?.action ? ' · ' + last.temporal.action : '') : '';
+    return diagnostic;
+  }
+  function renderControls(activeOverride) {
+    if (!q) return;
+    const active = activeOverride === undefined ? q.getActiveObservation() : activeOverride;
+    const neutral = active ? { ready: false } : neutralState();
+    const needsNeutral = !active;
+    const reset = neutral.reason === 'TRACKING_RESET_NEW_SESSION_REQUIRED' || neutral.blockers?.includes('TRACKING_RESET_NEW_SESSION_REQUIRED');
+    const text = active ? 'Observation en cours' : reset ? 'Tracking réinitialisé — exportez la session puis rechargez et préparez une nouvelle session.' : neutral.ready ? 'Prêt pour l’essai suivant' : 'Retirez la carte précédente — attente de remise à zéro de Vision…';
+    $('vqNeutralStatus').textContent = text;
+    for (const id of ['vqStart', 'vqNext', 'vqRetrySwitch']) $(id).disabled = needsNeutral && !neutral.ready;
+    for (const button of $('vqActions').querySelectorAll('button')) button.classList.remove('primary');
+    const primary = [...$('vqActions').querySelectorAll('button')].find(button => !button.hidden);
+    if (primary) primary.classList.add('primary');
+    $('vqControlBar').dataset.neutralReady = String(Boolean(neutral.ready));
+    $('vqControlBar').dataset.active = String(Boolean(active));
   }
   function render() {
     if (!q) return;
     const state = session(), jobs = buildJobs(state), nominal = nominalProgress(state), active = state.active;
+    if (!active) cachedNominalGate = root.TCGVisionQualificationReport.nominalGate(q.exportReport());
     const nextJob = currentJob(state);
     const retryJob = pendingAdvance ? null : retrySwitchJob(nextJob, state, jobs);
     $('vqStatus').textContent = active ? 'Qualification en cours' : records(state).length ? 'Qualification en cours · observation terminée' : 'Qualification prête';
@@ -208,10 +250,13 @@
       const original = documentSample.sample.find(card => card.sampleId === row.dataset.sampleId), card = activeCard(original, state);
       row.textContent = card.name + ' · ' + card.profile.type + ' · ' + card.profile.color + (card.originalCardId ? ' (remplace ' + original.name + ')' : '');
     }
-    $('vqComplementaryLabel').hidden = nominal.count < nominal.total;
-    for (const option of $('vqCondition').options) option.disabled = Boolean(active) || (option.value !== 'NOMINAL' && nominal.count < nominal.total);
+    const gate = nominalGate(state);
+    $('vqComplementaryLabel').hidden = !gate.ready;
+    $('vqNominalGate').textContent = gate.ready ? 'VISION NOMINAL READY FOR FULL QUALIFICATION · le nominal physique satisfait les seuils de qualification.' : 'Jalon 6B : 45 essais nominaux physiques uniquement. Les conditions complémentaires restent bloquées tant que le nominal réel ne passe pas ≥ 95 % correct et ≤ 1 % de mauvaise identification.';
+    for (const option of $('vqCondition').options) option.disabled = Boolean(active) || (option.value !== 'NOMINAL' && !gate.ready);
     $('vqCondition').disabled = Boolean(active);
     $('vqCondition').value = selection;
+    $('vqConsoleTitle').textContent = 'Qualification Vision 1.0 · ' + LABEL[selection];
     const remaining = jobs.filter(item => item.condition === selection && !unavailable(item, state)).length;
     const finished = jobs.filter(item => item.condition === selection && completed(item, state)).length;
     $('vqSectionProgress').textContent = LABEL[selection] + ' · ' + finished + ' / ' + remaining + ' observations';
@@ -226,10 +271,10 @@
     const lastRaw = records(state).find(record => record.trialId === lastResultId || record.sceneId === lastResultId);
     const previousJob = lastRaw && jobs.find(item => matches(lastRaw, item));
     const job = pendingAdvance && previousJob ? previousJob : retryJob || nextJob;
-    $('vqNext').textContent = previousJob?.condition === 'NOMINAL' && previousJob.repetition === previousJob.total ? 'Carte suivante' : 'Essai suivant';
+    $('vqNext').textContent = lastRaw && !lastRaw.scene && classify(lastRaw, state).category === 'INVALID_TEST' ? 'Nouvelle tentative' : previousJob?.condition === 'NOMINAL' && previousJob.repetition === previousJob.total ? 'Carte suivante' : 'Essai suivant';
     $('vqCurrent').hidden = !job;
     $('vqComplete').hidden = Boolean(job) || pendingAdvance;
-    $('vqComplete').textContent = selection === 'NOMINAL' ? 'Nominal terminé. Passez aux tests complémentaires.' : 'Section terminée ou indisponible. Choisissez la section suivante ; les cas indisponibles restent NOT TESTED.';
+    $('vqComplete').textContent = selection === 'NOMINAL' ? gate.ready ? 'Nominal qualifié. Le reste de la qualification peut être repris.' : 'Nominal terminé. Exportez les preuves pour le diagnostic ; les conditions complémentaires restent bloquées.' : 'Section terminée ou indisponible. Choisissez la section suivante ; les cas indisponibles restent NOT TESTED.';
     $('vqSleeveSetup').hidden = selection !== 'SLEEVE_GLARE';
     $('vqVariantsSetup').hidden = selection !== 'SIMILAR_PRINTINGS';
     if (state.plan.sleeveAvailability) { $('vqSleeveAvailability').value = state.plan.sleeveAvailability; $('vqSleeveAvailability').disabled = true; }
@@ -251,6 +296,9 @@
       $('vqCardName').textContent = job.scene ? SCENE[job.scene] : job.card.name;
       $('vqCardMeta').textContent = job.scene ? 'Aucune carte cible visible pendant toute la scène.' : [job.card.profile?.type, job.card.profile?.color, job.printing ? job.printing.setId + ' · ' + job.printing.number + ' · ' + job.printing.variantKind : null].filter(Boolean).join(' · ');
       $('vqTrialLabel').textContent = [POSITION[job.position] || LABEL[job.condition], job.phase ? 'Carte ' + job.phase : null, job.repetition ? 'Essai ' + job.repetition + ' / ' + job.total + (pendingAdvance ? ' terminé' : '') : null].filter(Boolean).join(' · ');
+      $('vqCameraCard').textContent = [job.card?.name || SCENE[job.scene], $('vqPosition').textContent, $('vqTrialLabel').textContent].filter(Boolean).join(' · ');
+      $('vqCompactCard').textContent = job.card?.name || SCENE[job.scene];
+      $('vqCompactTrial').textContent = $('vqPosition').textContent + ' · ' + $('vqTrialLabel').textContent;
       $('vqSelectionReason').textContent = job.card?.selectionReason || '';
       $('vqCardDiagnostic').textContent = JSON.stringify({ testedBuildSha: productSha, sampleUrl, cardId: job.card?.cardId, printingId: job.card?.printingId, condition: job.condition, position: job.position, variantCase: job.variant?.caseId, pairId: job.pairId, jobKey: job.key, activeTrialId: active?.trialId, substitution: state.plan.substitutions?.find(item => item.originalCardId === job.card?.originalCardId) || null }, null, 2);
       $('vqInstruction').textContent = instructions(job, active, Boolean(stable));
@@ -258,8 +306,13 @@
     }
     if (!active) { $('vqTimer').textContent = 'Aucune observation active'; $('vqTrialProgress').value = 0; }
     if (lastRaw) showResult(lastRaw, state);
+    $('vqCompactProgress').textContent = 'Nominal ' + nominal.count + ' / ' + nominal.total + ' essais · Cartes ' + nominal.cards + ' / ' + documentSample.sample.length;
+    const rate = value => typeof value === 'number' ? (value * 100).toFixed(1) + ' %' : 'NOT TESTED';
+    const baseline = gate.baseline;
+    $('vqBaselineComparison').textContent = (baseline?.valid ? 'Baseline FAIL : correct ' + rate(baseline.correct / baseline.valid) + ' · erreur ' + rate(baseline.wrong / baseline.valid) + ' — ' : '') + 'Nouvelle : ' + (gate.valid ? 'correct ' + rate(gate.correct / gate.valid) + ' · erreur ' + rate(gate.wrong / gate.valid) : 'NOT TESTED');
+    renderControls();
     const errors = active?.observations?.at(-1)?.validityErrors || [];
-    if (errors.length) { lastError = 'Runtime : ' + errors.join(' · '); $('vqError').textContent = lastError; }
+    if (errors.length) fail('Runtime : ' + errors.join(' · '));
   }
   function instructions(job, active, stable) {
     if (job.scene) return 'Préparez la scène « ' + SCENE[job.scene] + ' », sans carte cible. Observez 30 secondes ; l’arrêt sera automatique.';
@@ -295,6 +348,7 @@
   function startObservation() {
     const state = session(), job = currentJob(state);
     if (!job || state.active || pendingAdvance) return;
+    if (selection !== 'NOMINAL' && !nominalGate(state).ready) throw Error('Les conditions complémentaires restent bloquées : le nominal physique doit être qualifié avant de poursuivre.');
     if (job.variant && !state.trials.some(trial => trial.expectedPrintingId === job.printing.printingId) && !state.plan.variantAvailability?.some(item => item.caseId === job.variant.caseId && item.printingId === job.printing.printingId && item.availability === 'AVAILABLE')) throw Error('Confirmez la disponibilité de cette impression avant l’essai.');
     if (job.condition === 'SLEEVE_GLARE' && state.plan.sleeveAvailability !== 'AVAILABLE') throw Error('Indiquez si vous possédez une vraie sleeve avant cet essai.');
     if (job.phase === 'B') {
@@ -303,7 +357,7 @@
       q.startTrial({ ...spec(job, state), previousTrialId: previous.trialId });
     } else if (job.scene) q.startScene(spec(job, state));
     else q.startTrial(spec(job, state));
-    $('vqResultPanel').hidden = true; armTimer(job);
+    $('vqResultPanel').hidden = true; $('vqCompactResult').textContent = ''; $('vqCompactDiagnostic').textContent = ''; armTimer(job);
   }
   function endObservation(automatic = false) {
     const state = session(), active = state.active, job = currentJob(state); if (!active) return;
@@ -330,6 +384,7 @@
   function tick() {
     if (!q) return;
     const active = q.getActiveObservation(), job = activeJob;
+    renderControls(active);
     if (!active || !job || !matches(active, job)) return;
     if (job.condition === 'STABILITY' && activeDeadline == null) {
       const firstDetected = active.observations.find(observation => observation.detected);
@@ -344,6 +399,7 @@
     renderLive(active, job);
   }
   function renderLive(active, job) {
+    showAttemptDiagnostic(active);
     const latest = active.observations?.at(-1);
     const classified = active.scene ? null : root.TCGateVisionQualification.classifyTrial({ ...active, endMs: Math.max(active.observations.at(-1).atMs, active.t0Ms + 0.01) }, immutableContext);
     const stable = latest?.identifiedCardId === job.card?.cardId && classified?.stableConfirmedAtMs != null;
@@ -351,7 +407,7 @@
     $('vqRemoval').hidden = !canRemove || Boolean(active.removal); $('vqRemoval').disabled = !stable;
     $('vqSwitch').hidden = job.phase !== 'A' || !active.removal; $('vqSwitch').disabled = active.removal?.clearAtMs == null;
     $('vqInstruction').textContent = instructions(job, active, Boolean(stable));
-    if (latest?.validityErrors?.length) { lastError = 'Runtime : ' + latest.validityErrors.join(' · '); $('vqError').textContent = lastError; }
+    if (latest?.validityErrors?.length) fail('Runtime : ' + latest.validityErrors.join(' · '));
   }
   function download(name, payload) {
     const url = root.URL.createObjectURL(new root.Blob([payload], { type: 'application/json' }));
@@ -389,13 +445,15 @@
   }
   function action(fn) { clearError(); try { const result = fn(); if (result?.then) result.catch(fail); } catch (error) { fail(error); } }
   $('vqPrepare').addEventListener('click', () => action(prepare));
+  $('vqResume').addEventListener('click', () => setOperating(true));
+  $('vqReturnLab').addEventListener('click', () => { setOperating(false); $('vqResume').focus({ preventScroll: true }); });
   $('vqStart').addEventListener('click', () => action(startObservation));
   $('vqEnd').addEventListener('click', () => action(() => endObservation()));
-  $('vqNext').addEventListener('click', () => action(() => { pendingAdvance = false; render(); }));
+  $('vqNext').addEventListener('click', () => action(() => { if (!neutralState().ready) throw Error('Attendez la remise à zéro de Vision avant l’essai suivant.'); pendingAdvance = false; render(); }));
   $('vqUnavailable').addEventListener('click', () => action(showAlternatives));
   $('vqApplySubstitution').addEventListener('click', () => action(applySubstitution));
   $('vqSetupCard').addEventListener('change', () => { $('vqSubstitution').hidden = true; });
-  $('vqCondition').addEventListener('change', () => action(() => { if (session().active) throw Error('Terminez l’observation active avant de changer de section.'); selection = $('vqCondition').value; pendingAdvance = false; render(); }));
+  $('vqCondition').addEventListener('change', () => action(() => { if (session().active) throw Error('Terminez l’observation active avant de changer de section.'); if ($('vqCondition').value !== 'NOMINAL' && !nominalGate(session()).ready) { $('vqCondition').value = selection; throw Error('Le nominal physique doit être qualifié avant toute condition complémentaire.'); } selection = $('vqCondition').value; pendingAdvance = false; render(); }));
   $('vqSleeveAvailability').addEventListener('change', () => action(() => { if ($('vqSleeveAvailability').value === 'UNCONFIRMED') throw Error('Choisissez disponible ou indisponible.'); q.setSleeveAvailability($('vqSleeveAvailability').value); render(); }));
   $('vqRemoval').addEventListener('click', () => action(() => { q.markRemoval(); render(); }));
   $('vqSwitch').addEventListener('click', () => action(rapidSwitch));
@@ -407,6 +465,22 @@
   $('vqImportInputs').addEventListener('change', () => action(importReportInputs));
   $('vqRecordIndex').addEventListener('click', () => action(recordIndex));
   root.addEventListener('beforeunload', event => { if (!q) return; const state = session(); if (state.active || records(state).length || state.indexMeasurements.length || importedSessions.length || importedIndexes.length) { event.preventDefault(); event.returnValue = ''; } });
+  root.document.addEventListener('keydown', event => {
+    if (operating && event.key === 'Tab') {
+      const focusable = [...$('vqWorkflow').querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],summary,[tabindex="0"]')].filter(element => element.getClientRects().length);
+      const first = focusable[0], last = focusable.at(-1), focused = root.document.activeElement;
+      if (first && ((event.shiftKey && (focused === first || focused === $('vqWorkflow'))) || (!event.shiftKey && (focused === last || !$( 'vqWorkflow').contains(focused))))) {
+        event.preventDefault(); (event.shiftKey ? last : first).focus({ preventScroll: true });
+      }
+    }
+    if (!operating || event.code !== 'Space' || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.defaultPrevented) return;
+    if (event.target?.closest?.('input,select,textarea,button,a,summary,[contenteditable="true"],[role="textbox"]')) return;
+    // A waiting/disabled primary action must not turn Space into page scrolling.
+    event.preventDefault();
+    const button = $('vqActions').querySelector('button.primary:not([hidden]):not(:disabled)');
+    if (button) button.click();
+  });
+  new root.MutationObserver(() => { if (operating && $('panel-lab').hidden) setOperating(false); }).observe($('panel-lab'), { attributes: true, attributeFilter: ['hidden'] });
   root.setInterval(tick, 100);
-  root.TCGWorkspaceVisionQualification = Object.freeze({ prepare, getState: () => ({ productSha, sampleUrl, prepared: Boolean(q), preparing: Boolean(preparing), currentJob: currentJob(), session: session(), lastError }) });
+  root.TCGWorkspaceVisionQualification = Object.freeze({ prepare, getState: () => ({ productSha, sampleUrl, prepared: Boolean(q), preparing: Boolean(preparing), operating, currentJob: currentJob(), session: session(), neutral: q ? neutralState() : null, nominalGate: q ? nominalGate(session()) : null, lastError }) });
 })(typeof window !== 'undefined' ? window : globalThis);

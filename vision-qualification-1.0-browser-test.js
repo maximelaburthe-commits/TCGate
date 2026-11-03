@@ -170,36 +170,39 @@ async function fixtureObserver(browser, actualContext) {
       window.TCGTableStateBridge = { getRefs: () => window.__fixture.refs };
       window.TCGateDatabaseSource = { getVisionReferences: async () => refs };
       window.TCGIdentificationLab = { getSnapshot: () => window.__fixture.snapshot };
-      window.TCGVisionEngine = { getSnapshot: () => ({ activeCards: window.__fixture.activeCards }) };
+      window.TCGVisionEngine = { getSnapshot: () => ({ active: true, modelReady: true, activeCards: window.__fixture.activeCards }) };
       window.TCGTableStateEngine = { getSnapshot: () => ({ entries: window.__fixture.entries }) };
     }, { context: actualContext, databaseSha });
     await loadObserver(page);
     const outcome = await page.evaluate(async () => {
       const expected = __fixture.refs.find(ref => ref.printingId);
+      const confirmNeutral = () => { for (let n = 0; n < 4; n++) { __fixtureTime += 250; __q.getNeutralState(); } };
       let confirmationRejected = false;
       try { __q.startTrial({ mode: 'physical', expectedCardId: expected.cardId }); } catch { confirmationRejected = true; }
       let automatedPhysicalRejected = false, freeTextRejected = false;
       try { __q.startTrial({ mode: 'physical', physicalConfirmation: 'REAL_CARDS_OPERATOR_CONFIRMED', expectedCardId: expected.cardId }); } catch { automatedPhysicalRejected = true; }
       try { __q.startTrial({ mode: 'automated', expectedCardId: expected.cardId, notes: ['private arbitrary free text'] }); } catch { freeTextRejected = true; }
+      confirmNeutral();
       __q.startTrial({ mode: 'automated', expectedCardId: expected.cardId, expectedPrintingId: expected.printingId, stableWindowMs: 1000, maxObservationGapMs: 1000 });
-      __fixtureTime = 200; __fixture.activeCards = 1; __q.sample();
-      __fixtureTime = 300;
+      const firstT0 = __fixtureTime;
+      __fixtureTime = firstT0 + 100; __fixture.activeCards = 1; __q.sample();
+      __fixtureTime = firstT0 + 200;
       __fixture.snapshot.visibleIdentity = { accepted: true, refId: expected.refId, cardId: expected.cardId, printingId: expected.printingId, image: expected.image };
       __fixture.snapshot.identification = { accepted: true, best: { ...expected, matcherScore: 0.78 }, candidates: [{ image: expected.image }] };
       __q.sample();
-      __fixtureTime = 800; __q.sample();
-      __fixtureTime = 1300; __q.sample();
-      __fixtureTime = 1400; __q.markRemoval();
-      __fixtureTime = 1500; __fixture.activeCards = 0; __q.sample();
-      __fixtureTime = 1700; __fixture.snapshot.visibleIdentity = null; __fixture.snapshot.identification = null; __q.sample();
-      __fixtureTime = 1800; __q.endTrial();
+      __fixtureTime = firstT0 + 700; __q.sample();
+      __fixtureTime = firstT0 + 1200; __q.sample();
+      __fixtureTime = firstT0 + 1300; __q.markRemoval();
+      __fixtureTime = firstT0 + 1400; __fixture.activeCards = 0; __q.sample();
+      __fixtureTime = firstT0 + 1600; __fixture.snapshot.visibleIdentity = null; __fixture.snapshot.identification = null; __q.sample();
+      __fixtureTime = firstT0 + 1700; __q.endTrial();
       const raw = __q.getSession();
       const report = __q.exportReport();
       const json1 = __q.exportJson(), json2 = __q.exportJson();
-      __fixtureTime = 1900;
+      confirmNeutral();
       __q.startTrial({ mode: 'automated', expectedCardId: expected.cardId });
-      __fixtureTime = 2000; __fixture.refs[0] = { ...__fixture.refs[0], locale: 'fr' }; __q.sample();
-      __fixtureTime = 2100; __q.endTrial();
+      __fixtureTime += 100; __fixture.refs[0] = { ...__fixture.refs[0], locale: 'fr' }; __q.sample();
+      __fixtureTime += 100; __q.endTrial();
       const contaminated = __q.getSession().trials.at(-1);
       let nextRejected = false; try { __q.startTrial({ mode: 'automated', expectedCardId: expected.cardId }); } catch { nextRejected = true; }
       __q.detach();
@@ -208,16 +211,16 @@ async function fixtureObserver(browser, actualContext) {
         environment: { execution: 'AUTOMATED', browserFamily: 'CHROMIUM', deviceId: 'private-raw-device', sdp: 'private-signaling', video: 'data:image/private' },
         plan: { sample: [], privateInfo: 'private-plan-data' }
       });
-      __fixtureTime = 2200;
+      confirmNeutral();
       __q.startScene({ mode: 'automated', scene: 'EMPTY_TABLE' });
       const other = __fixture.refs.find(ref => ref.cardId !== expected.cardId && ref.printingId);
       __fixture.snapshot.visibleIdentity = { accepted: true, image: expected.refId };
       __fixture.entries = [{ activeUid: 1, identity: { image: other.refId }, observations: [] }];
-      __fixtureTime = 2300; __q.sample();
-      __fixtureTime = 2400; __q.endScene();
+      __fixtureTime += 100; __q.sample();
+      __fixtureTime += 100; __q.endScene();
       const multiScene = __q.getSession(), sceneReport = __q.exportReport();
       __q.detach();
-      return { confirmationRejected, automatedPhysicalRejected, freeTextRejected, raw, report, sameJson: json1 === json2, contaminated, nextRejected, multiScene, sceneReport };
+      return { confirmationRejected, automatedPhysicalRejected, freeTextRejected, raw, report, sameJson: json1 === json2, contaminated, nextRejected, multiScene, sceneReport, firstT0 };
     });
     check(outcome.confirmationRejected, 'Physical capture needs explicit operator confirmation');
     check(outcome.automatedPhysicalRejected, 'An automated browser cannot relabel fixture observations as physical evidence');
@@ -226,7 +229,7 @@ async function fixtureObserver(browser, actualContext) {
     equal(outcome.raw.trials[0].provenance, 'automated', 'Synthetic event fixtures are explicitly automated');
     check(outcome.raw.trials[0].observations.some(item => item.detected), 'Read-only detector state is observed');
     check(outcome.raw.trials[0].observations.some(item => item.identifiedCardId && item.score === 0.78 && item.scoreKind === 'matcherScore'), 'Existing matcher score is preserved without inventing a probability');
-    equal(outcome.raw.trials[0].removal, { t0Ms: 1400, clearAtMs: 1700 }, 'Removal timing includes persisted identity until the exposed result clears');
+    equal(outcome.raw.trials[0].removal, { t0Ms: outcome.firstT0 + 1300, clearAtMs: outcome.firstT0 + 1600 }, 'Removal timing includes persisted identity until the exposed result clears');
     check(outcome.sameJson, 'Unchanged sessions export deterministic report bytes');
     check(outcome.contaminated.observations.some(item => item.validityErrors.includes('LOCALE_CONTAMINATION')), 'An observed FR candidate invalidates the trial');
     check(outcome.nextRejected, 'A contaminated corpus blocks further capture');

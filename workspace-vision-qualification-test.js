@@ -142,10 +142,11 @@ async function runtimeContract() {
   vm.runInContext(fs.readFileSync(runtimePath, 'utf8'), sandbox);
   const runtime = window.TCGVisionQualificationRuntime;
   const q = await runtime.attach({ productSha, sampleDocument: sample, environment: { execution: 'AUTOMATED', deviceId: 'private-runtime-secret' } });
-  equal(events.size, 5); equal(intervals.size, 1);
+  equal(events.size, 9); equal(intervals.size, 1);
   await rejects(() => runtime.attach({ productSha, sampleDocument: sample }), /already attached/);
   let p = q.getProgress(); equal(p.active, null); equal(p.trials.length, 0); equal(p.plan.sample.length, 15);
   p.plan.sample[0].cardId = 'mutated'; equal(q.getProgress().plan.sample[0].cardId, selected.cardId);
+  for (let n = 0; n < 3; n++) { clock += 250; for (const callback of intervals) callback(); }
   q.startTrial({ trialId: 'runtime-first', mode: 'automated', expectedCardId: selected.cardId, expectedPrintingId: selected.printingId });
   equal(q.getProgress().active.trialId, 'runtime-first'); throws(() => q.getSession(), /active/);
   const live = q.getActiveObservation(); equal(live.trialId, 'runtime-first');
@@ -191,6 +192,7 @@ async function runtimeContract() {
   window.TCGVisionEngine.getSnapshot = () => ({ active: false, modelReady: true, activeCards: 0 });
   window.TCGDetectionLab = { state: { detecting: true, stream: { getVideoTracks: () => [track] } } };
   const local = await runtime.attach({ productSha, sampleDocument: sample, environment: { execution: 'RAILWAY_TEST' } });
+  for (let n = 0; n < 3; n++) { clock += 250; for (const callback of intervals) callback(); }
   local.startTrial({ trialId: 'local-camera-contract', mode: 'physical', physicalConfirmation: runtime.physicalConfirmation, expectedCardId: selected.cardId, expectedPrintingId: selected.printingId });
   equal(local.getProgress().active.observations[0].validityErrors.length, 0, 'Live local webcam is accepted without an external attachment');
   track.readyState = 'ended'; clock += 500; local.sample(); clock += 500; local.endTrial();

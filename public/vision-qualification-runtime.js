@@ -8,6 +8,10 @@
 
   const DATABASE_SHA = '56402636a77af9c8b5dc4e3b61c509a185f3c834';
   const PHYSICAL_CONFIRMATION = 'REAL_CARDS_OPERATOR_CONFIRMED';
+  // Qualification boundary only: never changes the detector's identity memory.
+  const NEUTRAL_WINDOW_MS = 750;
+  const NEUTRAL_MAX_GAP_MS = 750;
+  const RESET_EVENTS = ['tcg-camera-state', 'tcg-vision-state', 'tcg-vision-input-state', 'tcg-vision-geometry'];
   const EVENTS = ['tcg-tracks-updated', 'tcg-identification-result', 'tcg-table-state-updated', 'tcg-identification-context', 'tcg-identification-visible'];
   function copy(value) { return JSON.parse(JSON.stringify(value)); }
   function finite(value) { return typeof value === 'number' && Number.isFinite(value); }
@@ -102,6 +106,14 @@
     const sessionId = 'q6-' + Date.now().toString(36) + '-' + nonce;
     let active = null, disposed = false, queued = false, nextId = 1;
     let lastForegroundEvent = null;
+    let neutralSince = null, neutralCheckedAt = null;
+    let neutralSequence = null, neutralSequenceChangedAt = null, neutralSequenceAtStart = null;
+    const retiredTrackUids = new Set();
+    let boundaryTrackUids = new Set();
+    const attachedLocalState = root.TCGDetectionLab?.state || null;
+    const attachedStream = attachedLocalState?.stream || null;
+    let trackingSequenceHighWater = finite(attachedLocalState?.analysisSeq) ? attachedLocalState.analysisSeq : null;
+    let trackingReset = false;
     const now = () => root.performance.now();
     function requireOpen() { if (disposed) throw Error('Qualification observer is detached'); }
     function safeSession() { return copy({ context, trials, scenes, indexMeasurements, environment, plan, trialAnnotations, declarationEvents }); }
@@ -165,6 +177,15 @@
           !snapshot.matcherWorker?.ready || snapshot.libraryIntegrity?.degraded !== false) return ['CONTEXT_CHANGED'];
       return [];
     }
+    function checkTrackingContinuity() {
+      const local = root.TCGDetectionLab?.state || null;
+      if (attachedLocalState && (local !== attachedLocalState || (local?.stream || null) !== attachedStream)) trackingReset = true;
+      if (finite(local?.analysisSeq)) {
+        if (trackingSequenceHighWater !== null && local.analysisSeq < trackingSequenceHighWater) trackingReset = true;
+        trackingSequenceHighWater = Math.max(trackingSequenceHighWater || 0, local.analysisSeq);
+      }
+      return !trackingReset;
+    }
     function resolve(value, errors) {
       if (!value) return null;
       const key = value.refId || value.image;
@@ -176,11 +197,74 @@
       }
       return found;
     }
+    function getNeutralState() {
+      requireOpen();
+      const atMs = now(), blockers = [];
+      const snapshot = root.TCGIdentificationLab.getSnapshot();
+      const detector = root.TCGVisionEngine.getSnapshot();
+      const local = root.TCGDetectionLab?.state;
+      const table = root.TCGTableStateEngine?.getSnapshot?.();
+      if (!checkTrackingContinuity()) blockers.push('TRACKING_RESET_NEW_SESSION_REQUIRED');
+      if (contextErrors(snapshot).length) blockers.push('CONTEXT_CHANGED');
+      if (!detectorRunning(detector)) blockers.push('DETECTOR_NOT_RUNNING');
+      if (snapshot.enabled === false) blockers.push('IDENTIFICATION_DISABLED');
+      if (detector.performanceBudget?.inputPaused) blockers.push('DETECTOR_PAUSED');
+      if (snapshot.matcherWorker?.busy || snapshot.matcherWorker?.queued || table?.workerBusy) blockers.push('MATCHER_PENDING');
+      const liveTracks = [...(Array.isArray(detector.tracking?.activeTracks) ? detector.tracking.activeTracks : []),
+        ...(Array.isArray(local?.tracks) ? local.tracks : [])];
+      for (const track of liveTracks) if (track?.uid != null) retiredTrackUids.add(String(track.uid));
+      if (Number(detector.activeCards || 0) > 0 || Number(detector.rawDetections || 0) > 0 || liveTracks.length) blockers.push('CARD_PRESENT');
+      const memoryMs = finite(local?.identityMemoryMs) ? local.identityMemoryMs : null;
+      for (const track of Array.isArray(local?.lostTracks) ? local.lostTracks : []) {
+        if (track?.uid != null) retiredTrackUids.add(String(track.uid));
+        // A stale array entry is harmless only after the unchanged engine's own
+        // expiry. Never delete it, reset tracking, or shorten that memory.
+        if (memoryMs === null || !finite(track?.lostAtMs) || atMs - track.lostAtMs <= memoryMs) blockers.push('TRACK_MEMORY_RETAINED');
+      }
+      if (snapshot.hoveredTrack?.uid != null) {
+        retiredTrackUids.add(String(snapshot.hoveredTrack.uid));
+        blockers.push('FOREGROUND_TRACK_RETAINED');
+      }
+      if (snapshot.identification?.accepted) blockers.push('FOREGROUND_IDENTITY_RETAINED');
+      if ((table?.entries || []).some(entry => entry.activeUid != null || entry.identity || entry.pendingSwitch)) blockers.push('TABLE_MEMORY_RETAINED');
+      // The ordinary player UI deliberately keeps its last HD card on pointer
+      // leave. Once real tracking/matcher memory is gone, clear that presentation
+      // through its existing handoff API. This does not mutate engine memory.
+      if (!blockers.length && snapshot.visibleIdentity && (!active || active.removal)) {
+        root.TCGIdentificationLab.clearVisibleForHandoff?.('Retirez la carte precedente - attente de remise a zero de Vision');
+      }
+      if (root.TCGIdentificationLab.getSnapshot().visibleIdentity) blockers.push('VISIBLE_IDENTITY_RETAINED');
+      const sequence = finite(local?.analysisSeq) ? local.analysisSeq : detector.scheduling?.visionFramesProcessed;
+      if (finite(sequence)) {
+        if (neutralSequence !== sequence) { neutralSequence = sequence; neutralSequenceChangedAt = atMs; }
+        if (neutralSequenceChangedAt !== null && atMs - neutralSequenceChangedAt > 1000) blockers.push('DETECTOR_NOT_ADVANCING');
+      }
+      if (neutralCheckedAt !== null && (atMs < neutralCheckedAt || atMs - neutralCheckedAt > NEUTRAL_MAX_GAP_MS)) neutralSince = null;
+      neutralCheckedAt = atMs;
+      if (blockers.length) { neutralSince = null; neutralSequenceAtStart = null; }
+      else if (neutralSince === null) { neutralSince = atMs; neutralSequenceAtStart = finite(sequence) ? sequence : null; }
+      const neutralForMs = neutralSince === null ? 0 : Math.max(0, atMs - neutralSince);
+      const freshFrames = neutralSequenceAtStart === null || sequence !== neutralSequenceAtStart;
+      const ready = !blockers.length && neutralForMs >= NEUTRAL_WINDOW_MS && freshFrames;
+      return { ready, reason: blockers[0] || (ready ? 'NEUTRAL_CONFIRMED' : freshFrames ? 'NEUTRAL_WINDOW_PENDING' : 'WAITING_FOR_FRESH_DETECTION'),
+        blockers: [...new Set(blockers)], neutralForMs, requiredMs: NEUTRAL_WINDOW_MS,
+        remainingMs: Math.max(0, NEUTRAL_WINDOW_MS - neutralForMs) };
+    }
+    function requireNeutral() {
+      const state = getNeutralState();
+      if (!state.ready) throw Error('Qualification requires confirmed neutral Vision before T0: ' + state.reason);
+      // Neither an old foreground event nor an already queued callback may seed
+      // the next observation. The first recorded state is read after this fence.
+      lastForegroundEvent = null;
+      boundaryTrackUids = new Set(retiredTrackUids);
+      return { requiredMs: NEUTRAL_WINDOW_MS, confirmedForMs: state.neutralForMs };
+    }
     function observation() {
       const snapshot = root.TCGIdentificationLab.getSnapshot();
       const detection = root.TCGVisionEngine.getSnapshot();
       const table = root.TCGTableStateEngine?.getSnapshot?.();
       const errors = contextErrors(snapshot);
+      if (!checkTrackingContinuity()) errors.push('CONTEXT_CHANGED');
       if (active?.provenance === 'physical' && !detectorRunning(detection)) errors.push('MISSING_RUNTIME_STATE');
       const candidateRefs = [];
       for (const candidate of snapshot.identification?.candidates || []) {
@@ -195,15 +279,15 @@
       }
       const identities = [];
       const visible = snapshot.visibleIdentity;
-      if (visible?.accepted) {
+      if (visible?.accepted && !boundaryTrackUids.has(String(visible.trackUid))) {
         const ref = resolve(visible, errors);
         if (ref) identities.push({ ref, source: 'VISIBLE', value: visible });
-      } else if (snapshot.identification?.accepted && snapshot.identification.best) {
+      } else if (snapshot.identification?.accepted && snapshot.identification.best && !boundaryTrackUids.has(String(snapshot.hoveredTrack?.uid))) {
         const ref = resolve(snapshot.identification.best, errors);
         if (ref) identities.push({ ref, source: 'FOREGROUND', value: snapshot.identification.best });
       }
       for (const entry of table?.entries || []) {
-        if (entry.activeUid == null || !entry.identity || entry.identitySuspended || entry.needsReacquireVerification) continue;
+        if (entry.activeUid == null || !entry.identity || entry.identitySuspended || entry.needsReacquireVerification || boundaryTrackUids.has(String(entry.activeUid))) continue;
         const ref = resolve(entry.identity, errors);
         if (ref) identities.push({ ref, source: 'TABLE_MEMORY', value: entry.identity });
       }
@@ -240,6 +324,7 @@
       if (active.observations.length && value.atMs <= active.observations.at(-1).atMs) return copy(active.observations.at(-1));
       active.observations.push(value);
       if (active.removal && active.removal.clearAtMs == null && value.atMs >= active.removal.t0Ms && !value.identifiedCardId) active.removal.clearAtMs = value.atMs;
+      getNeutralState();
       return copy(value);
     }
     function provenance(spec) {
@@ -275,6 +360,7 @@
       if (!scene && !context.references.some(ref => ref.cardId === spec.expectedCardId)) throw Error('Expected card is outside the active EN corpus');
       if (!scene && spec.expectedPrintingId && !context.references.some(ref => ref.cardId === spec.expectedCardId && (ref.printingId === spec.expectedPrintingId || ref.referencePrintingId === spec.expectedPrintingId || ref.candidatePrintingIds.includes(spec.expectedPrintingId)))) throw Error('Expected printing is outside the active EN corpus');
       if (spec.previousTrialId !== undefined && !trials.some(trial => trial.trialId === spec.previousTrialId && trial.removal)) throw Error('A rapid-switch link requires a completed prior trial with an explicit removal marker');
+      const neutralBoundary = requireNeutral();
       active = {
         ...(spec.previousTrialId ? { previousTrialId: spec.previousTrialId } : {}),
         trialId: typeof spec.trialId === 'string' ? spec.trialId : sessionId + '-trial-' + nextId++,
@@ -285,8 +371,9 @@
           stableWindowMs: spec.stableWindowMs ?? 1000,
           maxObservationGapMs: spec.maxObservationGapMs ?? 1000
         }),
-        t0Ms: now(), observations: [], notes: ['MANUAL_T0', ...(spec.notes || [])]
+        t0Ms: now(), observations: [], neutralBoundary, notes: ['MANUAL_T0', ...(spec.notes || [])]
       };
+      neutralSince = null;
       sample();
       active.t0Ms = active.observations[0].atMs;
       return copy(active);
@@ -301,14 +388,23 @@
     }
     function eventSample(event) {
       if (event?.type === 'tcg-identification-result') lastForegroundEvent = event.detail || null;
-      if (!active || queued || disposed) return;
+      if (disposed) return;
+      if (!active) { getNeutralState(); return; }
+      if (queued) return;
       queued = true;
       root.queueMicrotask(() => { queued = false; if (active && !disposed) sample(); });
     }
     for (const event of EVENTS) root.addEventListener(event, eventSample);
+    const resetNotice = () => { trackingReset = true; neutralSince = null; };
+    for (const event of RESET_EVENTS) root.addEventListener(event, resetNotice);
+    const resetControls = [['visionResetTrackingButton', 'click'], ['visionTrackingToggle', 'change'],
+      ['visionShapeFilterToggle', 'change'], ['visionVisualLockToggle', 'change'],
+      ['visionResolutionSelect', 'change'], ['visionCameraSelect', 'change']].map(([id, event]) => ({ element: root.document?.getElementById?.(id), event })).filter(value => value.element?.addEventListener);
+    for (const { element, event } of resetControls) element.addEventListener(event, resetNotice, true);
     // Observation cadence measures persistence of the exposed runtime state,
     // not a new matcher inference or any engine smoothing.
-    const timer = root.setInterval(() => { if (active && !disposed) sample(); }, 250);
+    const timer = root.setInterval(() => { if (!disposed) { if (active) sample(); else getNeutralState(); } }, 250);
+    getNeutralState();
     async function recordIndexMeasurement(kind) {
       requireOpen();
       if (!['COLD', 'WARM_RELOAD'].includes(kind)) throw Error('Index kind must be COLD or WARM_RELOAD');
@@ -346,12 +442,19 @@
         indexMeasurements: copy(indexMeasurements), environment, plan });
     }
     return Object.freeze({
-      version: '1.0.0-qualification-observer',
+      version: '1.1.0-qualification-neutral-boundary',
       context: () => copy(context),
+      getNeutralState,
       startTrial: spec => begin(spec || {}, false),
       endTrial: () => finish(false),
       switchTrial(spec) {
         if (!active || active.scene || !active.removal) throw Error('Rapid switch requires an active card trial with an explicit removal marker');
+        // A failed readiness check must leave A active and intact. Only an
+        // explicitly removed A followed by the same neutral boundary can link B.
+        const current = active; active = null;
+        let readiness;
+        try { readiness = getNeutralState(); } finally { active = current; }
+        if (!readiness.ready) throw Error('Rapid switch requires confirmed neutral Vision: ' + readiness.reason);
         const previous = finish(false);
         const next = begin({ ...spec, previousTrialId: previous.trialId, notes: ['RAPID_SWITCH', ...(spec?.notes || [])] }, false);
         return { previous, next };
@@ -401,6 +504,8 @@
         if (disposed) return;
         if (active) throw Error('End the active observation before detaching');
         for (const event of EVENTS) root.removeEventListener(event, eventSample);
+        for (const event of RESET_EVENTS) root.removeEventListener(event, resetNotice);
+        for (const { element, event } of resetControls) element.removeEventListener(event, resetNotice, true);
         root.clearInterval(timer); disposed = true;
         if (root[observerKey] === reservation) delete root[observerKey];
       }

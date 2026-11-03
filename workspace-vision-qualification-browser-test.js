@@ -179,6 +179,7 @@ async function realWorkspaceSmoke(browser, fixture, pinned) {
     equal(await page.evaluate(() => window.__qualificationAttachments), 1, 'Exactly one observer was attached');
     check(control.sampleRequests.every(url => url === sampleUrl), 'No main/update-next/historical SHA sample fallback occurred');
     const actualContext = ready.session.context;
+    await page.click('#vqReturnLab');
     await page.click('#visionDetectButton'); await page.click('#visionCameraButton');
     equal(errors, [], 'Real Workspace + existing camera/index + qualification panel produce no browser exception');
     console.log('WORKSPACE_VISION_QUALIFICATION_REAL_LAB_OK actual immutable EN 150/229/229, no recognition trial, no physical claim');
@@ -197,6 +198,7 @@ async function installIdentityFixture(page, actualContext) {
     window.TCGTableStateBridge = { getRefs: () => refs };
     window.TCGateDatabaseSource = { getVisionReferences: async () => refs };
     window.TCGIdentificationLab = { getSnapshot: () => window.__qualificationFixture.snapshot, getAnalyzedCropDataUrl: () => null };
+    window.TCGDetectionLab = undefined; // Test-only snapshot fixture owns detector observations.
     window.TCGVisionEngine = { getSnapshot: () => window.__qualificationFixture.detector };
     window.TCGTableStateEngine = { getSnapshot: () => ({ entries: [] }) };
   }, { context: actualContext, databaseSha });
@@ -222,10 +224,11 @@ async function advance(page, durationMs) {
   for (let remaining = durationMs; remaining > 0; remaining -= 500) await page.clock.fastForward(Math.min(500, remaining));
 }
 async function finishCardTrial(page, cardId, automatic = false) {
-  await setIdentity(page, null); await page.click('#vqStart');
+  await setIdentity(page, null); await advance(page, 1000); await page.click('#vqStart');
   await setIdentity(page, cardId); await advance(page, 10250);
   if (!automatic) await page.click('#vqEnd');
 }
+async function nextTrial(page) { await setIdentity(page, null); await advance(page, 1000); await page.click('#vqNext'); }
 async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const control = controls(), errors = [], requests = [];
@@ -246,8 +249,8 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
     check(await page.locator('#vqPhysicalConfirm').isDisabled(), 'Confirmed session setup is locked after preparation');
     equal(await page.locator('#vqSampleList li').allTextContents(), sampleDocument.sample.map(card => card.name + ' · ' + card.profile.type + ' · ' + card.profile.color), 'All fifteen proposed cards are loaded from the JSON');
     await page.evaluate(() => { window.__qualificationFixture.snapshot.playerLocale = 'fr'; });
-    await page.click('#vqStart');
-    check(/LOCALE|context/i.test(await page.locator('#vqError').textContent()), 'A changed FR context blocks capture from the UI');
+    await advance(page, 1000);
+    check(await page.locator('#vqStart').isDisabled(), 'A changed FR context blocks capture from the UI');
     equal((await state(page)).session.trials.length, 0, 'Cross-locale attempt does not create a trial');
     await page.evaluate(() => { window.__qualificationFixture.snapshot.playerLocale = 'en'; });
     // Substitution occurs before any observation; only JSON-authorized candidates.
@@ -271,15 +274,15 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
     snapshot = await state(page);
     const firstTrial = snapshot.session.trials[0], firstTrialBytes = JSON.stringify(firstTrial);
     check(/Mauvaise identification|Instable/.test(await page.locator('#vqResult').innerText()), 'An incorrect runtime identity is plainly shown');
-    await page.click('#vqNext');
+    await nextTrial(page);
     for (let count = 1; count < 3; count++) {
       const job = (await state(page)).currentJob;
-      await finishCardTrial(page, job.card.cardId); await page.click('#vqNext');
+      await finishCardTrial(page, job.card.cardId); await nextTrial(page);
     }
     snapshot = await state(page);
     equal(snapshot.session.trials.length, 3, 'Three button-driven nominal trials are appended');
     equal(JSON.stringify(snapshot.session.trials[0]), firstTrialBytes, 'A bad trial remains unchanged after next attempts');
-    check((await page.locator('#vqProgress').innerText()).includes('3 / 45'), 'Global progress derives from three real observer trials');
+    check((await page.locator('#vqCompactProgress').innerText()).includes('3 / 45'), 'Visible compact progress derives from three real observer trials');
     check(!(await page.locator('#vqCardName').textContent()).includes(sampleDocument.sample[0].name), 'Next card is guided after three nominal attempts');
     // Explicit invalidation keeps original raw bad record; it is never a retry.
     await finishCardTrial(page, actualContext.references.find(ref => ref.cardId !== snapshot.currentJob.card.cardId).cardId);
@@ -287,7 +290,7 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
     await page.click('#vqInvalidate'); snapshot = await state(page);
     equal(JSON.stringify(snapshot.session.trials.at(-1)), fourthBytes, 'Explicit invalidation preserves original observation record');
     check(snapshot.session.trialAnnotations?.some(item => item.trialId === fourth.trialId), 'Protocol invalidation is an appended separate event');
-    await page.click('#vqNext');
+    await nextTrial(page);
     console.log('WORKSPACE_VISION_QUALIFICATION_STEP automated-nominal');
     let sharedArtUiChecked = false;
     for (let attempt = 0; attempt < 48; attempt++) {
@@ -300,13 +303,21 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
         check(!(await page.locator('#vqResult').getAttribute('class')).includes('error'), 'Unresolved shared art is not shown as a red canonical identity error');
         sharedArtUiChecked = true;
       }
-      await page.click('#vqNext');
+      await nextTrial(page);
     }
     snapshot = await state(page);
-    check((await page.locator('#vqProgress').innerText()).includes('45 / 45'), 'Forty-five nominal protocol slots finish from actual session');
-    check(await page.locator('#vqCondition').isEnabled(), 'Complementary conditions are unlocked after nominal');
+    check((await page.locator('#vqCompactProgress').innerText()).includes('45 / 45'), 'Visible compact progress shows forty-five nominal protocol slots from actual session');
+    check(await page.locator('#vqCondition option[value="ANGLE"]').evaluate(option => option.disabled), 'Automated nominal fixtures cannot unlock physical complementary conditions');
     check(snapshot.session.trials.every(trial => trial.provenance === 'automated'), 'Automated UI fixtures cannot manufacture physical evidence');
     check(sharedArtUiChecked, 'A real shared-art corpus case was exercised through UI');
+    // TEST ONLY: exercise historical supplementary UI while the unchanged pure
+    // generator continues classifying every exported fixture as NOT TESTED.
+    await page.evaluate(() => {
+      const real = window.TCGVisionQualificationReport;
+      window.TCGVisionQualificationReport = Object.freeze({ ...real, nominalGate: report => ({ ...real.nominalGate(report), ready: true }) });
+      document.querySelector('#vqCondition').dispatchEvent(new Event('change'));
+    });
+    await page.getByText('Progression et section', { exact: true }).click();
     const variant = sampleDocument.plan.variantCases.find(value => value.cardId !== substitution.originalCardId);
     const testedPrinting = variant.printings.find(printing => snapshot.session.trials.some(trial => trial.expectedPrintingId === printing.printingId));
     await page.selectOption('#vqCondition', 'SIMILAR_PRINTINGS');
@@ -329,7 +340,7 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
     check(stability.endMs - stability.t0Ms >= 10000, 'Stability observes a genuine monotonic ten-second interval');
     // Removal starts its marker from the UI only after actual identification.
     await page.selectOption('#vqCondition', 'REMOVAL'); snapshot = await state(page);
-    await setIdentity(page, null); await page.click('#vqStart');
+    await setIdentity(page, null); await advance(page, 1000); await page.click('#vqStart');
     await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 1500);
     await page.click('#vqRemoval'); await setIdentity(page, null); await advance(page, 9000); await page.click('#vqEnd');
     check((await state(page)).session.trials.at(-1).removal?.clearAtMs != null, 'Removal marker and clearing time are measured through real observer');
@@ -337,13 +348,13 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
     // invalidation to unlock B. Repeating A appends a fresh bounded attempt.
     await page.selectOption('#vqCondition', 'RAPID_SWITCH'); snapshot = await state(page);
     const firstPair = snapshot.currentJob.pairIndex;
-    await setIdentity(page, null); await page.click('#vqStart'); await advance(page, 10250); await page.click('#vqEnd');
+    await setIdentity(page, null); await advance(page, 1000); await page.click('#vqStart'); await advance(page, 10250); await page.click('#vqEnd');
     snapshot = await state(page);
     const failedA = snapshot.session.trials.at(-1), failedABytes = JSON.stringify(failedA);
     const annotationsBeforeRetry = JSON.stringify(snapshot.session.trialAnnotations);
     check(/Non détectée/.test(await page.locator('#vqResult').textContent()), 'A valid no-detection A outcome remains visible');
     check(!snapshot.session.trialAnnotations.some(value => value.trialId === failedA.trialId), 'No-detection A is a measured failure, not an invalid protocol');
-    await page.click('#vqNext'); snapshot = await state(page);
+    await nextTrial(page); snapshot = await state(page);
     equal(snapshot.currentJob.phase, 'B', 'The derived next rapid-switch job remains B after failed A');
     check(await page.locator('#vqRetrySwitch').isVisible(), 'Failed A exposes an explicit new-A attempt button');
     check(!(await page.locator('#vqStart').isVisible()) || await page.locator('#vqStart').isDisabled(), 'B cannot start without a cleared prior A');
@@ -358,7 +369,7 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
     equal(JSON.stringify(snapshot.session.trialAnnotations), annotationsBeforeRetry, 'New A requires no false invalidation or annotation');
     // Successful A now supplies the actual removal marker for its own linked B.
     await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 10000);
-    await page.click('#vqRemoval'); await setIdentity(page, null); await advance(page, 500);
+    await page.click('#vqRemoval'); await setIdentity(page, null); await advance(page, 1000);
     await page.click('#vqSwitch'); snapshot = await state(page);
     await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 10250); await page.click('#vqEnd');
     snapshot = await state(page);
@@ -369,22 +380,22 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
     equal(JSON.stringify(snapshot.session.trials.find(trial => trial.trialId === failedA.trialId)), failedABytes, 'Original no-detection A remains intact after successful B');
     // The second planned pair is reachable. A detected identity which never
     // clears is also a retained measured failure with the same honest recovery.
-    await page.click('#vqNext'); snapshot = await state(page);
+    await nextTrial(page); snapshot = await state(page);
     equal(snapshot.currentJob.pairIndex, firstPair + 1, 'Completing B unlocks the second planned rapid-switch pair');
     equal(snapshot.currentJob.phase, 'A', 'Second pair begins with its real A card');
-    await setIdentity(page, null); await page.click('#vqStart');
+    await setIdentity(page, null); await advance(page, 1000); await page.click('#vqStart');
     await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 10000);
     await page.click('#vqRemoval'); await advance(page, 500); await page.click('#vqEnd');
     snapshot = await state(page);
     const unclearedA = snapshot.session.trials.at(-1), unclearedABytes = JSON.stringify(unclearedA);
     equal(unclearedA.removal.clearAtMs, null, 'The failed clearing observation is preserved as actually measured');
-    await page.click('#vqNext');
+    await nextTrial(page);
     check(await page.locator('#vqRetrySwitch').isVisible(), 'An uncleared A exposes the same append-only recovery');
     await page.click('#vqRetrySwitch'); snapshot = await state(page);
     const retriedSecondA = snapshot.session.active.trialId;
     check(retriedSecondA !== unclearedA.trialId, 'An uncleared A retry is a new trial');
     await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 10000);
-    await page.click('#vqRemoval'); await setIdentity(page, null); await advance(page, 500); await page.click('#vqSwitch');
+    await page.click('#vqRemoval'); await setIdentity(page, null); await advance(page, 1000); await page.click('#vqSwitch');
     snapshot = await state(page); await setIdentity(page, snapshot.currentJob.card.cardId); await advance(page, 10250); await page.click('#vqEnd');
     snapshot = await state(page);
     equal(snapshot.session.trials.at(-1).previousTrialId, retriedSecondA, 'Second B links to its successful retry A');
@@ -393,7 +404,7 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
     // All five no-target scenes: no early finish; countdown automatic at 30s.
     await page.selectOption('#vqCondition', 'NEGATIVE');
     for (const scene of sampleDocument.plan.requiredScenes) {
-      await setIdentity(page, null); await page.click('#vqStart');
+      await setIdentity(page, null); await advance(page, 1000); await page.click('#vqStart');
       check(/00:30/.test(await page.locator('#vqTimer').textContent()), 'Negative scene countdown starts at thirty seconds');
       await advance(page, 29250);
       check((await state(page)).session.active?.scene === scene.scene, 'Scene remains active before thirty seconds');
@@ -402,7 +413,7 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
       const recorded = snapshot.session.scenes.at(-1);
       equal(recorded.scene, scene.scene, 'The next planned negative scene is recorded');
       check(recorded.endMs - recorded.t0Ms >= 30000, 'Negative scene actually observes at least thirty seconds');
-      if (scene !== sampleDocument.plan.requiredScenes.at(-1)) await page.click('#vqNext');
+      if (scene !== sampleDocument.plan.requiredScenes.at(-1)) await nextTrial(page);
     }
     // Export the sanitized raw session and both reports through visible buttons.
     let unexpectedDownload = false;
@@ -454,4 +465,5 @@ async function main() {
     console.log('WORKSPACE_VISION_QUALIFICATION_BROWSER_OK ' + assertions + ' assertions; actual Workspace/EN index, click-guided AUTOMATED observations, physical NOT TESTED');
   } finally { await browser?.close(); await fixture.close(); }
 }
-main().catch(error => { console.error(error.stack || error); process.exitCode = 1; });
+module.exports = { controls, installRoutes, openLab, installIdentityFixture, setIdentity, advance, state, pinnedDocuments, realWorkspaceSmoke, sampleDocument, sha, root, check, equal, nextTrial };
+if (require.main === module) main().catch(error => { console.error(error.stack || error); process.exitCode = 1; });
