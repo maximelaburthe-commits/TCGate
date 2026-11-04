@@ -128,6 +128,16 @@
     for (const key of ['score', 'confidence']) if (finite(source[key])) output[key] = source[key];
     if (['matcherScore', 'visualIndex'].includes(source.scoreKind)) output.scoreKind = source.scoreKind;
     if (['exact', 'canonical', 'shared', 'shared_art', 'shared-art'].includes(source.recognitionMode)) output.recognitionMode = source.recognitionMode;
+    if (object(source.qualificationTracking)) {
+      const trace=source.qualificationTracking;
+      output.qualificationTracking={mode:trace.mode==='PINNED_CANONICAL_TRACK'?trace.mode:null,
+        status:['WAITING_FOR_SINGLE_TRACK','TRACKING','TRACK_LOST','MULTIPLE_TRACKS','MATCHER_ERROR','TRACKING_ERROR','STOPPED'].includes(trace.status)?trace.status:null,
+        lockedTrackUid:Number.isSafeInteger(trace.lockedTrackUid)&&trace.lockedTrackUid>0?trace.lockedTrackUid:null,
+        trackPresent:trace.trackPresent===true,accepted:trace.accepted===true,
+        observedTrackCount:Number.isSafeInteger(trace.observedTrackCount)&&trace.observedTrackCount>=0?trace.observedTrackCount:null,
+        decisionAtMs:finite(trace.decisionAtMs)?trace.decisionAtMs:null,
+        errors:list(trace.errors).filter(value=>['MATCHER_ERROR','TRACKING_ERROR'].includes(value))};
+    }
     output.multipleIdentities = list(source.validityErrors).includes('MULTIPLE_IDENTITIES') || list(output.identifiedCandidates).length > 1;
     for (const code of list(source.validityErrors)) if (code !== 'MULTIPLE_IDENTITIES') errors.push(ERROR_CODES.includes(code) ? code : 'RUNTIME_INVALID');
     output.validityErrors = unique(errors);
@@ -152,9 +162,27 @@
     if (physical(source) && (stableWindowMs !== DEFAULT_STABLE_WINDOW_MS || maxObservationGapMs !== DEFAULT_MAX_GAP_MS)) errors.push('PHYSICAL_MEASUREMENT_WINDOW_MISMATCH');
     if (!Array.isArray(source.observations) || !source.observations.length) errors.push('OBSERVATIONS_REQUIRED');
     const observations = list(source.observations).map(observation => sanitizeObservation(observation, data));
+    const pinnedMeasurement=source.identityMeasurement==='PINNED_CANONICAL_TRACK';
+    let lockedUid=null;
     let previous = -Infinity;
     for (const observation of observations) {
       errors.push(...observation.validityErrors);
+      if(pinnedMeasurement) {
+        const trace=observation.qualificationTracking;
+        if(!trace || trace.mode!=='PINNED_CANONICAL_TRACK' || !trace.status || trace.observedTrackCount===null) errors.push('MISSING_RUNTIME_STATE');
+        else {
+          if(trace.lockedTrackUid!==null) {
+            if(lockedUid!==null && lockedUid!==trace.lockedTrackUid) errors.push('CONTEXT_CHANGED');
+            lockedUid=trace.lockedTrackUid;
+          }
+          if(trace.accepted!==Boolean(observation.identifiedCardId) ||
+            (observation.identifiedCardId && (!trace.trackPresent || trace.status!=='TRACKING' || trace.lockedTrackUid===null ||
+              trace.decisionAtMs===null || trace.decisionAtMs<source.t0Ms || trace.decisionAtMs>observation.atMs))) errors.push('MISSING_RUNTIME_STATE');
+          if(trace.status==='MULTIPLE_TRACKS' || trace.observedTrackCount>1) errors.push('MISSING_RUNTIME_STATE');
+          if(trace.errors.length) errors.push('CRASH');
+        }
+        if(previous!==-Infinity && observation.atMs-previous>maxObservationGapMs) errors.push('INCOMPLETE_CONTINUOUS_OBSERVATION');
+      }
       if (observation.atMs < source.t0Ms || observation.atMs > source.endMs || observation.atMs <= previous) errors.push('OBSERVATION_INTERVAL_INVALID');
       previous = observation.atMs;
     }
@@ -164,14 +192,15 @@
     const visible = observations.filter(observation => removalAt === null || observation.atMs < removalAt);
     const detected = visible.some(observation => observation.detected);
     const identified = visible.some(observation => observation.identifiedCardId);
+    const pinnedCanonical=source.identityMeasurement==='PINNED_CANONICAL_TRACK';
     const identities = [];
     let previousIdentity = null, lastKnownIdentity = null, disappearances = 0, lastAt = null, runStart = null, stableSince = null, stableAt = null;
-    let wrongCardEvents = 0, wrongPrintingEvents = 0;
+    let wrongCardEvents = 0, wrongPrintingEvents = 0, firstNativeDecisionAt = null, staleNativeAfterStable = false;
     let firstDetectionAt = null;
     const expectedPrintingId = identifier(source.expectedPrintingId);
     for (const observation of visible) {
       if (observation.detected && firstDetectionAt === null) firstDetectionAt = observation.atMs;
-      const identity = observation.identifiedCardId ? `${observation.identifiedCardId}|${observation.identifiedPrintingId || '?'}` : null;
+      const identity = observation.identifiedCardId ? pinnedCanonical ? observation.identifiedCardId : `${observation.identifiedCardId}|${observation.identifiedPrintingId || '?'}` : null;
       if (identity && lastKnownIdentity && identity !== lastKnownIdentity) identities.push([lastKnownIdentity, identity]);
       if (identity) lastKnownIdentity = identity;
       if (!identity && previousIdentity) disappearances += 1;
@@ -185,15 +214,32 @@
       const wrongPrintings = expectedPrintingId ? [...accepted.values()].filter(candidate => candidate.cardId === source.expectedCardId && candidate.printingId && candidate.printingId !== expectedPrintingId).length : 0;
       wrongCardEvents += wrongCards;
       wrongPrintingEvents += wrongPrintings;
-      const correct = observation.detected && observation.identifiedCardId === source.expectedCardId && !wrongCards && !wrongPrintings;
+      const freshNative=!pinnedCanonical || (finite(observation.qualificationTracking?.decisionAtMs) &&
+        observation.atMs-observation.qualificationTracking.decisionAtMs<=maxObservationGapMs);
+      if(pinnedCanonical && stableAt!==null && observation.identifiedCardId && !freshNative) staleNativeAfterStable=true;
+      const correct = observation.detected && observation.identifiedCardId === source.expectedCardId && !wrongCards && !wrongPrintings && freshNative;
       if (correct) {
-        if (runStart === null || lastAt === null || observation.atMs - lastAt > maxObservationGapMs) runStart = observation.atMs;
-        if (stableAt === null && observation.atMs - runStart >= stableWindowMs) { stableSince = runStart; stableAt = observation.atMs; }
-      } else runStart = null;
+        if (runStart === null || lastAt === null || observation.atMs - lastAt > maxObservationGapMs) {
+          runStart = observation.atMs; firstNativeDecisionAt=observation.qualificationTracking?.decisionAtMs??null;
+        }
+        if (stableAt === null && observation.atMs - runStart >= stableWindowMs && (!pinnedCanonical || observation.qualificationTracking.decisionAtMs-firstNativeDecisionAt>=stableWindowMs)) { stableSince = runStart; stableAt = observation.atMs; }
+      } else { runStart = null; firstNativeDecisionAt = null; }
       lastAt = observation.atMs;
     }
     const transitions = identities.length;
-    const unstable = transitions >= 2 || disappearances >= 2;
+    // New controlled trials measure native track/identity continuity. A UI
+    // presentation withdrawal does not enter this history; real losses do.
+    const postStableTrackLoss=pinnedCanonical && stableAt!==null && visible.some(observation=>
+      observation.atMs>=stableAt && observation.qualificationTracking?.status==='TRACK_LOST');
+    let nativeLossStart=null,prolongedNativeLoss=false;
+    if(pinnedCanonical && stableAt!==null) for(const observation of visible) {
+      if(observation.atMs<stableAt) continue;
+      if(!observation.identifiedCardId) {
+        if(nativeLossStart===null) nativeLossStart=observation.atMs;
+        if(observation.atMs-nativeLossStart>DEFAULT_STABLE_WINDOW_MS) prolongedNativeLoss=true;
+      } else nativeLossStart=null;
+    }
+    const unstable = transitions >= 2 || disappearances >= 2 || postStableTrackLoss || prolongedNativeLoss || staleNativeAfterStable;
     const invalidReasons = unique(errors);
     const category = invalidReasons.length ? 'INVALID_TEST' : unstable ? 'UNSTABLE' : wrongCardEvents || wrongPrintingEvents ? 'WRONG_IDENTIFICATION' : stableAt !== null ? 'CORRECT' : !detected ? 'NO_DETECTION' : 'NOT_IDENTIFIED';
     const correctObservations = visible.filter(observation => observation.identifiedCardId === source.expectedCardId);
@@ -208,6 +254,7 @@
       stableWindowMs: finite(stableWindowMs) ? stableWindowMs : null, maxObservationGapMs: finite(maxObservationGapMs) ? maxObservationGapMs : null,
       detected, identified, identifiedCardId: visible.filter(observation => observation.identifiedCardId).at(-1)?.identifiedCardId || null,
       identifiedPrintingId: visible.filter(observation => observation.identifiedCardId).at(-1)?.identifiedPrintingId || null,
+      ...(pinnedCanonical?{identityMeasurement:'PINNED_CANONICAL_TRACK',canonicalIdentityAssessment:stableAt!==null&&!wrongCardEvents?'CORRECT CANONICAL IDENTITY':'NOT_CONFIRMED'}:{}),
       correct: category === 'CORRECT', category, printingAssessment, wrongCardEvents, wrongPrintingEvents, identityChanges: transitions, disappearances,
       detectionLatency: invalidReasons.length || firstDetectionAt === null ? null : firstDetectionAt - source.t0Ms,
       identificationLatency: invalidReasons.length || stableAt === null ? null : stableAt - source.t0Ms,

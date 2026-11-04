@@ -123,7 +123,9 @@
     const nonce = [...root.crypto.getRandomValues(new Uint32Array(2))].map(value => value.toString(16).padStart(8, '0')).join('');
     const sessionId = 'q6-' + Date.now().toString(36) + '-' + nonce;
     let active = null, disposed = false, queued = false, nextId = 1;
-    let lastForegroundEvent = null;
+    let lastForegroundEvent = null, trialTracking = null;
+    const pinnedQualification=options.trackSelection==='PINNED_CANONICAL_TRACK';
+    if(pinnedQualification && !root.TCGIdentificationLab.beginQualificationTracking) throw Error('Pinned qualification API is unavailable');
     let neutralSince = null, neutralCheckedAt = null;
     let neutralSequence = null, neutralSequenceChangedAt = null, neutralSequenceAtStart = null;
     const retiredTrackUids = new Set();
@@ -309,7 +311,23 @@
         const ref = resolve(entry.identity, errors);
         if (ref) identities.push({ ref, source: 'TABLE_MEMORY', value: entry.identity });
       }
-      const chosen = identities[0] || null;
+      let chosen = identities[0] || null;
+      let tracked=null;
+      if(pinnedQualification && active && !active.scene) {
+        tracked=trialTracking?.getState();
+        if(!tracked?.active) errors.push('MISSING_RUNTIME_STATE');
+        if(tracked?.status==='MULTIPLE_TRACKS') errors.push('MULTIPLE_IDENTITIES');
+        if(tracked?.errors?.length) errors.push('CRASH');
+        if(snapshot.enabled===false) errors.push('MISSING_RUNTIME_STATE');
+        // The selected physical track's accepted engine decision is authoritative.
+        // UI presentation and pointer leave cannot create or remove this identity.
+        identities.length=0; chosen=null;
+        const value=tracked?.trackPresent && tracked.status==='TRACKING' ? tracked.identity : null;
+        if(value?.accepted) {
+          const ref=resolve(value,errors);
+          if(ref) { chosen={ref,source:'QUALIFICATION_TRACK',value}; identities.push(chosen); }
+        }
+      }
       const best = snapshot.identification?.best;
       const acceptedBest = snapshot.identification?.accepted && best && chosen && resolve(best, errors)?.refId === chosen.ref.refId;
       const out = {
@@ -322,10 +340,16 @@
         locale: 'en', candidatePrintingIds: chosen ? [...chosen.ref.candidatePrintingIds] : [],
         recognitionMode: chosen?.ref.recognitionMode || null,
         runtimeState: runtimeState(snapshot, detection, chosen),
+        ...(tracked?{qualificationTracking:{mode:'PINNED_CANONICAL_TRACK',status:tracked.status,
+          lockedTrackUid:tracked.lockedTrackUid,trackPresent:tracked.trackPresent,
+          observedTrackCount:tracked.observedTrackCount,decisionAtMs:tracked.decisionAtMs,
+          accepted:Boolean(tracked.identity?.accepted),errors:[...(tracked.errors||[])]}}:{}),
         validityErrors: [...new Set(errors)].sort()
       };
       if (acceptedBest && finite(best.matcherScore)) { out.score = best.matcherScore; out.scoreKind = 'matcherScore'; }
-      else if (chosen?.source === 'TABLE_MEMORY' && finite(chosen.value.confidence)) {
+      else if (chosen?.source === 'QUALIFICATION_TRACK' && finite(chosen.value.score)) {
+        out.score=chosen.value.score; out.scoreKind='matcherScore';
+      } else if (chosen?.source === 'TABLE_MEMORY' && finite(chosen.value.confidence)) {
         // Existing memory confidence is a matcher score, never a probability.
         out.score = chosen.value.confidence; out.scoreKind = 'matcherScore';
       } else if (chosen && lastForegroundEvent?.accepted &&
@@ -391,10 +415,15 @@
           maxObservationGapMs: spec.maxObservationGapMs ?? 1000
         }),
         t0Ms: now(), observations: [], neutralBoundary,
+        ...(pinnedQualification&&!scene?{identityMeasurement:'PINNED_CANONICAL_TRACK'}:{}),
         ...(!scene ? { attemptDiagnostics: [], attemptDiagnosticsDropped: 0, attemptDiagnosticsTruncated: false } : {}),
         notes: ['MANUAL_T0', ...(spec.notes || [])]
       };
       neutralSince = null;
+      if(pinnedQualification&&!scene) {
+        try { trialTracking=root.TCGIdentificationLab.beginQualificationTracking(); }
+        catch(error) { active=null; throw error; }
+      }
       sample();
       active.t0Ms = active.observations[0].atMs;
       return copy(active);
@@ -404,6 +433,7 @@
       if (!active || Boolean(active.scene) !== scene) throw Error(scene ? 'No active scene' : 'No active card trial');
       sample(); active.endMs = active.observations.at(-1).atMs;
       const result = active; active = null;
+      trialTracking?.stop(); trialTracking=null;
       (scene ? scenes : trials).push(result);
       return copy(result);
     }
@@ -432,7 +462,7 @@
       root.queueMicrotask(() => { queued = false; if (active && !disposed) sample(); });
     }
     for (const event of EVENTS) root.addEventListener(event, eventSample);
-    const resetNotice = () => { trackingReset = true; neutralSince = null; };
+    const resetNotice = () => { trackingReset = true; neutralSince = null; trialTracking?.stop(); };
     for (const event of RESET_EVENTS) root.addEventListener(event, resetNotice);
     const resetControls = [['visionResetTrackingButton', 'click'], ['visionTrackingToggle', 'change'],
       ['visionShapeFilterToggle', 'change'], ['visionVisualLockToggle', 'change'],
@@ -479,7 +509,7 @@
         indexMeasurements: copy(indexMeasurements), environment, plan });
     }
     return Object.freeze({
-      version: '1.1.0-qualification-neutral-boundary',
+      version: '1.2.0-pinned-canonical-qualification',
       context: () => copy(context),
       getNeutralState,
       startTrial: spec => begin(spec || {}, false),
@@ -510,7 +540,8 @@
       getProgress() { requireOpen(); return { ...safeSession(), active: active ? copy(active) : null }; },
       // Live UI polling must not clone the immutable 229-reference context or
       // every completed trial. This copy contains controlled observer data only.
-      getActiveObservation() { requireOpen(); return active ? copy(active) : null; },
+      getActiveObservation() { requireOpen(); return active ? copy({...active,
+        ...(trialTracking?{qualificationTracking:trialTracking.getState()}: {})}) : null; },
       getSession() {
         requireOpen();
         if (active) throw Error('End the active observation before exporting');

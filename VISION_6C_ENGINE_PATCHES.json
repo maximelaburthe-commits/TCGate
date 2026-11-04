@@ -8,7 +8,7 @@
       "path": "public/identification.js",
       "baselineGitBlob": "b0af6a5d3b122c5bab805c064168fa1e689190bd",
       "baselineSha256": "618a87323f186409930d74c640205e0cfccfd48237e4e29a9b2141bbed7b92fa",
-      "afterSha256": "c4883071c03f5b7a431ce9afce866113ea5af9cbf02d622b6aeac91a8d4fa2fb",
+      "afterSha256": "4e80603500cf4c9eb41bcc860f245f1d3454dabd92cf5cb583ed9c38b0bb11bb",
       "hunks": [
         {
           "oldStart": 32,
@@ -165,6 +165,114 @@
           "newOffset": 68866,
           "beforeSha256": "e45dce59fb50b200b6d18e233cb46a56b61a01722bceb55c1aa1bd4d308c7e5b",
           "afterSha256": "458d9b515c987b8454df73b6845acdc97dea59a56eb69a7cec95528643890b0e"
+        },
+        {
+          "oldStart": 2101,
+          "oldLines": 6,
+          "newStart": 2138,
+          "newLines": 47,
+          "before": "    return {action:'hold',result,recheck:true,count:entry.pendingCount,required};\n  }\n\n  async function identifyTrack(track, generation) {\n    if (!ui.toggle?.checked) return clearCurrentIdentification('Identification désactivée.');\n    if (!state.ready) return clearCurrentIdentification('Bibliothèque encore en préparation…');\n",
+          "after": "    return {action:'hold',result,recheck:true,count:entry.pendingCount,required};\n  }\n\n  // Controlled qualification only. Ordinary player identification remains hover-driven.\n  let qualificationTracking = null;\n  function qualificationDecision(track, result, held=false) {\n    if (!qualificationTracking?.getState().active) return undefined;\n    const ref=result?.best?.ref;\n    const accepted=Boolean(result?.accepted && ref?.locale==='en' && ref.cardId && ref.refId &&\n      state.refs.some(known=>known.refId===ref.refId&&known.cardId===ref.cardId&&known.locale==='en'));\n    return { accepted, cardId:accepted?ref.cardId:null, refId:accepted?ref.refId:null,\n      printingId:accepted?ref.printingId||null:null,\n      candidatePrintingIds:accepted&&Array.isArray(ref.candidatePrintingIds)?[...ref.candidatePrintingIds]:[],\n      recognitionMode:accepted?ref.recognitionMode||null:null,\n      score:accepted&&Number.isFinite(result.best.score)?result.best.score:null,\n      atMs:performance.now(), decision:accepted?(held?'HELD':'ACCEPTED'):'REJECTED' };\n  }\n  function beginQualificationTracking() {\n    if (window.location?.pathname!=='/workspace.html' || !window.TCGVisionQualificationTracking?.create ||\n        !state.ready || !state.matcherWorkerReady || state.contextInput?.gameId!=='cyberpunk' ||\n        state.contextInput?.playerLocale!=='en' || state.refs.length!==229 || !ui.toggle?.checked) {\n      throw Error('Pinned qualification requires the ready Workspace Cyberpunk EN Lab');\n    }\n    if (qualificationTracking?.getState().active) throw Error('A qualification track is already active');\n    state.hoverGeneration+=1; clearTimeout(state.hoverTimer); clearTimeout(state.temporalRecheckTimer);\n    state.lastAnalyzedCropDataUrl=null; state.lastAnalyzedTrackUid=null;\n    qualificationTracking=window.TCGVisionQualificationTracking.create({\n      deferFirstSample:true, now:()=>performance.now(), getTracks:()=>lab.activeTracks(),\n      setInterval:(fn,delay)=>window.setInterval(fn,delay), clearInterval:id=>window.clearInterval(id),\n      onTarget(track) {\n        const previous=state.hoveredTrack?.uid??null, next=track?.uid??null;\n        if(previous!==next) {\n          state.hoverGeneration+=1; clearTimeout(state.hoverTimer); clearTimeout(state.temporalRecheckTimer);\n          clearCurrentIdentification(track?'Analyse automatique de la carte de qualification…':'Track de qualification absent.');\n        }\n        state.hoveredTrack=track?{uid:track.uid,displayId:track.displayId,conf:track.conf,cx:track.cx,cy:track.cy,\n          w:track.w,h:track.h,angle:track.angle,misses:track.misses||0}:null;\n      },\n      identify:track=>identifyTrack(track,state.hoverGeneration)\n    });\n    qualificationTracking.sample();\n    return qualificationTracking;\n  }\n\n  async function identifyTrack(track, generation) {\n    if (!ui.toggle?.checked) return clearCurrentIdentification('Identification désactivée.');\n    if (!state.ready) return clearCurrentIdentification('Bibliothèque encore en préparation…');\n",
+          "oldOffset": 73939,
+          "newOffset": 76029,
+          "beforeSha256": "1dfc9926bbc4089d3eb5e04f57504c9a9831fa2a29825de69e17767a2b387ee8",
+          "afterSha256": "f6bb447d48a596577a3440d812f5f4889ba79e5a096415b1fff2bd9c90847bac"
+        },
+        {
+          "oldStart": 2115,
+          "oldLines": 8,
+          "newStart": 2193,
+          "newLines": 9,
+          "before": "    const cropQuality=analyzeCropQuality(canvas);\n\n    const overlap=overlapContext(track);\n    const pointerCanonical=pointerInCanonical(track,state.pointer);\n    const maskInfo=buildOcclusionMask(track,state.pointer);\n    const context={\n      ...overlap,\n      pointerCanonical,\n",
+          "after": "    const cropQuality=analyzeCropQuality(canvas);\n\n    const overlap=overlapContext(track);\n    const matchingPointer=qualificationTracking?.getState().active?null:state.pointer;\n    const pointerCanonical=pointerInCanonical(track,matchingPointer);\n    const maskInfo=buildOcclusionMask(track,matchingPointer);\n    const context={\n      ...overlap,\n      pointerCanonical,\n",
+          "oldOffset": 74659,
+          "newOffset": 79447,
+          "beforeSha256": "9676fbbac204011f6fc2a3db6829edce016a47cf528baf1146bbd939d30fec0a",
+          "afterSha256": "b475dce5cd42b31214eb58b138c59913c23fca42b643533ab7a84c9a6c17e7a8"
+        },
+        {
+          "oldStart": 2125,
+          "oldLines": 7,
+          "newStart": 2204,
+          "newLines": 7,
+          "before": "\n    // Diagnostic serialization must never stall remote playback. toBlob lets the\n    // browser encode outside this latency-sensitive call stack.\n    if(typeof canvas.toBlob==='function'){\n      canvas.toBlob(blob=>{\n        if(!blob || generation!==state.hoverGeneration || state.hoveredTrack?.uid!==track.uid) return;\n        const reader=new FileReader();\n",
+          "after": "\n    // Diagnostic serialization must never stall remote playback. toBlob lets the\n    // browser encode outside this latency-sensitive call stack.\n    if(!qualificationTracking?.getState().active && typeof canvas.toBlob==='function'){\n      canvas.toBlob(blob=>{\n        if(!blob || generation!==state.hoverGeneration || state.hoveredTrack?.uid!==track.uid) return;\n        const reader=new FileReader();\n",
+          "oldOffset": 74963,
+          "newOffset": 79842,
+          "beforeSha256": "d51267ebee25e3e0132f0bf9b5320fe2ff67db0508199436adca21eecf408246",
+          "afterSha256": "aacba8e031ee289f8e3fd39f4d24715b9f0f6fa65f28a38aea57cdbb68da6c49"
+        },
+        {
+          "oldStart": 2217,
+          "oldLines": 10,
+          "newStart": 2296,
+          "newLines": 10,
+          "before": "          : ' · reflet/transitoire';\n        ui.matcherStatus.textContent+=` · identité stable conservée${suffix}`;\n      }\n      if(temporal.recheck) scheduleTemporalRecheck(track.uid,generation);\n      purgeHoverCache();\n      purgeIdentityStability();\n      return;\n    }\n\n    result=temporal.result;\n",
+          "after": "          : ' · reflet/transitoire';\n        ui.matcherStatus.textContent+=` · identité stable conservée${suffix}`;\n      }\n      if(temporal.recheck && !qualificationTracking?.getState().active) scheduleTemporalRecheck(track.uid,generation);\n      purgeHoverCache();\n      purgeIdentityStability();\n      return qualificationDecision(track,entry?.stableResult,true);\n    }\n\n    result=temporal.result;\n",
+          "oldOffset": 78989,
+          "newOffset": 83913,
+          "beforeSha256": "6ecdc85c05bf815f7a3c8f32f794d031fdbb9215b1133f27b1bd8a367b1d9478",
+          "afterSha256": "fa0dd6d5470645d1fe16e118759084da4ab2a3c4100d92f11473963e1b97888c"
+        },
+        {
+          "oldStart": 2230,
+          "oldLines": 9,
+          "newStart": 2309,
+          "newLines": 11,
+          "before": "    putHoverCache(track,result,state.lastAnalyzedCropDataUrl);\n    purgeHoverCache();\n    purgeIdentityStability();\n  }\n\n  function onPointerMove(event) {\n    if (event.target?.closest?.('.fullscreen-card-preview')) return;\n\n    const point=stagePoint(event);\n",
+          "after": "    putHoverCache(track,result,state.lastAnalyzedCropDataUrl);\n    purgeHoverCache();\n    purgeIdentityStability();\n    return qualificationDecision(track,result);\n  }\n\n  function onPointerMove(event) {\n    if(qualificationTracking?.getState().active){state.pointerInsideStage=true;return;}\n    if (event.target?.closest?.('.fullscreen-card-preview')) return;\n\n    const point=stagePoint(event);\n",
+          "oldOffset": 79399,
+          "newOffset": 84422,
+          "beforeSha256": "83eba788ab916ba3a9b1ab589ba94673ee46a8fb67faa29913a5a695309378b0",
+          "afterSha256": "1bf4c788e4f42f3dc98f2453bca2e045609659a23ee38a2561172865a3b893b2"
+        },
+        {
+          "oldStart": 2334,
+          "oldLines": 6,
+          "newStart": 2415,
+          "newLines": 7,
+          "before": "  }\n\n  function refreshStationaryPointerHover() {\n    if (!state.pointerInsideStage || !state.pointer) return;\n\n    const track=currentTrackUnderStoredPointer();\n",
+          "after": "  }\n\n  function refreshStationaryPointerHover() {\n    if(qualificationTracking?.getState().active){qualificationTracking.sample();return;}\n    if (!state.pointerInsideStage || !state.pointer) return;\n\n    const track=currentTrackUnderStoredPointer();\n",
+          "oldOffset": 82465,
+          "newOffset": 87624,
+          "beforeSha256": "4df834f3c4ec3ff66561480429a9d25a9da2ef13ff1ae5d2f15eeeec7ea881c8",
+          "afterSha256": "f6da2fcb6339862dd5ec01afc3054188baddaf678f6842fb5eeb468af5a1e78c"
+        },
+        {
+          "oldStart": 2374,
+          "oldLines": 6,
+          "newStart": 2456,
+          "newLines": 7,
+          "before": "  lab.els.videoStage.addEventListener('pointermove',onPointerMove);\n  lab.els.videoStage.addEventListener('pointerleave',()=>{\n    state.pointerInsideStage=false;\n    state.hoveredTrack=null;\n    state.hoverGeneration+=1;\n    clearTimeout(state.hoverTimer);\n",
+          "after": "  lab.els.videoStage.addEventListener('pointermove',onPointerMove);\n  lab.els.videoStage.addEventListener('pointerleave',()=>{\n    state.pointerInsideStage=false;\n    if(qualificationTracking?.getState().active) return;\n    state.hoveredTrack=null;\n    state.hoverGeneration+=1;\n    clearTimeout(state.hoverTimer);\n",
+          "oldOffset": 83666,
+          "newOffset": 88914,
+          "beforeSha256": "9359a58aa9b8fb19785d387b2e3cb2c0a8cf24c186a67339a4dd60a0081d81a1",
+          "afterSha256": "fc28cfa5507cd933d398cfb96258259a55459dceafb7fa09e6153e66eea06c22"
+        },
+        {
+          "oldStart": 2499,
+          "oldLines": 6,
+          "newStart": 2582,
+          "newLines": 7,
+          "before": "  window.TCGIdentificationLab = {\n    version: '1.0.0-vision-locale',\n    setContext,\n    start: startProductIdentification,\n    preloadImage(image) {\n      return preloadHdUrl(hdUrlFromImage(image));\n",
+          "after": "  window.TCGIdentificationLab = {\n    version: '1.0.0-vision-locale',\n    setContext,\n    beginQualificationTracking,\n    start: startProductIdentification,\n    preloadImage(image) {\n      return preloadHdUrl(hdUrlFromImage(image));\n",
+          "oldOffset": 89540,
+          "newOffset": 94845,
+          "beforeSha256": "1ac27ed717a39da0fd3732b602196c44bbfbd996b9be84f03f53d47b7fc51332",
+          "afterSha256": "e4ae9a769cb522805ed2abb016c601132e44f5129dd48d89977767f622024809"
+        },
+        {
+          "oldStart": 2589,
+          "oldLines": 6,
+          "newStart": 2673,
+          "newLines": 7,
+          "before": "          verifyDelayMs: HOVER_CACHE_VERIFY_DELAY_MS,\n          rejects: { ...state.hoverCacheRejects }\n        },\n        pointerInsideStage: state.pointerInsideStage,\n        pointer: state.pointer ? { ...state.pointer } : null,\n        spatialPointer: {\n",
+          "after": "          verifyDelayMs: HOVER_CACHE_VERIFY_DELAY_MS,\n          rejects: { ...state.hoverCacheRejects }\n        },\n        qualificationTracking: qualificationTracking?.getState()||null,\n        pointerInsideStage: state.pointerInsideStage,\n        pointer: state.pointer ? { ...state.pointer } : null,\n        spatialPointer: {\n",
+          "oldOffset": 94392,
+          "newOffset": 99729,
+          "beforeSha256": "0305e77eb82ca79ab56fc5196afac2dcf26ab01e0abaa30047a4144a62430582",
+          "afterSha256": "02184d5d2f25d242df2e6d74e6e9d9b815c0cc8b5a8e082bf7850883914bb3c1"
         }
       ]
     },

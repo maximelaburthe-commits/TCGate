@@ -29,6 +29,7 @@
       Object.freeze({ name: 'vision-qualification-1.0.json', sha256: '593ee46ae23585e88a2d015aecee1088b040680832a873f927a28a3264c39541' })
     ])
   });
+  const NOMINAL_6B_BASELINE={"productSha":"7082e92a66b50d0e0654ef44a6bdba89b0715e2b","label":"PHYSICAL 6B NOMINAL FAIL — ORIGINAL EXPORTS PRESERVED","trials":46,"valid":45,"invalid":1,"correct":0,"wrong":0,"detected":45,"correctIdentificationRate":0,"wrongIdentificationRate":0,"detectionRate":100,"categories":{"CORRECT":0,"NOT_IDENTIFIED":19,"UNSTABLE":26,"WRONG_IDENTIFICATION":0,"INVALID_TEST":1,"NO_DETECTION":0},"exports":[{"name":"vision-qualification-session.json","sha256":"da70fbce21f7ba1a99283ed6c51609883308780c011cdaf92502572cb9b1a6ac"},{"name":"vision-qualification-reading-report.json","sha256":"f9158f1daf5529c502d2b0bbff381fb26728ed8bcebb6e55f8b4bb47be9cfbb2"},{"name":"vision-qualification-1.0.json","sha256":"f9158f1daf5529c502d2b0bbff381fb26728ed8bcebb6e55f8b4bb47be9cfbb2"}]};
   // A separate nominal gate never promotes the full qualification verdict.
   // Counts and rates come from the existing harness, including every failure.
   function nominalGate(report) {
@@ -48,7 +49,7 @@
       requiredValid: 45, valid, correct, wrong, invalid: metrics?.invalid || 0, total: metrics?.total || 0,
       correctIdentificationRate, wrongIdentificationRate, minimumCorrectPercent: 95, maximumWrongPercent: 1,
       completedCards: coverage.filter(card => card.valid === 3).length, coverage,
-      baseline: copy(NOMINAL_BASELINE), currentProductSha: report?.productSha || null,
+      baseline: copy(NOMINAL_BASELINE), previousCampaign:copy(NOMINAL_6B_BASELINE), baselines:[copy(NOMINAL_BASELINE),copy(NOMINAL_6B_BASELINE)], currentProductSha: report?.productSha || null,
       fullQualificationVerdict: report?.verdict || 'NOT YET QUALIFIED' };
   }
   function normalizedReferences(input) {

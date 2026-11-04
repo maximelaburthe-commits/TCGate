@@ -2138,6 +2138,47 @@ function applyQualityGuard(result,quality) {
     return {action:'hold',result,recheck:true,count:entry.pendingCount,required};
   }
 
+  // Controlled qualification only. Ordinary player identification remains hover-driven.
+  let qualificationTracking = null;
+  function qualificationDecision(track, result, held=false) {
+    if (!qualificationTracking?.getState().active) return undefined;
+    const ref=result?.best?.ref;
+    const accepted=Boolean(result?.accepted && ref?.locale==='en' && ref.cardId && ref.refId &&
+      state.refs.some(known=>known.refId===ref.refId&&known.cardId===ref.cardId&&known.locale==='en'));
+    return { accepted, cardId:accepted?ref.cardId:null, refId:accepted?ref.refId:null,
+      printingId:accepted?ref.printingId||null:null,
+      candidatePrintingIds:accepted&&Array.isArray(ref.candidatePrintingIds)?[...ref.candidatePrintingIds]:[],
+      recognitionMode:accepted?ref.recognitionMode||null:null,
+      score:accepted&&Number.isFinite(result.best.score)?result.best.score:null,
+      atMs:performance.now(), decision:accepted?(held?'HELD':'ACCEPTED'):'REJECTED' };
+  }
+  function beginQualificationTracking() {
+    if (window.location?.pathname!=='/workspace.html' || !window.TCGVisionQualificationTracking?.create ||
+        !state.ready || !state.matcherWorkerReady || state.contextInput?.gameId!=='cyberpunk' ||
+        state.contextInput?.playerLocale!=='en' || state.refs.length!==229 || !ui.toggle?.checked) {
+      throw Error('Pinned qualification requires the ready Workspace Cyberpunk EN Lab');
+    }
+    if (qualificationTracking?.getState().active) throw Error('A qualification track is already active');
+    state.hoverGeneration+=1; clearTimeout(state.hoverTimer); clearTimeout(state.temporalRecheckTimer);
+    state.lastAnalyzedCropDataUrl=null; state.lastAnalyzedTrackUid=null;
+    qualificationTracking=window.TCGVisionQualificationTracking.create({
+      deferFirstSample:true, now:()=>performance.now(), getTracks:()=>lab.activeTracks(),
+      setInterval:(fn,delay)=>window.setInterval(fn,delay), clearInterval:id=>window.clearInterval(id),
+      onTarget(track) {
+        const previous=state.hoveredTrack?.uid??null, next=track?.uid??null;
+        if(previous!==next) {
+          state.hoverGeneration+=1; clearTimeout(state.hoverTimer); clearTimeout(state.temporalRecheckTimer);
+          clearCurrentIdentification(track?'Analyse automatique de la carte de qualification…':'Track de qualification absent.');
+        }
+        state.hoveredTrack=track?{uid:track.uid,displayId:track.displayId,conf:track.conf,cx:track.cx,cy:track.cy,
+          w:track.w,h:track.h,angle:track.angle,misses:track.misses||0}:null;
+      },
+      identify:track=>identifyTrack(track,state.hoverGeneration)
+    });
+    qualificationTracking.sample();
+    return qualificationTracking;
+  }
+
   async function identifyTrack(track, generation) {
     if (!ui.toggle?.checked) return clearCurrentIdentification('Identification désactivée.');
     if (!state.ready) return clearCurrentIdentification('Bibliothèque encore en préparation…');
@@ -2152,8 +2193,9 @@ function applyQualityGuard(result,quality) {
     const cropQuality=analyzeCropQuality(canvas);
 
     const overlap=overlapContext(track);
-    const pointerCanonical=pointerInCanonical(track,state.pointer);
-    const maskInfo=buildOcclusionMask(track,state.pointer);
+    const matchingPointer=qualificationTracking?.getState().active?null:state.pointer;
+    const pointerCanonical=pointerInCanonical(track,matchingPointer);
+    const maskInfo=buildOcclusionMask(track,matchingPointer);
     const context={
       ...overlap,
       pointerCanonical,
@@ -2162,7 +2204,7 @@ function applyQualityGuard(result,quality) {
 
     // Diagnostic serialization must never stall remote playback. toBlob lets the
     // browser encode outside this latency-sensitive call stack.
-    if(typeof canvas.toBlob==='function'){
+    if(!qualificationTracking?.getState().active && typeof canvas.toBlob==='function'){
       canvas.toBlob(blob=>{
         if(!blob || generation!==state.hoverGeneration || state.hoveredTrack?.uid!==track.uid) return;
         const reader=new FileReader();
@@ -2254,10 +2296,10 @@ function applyQualityGuard(result,quality) {
           : ' · reflet/transitoire';
         ui.matcherStatus.textContent+=` · identité stable conservée${suffix}`;
       }
-      if(temporal.recheck) scheduleTemporalRecheck(track.uid,generation);
+      if(temporal.recheck && !qualificationTracking?.getState().active) scheduleTemporalRecheck(track.uid,generation);
       purgeHoverCache();
       purgeIdentityStability();
-      return;
+      return qualificationDecision(track,entry?.stableResult,true);
     }
 
     result=temporal.result;
@@ -2267,9 +2309,11 @@ function applyQualityGuard(result,quality) {
     putHoverCache(track,result,state.lastAnalyzedCropDataUrl);
     purgeHoverCache();
     purgeIdentityStability();
+    return qualificationDecision(track,result);
   }
 
   function onPointerMove(event) {
+    if(qualificationTracking?.getState().active){state.pointerInsideStage=true;return;}
     if (event.target?.closest?.('.fullscreen-card-preview')) return;
 
     const point=stagePoint(event);
@@ -2371,6 +2415,7 @@ function applyQualityGuard(result,quality) {
   }
 
   function refreshStationaryPointerHover() {
+    if(qualificationTracking?.getState().active){qualificationTracking.sample();return;}
     if (!state.pointerInsideStage || !state.pointer) return;
 
     const track=currentTrackUnderStoredPointer();
@@ -2411,6 +2456,7 @@ function applyQualityGuard(result,quality) {
   lab.els.videoStage.addEventListener('pointermove',onPointerMove);
   lab.els.videoStage.addEventListener('pointerleave',()=>{
     state.pointerInsideStage=false;
+    if(qualificationTracking?.getState().active) return;
     state.hoveredTrack=null;
     state.hoverGeneration+=1;
     clearTimeout(state.hoverTimer);
@@ -2536,6 +2582,7 @@ function applyQualityGuard(result,quality) {
   window.TCGIdentificationLab = {
     version: '1.0.0-vision-locale',
     setContext,
+    beginQualificationTracking,
     start: startProductIdentification,
     preloadImage(image) {
       return preloadHdUrl(hdUrlFromImage(image));
@@ -2626,6 +2673,7 @@ function applyQualityGuard(result,quality) {
           verifyDelayMs: HOVER_CACHE_VERIFY_DELAY_MS,
           rejects: { ...state.hoverCacheRejects }
         },
+        qualificationTracking: qualificationTracking?.getState()||null,
         pointerInsideStage: state.pointerInsideStage,
         pointer: state.pointer ? { ...state.pointer } : null,
         spatialPointer: {

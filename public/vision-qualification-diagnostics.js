@@ -34,10 +34,18 @@
       activeTrackCount: integer(source.activeTrackCount),
       matcherBusy: nullableBoolean(source.matcherBusy), matcherQueued: nullableBoolean(source.matcherQueued),
       temporalEventType: TEMPORAL_EVENT_TYPES.includes(source.temporalEventType) ? source.temporalEventType : null,
-      visibleSource: ['VISIBLE', 'FOREGROUND', 'TABLE_MEMORY'].includes(source.visibleSource) ? source.visibleSource : null
+      visibleSource: ['VISIBLE', 'FOREGROUND', 'TABLE_MEMORY', 'QUALIFICATION_TRACK'].includes(source.visibleSource) ? source.visibleSource : null
     };
   }
 
+  function sanitizeQualificationTracking(input) {
+    const source=input||{};
+    return {mode:source.mode==='PINNED_CANONICAL_TRACK'?source.mode:null,
+      status:['WAITING_FOR_SINGLE_TRACK','TRACKING','TRACK_LOST','MULTIPLE_TRACKS','MATCHER_ERROR','TRACKING_ERROR','STOPPED'].includes(source.status)?source.status:null,
+      lockedTrackUid:integer(source.lockedTrackUid),trackPresent:nullableBoolean(source.trackPresent),
+      observedTrackCount:integer(source.observedTrackCount),decisionAtMs:nonnegative(source.decisionAtMs),accepted:source.accepted===true,
+      errors:(Array.isArray(source.errors)?source.errors:[]).filter(value=>['MATCHER_ERROR','TRACKING_ERROR'].includes(value))};
+  }
   function sanitizeAttempt(input, options = {}) {
     if (!input || typeof input !== 'object') return null;
     const atMs = nonnegative(input.atMs), requestStartedAtMs = nonnegative(input.requestStartedAtMs);
@@ -178,7 +186,8 @@
       value?.runtimeState && typeof value.runtimeState === 'object' && nonnegative(value.atMs) !== null &&
       (number(trial.t0Ms) === null || value.atMs >= trial.t0Ms) &&
       (number(trial.endMs) === null || value.atMs <= trial.endMs))
-      .map(value => ({ atMs: value.atMs, ...sanitizeRuntimeState(value.runtimeState) }));
+      .map(value => ({ atMs: value.atMs, ...sanitizeRuntimeState(value.runtimeState),
+        ...(value.qualificationTracking?{qualificationTracking:sanitizeQualificationTracking(value.qualificationTracking)}:{}) }));
     return { attempts, states, recorded: attempts.length, rejected: source.length - attempts.length,
       truncated: trial?.attemptDiagnosticsTruncated === true,
       dropped: nonnegative(trial?.attemptDiagnosticsDropped) || 0 };
