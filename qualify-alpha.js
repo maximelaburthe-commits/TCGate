@@ -15,7 +15,7 @@ const suites = [
   ['player-locale-test.js'],
   ['vision-locale-test.js'],
   ['cyberpunk-languages-qualification-test.js'],
-  ['vision-qualification-1.0-test.js'], ['workspace-vision-qualification-test.js'], ['vision-qualification-neutral-test.js'], ['vision-nominal-6b-test.js'], ['vision-nominal-diagnostics-test.js'], ['vision-canonical-6c-test.js'], ['vision-6c-production-contract-test.js'], ['vision-qualification-track-test.js'], ['vision-qualification-stable-6c-test.js'],
+  ['vision-qualification-1.0-test.js'], ['workspace-vision-qualification-test.js'], ['vision-qualification-neutral-test.js'], ['vision-nominal-6b-test.js'], ['vision-nominal-diagnostics-test.js'], ['vision-canonical-6c-test.js'], ['vision-6c-production-contract-test.js'], ['vision-qualification-track-test.js'], ['vision-qualification-stable-6c-test.js'], ['vision-nominal-semantics-6c1-test.js'],
   ['future-ux-v3.7-test.js'], ['future-ux-room-metadata-test.js'], ['smoke-test-ui-integration.js'],
   ['phone-camera-test.js'], ['phone-camera-diagnostics-test.js'], ['phone-consolidation-1.2c-test.js'],
   ['vision-integrity-test.js'], ['vision-source-provenance-test.js'], ['vision-backpressure-test.js'],
@@ -72,7 +72,7 @@ function main() {
   delete env.VISION_QUALIFICATION_TEST_ROOT;
   delete env.VISION_QUALIFICATION_HARNESS_PATH;
   delete env.VISION_QUALIFICATION_RUNTIME_PATH;
-  for (const key of ['WORKSPACE_VISION_QUALIFICATION_TEST_ROOT', 'WORKSPACE_VISION_QUALIFICATION_UI_STAGE', 'WORKSPACE_VISION_QUALIFICATION_SHARED_STAGE', 'TCGATE_QUALIFICATION_WORKSPACE_TEST_ROOT', 'TCGATE_VISION_QUALIFICATION_REPORT_MODULE', 'TCGATE_NOMINAL_6B_TEST_ROOT', 'VISION_QUALIFICATION_DIAGNOSTICS_PATH', 'TCGATE_6C_TEST_ROOT', 'TCGATE_6C_PRODUCTION_ROOT', 'TCGATE_6C_CORPUS_PATH', 'TCGATE_6C_SAMPLE_PATH', 'TCGATE_6C_BASELINE_REPO', 'TCGATE_6C_ENGINE_TARGET_ROOT', 'TCGATE_6C_CANONICAL_TARGET_ROOT']) delete env[key];
+  for (const key of ['WORKSPACE_VISION_QUALIFICATION_TEST_ROOT', 'WORKSPACE_VISION_QUALIFICATION_UI_STAGE', 'WORKSPACE_VISION_QUALIFICATION_SHARED_STAGE', 'TCGATE_QUALIFICATION_WORKSPACE_TEST_ROOT', 'TCGATE_VISION_QUALIFICATION_REPORT_MODULE', 'TCGATE_NOMINAL_6B_TEST_ROOT', 'VISION_QUALIFICATION_DIAGNOSTICS_PATH', 'TCGATE_6C1_TEST_ROOT', 'TCGATE_6C_TEST_ROOT', 'TCGATE_6C_PRODUCTION_ROOT', 'TCGATE_6C_CORPUS_PATH', 'TCGATE_6C_SAMPLE_PATH', 'TCGATE_6C_BASELINE_REPO', 'TCGATE_6C_ENGINE_TARGET_ROOT', 'TCGATE_6C_CANONICAL_TARGET_ROOT']) delete env[key];
   env.WORKSPACE_VISION_QUALIFICATION_ARTIFACT_DIR = path.join(output, 'workspace-qualification-ux');
   env.CANDIDATE_GIG_AUDIT_PATH = path.join(output, 'gig-audit.json');
   const preload = path.join(root, 'qualification-assert-count.js').split(path.sep).join('/');

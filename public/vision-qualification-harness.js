@@ -241,7 +241,11 @@
     }
     const unstable = transitions >= 2 || disappearances >= 2 || postStableTrackLoss || prolongedNativeLoss || staleNativeAfterStable;
     const invalidReasons = unique(errors);
-    const category = invalidReasons.length ? 'INVALID_TEST' : unstable ? 'UNSTABLE' : wrongCardEvents || wrongPrintingEvents ? 'WRONG_IDENTIFICATION' : stableAt !== null ? 'CORRECT' : !detected ? 'NO_DETECTION' : 'NOT_IDENTIFIED';
+    // NOMINAL certifies acquisition once the correct stable window completes.
+    // Later losses stay in the counters; invalid evidence and any wrong result
+    // still prevent success. Dedicated conditions retain their continuity rules.
+    const nominalConfirmed = source.condition === 'NOMINAL' && stableAt !== null && !wrongCardEvents && !wrongPrintingEvents;
+    const category = invalidReasons.length ? 'INVALID_TEST' : nominalConfirmed ? 'CORRECT' : unstable ? 'UNSTABLE' : wrongCardEvents || wrongPrintingEvents ? 'WRONG_IDENTIFICATION' : stableAt !== null ? 'CORRECT' : !detected ? 'NO_DETECTION' : 'NOT_IDENTIFIED';
     const correctObservations = visible.filter(observation => observation.identifiedCardId === source.expectedCardId);
     const exactPrinting = expectedPrintingId && correctObservations.some(observation => observation.identifiedPrintingId === expectedPrintingId);
     const sharedArt = correctObservations.some(observation => observation.referenceIds.some(refId => { const reference = data.references.get(refId); return reference && (['shared', 'shared_art', 'shared-art'].includes(reference.recognitionMode) || list(reference.candidatePrintingIds).length > 1); }));

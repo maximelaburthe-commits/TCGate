@@ -76,12 +76,12 @@ async function main(){
   tampered=copy(pinnedRaw);for(const o of tampered.observations)if(o.identifiedCardId)o.qualificationTracking.decisionAtMs=tampered.t0Ms-1;equal(harness.classifyTrial(tampered,pinnedContext).category,'INVALID_TEST','An accepted decision from before this trial is invalid evidence');
   tampered=copy(pinnedRaw);tampered.observations.forEach((o,i)=>{if(i>2)o.atMs+=1500;});tampered.endMs+=1500;equal(harness.classifyTrial(tampered,pinnedContext).category,'INVALID_TEST','A long missing sample interval is not a stable-identity certificate');
   tampered=copy(pinnedRaw);tampered.observations.forEach(o=>{o.qualificationTracking.privateImage='private-trace-payload';});check(!JSON.stringify(harness.classifyTrial(tampered,pinnedContext)).includes('private-trace-payload'),'Per-track evidence is sanitized before report output');
-  w=await world();await w.tick(4);w.start();w.tracks([{uid:61}]);await w.tick(7);w.tracks([]);await w.tick(2);check(w.finish().category!=='CORRECT','Unmarked real track loss cannot hide behind an earlier correct window');await w.dispose();
+  w=await world();await w.tick(4);w.start(exact,{condition:'STABILITY'});w.tracks([{uid:61}]);await w.tick(7);w.tracks([]);await w.tick(2);check(w.finish().category!=='CORRECT','Unmarked real track loss cannot hide behind an earlier correct window');await w.dispose();
   w=await world();await w.tick(4);w.start();w.setNext(()=>Promise.reject(Error('private native error')));w.tracks([{uid:62}]);await w.tick(3);const crashed=w.finish();equal(crashed.category,'INVALID_TEST');check(crashed.invalidReasons.includes('CRASH'));check(!JSON.stringify(crashed).includes('private native error'));await w.dispose();
-  w=await world();await w.tick(4);w.start();w.tracks([{uid:63}]);await w.tick(7);w.setNext(native(exact,{accepted:false,decision:'REJECTED'}));await w.tick(6);equal(w.finish().category,'UNSTABLE','One sustained native loss after recognition is real instability');await w.dispose();
+  w=await world();await w.tick(4);w.start(exact,{condition:'STABILITY'});w.tracks([{uid:63}]);await w.tick(7);w.setNext(native(exact,{accepted:false,decision:'REJECTED'}));await w.tick(6);equal(w.finish().category,'UNSTABLE','One sustained native loss after recognition is real instability');await w.dispose();
   w=await world();await w.tick(4);w.start(exact,{condition:'REMOVAL'});w.tracks([{uid:64}]);await w.tick(7);w.q.markRemoval();w.tracks([]);await w.tick(6);const removed=w.finish();equal(removed.category,'CORRECT','Explicit physical removal does not count as unmarked identity instability');equal(removed.removal.assessment,'CLEARED');await w.dispose();
   w=await world();await w.tick(4);w.start();w.tracks([{uid:65}]);await w.tick();w.setNext(()=>new Promise(()=>{}));await w.tick(8);check(w.finish().category!=='CORRECT','Polling one cached native acceptance cannot manufacture a 1000ms engine confirmation span');await w.dispose();
-  w=await world();await w.tick(4);w.start();w.tracks([{uid:66}]);await w.tick(7);w.setNext(()=>new Promise(()=>{}));await w.tick(8);equal(w.finish().category,'UNSTABLE','A qualifying native window followed by more than 1000ms without fresh completion is unstable');await w.dispose();
+  w=await world();await w.tick(4);w.start(exact,{condition:'STABILITY'});w.tracks([{uid:66}]);await w.tick(7);w.setNext(()=>new Promise(()=>{}));await w.tick(8);equal(w.finish().category,'UNSTABLE','A qualifying native window followed by more than 1000ms without fresh completion is unstable');await w.dispose();
   w=await world();await w.tick(4);w.start();w.tracks([{uid:67}]);await w.tick(2);w.tracks([{uid:67},{uid:68}]);await w.tick(2);equal(w.handle.getState().identity,null);equal(w.finish().category,'INVALID_TEST','An extra live track after locking invalidates this single-card qualification');await w.dispose();
   const compact=JSON.parse(fs.readFileSync(path.join(root,'fixtures/vision-qualification-6c-replays.json'),'utf8'));
   equal(compact.visibleClearTransitions.length,85);
@@ -111,11 +111,20 @@ async function main(){
         dir==='physical-baseline-fail'?'593ee46ae23585e88a2d015aecee1088b040680832a873f927a28a3264c39541':'f9158f1daf5529c502d2b0bbff381fb26728ed8bcebb6e55f8b4bb47be9cfbb2','Archived report bytes remain authentic');
       const replay=sharedReport.generate({productSha:s.context.productSha,sampleProductSha:s.context.productSha,references:s.context.references,sampleDocument,sessions:[s]});
       equal(replay.trials.length,s.trials.length,'No invalid historical trial disappears');
-      equal(replay.metrics.physical,original.metrics.physical,'Entire original physical aggregate including invalids stays unchanged');
-      for(const t of original.trials){const actual=replay.trials.find(x=>x.trialId===t.trialId);equal(actual.category,t.category);equal(actual.wrongCardEvents,t.wrongCardEvents);equal(actual.wrongPrintingEvents,t.wrongPrintingEvents);equal(actual.disappearances,t.disappearances);equal(actual.invalidReasons,t.invalidReasons);archiveTrials++;}
+      // 6C.1 changes only the interpretation of a valid NOMINAL acquisition.
+      // These original reports and session bytes remain immutable; historical
+      // counters and timings still match, with the explicit nominal-only delta.
+      const acquired=t=>t.condition==='NOMINAL' && t.category!=='INVALID_TEST' && t.stableConfirmedAtMs!==null && !t.wrongCardEvents && !t.wrongPrintingEvents;
+      const corrected=original.trials.filter(t=>acquired(t)&&t.category!=='CORRECT');
+      equal(corrected.length,dir==='physical-baseline-fail'?4:24,'Historical semantics delta is explicit, not a rewrite of original FAIL evidence');
+      const expectedMetrics=copy(original.metrics.physical);
+      for(const t of corrected){expectedMetrics.categories[t.category]--;expectedMetrics.categories.CORRECT++;expectedMetrics.correct++;}
+      expectedMetrics.correctIdentificationRate=expectedMetrics.correct/expectedMetrics.valid*100;
+      equal(replay.metrics.physical,expectedMetrics,'Only nominal category/correct-rate aggregates change under 6C.1');
+      for(const t of original.trials){const actual=replay.trials.find(x=>x.trialId===t.trialId);equal(actual.category,acquired(t)?'CORRECT':t.category);equal(actual.wrongCardEvents,t.wrongCardEvents);equal(actual.wrongPrintingEvents,t.wrongPrintingEvents);equal(actual.disappearances,t.disappearances);equal(actual.invalidReasons,t.invalidReasons);equal(actual.stableConfirmedAtMs,t.stableConfirmedAtMs);equal(actual.stableCorrectSinceMs,t.stableCorrectSinceMs);archiveTrials++;}
       equal(replay.metrics.physical.total,dir==='physical-baseline-fail'?45:46);equal(replay.metrics.physical.valid,dir==='physical-baseline-fail'?43:45);equal(replay.metrics.physical.invalid,dir==='physical-baseline-fail'?2:1);equal(replay.metrics.physical.wrongIdentification,dir==='physical-baseline-fail'?7:0);
     }
   }
-  console.log('VISION_QUALIFICATION_STABLE_6C_PASS '+assertions+' assertions; '+archiveTrials+' unchanged historical trials including invalids; native scalar injections are automated tests only');
+  console.log('VISION_QUALIFICATION_STABLE_6C_PASS '+assertions+' assertions; '+archiveTrials+' historical trials with explicit 6C.1 nominal-only category deltas; original exports immutable; native scalar injections are automated tests only');
 }
 main().catch(error=>{console.error(error.stack||error.message);process.exitCode=1;});
