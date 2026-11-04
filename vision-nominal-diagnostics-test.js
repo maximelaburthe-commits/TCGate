@@ -121,7 +121,9 @@ check(/PRIVATE|device|image|crop|"x"|"y"|name|https:/.test(JSON.stringify(stateP
 
 // Real optional tap, before HOLD return; stripping this exact tap must reproduce
 // the entire immutable production identification source at the 6A.1 baseline.
-const engine = fs.readFileSync(path.join(publicRoot, 'identification.js'), 'utf8');
+// Reverse only the reviewed exact 6C hunks, then run every historical 6B
+// tap and 79-function fingerprint assertion unchanged against the real source.
+const engine = require('./vision-6c-production-contract.js').normalizeIdentification6C(fs.readFileSync(path.join(publicRoot, 'identification.js'))).toString('utf8');
 const tap = '\n    // Qualification-only scalar diagnostics; absent outside the Workspace workflow.\n' +
   '    window.TCGVisionQualificationDiagnostics?.observeAttempt({\n' +
   '      result,temporal,temporalEntry:state.identityStability.tracks.get(track.uid),\n' +
@@ -192,4 +194,4 @@ context.TCGVisionQualificationDiagnostics.observeAttempt(input);
 checks++; // Non-throwing observation is required even when a diagnostic listener fails.
 context.TCGVisionQualificationDiagnostics.observeAttempt(null);
 checks++;
-console.log(`Vision nominal diagnostics: ${checks} assertions PASS; scalar-only attempt events; Vision source unchanged outside the optional tap.`);
+console.log(`Vision nominal diagnostics: ${checks} assertions PASS; scalar-only attempt events; original Vision fingerprints retained after exact authorised 6C patches and the optional 6B tap.`);

@@ -113,7 +113,7 @@ async function run(){
   await assert.rejects(databaseSource.load('cyberpunk',{fetchImpl:fixtureFetch(fallbackData,fallbackCounters,{fail:true})}),/DB HTTP 503/,'remote failure remains explicit; active locale recognition never broadens to a global fallback');
 
   const criticalHashes={'public/detection-worker.js':'19d0e72eeb620f23742a9b8fe321f700c45cbd29ad41b952d115bca5fd983227','public/identification-worker.js':'306eafe4decdCCE26287683bc581cd8ca24a0c2f58cd299873b093942127a14a'.toLowerCase(),'models/card_detector_v53_512.onnx':'2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319'};
-  for(const[file,expected]of Object.entries(criticalHashes)){const actual=crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname,file))).digest('hex');assert.strictEqual(actual,expected,`critical component changed: ${file}`);}
+  for(const[file,expected]of Object.entries(criticalHashes)){const bytes=fs.readFileSync(path.join(__dirname,file));const checked=file==='public/identification-worker.js'?require('./vision-6c-production-contract.js').productionIdentificationWorker(bytes):bytes;const actual=crypto.createHash('sha256').update(checked).digest('hex');assert.strictEqual(actual,expected,`critical component changed: ${file}`);}
   console.log(`PASS cyberpunk-db-integration (${source.real?'real DB v1 fixture':'synthetic CI fixture'})`);
   console.log(`150 canonical / 229 printings / ${database.references.length} matcher references / ${database.recognitionGroups.length} recognition groups / requests=${counters.requests} / bytes=${database.metrics.bytes}`);
 }

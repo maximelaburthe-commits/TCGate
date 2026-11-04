@@ -354,8 +354,29 @@ function bestMaskedComparison(observations,ref,maskInfo){
   return best;
 }
 
+function canonicalRankCandidates(physicalRanked){
+  // EN recognition competes between canonical cards. A sibling physical
+  // reference keeps its own artwork/printing metadata but cannot be runner-up.
+  // Other locales and legacy references retain their physical decisions.
+  const bestByCard=new Map();
+  for(let index=0;index<physicalRanked.length;index++){
+    const item=physicalRanked[index];
+    const ref=item.ref;
+    const key=ref?.locale==='en'&&ref.cardId ? 'card:'+ref.cardId : 'physical:'+index;
+    const previous=bestByCard.get(key);
+    if(!previous||item.score>previous.score) bestByCard.set(key,item);
+  }
+  return Array.from(bestByCard.values()).sort((a,b)=>b.score-a.score);
+}
+
 function metaRef(ref){
-  return {name:ref.name,type:ref.type||'',image:ref.image};
+  return {
+    locale:ref.locale||null,refId:ref.refId||null,cardId:ref.cardId||null,
+    printingId:ref.printingId||null,referencePrintingId:ref.referencePrintingId||null,
+    recognitionGroupId:ref.recognitionGroupId||null,recognitionMode:ref.recognitionMode||null,
+    candidatePrintingIds:Array.isArray(ref.candidatePrintingIds)?[...ref.candidatePrintingIds]:[],
+    variantKind:ref.variantKind||null,name:ref.name,type:ref.type||'',image:ref.image
+  };
 }
 function packItem(item){
   if(!item) return null;
@@ -398,7 +419,8 @@ function identify(bitmap,context){
     return {ref:item.ref,score:parts.total,parts,coarseScore:item.coarseScore};
   }).sort((a,b)=>b.score-a.score);
 
-  let ranked=normalRanked.slice(0,5);
+  let ranked=canonicalRankCandidates(normalRanked).slice(0,5);
+  let physicalRanked=normalRanked.slice(0,5);
   let best=ranked[0]||null;
   let second=ranked[1]||null;
   let margin=best?best.score-(second?.score||0):0;
@@ -420,7 +442,8 @@ function identify(bitmap,context){
         return {ref:item.ref,score:parts.total,parts,coarseScore:item.coarseScore};
       });
       normalRanked=[...normalRanked,...more].sort((a,b)=>b.score-a.score);
-      ranked=normalRanked.slice(0,5);
+      ranked=canonicalRankCandidates(normalRanked).slice(0,5);
+      physicalRanked=normalRanked.slice(0,5);
       best=ranked[0]||null;
       second=ranked[1]||null;
       margin=best?best.score-(second?.score||0):0;
@@ -448,7 +471,7 @@ function identify(bitmap,context){
     timing.maskCoarseMs=performance.now()-tMaskCoarse;
 
     const tMaskDetail=performance.now();
-    const maskRanked=maskPool.map(ref=>{
+    const maskPhysicalRanked=maskPool.map(ref=>{
       const m=bestMaskedComparison(observations,ref.descriptor,context.maskInfo);
       return {
         ref,
@@ -459,7 +482,8 @@ function identify(bitmap,context){
         },
         masked:m
       };
-    }).sort((a,b)=>b.score-a.score).slice(0,5);
+    }).sort((a,b)=>b.score-a.score);
+    const maskRanked=canonicalRankCandidates(maskPhysicalRanked).slice(0,5);
     timing.maskDetailMs=performance.now()-tMaskDetail;
 
     const mb=maskRanked[0]||null;
@@ -473,14 +497,15 @@ function identify(bitmap,context){
       bestScore:mb?.score||0,
       margin:mm,
       testedCandidates:maskPool.length,
-      candidates:maskRanked.map(packItem)
+      candidates:maskRanked.map(packItem),
+      physicalCandidates:maskPhysicalRanked.slice(0,5).map(packItem)
     };
 
     if(mb&&mb.score>=.655&&mm>=.038){
-      best=mb;second=ms;margin=mm;ranked=maskRanked;
+      best=mb;second=ms;margin=mm;ranked=maskRanked;physicalRanked=maskPhysicalRanked.slice(0,5);
       accepted=true;mode='masked';
     }else if(mb&&mm>margin+.035){
-      best=mb;second=ms;margin=mm;ranked=maskRanked;
+      best=mb;second=ms;margin=mm;ranked=maskRanked;physicalRanked=maskPhysicalRanked.slice(0,5);
       mode='masked-uncertain';
     }
   }
@@ -493,13 +518,16 @@ function identify(bitmap,context){
 
   return {
     accepted,
+    marginScope:best?.ref?.locale==='en'&&best.ref.cardId?'CANONICAL_CARD_ID':'PHYSICAL_REFERENCE',
     best:packItem(best),
     second:packItem(second),
     margin,
     ranked:ranked.slice(0,5).map(packItem),
+    physicalCandidates:physicalRanked.map(packItem),
     mode,
     overlap:context?.maxOverlap||0,
-    normalCandidates:normalRanked.slice(0,5).map(packItem),
+    normalCandidates:canonicalRankCandidates(normalRanked).slice(0,5).map(packItem),
+    normalPhysicalCandidates:normalRanked.slice(0,5).map(packItem),
     maskDiagnostics,
     timing
   };

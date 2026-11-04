@@ -62,6 +62,18 @@
       }
       candidates.push({ rank: candidates.length + 1, cardId, printingId, refId, matcherScore: score });
     }
+    const physicalCandidates = [];
+    for (const value of (Array.isArray(input.physicalCandidates) ? input.physicalCandidates : []).slice(0, 5)) {
+      const cardId = identifier(value?.cardId), printingId = identifier(value?.printingId), refId = identifier(value?.refId);
+      const score = number(value?.matcherScore);
+      const reference = byRef?.get(refId);
+      if (!cardId || !refId || score === null || (byRef && (!reference || reference.locale !== 'en' ||
+          reference.cardId !== cardId || (printingId && ![reference.printingId, reference.referencePrintingId,
+            ...(Array.isArray(reference.candidatePrintingIds) ? reference.candidatePrintingIds : [])].includes(printingId))))) {
+        validationErrors.push('UNKNOWN_OR_INVALID_REFERENCE'); continue;
+      }
+      physicalCandidates.push({ rank: physicalCandidates.length + 1, cardId, printingId, refId, matcherScore: score });
+    }
     const qualityInput = input.quality || {};
     const temporalInput = input.temporal || {};
     const visibleInput = input.visibleIdentityBeforeRender || {};
@@ -107,7 +119,10 @@
     if (input.matcherAccepted === false && !causes.length) causes.push('OTHER_OBSERVED_REJECTION');
     return {
       attemptId: nonnegative(input.attemptId), atMs, requestStartedAtMs, trackUid: trackId(input.trackUid),
-      expectedCardId, candidates, bestScore, secondScore, margin,
+      expectedCardId, candidates, physicalCandidates, bestScore, secondScore, margin,
+      marginScope:['CANONICAL_CARD_ID','PHYSICAL_REFERENCE'].includes(input.marginScope)?input.marginScope:null,
+      canonicalMargin:input.marginScope==='CANONICAL_CARD_ID'?margin:null,
+      physicalMargin:physicalCandidates.length>1?physicalCandidates[0].matcherScore-physicalCandidates[1].matcherScore:null,
       expectedRank: expected?.rank || null, expectedScore: expected?.matcherScore ?? null,
       expectedScoreStatus: !expectedCardId ? 'NO_EXPECTATION' : expected ? 'OBSERVED_IN_EXISTING_RANKED_CANDIDATES' : 'NOT_AVAILABLE_IN_EXISTING_RANKED_CANDIDATES',
       matcherAccepted: bool(input.matcherAccepted), finalAccepted: bool(input.finalAccepted),
@@ -136,6 +151,9 @@
         trackUid: input.track?.uid, trackMisses: input.track?.misses, activeTrackCount: input.activeTrackCount,
         candidates: (result?.ranked || []).slice(0, 5).map(item => ({ cardId: item.ref?.cardId,
           printingId: item.ref?.printingId, refId: item.ref?.refId, matcherScore: item.score })),
+        marginScope:result?.marginScope,
+        physicalCandidates:(result?.physicalCandidates||[]).slice(0,5).map(item=>({cardId:item.ref?.cardId,
+          printingId:item.ref?.printingId,refId:item.ref?.refId,matcherScore:item.score})),
         bestScore: number(result?.best?.score), secondScore: number(result?.second?.score), margin: number(result?.margin),
         matcherAccepted: result?.accepted === true, finalAccepted: temporal?.action === 'render' && temporal.result?.accepted === true,
         rejectionReason: temporal?.result?.rejectionReason || result?.rejectionReason || null,

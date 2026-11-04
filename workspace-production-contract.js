@@ -1,10 +1,13 @@
 'use strict';
 // Jalon 4 changes corpus adapters and worker lifecycle. Freeze every other named
 // function and every recognition constant against the pre-Jalon-4 fingerprints.
-// Detector/model/identification-worker keep their separate complete byte hashes.
-// The qualification tap is the sole 6B exception. It is observational, is
+// Detector/model keep complete byte hashes. The identification worker retains
+// its historical byte hash after exact literal 6C hunk reversal.
+// Exact anchored 6C hunks are reversed first. The qualification tap is the sole
+// 6B exception. It is observational, is
 // accepted only at its exact site, and is removed before the existing 79 named
 // functions and constants are fingerprinted. Changed taps are never stripped.
+const { normalizeIdentification6C } = require('./vision-6c-production-contract.js');
 const qualificationDiagnosticsTap = '\n    // Qualification-only scalar diagnostics; absent outside the Workspace workflow.\n' +
   '    window.TCGVisionQualificationDiagnostics?.observeAttempt({\n' +
   '      result,temporal,temporalEntry:state.identityStability.tracks.get(track.uid),\n' +
@@ -44,7 +47,7 @@ function algorithmSections(buffer, lifecycle, expectedFunctions) {
   return Buffer.from(JSON.stringify({ functions: functions.sort(([a], [b]) => a.localeCompare(b)), constants: constants.sort(([a], [b]) => a.localeCompare(b)) }));
 }
 function productionIdentification(buffer) {
-  return algorithmSections(stripQualificationDiagnostics(buffer), ['fingerprint', 'loadCache', 'saveCache', 'loadFallbackSnapshotCardList', 'loadCardList', 'buildLibrary', 'matcherWorkerPayload', 'initMatcherWorker', 'startProductIdentification', 'setContext'], 79);
+  return algorithmSections(stripQualificationDiagnostics(normalizeIdentification6C(buffer)), ['fingerprint', 'loadCache', 'saveCache', 'loadFallbackSnapshotCardList', 'loadCardList', 'buildLibrary', 'matcherWorkerPayload', 'initMatcherWorker', 'startProductIdentification', 'setContext'], 79);
 }
 function productionTableState(buffer) {
   return algorithmSections(buffer, ['initWorker', 'start', 'stop'], 47);

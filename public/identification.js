@@ -32,7 +32,7 @@
   const REF_W = 72;
   const REF_H = 108;
 
-  // Acceptance is based on both absolute visual evidence and separation from #2.
+  // Acceptance uses absolute visual evidence and separation from the next card (EN).
   // These are matcher indices, NOT calibrated probabilities.
   const NORMAL_ACCEPT = 0.235;
   const NORMAL_MARGIN = 0.075;
@@ -1209,6 +1209,13 @@
     return state.refs.map(ref=>({
       locale:ref.locale||null,
       refId:ref.refId||null,
+      cardId:ref.cardId||null,
+      printingId:ref.printingId||null,
+      referencePrintingId:ref.referencePrintingId||null,
+      recognitionGroupId:ref.recognitionGroupId||null,
+      recognitionMode:ref.recognitionMode||null,
+      candidatePrintingIds:Array.isArray(ref.candidatePrintingIds)?[...ref.candidatePrintingIds]:[],
+      variantKind:ref.variantKind||null,
       name:ref.name,
       type:ref.type||'',
       image:ref.image,
@@ -1229,6 +1236,10 @@
     hydrate(result.best);hydrate(result.second);
     for(const item of result.ranked||[])hydrate(item);
     for(const item of result.normalCandidates||[])hydrate(item);
+    for(const item of result.physicalCandidates||[])hydrate(item);
+    for(const item of result.normalPhysicalCandidates||[])hydrate(item);
+    for(const item of result.maskDiagnostics?.candidates||[])hydrate(item);
+    for(const item of result.maskDiagnostics?.physicalCandidates||[])hydrate(item);
     return result;
   }
 
@@ -1411,6 +1422,21 @@
     }
   }
 
+  function canonicalRankCandidates(physicalRanked){
+    // EN recognition competes between canonical cards. A sibling physical
+    // reference keeps its own artwork/printing metadata but cannot be runner-up.
+    // Other locales and legacy references retain their physical decisions.
+    const bestByCard=new Map();
+    for(let index=0;index<physicalRanked.length;index++){
+      const item=physicalRanked[index];
+      const ref=item.ref;
+      const key=ref?.locale==='en'&&ref.cardId ? 'card:'+ref.cardId : 'physical:'+index;
+      const previous=bestByCard.get(key);
+      if(!previous||item.score>previous.score) bestByCard.set(key,item);
+    }
+    return Array.from(bestByCard.values()).sort((a,b)=>b.score-a.score);
+  }
+
   function identifyCanvas(canvas, context=null) {
     if (!canvas || !state.ready) return null;
 
@@ -1443,7 +1469,8 @@
       return {ref:item.ref,score:parts.total,parts,coarseScore:item.coarseScore};
     }).sort((a,b)=>b.score-a.score);
 
-    let ranked=normalRanked.slice(0,5);
+    let ranked=canonicalRankCandidates(normalRanked).slice(0,5);
+    let physicalRanked=normalRanked.slice(0,5);
     let best=ranked[0]||null;
     let second=ranked[1]||null;
     let margin=best ? best.score-(second?.score||0) : 0;
@@ -1468,7 +1495,8 @@
           return {ref:item.ref,score:parts.total,parts,coarseScore:item.coarseScore};
         });
         normalRanked=[...normalRanked,...more].sort((a,b)=>b.score-a.score);
-        ranked=normalRanked.slice(0,5);
+        ranked=canonicalRankCandidates(normalRanked).slice(0,5);
+        physicalRanked=normalRanked.slice(0,5);
         best=ranked[0]||null;
         second=ranked[1]||null;
         margin=best ? best.score-(second?.score||0) : 0;
@@ -1501,7 +1529,7 @@
       timing.maskCoarseMs=performance.now()-tMaskCoarse;
 
       const tMaskDetail=performance.now();
-      const maskRanked=maskPool.map(ref=>{
+      const maskPhysicalRanked=maskPool.map(ref=>{
         const m=bestMaskedComparison(observations,ref.descriptor,context.maskInfo);
         return {
           ref,
@@ -1516,7 +1544,8 @@
           },
           masked:m
         };
-      }).sort((a,b)=>b.score-a.score).slice(0,5);
+      }).sort((a,b)=>b.score-a.score);
+      const maskRanked=canonicalRankCandidates(maskPhysicalRanked).slice(0,5);
       timing.maskDetailMs=performance.now()-tMaskDetail;
 
       const mb=maskRanked[0]||null;
@@ -1530,7 +1559,8 @@
         bestScore:mb?.score||0,
         margin:mm,
         testedCandidates:maskPool.length,
-        candidates:maskRanked
+        candidates:maskRanked,
+        physicalCandidates:maskPhysicalRanked.slice(0,5)
       };
 
       if (mb && mb.score>=.655 && mm>=.038) {
@@ -1538,6 +1568,7 @@
         second=ms;
         margin=mm;
         ranked=maskRanked;
+        physicalRanked=maskPhysicalRanked.slice(0,5);
         accepted=true;
         mode='masked';
       } else if (mb && mm>margin+.035) {
@@ -1545,6 +1576,7 @@
         second=ms;
         margin=mm;
         ranked=maskRanked;
+        physicalRanked=maskPhysicalRanked.slice(0,5);
         mode='masked-uncertain';
       }
     }
@@ -1558,9 +1590,12 @@
 
     return {
       accepted,best,second,margin,ranked,
+      marginScope:best?.ref?.locale==='en'&&best.ref.cardId?'CANONICAL_CARD_ID':'PHYSICAL_REFERENCE',
+      physicalCandidates:physicalRanked,
       mode,
       overlap:context?.maxOverlap||0,
-      normalCandidates:normalRanked.slice(0,5),
+      normalCandidates:canonicalRankCandidates(normalRanked).slice(0,5),
+      normalPhysicalCandidates:normalRanked.slice(0,5),
       maskDiagnostics,
       timing
     };
@@ -1888,7 +1923,9 @@ function applyQualityGuard(result,quality) {
 
   function identityKey(result) {
     if (!result?.accepted || !result.best?.ref) return null;
-    return result.best.ref.image || result.best.ref.name || null;
+    const ref=result.best.ref;
+    if(ref.locale==='en'&&ref.cardId) return 'card:'+ref.cardId;
+    return ref.image || ref.name || null;
   }
 
   function emitIdentityStability(type, track, extra={}) {

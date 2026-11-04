@@ -1,0 +1,3864 @@
+{
+  "schemaVersion": "6C-authentic-EN-corpus-1",
+  "databaseSha": "56402636a77af9c8b5dc4e3b61c509a185f3c834",
+  "canonicalCardCount": 150,
+  "referenceCount": 229,
+  "provenance": "Scalar metadata projected from the immutable official database via the existing production validator; no image or media export",
+  "sourceHashes": {
+    "manifest.json": "9ff6012846af646ab3dee07522f0492629c00a78797124aa4cbca684b65876f6",
+    "db-manifest.json": "f66a4c840d176650498db8f2fcfdf9b55499c8dea1a10acec0545f009b4f560d",
+    "runtime/cards.min.json": "94e9a55ae043a199e65ef697b046751bda6ccbd15235d0f191f93a75461592c9",
+    "runtime/printings.min.json": "e002dee37eac81de3a1d685256e28ab80cfcbdcdda81afb83126975174540a8c",
+    "runtime/canonical-vision-index.json": "a72e864b691e165da15ad0da77b40f6c580b0a0edf589f3d0466cf9e5353204f",
+    "runtime/printing-recognition-index.json": "5ca3f0ce501fdd00155baa8532358bed51e359d92668534fb7c7ee7d28943449",
+    "runtime/recognition-groups.json": "5f382dcf51b61728bddd54bca3b8e54c42a7eb14e905701b60d159e831027c36"
+  },
+  "references": [
+    {
+      "locale": "en",
+      "refId": "cprg-3bc009be7b68b50d:cpp-90f146ec20a44e39",
+      "cardId": "cp-6th-street-recruits",
+      "printingId": "cpp-90f146ec20a44e39",
+      "referencePrintingId": "cpp-90f146ec20a44e39",
+      "candidatePrintingIds": [
+        "cpp-90f146ec20a44e39"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-3bc009be7b68b50d",
+      "variantKind": "standard",
+      "name": "6th Street Recruits",
+      "type": "Unit",
+      "image": "cprg-3bc009be7b68b50d:cpp-90f146ec20a44e39"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-0d26ece3e78ec28e:cpp-0c4d5b62f83947af",
+      "cardId": "cp-adam-smasher-ender-of-legends",
+      "printingId": null,
+      "referencePrintingId": "cpp-0c4d5b62f83947af",
+      "candidatePrintingIds": [
+        "cpp-0c4d5b62f83947af",
+        "cpp-bec13059d093b5a4",
+        "cpp-fff81bae871b83ec"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-0d26ece3e78ec28e",
+      "variantKind": "standard",
+      "name": "Adam Smasher: Ender of Legends",
+      "type": "Legend",
+      "image": "cprg-0d26ece3e78ec28e:cpp-0c4d5b62f83947af"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-0d26ece3e78ec28e:cpp-bec13059d093b5a4",
+      "cardId": "cp-adam-smasher-ender-of-legends",
+      "printingId": null,
+      "referencePrintingId": "cpp-bec13059d093b5a4",
+      "candidatePrintingIds": [
+        "cpp-0c4d5b62f83947af",
+        "cpp-bec13059d093b5a4",
+        "cpp-fff81bae871b83ec"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-0d26ece3e78ec28e",
+      "variantKind": "standard",
+      "name": "Adam Smasher: Ender of Legends",
+      "type": "Legend",
+      "image": "cprg-0d26ece3e78ec28e:cpp-bec13059d093b5a4"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-0d26ece3e78ec28e:cpp-fff81bae871b83ec",
+      "cardId": "cp-adam-smasher-ender-of-legends",
+      "printingId": null,
+      "referencePrintingId": "cpp-fff81bae871b83ec",
+      "candidatePrintingIds": [
+        "cpp-0c4d5b62f83947af",
+        "cpp-bec13059d093b5a4",
+        "cpp-fff81bae871b83ec"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-0d26ece3e78ec28e",
+      "variantKind": "iconic",
+      "name": "Adam Smasher: Ender of Legends",
+      "type": "Legend",
+      "image": "cprg-0d26ece3e78ec28e:cpp-fff81bae871b83ec"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d8f4bad2aab7c161:cpp-d6010bbf2e2db17e",
+      "cardId": "cp-adam-smasher-metal-over-meat",
+      "printingId": null,
+      "referencePrintingId": "cpp-d6010bbf2e2db17e",
+      "candidatePrintingIds": [
+        "cpp-d6010bbf2e2db17e",
+        "cpp-da46cce396eab392"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d8f4bad2aab7c161",
+      "variantKind": "iconic",
+      "name": "Adam Smasher: Metal Over Meat",
+      "type": "Unit",
+      "image": "cprg-d8f4bad2aab7c161:cpp-d6010bbf2e2db17e"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d8f4bad2aab7c161:cpp-da46cce396eab392",
+      "cardId": "cp-adam-smasher-metal-over-meat",
+      "printingId": null,
+      "referencePrintingId": "cpp-da46cce396eab392",
+      "candidatePrintingIds": [
+        "cpp-d6010bbf2e2db17e",
+        "cpp-da46cce396eab392"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d8f4bad2aab7c161",
+      "variantKind": "standard",
+      "name": "Adam Smasher: Metal Over Meat",
+      "type": "Unit",
+      "image": "cprg-d8f4bad2aab7c161:cpp-da46cce396eab392"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d52d70091eb6b24f:cpp-847b9c89f75480ec",
+      "cardId": "cp-adrenaline-converter",
+      "printingId": "cpp-847b9c89f75480ec",
+      "referencePrintingId": "cpp-847b9c89f75480ec",
+      "candidatePrintingIds": [
+        "cpp-847b9c89f75480ec"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-d52d70091eb6b24f",
+      "variantKind": "standard",
+      "name": "Adrenaline Converter",
+      "type": "Gear",
+      "image": "cprg-d52d70091eb6b24f:cpp-847b9c89f75480ec"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-a9f7fcdbbdddc7bf:cpp-66122f1a59400546",
+      "cardId": "cp-afterparty-at-lizzie-s",
+      "printingId": null,
+      "referencePrintingId": "cpp-66122f1a59400546",
+      "candidatePrintingIds": [
+        "cpp-66122f1a59400546",
+        "cpp-a86d67874ca62e37"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-a9f7fcdbbdddc7bf",
+      "variantKind": "standard",
+      "name": "Afterparty at Lizzie's",
+      "type": "Program",
+      "image": "cprg-a9f7fcdbbdddc7bf:cpp-66122f1a59400546"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-a9f7fcdbbdddc7bf:cpp-a86d67874ca62e37",
+      "cardId": "cp-afterparty-at-lizzie-s",
+      "printingId": null,
+      "referencePrintingId": "cpp-a86d67874ca62e37",
+      "candidatePrintingIds": [
+        "cpp-66122f1a59400546",
+        "cpp-a86d67874ca62e37"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-a9f7fcdbbdddc7bf",
+      "variantKind": "standard",
+      "name": "Afterparty at Lizzie's",
+      "type": "Program",
+      "image": "cprg-a9f7fcdbbdddc7bf:cpp-a86d67874ca62e37"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-4c344513e176db26:cpp-a90b84997c367fca",
+      "cardId": "cp-all-is-lost",
+      "printingId": "cpp-a90b84997c367fca",
+      "referencePrintingId": "cpp-a90b84997c367fca",
+      "candidatePrintingIds": [
+        "cpp-a90b84997c367fca"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-4c344513e176db26",
+      "variantKind": "standard",
+      "name": "All is Lost",
+      "type": "Program",
+      "image": "cprg-4c344513e176db26:cpp-a90b84997c367fca"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-9adf69333be9df52:cpp-3fabf6939f81b8ee",
+      "cardId": "cp-alt-cunningham-mother-of-daemons",
+      "printingId": null,
+      "referencePrintingId": "cpp-3fabf6939f81b8ee",
+      "candidatePrintingIds": [
+        "cpp-3fabf6939f81b8ee",
+        "cpp-4aa54fc326f170f1"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-9adf69333be9df52",
+      "variantKind": "standard",
+      "name": "Alt Cunningham: Mother of Daemons",
+      "type": "Unit",
+      "image": "cprg-9adf69333be9df52:cpp-3fabf6939f81b8ee"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-9adf69333be9df52:cpp-4aa54fc326f170f1",
+      "cardId": "cp-alt-cunningham-mother-of-daemons",
+      "printingId": null,
+      "referencePrintingId": "cpp-4aa54fc326f170f1",
+      "candidatePrintingIds": [
+        "cpp-3fabf6939f81b8ee",
+        "cpp-4aa54fc326f170f1"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-9adf69333be9df52",
+      "variantKind": "iconic",
+      "name": "Alt Cunningham: Mother of Daemons",
+      "type": "Unit",
+      "image": "cprg-9adf69333be9df52:cpp-4aa54fc326f170f1"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-1eeb7d392dd31cf2:cpp-32bdcdaf7564468c",
+      "cardId": "cp-alt-cunningham-soulkiller-architect",
+      "printingId": null,
+      "referencePrintingId": "cpp-32bdcdaf7564468c",
+      "candidatePrintingIds": [
+        "cpp-32bdcdaf7564468c",
+        "cpp-92a25d343e3eef9d",
+        "cpp-a43c6e72edfd89f2"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-1eeb7d392dd31cf2",
+      "variantKind": "iconic",
+      "name": "Alt Cunningham: Soulkiller Architect",
+      "type": "Legend",
+      "image": "cprg-1eeb7d392dd31cf2:cpp-32bdcdaf7564468c"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-1eeb7d392dd31cf2:cpp-92a25d343e3eef9d",
+      "cardId": "cp-alt-cunningham-soulkiller-architect",
+      "printingId": null,
+      "referencePrintingId": "cpp-92a25d343e3eef9d",
+      "candidatePrintingIds": [
+        "cpp-32bdcdaf7564468c",
+        "cpp-92a25d343e3eef9d",
+        "cpp-a43c6e72edfd89f2"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-1eeb7d392dd31cf2",
+      "variantKind": "standard",
+      "name": "Alt Cunningham: Soulkiller Architect",
+      "type": "Legend",
+      "image": "cprg-1eeb7d392dd31cf2:cpp-92a25d343e3eef9d"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-1eeb7d392dd31cf2:cpp-a43c6e72edfd89f2",
+      "cardId": "cp-alt-cunningham-soulkiller-architect",
+      "printingId": null,
+      "referencePrintingId": "cpp-a43c6e72edfd89f2",
+      "candidatePrintingIds": [
+        "cpp-32bdcdaf7564468c",
+        "cpp-92a25d343e3eef9d",
+        "cpp-a43c6e72edfd89f2"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-1eeb7d392dd31cf2",
+      "variantKind": "standard",
+      "name": "Alt Cunningham: Soulkiller Architect",
+      "type": "Legend",
+      "image": "cprg-1eeb7d392dd31cf2:cpp-a43c6e72edfd89f2"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-f4bfe962e084cd31:cpp-a3b00d354871a647",
+      "cardId": "cp-animals-wrecker",
+      "printingId": "cpp-a3b00d354871a647",
+      "referencePrintingId": "cpp-a3b00d354871a647",
+      "candidatePrintingIds": [
+        "cpp-a3b00d354871a647"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-f4bfe962e084cd31",
+      "variantKind": "standard",
+      "name": "Animals Wrecker",
+      "type": "Unit",
+      "image": "cprg-f4bfe962e084cd31:cpp-a3b00d354871a647"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-9fd81861f8498343:cpp-294fb00e21c65ff1",
+      "cardId": "cp-appetite-for-destruction",
+      "printingId": "cpp-294fb00e21c65ff1",
+      "referencePrintingId": "cpp-294fb00e21c65ff1",
+      "candidatePrintingIds": [
+        "cpp-294fb00e21c65ff1"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-9fd81861f8498343",
+      "variantKind": "standard",
+      "name": "Appetite for Destruction",
+      "type": "Program",
+      "image": "cprg-9fd81861f8498343:cpp-294fb00e21c65ff1"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-412deeac386344e8:cpp-bb5b599fe74859d8",
+      "cardId": "cp-arasaka-emergency-radioport",
+      "printingId": null,
+      "referencePrintingId": "cpp-bb5b599fe74859d8",
+      "candidatePrintingIds": [
+        "cpp-bb5b599fe74859d8",
+        "cpp-d5439afadfbc53e0"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-412deeac386344e8",
+      "variantKind": "standard",
+      "name": "Arasaka Emergency Radioport",
+      "type": "Gear",
+      "image": "cprg-412deeac386344e8:cpp-bb5b599fe74859d8"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-412deeac386344e8:cpp-d5439afadfbc53e0",
+      "cardId": "cp-arasaka-emergency-radioport",
+      "printingId": null,
+      "referencePrintingId": "cpp-d5439afadfbc53e0",
+      "candidatePrintingIds": [
+        "cpp-bb5b599fe74859d8",
+        "cpp-d5439afadfbc53e0"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-412deeac386344e8",
+      "variantKind": "standard",
+      "name": "Arasaka Emergency Radioport",
+      "type": "Gear",
+      "image": "cprg-412deeac386344e8:cpp-d5439afadfbc53e0"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-f34693fb656992ab:cpp-1c43d2759b58ae15",
+      "cardId": "cp-augmented-negotiators",
+      "printingId": "cpp-1c43d2759b58ae15",
+      "referencePrintingId": "cpp-1c43d2759b58ae15",
+      "candidatePrintingIds": [
+        "cpp-1c43d2759b58ae15"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-f34693fb656992ab",
+      "variantKind": "standard",
+      "name": "Augmented Negotiators",
+      "type": "Unit",
+      "image": "cprg-f34693fb656992ab:cpp-1c43d2759b58ae15"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-5b9ad7dfd37a65ef:cpp-6faba96157c02dbe",
+      "cardId": "cp-bonnie-and-clyde",
+      "printingId": "cpp-6faba96157c02dbe",
+      "referencePrintingId": "cpp-6faba96157c02dbe",
+      "candidatePrintingIds": [
+        "cpp-6faba96157c02dbe"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-5b9ad7dfd37a65ef",
+      "variantKind": "standard",
+      "name": "Bonnie and Clyde",
+      "type": "Program",
+      "image": "cprg-5b9ad7dfd37a65ef:cpp-6faba96157c02dbe"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-aae97c3a2f4e3154:cpp-6284ade0464122b3",
+      "cardId": "cp-bootleg-black-sapphire-show",
+      "printingId": "cpp-6284ade0464122b3",
+      "referencePrintingId": "cpp-6284ade0464122b3",
+      "candidatePrintingIds": [
+        "cpp-6284ade0464122b3"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-aae97c3a2f4e3154",
+      "variantKind": "standard",
+      "name": "Bootleg Black Sapphire Show",
+      "type": "Program",
+      "image": "cprg-aae97c3a2f4e3154:cpp-6284ade0464122b3"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-494fc3dc35e4ce67:cpp-3fd49d361a4ef00a",
+      "cardId": "cp-caliber-totentanz-s-top-dog",
+      "printingId": "cpp-3fd49d361a4ef00a",
+      "referencePrintingId": "cpp-3fd49d361a4ef00a",
+      "candidatePrintingIds": [
+        "cpp-3fd49d361a4ef00a"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-494fc3dc35e4ce67",
+      "variantKind": "standard",
+      "name": "Caliber: Totentanz's Top Dog",
+      "type": "Unit",
+      "image": "cprg-494fc3dc35e4ce67:cpp-3fd49d361a4ef00a"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-385181467eea4892:cpp-2e3c3117220fc4e3",
+      "cardId": "cp-carnage-at-the-colosseum",
+      "printingId": "cpp-2e3c3117220fc4e3",
+      "referencePrintingId": "cpp-2e3c3117220fc4e3",
+      "candidatePrintingIds": [
+        "cpp-2e3c3117220fc4e3"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-385181467eea4892",
+      "variantKind": "standard",
+      "name": "Carnage at the Colosseum",
+      "type": "Program",
+      "image": "cprg-385181467eea4892:cpp-2e3c3117220fc4e3"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-1884d736d5721a48:cpp-bf8e56e69d83d96f",
+      "cardId": "cp-chrome-fang",
+      "printingId": null,
+      "referencePrintingId": "cpp-bf8e56e69d83d96f",
+      "candidatePrintingIds": [
+        "cpp-bf8e56e69d83d96f",
+        "cpp-f2122604133d9980"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-1884d736d5721a48",
+      "variantKind": "standard",
+      "name": "Chrome Fang",
+      "type": "Unit",
+      "image": "cprg-1884d736d5721a48:cpp-bf8e56e69d83d96f"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-1884d736d5721a48:cpp-f2122604133d9980",
+      "cardId": "cp-chrome-fang",
+      "printingId": null,
+      "referencePrintingId": "cpp-f2122604133d9980",
+      "candidatePrintingIds": [
+        "cpp-bf8e56e69d83d96f",
+        "cpp-f2122604133d9980"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-1884d736d5721a48",
+      "variantKind": "standard",
+      "name": "Chrome Fang",
+      "type": "Unit",
+      "image": "cprg-1884d736d5721a48:cpp-f2122604133d9980"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-0d11b450124c7e4a:cpp-b53086ed2b56a516",
+      "cardId": "cp-chrome-reverie",
+      "printingId": "cpp-b53086ed2b56a516",
+      "referencePrintingId": "cpp-b53086ed2b56a516",
+      "candidatePrintingIds": [
+        "cpp-b53086ed2b56a516"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-0d11b450124c7e4a",
+      "variantKind": "standard",
+      "name": "Chrome Reverie",
+      "type": "Program",
+      "image": "cprg-0d11b450124c7e4a:cpp-b53086ed2b56a516"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-653d29bf5af8474d:cpp-0a27bbc4f72ecccf",
+      "cardId": "cp-corpo-security",
+      "printingId": null,
+      "referencePrintingId": "cpp-0a27bbc4f72ecccf",
+      "candidatePrintingIds": [
+        "cpp-0a27bbc4f72ecccf",
+        "cpp-5aec11b6d1c4785f"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-653d29bf5af8474d",
+      "variantKind": "standard",
+      "name": "Corpo Security",
+      "type": "Unit",
+      "image": "cprg-653d29bf5af8474d:cpp-0a27bbc4f72ecccf"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-653d29bf5af8474d:cpp-5aec11b6d1c4785f",
+      "cardId": "cp-corpo-security",
+      "printingId": null,
+      "referencePrintingId": "cpp-5aec11b6d1c4785f",
+      "candidatePrintingIds": [
+        "cpp-0a27bbc4f72ecccf",
+        "cpp-5aec11b6d1c4785f"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-653d29bf5af8474d",
+      "variantKind": "standard",
+      "name": "Corpo Security",
+      "type": "Unit",
+      "image": "cprg-653d29bf5af8474d:cpp-5aec11b6d1c4785f"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-2ce865081a69ccb6:cpp-c153cf99d095ad0e",
+      "cardId": "cp-corporate-surveillance",
+      "printingId": null,
+      "referencePrintingId": "cpp-c153cf99d095ad0e",
+      "candidatePrintingIds": [
+        "cpp-c153cf99d095ad0e",
+        "cpp-e75869a9d9b71f34"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-2ce865081a69ccb6",
+      "variantKind": "standard",
+      "name": "Corporate Surveillance",
+      "type": "Program",
+      "image": "cprg-2ce865081a69ccb6:cpp-c153cf99d095ad0e"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-2ce865081a69ccb6:cpp-e75869a9d9b71f34",
+      "cardId": "cp-corporate-surveillance",
+      "printingId": null,
+      "referencePrintingId": "cpp-e75869a9d9b71f34",
+      "candidatePrintingIds": [
+        "cpp-c153cf99d095ad0e",
+        "cpp-e75869a9d9b71f34"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-2ce865081a69ccb6",
+      "variantKind": "standard",
+      "name": "Corporate Surveillance",
+      "type": "Program",
+      "image": "cprg-2ce865081a69ccb6:cpp-e75869a9d9b71f34"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-f0b366c26e40053d:cpp-dd60fbd3b8fcda15",
+      "cardId": "cp-cyberpsychosis",
+      "printingId": "cpp-dd60fbd3b8fcda15",
+      "referencePrintingId": "cpp-dd60fbd3b8fcda15",
+      "candidatePrintingIds": [
+        "cpp-dd60fbd3b8fcda15"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-f0b366c26e40053d",
+      "variantKind": "standard",
+      "name": "Cyberpsychosis",
+      "type": "Program",
+      "image": "cprg-f0b366c26e40053d:cpp-dd60fbd3b8fcda15"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-c1a01f8145051639:cpp-072bd01f8830b9ce",
+      "cardId": "cp-deadman-transmitter",
+      "printingId": "cpp-072bd01f8830b9ce",
+      "referencePrintingId": "cpp-072bd01f8830b9ce",
+      "candidatePrintingIds": [
+        "cpp-072bd01f8830b9ce"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-c1a01f8145051639",
+      "variantKind": "standard",
+      "name": "Deadman Transmitter",
+      "type": "Gear",
+      "image": "cprg-c1a01f8145051639:cpp-072bd01f8830b9ce"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-e18d8260680c5663:cpp-6e57d7449a9cdd7d",
+      "cardId": "cp-delamain-cab",
+      "printingId": null,
+      "referencePrintingId": "cpp-6e57d7449a9cdd7d",
+      "candidatePrintingIds": [
+        "cpp-6e57d7449a9cdd7d",
+        "cpp-8e98e9ece808b0c3"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-e18d8260680c5663",
+      "variantKind": "standard",
+      "name": "Delamain Cab",
+      "type": "Unit",
+      "image": "cprg-e18d8260680c5663:cpp-6e57d7449a9cdd7d"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-e18d8260680c5663:cpp-8e98e9ece808b0c3",
+      "cardId": "cp-delamain-cab",
+      "printingId": null,
+      "referencePrintingId": "cpp-8e98e9ece808b0c3",
+      "candidatePrintingIds": [
+        "cpp-6e57d7449a9cdd7d",
+        "cpp-8e98e9ece808b0c3"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-e18d8260680c5663",
+      "variantKind": "standard",
+      "name": "Delamain Cab",
+      "type": "Unit",
+      "image": "cprg-e18d8260680c5663:cpp-8e98e9ece808b0c3"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-557d9d9841796a45:cpp-d381b3057b88c8b1",
+      "cardId": "cp-delamain-rideshare-ai",
+      "printingId": "cpp-d381b3057b88c8b1",
+      "referencePrintingId": "cpp-d381b3057b88c8b1",
+      "candidatePrintingIds": [
+        "cpp-d381b3057b88c8b1"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-557d9d9841796a45",
+      "variantKind": "standard",
+      "name": "Delamain: Rideshare AI",
+      "type": "Unit",
+      "image": "cprg-557d9d9841796a45:cpp-d381b3057b88c8b1"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-0167e81392bfc2b3:cpp-62225092172d629f",
+      "cardId": "cp-detonate",
+      "printingId": "cpp-62225092172d629f",
+      "referencePrintingId": "cpp-62225092172d629f",
+      "candidatePrintingIds": [
+        "cpp-62225092172d629f"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-0167e81392bfc2b3",
+      "variantKind": "standard",
+      "name": "Detonate",
+      "type": "Program",
+      "image": "cprg-0167e81392bfc2b3:cpp-62225092172d629f"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-4e2a53b9253150e8:cpp-5168504edacfb5e4",
+      "cardId": "cp-dexter-deshawn-off-the-grid",
+      "printingId": null,
+      "referencePrintingId": "cpp-5168504edacfb5e4",
+      "candidatePrintingIds": [
+        "cpp-5168504edacfb5e4",
+        "cpp-88020317eb7d199d"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-4e2a53b9253150e8",
+      "variantKind": "iconic",
+      "name": "Dexter DeShawn: Off the Grid",
+      "type": "Legend",
+      "image": "cprg-4e2a53b9253150e8:cpp-5168504edacfb5e4"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-4e2a53b9253150e8:cpp-88020317eb7d199d",
+      "cardId": "cp-dexter-deshawn-off-the-grid",
+      "printingId": null,
+      "referencePrintingId": "cpp-88020317eb7d199d",
+      "candidatePrintingIds": [
+        "cpp-5168504edacfb5e4",
+        "cpp-88020317eb7d199d"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-4e2a53b9253150e8",
+      "variantKind": "standard",
+      "name": "Dexter DeShawn: Off the Grid",
+      "type": "Legend",
+      "image": "cprg-4e2a53b9253150e8:cpp-88020317eb7d199d"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-4bbdb9e1b9ed348c:cpp-baf78e9d0e876e98",
+      "cardId": "cp-dexter-deshawn-one-last-chance",
+      "printingId": "cpp-baf78e9d0e876e98",
+      "referencePrintingId": "cpp-baf78e9d0e876e98",
+      "candidatePrintingIds": [
+        "cpp-baf78e9d0e876e98"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-4bbdb9e1b9ed348c",
+      "variantKind": "standard",
+      "name": "Dexter DeShawn: One Last Chance",
+      "type": "Unit",
+      "image": "cprg-4bbdb9e1b9ed348c:cpp-baf78e9d0e876e98"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-97f266ba8a266f1d:cpp-ddb147631cf61283",
+      "cardId": "cp-don-t-fear-the-reaper",
+      "printingId": "cpp-ddb147631cf61283",
+      "referencePrintingId": "cpp-ddb147631cf61283",
+      "candidatePrintingIds": [
+        "cpp-ddb147631cf61283"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-97f266ba8a266f1d",
+      "variantKind": "standard",
+      "name": "(Don't Fear) The Reaper",
+      "type": "Program",
+      "image": "cprg-97f266ba8a266f1d:cpp-ddb147631cf61283"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-756c36d25617bdd7:cpp-58499b097b5947b8",
+      "cardId": "cp-dum-dum-maelstrom-triggerman",
+      "printingId": null,
+      "referencePrintingId": "cpp-58499b097b5947b8",
+      "candidatePrintingIds": [
+        "cpp-58499b097b5947b8",
+        "cpp-8305407ddc77541b",
+        "cpp-c19028c81d2e6887"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-756c36d25617bdd7",
+      "variantKind": "standard",
+      "name": "Dum Dum: Maelstrom Triggerman",
+      "type": "Legend",
+      "image": "cprg-756c36d25617bdd7:cpp-58499b097b5947b8"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-756c36d25617bdd7:cpp-8305407ddc77541b",
+      "cardId": "cp-dum-dum-maelstrom-triggerman",
+      "printingId": null,
+      "referencePrintingId": "cpp-8305407ddc77541b",
+      "candidatePrintingIds": [
+        "cpp-58499b097b5947b8",
+        "cpp-8305407ddc77541b",
+        "cpp-c19028c81d2e6887"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-756c36d25617bdd7",
+      "variantKind": "iconic",
+      "name": "Dum Dum: Maelstrom Triggerman",
+      "type": "Legend",
+      "image": "cprg-756c36d25617bdd7:cpp-8305407ddc77541b"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-756c36d25617bdd7:cpp-c19028c81d2e6887",
+      "cardId": "cp-dum-dum-maelstrom-triggerman",
+      "printingId": null,
+      "referencePrintingId": "cpp-c19028c81d2e6887",
+      "candidatePrintingIds": [
+        "cpp-58499b097b5947b8",
+        "cpp-8305407ddc77541b",
+        "cpp-c19028c81d2e6887"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-756c36d25617bdd7",
+      "variantKind": "standard",
+      "name": "Dum Dum: Maelstrom Triggerman",
+      "type": "Legend",
+      "image": "cprg-756c36d25617bdd7:cpp-c19028c81d2e6887"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-13e54369260f008f:cpp-7ed8790d0bef52a0",
+      "cardId": "cp-dying-night-v-s-pistol",
+      "printingId": null,
+      "referencePrintingId": "cpp-7ed8790d0bef52a0",
+      "candidatePrintingIds": [
+        "cpp-7ed8790d0bef52a0",
+        "cpp-f910e1b78717ae64"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-13e54369260f008f",
+      "variantKind": "standard",
+      "name": "Dying Night: V's Pistol",
+      "type": "Gear",
+      "image": "cprg-13e54369260f008f:cpp-7ed8790d0bef52a0"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-13e54369260f008f:cpp-f910e1b78717ae64",
+      "cardId": "cp-dying-night-v-s-pistol",
+      "printingId": null,
+      "referencePrintingId": "cpp-f910e1b78717ae64",
+      "candidatePrintingIds": [
+        "cpp-7ed8790d0bef52a0",
+        "cpp-f910e1b78717ae64"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-13e54369260f008f",
+      "variantKind": "standard",
+      "name": "Dying Night: V's Pistol",
+      "type": "Gear",
+      "image": "cprg-13e54369260f008f:cpp-f910e1b78717ae64"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-067b589677c25658:cpp-beb5eda82a011afa",
+      "cardId": "cp-el-sombreron-la-venganza-lenta",
+      "printingId": "cpp-beb5eda82a011afa",
+      "referencePrintingId": "cpp-beb5eda82a011afa",
+      "candidatePrintingIds": [
+        "cpp-beb5eda82a011afa"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-067b589677c25658",
+      "variantKind": "standard",
+      "name": "El Sombrerón: La Venganza Lenta",
+      "type": "Unit",
+      "image": "cprg-067b589677c25658:cpp-beb5eda82a011afa"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-605eaa9fc22847f9:cpp-067773ff49018f26",
+      "cardId": "cp-emergency-atlus",
+      "printingId": null,
+      "referencePrintingId": "cpp-067773ff49018f26",
+      "candidatePrintingIds": [
+        "cpp-067773ff49018f26",
+        "cpp-28ef3290ed3507c2"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-605eaa9fc22847f9",
+      "variantKind": "standard",
+      "name": "Emergency Atlus",
+      "type": "Unit",
+      "image": "cprg-605eaa9fc22847f9:cpp-067773ff49018f26"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-605eaa9fc22847f9:cpp-28ef3290ed3507c2",
+      "cardId": "cp-emergency-atlus",
+      "printingId": null,
+      "referencePrintingId": "cpp-28ef3290ed3507c2",
+      "candidatePrintingIds": [
+        "cpp-067773ff49018f26",
+        "cpp-28ef3290ed3507c2"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-605eaa9fc22847f9",
+      "variantKind": "standard",
+      "name": "Emergency Atlus",
+      "type": "Unit",
+      "image": "cprg-605eaa9fc22847f9:cpp-28ef3290ed3507c2"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-c641bdd3bc6103a5:cpp-135b165212dee6ae",
+      "cardId": "cp-evelyn-parker-beautiful-enigma",
+      "printingId": null,
+      "referencePrintingId": "cpp-135b165212dee6ae",
+      "candidatePrintingIds": [
+        "cpp-135b165212dee6ae",
+        "cpp-b5dd52e5eddd0410"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-c641bdd3bc6103a5",
+      "variantKind": "iconic",
+      "name": "Evelyn Parker: Beautiful Enigma",
+      "type": "Legend",
+      "image": "cprg-c641bdd3bc6103a5:cpp-135b165212dee6ae"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-c641bdd3bc6103a5:cpp-b5dd52e5eddd0410",
+      "cardId": "cp-evelyn-parker-beautiful-enigma",
+      "printingId": null,
+      "referencePrintingId": "cpp-b5dd52e5eddd0410",
+      "candidatePrintingIds": [
+        "cpp-135b165212dee6ae",
+        "cpp-b5dd52e5eddd0410"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-c641bdd3bc6103a5",
+      "variantKind": "standard",
+      "name": "Evelyn Parker: Beautiful Enigma",
+      "type": "Legend",
+      "image": "cprg-c641bdd3bc6103a5:cpp-b5dd52e5eddd0410"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-965d6f6aeee65d48:cpp-62ff44d4600c9b40",
+      "cardId": "cp-evelyn-parker-scheming-siren",
+      "printingId": null,
+      "referencePrintingId": "cpp-62ff44d4600c9b40",
+      "candidatePrintingIds": [
+        "cpp-62ff44d4600c9b40",
+        "cpp-94a4cf961a2fb801"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-965d6f6aeee65d48",
+      "variantKind": "standard",
+      "name": "Evelyn Parker: Scheming Siren",
+      "type": "Unit",
+      "image": "cprg-965d6f6aeee65d48:cpp-62ff44d4600c9b40"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-965d6f6aeee65d48:cpp-94a4cf961a2fb801",
+      "cardId": "cp-evelyn-parker-scheming-siren",
+      "printingId": null,
+      "referencePrintingId": "cpp-94a4cf961a2fb801",
+      "candidatePrintingIds": [
+        "cpp-62ff44d4600c9b40",
+        "cpp-94a4cf961a2fb801"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-965d6f6aeee65d48",
+      "variantKind": "standard",
+      "name": "Evelyn Parker: Scheming Siren",
+      "type": "Unit",
+      "image": "cprg-965d6f6aeee65d48:cpp-94a4cf961a2fb801"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-19c1c98ca4a67ba0:cpp-472e174b010fe873",
+      "cardId": "cp-field-operator",
+      "printingId": null,
+      "referencePrintingId": "cpp-472e174b010fe873",
+      "candidatePrintingIds": [
+        "cpp-472e174b010fe873",
+        "cpp-6a58110f46ef9c08"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-19c1c98ca4a67ba0",
+      "variantKind": "standard",
+      "name": "Field Operator",
+      "type": "Unit",
+      "image": "cprg-19c1c98ca4a67ba0:cpp-472e174b010fe873"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-19c1c98ca4a67ba0:cpp-6a58110f46ef9c08",
+      "cardId": "cp-field-operator",
+      "printingId": null,
+      "referencePrintingId": "cpp-6a58110f46ef9c08",
+      "candidatePrintingIds": [
+        "cpp-472e174b010fe873",
+        "cpp-6a58110f46ef9c08"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-19c1c98ca4a67ba0",
+      "variantKind": "standard",
+      "name": "Field Operator",
+      "type": "Unit",
+      "image": "cprg-19c1c98ca4a67ba0:cpp-6a58110f46ef9c08"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d6fa437d3e74bfad:cpp-06e49ee00eb09af2",
+      "cardId": "cp-floor-it",
+      "printingId": null,
+      "referencePrintingId": "cpp-06e49ee00eb09af2",
+      "candidatePrintingIds": [
+        "cpp-06e49ee00eb09af2",
+        "cpp-4b553731c3f879df"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d6fa437d3e74bfad",
+      "variantKind": "standard",
+      "name": "Floor It",
+      "type": "Program",
+      "image": "cprg-d6fa437d3e74bfad:cpp-06e49ee00eb09af2"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d6fa437d3e74bfad:cpp-4b553731c3f879df",
+      "cardId": "cp-floor-it",
+      "printingId": null,
+      "referencePrintingId": "cpp-4b553731c3f879df",
+      "candidatePrintingIds": [
+        "cpp-06e49ee00eb09af2",
+        "cpp-4b553731c3f879df"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d6fa437d3e74bfad",
+      "variantKind": "standard",
+      "name": "Floor It",
+      "type": "Program",
+      "image": "cprg-d6fa437d3e74bfad:cpp-4b553731c3f879df"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-14711916030b8bfd:cpp-f657b00aad9cc8b5",
+      "cardId": "cp-fool-on-the-hill",
+      "printingId": "cpp-f657b00aad9cc8b5",
+      "referencePrintingId": "cpp-f657b00aad9cc8b5",
+      "candidatePrintingIds": [
+        "cpp-f657b00aad9cc8b5"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-14711916030b8bfd",
+      "variantKind": "standard",
+      "name": "Fool on the Hill",
+      "type": "Program",
+      "image": "cprg-14711916030b8bfd:cpp-f657b00aad9cc8b5"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-17410946f55ec904:cpp-a55c215000f1e37d",
+      "cardId": "cp-gilded-maton",
+      "printingId": "cpp-a55c215000f1e37d",
+      "referencePrintingId": "cpp-a55c215000f1e37d",
+      "candidatePrintingIds": [
+        "cpp-a55c215000f1e37d"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-17410946f55ec904",
+      "variantKind": "standard",
+      "name": "Gilded Matón",
+      "type": "Unit",
+      "image": "cprg-17410946f55ec904:cpp-a55c215000f1e37d"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-8184b4a516920703:cpp-d05cf8c3411da91a",
+      "cardId": "cp-gorilla-arms",
+      "printingId": "cpp-d05cf8c3411da91a",
+      "referencePrintingId": "cpp-d05cf8c3411da91a",
+      "candidatePrintingIds": [
+        "cpp-d05cf8c3411da91a"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-8184b4a516920703",
+      "variantKind": "standard",
+      "name": "Gorilla Arms",
+      "type": "Gear",
+      "image": "cprg-8184b4a516920703:cpp-d05cf8c3411da91a"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-7641f9d79c4bc6cd:cpp-3a9ae1f43f810252",
+      "cardId": "cp-goro-takemura-hands-unclean",
+      "printingId": null,
+      "referencePrintingId": "cpp-3a9ae1f43f810252",
+      "candidatePrintingIds": [
+        "cpp-3a9ae1f43f810252",
+        "cpp-b954ed5775551783"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-7641f9d79c4bc6cd",
+      "variantKind": "standard",
+      "name": "Goro Takemura: Hands Unclean",
+      "type": "Legend",
+      "image": "cprg-7641f9d79c4bc6cd:cpp-3a9ae1f43f810252"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-7641f9d79c4bc6cd:cpp-b954ed5775551783",
+      "cardId": "cp-goro-takemura-hands-unclean",
+      "printingId": null,
+      "referencePrintingId": "cpp-b954ed5775551783",
+      "candidatePrintingIds": [
+        "cpp-3a9ae1f43f810252",
+        "cpp-b954ed5775551783"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-7641f9d79c4bc6cd",
+      "variantKind": "standard",
+      "name": "Goro Takemura: Hands Unclean",
+      "type": "Legend",
+      "image": "cprg-7641f9d79c4bc6cd:cpp-b954ed5775551783"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-c704bb0a5bc9e42b:cpp-fa7618b9563b825e",
+      "cardId": "cp-goro-takemura-losing-his-way",
+      "printingId": "cpp-fa7618b9563b825e",
+      "referencePrintingId": "cpp-fa7618b9563b825e",
+      "candidatePrintingIds": [
+        "cpp-fa7618b9563b825e"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-c704bb0a5bc9e42b",
+      "variantKind": "standard",
+      "name": "Goro Takemura: Losing His Way",
+      "type": "Unit",
+      "image": "cprg-c704bb0a5bc9e42b:cpp-fa7618b9563b825e"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-54703c02189eb092:cpp-53ac81560c2fd488",
+      "cardId": "cp-goro-takemura-vengeful-bodyguard",
+      "printingId": null,
+      "referencePrintingId": "cpp-53ac81560c2fd488",
+      "candidatePrintingIds": [
+        "cpp-53ac81560c2fd488",
+        "cpp-5b9f67492d1d4225",
+        "cpp-aeec368bfa1b3fbd"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-54703c02189eb092",
+      "variantKind": "standard",
+      "name": "Goro Takemura: Vengeful Bodyguard",
+      "type": "Legend",
+      "image": "cprg-54703c02189eb092:cpp-53ac81560c2fd488"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-54703c02189eb092:cpp-5b9f67492d1d4225",
+      "cardId": "cp-goro-takemura-vengeful-bodyguard",
+      "printingId": null,
+      "referencePrintingId": "cpp-5b9f67492d1d4225",
+      "candidatePrintingIds": [
+        "cpp-53ac81560c2fd488",
+        "cpp-5b9f67492d1d4225",
+        "cpp-aeec368bfa1b3fbd"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-54703c02189eb092",
+      "variantKind": "iconic",
+      "name": "Goro Takemura: Vengeful Bodyguard",
+      "type": "Legend",
+      "image": "cprg-54703c02189eb092:cpp-5b9f67492d1d4225"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-54703c02189eb092:cpp-aeec368bfa1b3fbd",
+      "cardId": "cp-goro-takemura-vengeful-bodyguard",
+      "printingId": null,
+      "referencePrintingId": "cpp-aeec368bfa1b3fbd",
+      "candidatePrintingIds": [
+        "cpp-53ac81560c2fd488",
+        "cpp-5b9f67492d1d4225",
+        "cpp-aeec368bfa1b3fbd"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-54703c02189eb092",
+      "variantKind": "standard",
+      "name": "Goro Takemura: Vengeful Bodyguard",
+      "type": "Legend",
+      "image": "cprg-54703c02189eb092:cpp-aeec368bfa1b3fbd"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-31121e4f2b7d6ef1:cpp-72e0d75d59f262aa",
+      "cardId": "cp-gunpoint-diplomacy",
+      "printingId": "cpp-72e0d75d59f262aa",
+      "referencePrintingId": "cpp-72e0d75d59f262aa",
+      "candidatePrintingIds": [
+        "cpp-72e0d75d59f262aa"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-31121e4f2b7d6ef1",
+      "variantKind": "standard",
+      "name": "Gunpoint Diplomacy",
+      "type": "Program",
+      "image": "cprg-31121e4f2b7d6ef1:cpp-72e0d75d59f262aa"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-bb2dde8c78a4e908:cpp-f3661e44ed34da62",
+      "cardId": "cp-hacked-corpo",
+      "printingId": "cpp-f3661e44ed34da62",
+      "referencePrintingId": "cpp-f3661e44ed34da62",
+      "candidatePrintingIds": [
+        "cpp-f3661e44ed34da62"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-bb2dde8c78a4e908",
+      "variantKind": "standard",
+      "name": "Hacked Corpo",
+      "type": "Unit",
+      "image": "cprg-bb2dde8c78a4e908:cpp-f3661e44ed34da62"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-54b1a02ccfabf6dd:cpp-9467665e02c783c1",
+      "cardId": "cp-hanako-arasaka-daughter-of-the-emperor",
+      "printingId": null,
+      "referencePrintingId": "cpp-9467665e02c783c1",
+      "candidatePrintingIds": [
+        "cpp-9467665e02c783c1",
+        "cpp-ba1cc3b3a71434af"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-54b1a02ccfabf6dd",
+      "variantKind": "iconic",
+      "name": "Hanako Arasaka: Daughter of the Emperor",
+      "type": "Legend",
+      "image": "cprg-54b1a02ccfabf6dd:cpp-9467665e02c783c1"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-54b1a02ccfabf6dd:cpp-ba1cc3b3a71434af",
+      "cardId": "cp-hanako-arasaka-daughter-of-the-emperor",
+      "printingId": null,
+      "referencePrintingId": "cpp-ba1cc3b3a71434af",
+      "candidatePrintingIds": [
+        "cpp-9467665e02c783c1",
+        "cpp-ba1cc3b3a71434af"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-54b1a02ccfabf6dd",
+      "variantKind": "standard",
+      "name": "Hanako Arasaka: Daughter of the Emperor",
+      "type": "Legend",
+      "image": "cprg-54b1a02ccfabf6dd:cpp-ba1cc3b3a71434af"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-92c06a216253d9f5:cpp-707abeae7389be69",
+      "cardId": "cp-hanako-arasaka-in-a-gilded-cage",
+      "printingId": null,
+      "referencePrintingId": "cpp-707abeae7389be69",
+      "candidatePrintingIds": [
+        "cpp-707abeae7389be69",
+        "cpp-e70e410751feab65"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-92c06a216253d9f5",
+      "variantKind": "standard",
+      "name": "Hanako Arasaka: In a Gilded Cage",
+      "type": "Unit",
+      "image": "cprg-92c06a216253d9f5:cpp-707abeae7389be69"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-92c06a216253d9f5:cpp-e70e410751feab65",
+      "cardId": "cp-hanako-arasaka-in-a-gilded-cage",
+      "printingId": null,
+      "referencePrintingId": "cpp-e70e410751feab65",
+      "candidatePrintingIds": [
+        "cpp-707abeae7389be69",
+        "cpp-e70e410751feab65"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-92c06a216253d9f5",
+      "variantKind": "iconic",
+      "name": "Hanako Arasaka: In a Gilded Cage",
+      "type": "Unit",
+      "image": "cprg-92c06a216253d9f5:cpp-e70e410751feab65"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-091fc2ff8745af10:cpp-cc02350936a5ce27",
+      "cardId": "cp-heywood-ripperdoc",
+      "printingId": null,
+      "referencePrintingId": "cpp-cc02350936a5ce27",
+      "candidatePrintingIds": [
+        "cpp-cc02350936a5ce27",
+        "cpp-e5428fad947da466"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-091fc2ff8745af10",
+      "variantKind": "standard",
+      "name": "Heywood Ripperdoc",
+      "type": "Unit",
+      "image": "cprg-091fc2ff8745af10:cpp-cc02350936a5ce27"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-091fc2ff8745af10:cpp-e5428fad947da466",
+      "cardId": "cp-heywood-ripperdoc",
+      "printingId": null,
+      "referencePrintingId": "cpp-e5428fad947da466",
+      "candidatePrintingIds": [
+        "cpp-cc02350936a5ce27",
+        "cpp-e5428fad947da466"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-091fc2ff8745af10",
+      "variantKind": "standard",
+      "name": "Heywood Ripperdoc",
+      "type": "Unit",
+      "image": "cprg-091fc2ff8745af10:cpp-e5428fad947da466"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d7fa5d0ca96b0b45:cpp-0b01ab6398a53131",
+      "cardId": "cp-industrial-assembly",
+      "printingId": null,
+      "referencePrintingId": "cpp-0b01ab6398a53131",
+      "candidatePrintingIds": [
+        "cpp-0b01ab6398a53131",
+        "cpp-90113f15f99edbec"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d7fa5d0ca96b0b45",
+      "variantKind": "standard",
+      "name": "Industrial Assembly",
+      "type": "Program",
+      "image": "cprg-d7fa5d0ca96b0b45:cpp-0b01ab6398a53131"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d7fa5d0ca96b0b45:cpp-90113f15f99edbec",
+      "cardId": "cp-industrial-assembly",
+      "printingId": null,
+      "referencePrintingId": "cpp-90113f15f99edbec",
+      "candidatePrintingIds": [
+        "cpp-0b01ab6398a53131",
+        "cpp-90113f15f99edbec"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d7fa5d0ca96b0b45",
+      "variantKind": "standard",
+      "name": "Industrial Assembly",
+      "type": "Program",
+      "image": "cprg-d7fa5d0ca96b0b45:cpp-90113f15f99edbec"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-a4e3baaa864a48e7:cpp-94febaf4f908774c",
+      "cardId": "cp-jacked-in-voodoo-boy",
+      "printingId": "cpp-94febaf4f908774c",
+      "referencePrintingId": "cpp-94febaf4f908774c",
+      "candidatePrintingIds": [
+        "cpp-94febaf4f908774c"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-a4e3baaa864a48e7",
+      "variantKind": "standard",
+      "name": "Jacked-In Voodoo Boy",
+      "type": "Unit",
+      "image": "cprg-a4e3baaa864a48e7:cpp-94febaf4f908774c"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d6c10325a86aac21:cpp-71e72a5d41466c21",
+      "cardId": "cp-jackie-welles-mama-s-favorite",
+      "printingId": null,
+      "referencePrintingId": "cpp-71e72a5d41466c21",
+      "candidatePrintingIds": [
+        "cpp-71e72a5d41466c21",
+        "cpp-94790158e46c6bb8",
+        "cpp-fedbde99d7cbf053"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d6c10325a86aac21",
+      "variantKind": "iconic",
+      "name": "Jackie Welles: Mama's Favorite",
+      "type": "Legend",
+      "image": "cprg-d6c10325a86aac21:cpp-71e72a5d41466c21"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d6c10325a86aac21:cpp-94790158e46c6bb8",
+      "cardId": "cp-jackie-welles-mama-s-favorite",
+      "printingId": null,
+      "referencePrintingId": "cpp-94790158e46c6bb8",
+      "candidatePrintingIds": [
+        "cpp-71e72a5d41466c21",
+        "cpp-94790158e46c6bb8",
+        "cpp-fedbde99d7cbf053"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d6c10325a86aac21",
+      "variantKind": "standard",
+      "name": "Jackie Welles: Mama's Favorite",
+      "type": "Legend",
+      "image": "cprg-d6c10325a86aac21:cpp-94790158e46c6bb8"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d6c10325a86aac21:cpp-fedbde99d7cbf053",
+      "cardId": "cp-jackie-welles-mama-s-favorite",
+      "printingId": null,
+      "referencePrintingId": "cpp-fedbde99d7cbf053",
+      "candidatePrintingIds": [
+        "cpp-71e72a5d41466c21",
+        "cpp-94790158e46c6bb8",
+        "cpp-fedbde99d7cbf053"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d6c10325a86aac21",
+      "variantKind": "standard",
+      "name": "Jackie Welles: Mama's Favorite",
+      "type": "Legend",
+      "image": "cprg-d6c10325a86aac21:cpp-fedbde99d7cbf053"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-3917a081b5234753:cpp-bfb10e0aa37510c7",
+      "cardId": "cp-jackie-welles-pour-one-out-for-me",
+      "printingId": null,
+      "referencePrintingId": "cpp-bfb10e0aa37510c7",
+      "candidatePrintingIds": [
+        "cpp-bfb10e0aa37510c7",
+        "cpp-fb9b1b6288b9c64f"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-3917a081b5234753",
+      "variantKind": "standard",
+      "name": "Jackie Welles: Pour One Out For Me",
+      "type": "Legend",
+      "image": "cprg-3917a081b5234753:cpp-bfb10e0aa37510c7"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-3917a081b5234753:cpp-fb9b1b6288b9c64f",
+      "cardId": "cp-jackie-welles-pour-one-out-for-me",
+      "printingId": null,
+      "referencePrintingId": "cpp-fb9b1b6288b9c64f",
+      "candidatePrintingIds": [
+        "cpp-bfb10e0aa37510c7",
+        "cpp-fb9b1b6288b9c64f"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-3917a081b5234753",
+      "variantKind": "standard",
+      "name": "Jackie Welles: Pour One Out For Me",
+      "type": "Legend",
+      "image": "cprg-3917a081b5234753:cpp-fb9b1b6288b9c64f"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-25105e6ff3c7f5f1:cpp-d54896c353c078f7",
+      "cardId": "cp-jackie-welles-ride-or-die-choom",
+      "printingId": "cpp-d54896c353c078f7",
+      "referencePrintingId": "cpp-d54896c353c078f7",
+      "candidatePrintingIds": [
+        "cpp-d54896c353c078f7"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-25105e6ff3c7f5f1",
+      "variantKind": "standard",
+      "name": "Jackie Welles: Ride or Die Choom",
+      "type": "Unit",
+      "image": "cprg-25105e6ff3c7f5f1:cpp-d54896c353c078f7"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-e4f363049afda6ed:cpp-c9d6798e32e92767",
+      "cardId": "cp-japantown-jonin",
+      "printingId": "cpp-c9d6798e32e92767",
+      "referencePrintingId": "cpp-c9d6798e32e92767",
+      "candidatePrintingIds": [
+        "cpp-c9d6798e32e92767"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-e4f363049afda6ed",
+      "variantKind": "standard",
+      "name": "Japantown Jonin",
+      "type": "Unit",
+      "image": "cprg-e4f363049afda6ed:cpp-c9d6798e32e92767"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-7aa9d0e0b464a953:cpp-95a676b10cec7bf3",
+      "cardId": "cp-johnny-silverhand-never-stop-fighting",
+      "printingId": null,
+      "referencePrintingId": "cpp-95a676b10cec7bf3",
+      "candidatePrintingIds": [
+        "cpp-95a676b10cec7bf3",
+        "cpp-e1fcd821f2132bee"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-7aa9d0e0b464a953",
+      "variantKind": "standard",
+      "name": "Johnny Silverhand: Never Stop Fighting",
+      "type": "Unit",
+      "image": "cprg-7aa9d0e0b464a953:cpp-95a676b10cec7bf3"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-7aa9d0e0b464a953:cpp-e1fcd821f2132bee",
+      "cardId": "cp-johnny-silverhand-never-stop-fighting",
+      "printingId": null,
+      "referencePrintingId": "cpp-e1fcd821f2132bee",
+      "candidatePrintingIds": [
+        "cpp-95a676b10cec7bf3",
+        "cpp-e1fcd821f2132bee"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-7aa9d0e0b464a953",
+      "variantKind": "iconic",
+      "name": "Johnny Silverhand: Never Stop Fighting",
+      "type": "Unit",
+      "image": "cprg-7aa9d0e0b464a953:cpp-e1fcd821f2132bee"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-e95ede011e0c130e:cpp-983be921f146e5aa",
+      "cardId": "cp-johnny-silverhand-rocking-renegade",
+      "printingId": null,
+      "referencePrintingId": "cpp-983be921f146e5aa",
+      "candidatePrintingIds": [
+        "cpp-983be921f146e5aa",
+        "cpp-aad91e09ce70f4e7"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-e95ede011e0c130e",
+      "variantKind": "iconic",
+      "name": "Johnny Silverhand: Rocking Renegade",
+      "type": "Legend",
+      "image": "cprg-e95ede011e0c130e:cpp-983be921f146e5aa"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-e95ede011e0c130e:cpp-aad91e09ce70f4e7",
+      "cardId": "cp-johnny-silverhand-rocking-renegade",
+      "printingId": null,
+      "referencePrintingId": "cpp-aad91e09ce70f4e7",
+      "candidatePrintingIds": [
+        "cpp-983be921f146e5aa",
+        "cpp-aad91e09ce70f4e7"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-e95ede011e0c130e",
+      "variantKind": "standard",
+      "name": "Johnny Silverhand: Rocking Renegade",
+      "type": "Legend",
+      "image": "cprg-e95ede011e0c130e:cpp-aad91e09ce70f4e7"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-bb85523c64cae30f:cpp-99d7c772b73ea459",
+      "cardId": "cp-judy-alvarez-braindance-maestro",
+      "printingId": null,
+      "referencePrintingId": "cpp-99d7c772b73ea459",
+      "candidatePrintingIds": [
+        "cpp-99d7c772b73ea459",
+        "cpp-a0fec5f312f39165",
+        "cpp-effee63a89dd2a7a"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-bb85523c64cae30f",
+      "variantKind": "iconic",
+      "name": "Judy Álvarez: Braindance Maestro",
+      "type": "Legend",
+      "image": "cprg-bb85523c64cae30f:cpp-99d7c772b73ea459"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-bb85523c64cae30f:cpp-a0fec5f312f39165",
+      "cardId": "cp-judy-alvarez-braindance-maestro",
+      "printingId": null,
+      "referencePrintingId": "cpp-a0fec5f312f39165",
+      "candidatePrintingIds": [
+        "cpp-99d7c772b73ea459",
+        "cpp-a0fec5f312f39165",
+        "cpp-effee63a89dd2a7a"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-bb85523c64cae30f",
+      "variantKind": "standard",
+      "name": "Judy Álvarez: Braindance Maestro",
+      "type": "Legend",
+      "image": "cprg-bb85523c64cae30f:cpp-a0fec5f312f39165"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-bb85523c64cae30f:cpp-effee63a89dd2a7a",
+      "cardId": "cp-judy-alvarez-braindance-maestro",
+      "printingId": null,
+      "referencePrintingId": "cpp-effee63a89dd2a7a",
+      "candidatePrintingIds": [
+        "cpp-99d7c772b73ea459",
+        "cpp-a0fec5f312f39165",
+        "cpp-effee63a89dd2a7a"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-bb85523c64cae30f",
+      "variantKind": "standard",
+      "name": "Judy Álvarez: Braindance Maestro",
+      "type": "Legend",
+      "image": "cprg-bb85523c64cae30f:cpp-effee63a89dd2a7a"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-86f1515d0cb77d1f:cpp-00f91c72a098f4c6",
+      "cardId": "cp-judy-alvarez-nothing-to-doubt",
+      "printingId": null,
+      "referencePrintingId": "cpp-00f91c72a098f4c6",
+      "candidatePrintingIds": [
+        "cpp-00f91c72a098f4c6",
+        "cpp-0dceb118ad99cc8f"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-86f1515d0cb77d1f",
+      "variantKind": "iconic",
+      "name": "Judy Álvarez: Nothing to Doubt",
+      "type": "Unit",
+      "image": "cprg-86f1515d0cb77d1f:cpp-00f91c72a098f4c6"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-86f1515d0cb77d1f:cpp-0dceb118ad99cc8f",
+      "cardId": "cp-judy-alvarez-nothing-to-doubt",
+      "printingId": null,
+      "referencePrintingId": "cpp-0dceb118ad99cc8f",
+      "candidatePrintingIds": [
+        "cpp-00f91c72a098f4c6",
+        "cpp-0dceb118ad99cc8f"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-86f1515d0cb77d1f",
+      "variantKind": "standard",
+      "name": "Judy Álvarez: Nothing to Doubt",
+      "type": "Unit",
+      "image": "cprg-86f1515d0cb77d1f:cpp-0dceb118ad99cc8f"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-41f9d7396a31eeb0:cpp-e7cdc75dfad2bf10",
+      "cardId": "cp-kerry-eurodyne-axe-attitude-audience",
+      "printingId": null,
+      "referencePrintingId": "cpp-e7cdc75dfad2bf10",
+      "candidatePrintingIds": [
+        "cpp-e7cdc75dfad2bf10",
+        "cpp-eda70936c81091c0"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-41f9d7396a31eeb0",
+      "variantKind": "iconic",
+      "name": "Kerry Eurodyne: Axe, Attitude, Audience",
+      "type": "Legend",
+      "image": "cprg-41f9d7396a31eeb0:cpp-e7cdc75dfad2bf10"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-41f9d7396a31eeb0:cpp-eda70936c81091c0",
+      "cardId": "cp-kerry-eurodyne-axe-attitude-audience",
+      "printingId": null,
+      "referencePrintingId": "cpp-eda70936c81091c0",
+      "candidatePrintingIds": [
+        "cpp-e7cdc75dfad2bf10",
+        "cpp-eda70936c81091c0"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-41f9d7396a31eeb0",
+      "variantKind": "standard",
+      "name": "Kerry Eurodyne: Axe, Attitude, Audience",
+      "type": "Legend",
+      "image": "cprg-41f9d7396a31eeb0:cpp-eda70936c81091c0"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-0c18eb6306bfb307:cpp-0cae10822d620d4c",
+      "cardId": "cp-kerry-eurodyne-the-last-rockerboy",
+      "printingId": "cpp-0cae10822d620d4c",
+      "referencePrintingId": "cpp-0cae10822d620d4c",
+      "candidatePrintingIds": [
+        "cpp-0cae10822d620d4c"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-0c18eb6306bfb307",
+      "variantKind": "standard",
+      "name": "Kerry Eurodyne: The Last Rockerboy",
+      "type": "Unit",
+      "image": "cprg-0c18eb6306bfb307:cpp-0cae10822d620d4c"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-4fc0d2696445ce7f:cpp-27bff1fb13ac9e0c",
+      "cardId": "cp-kiroshi-optics",
+      "printingId": null,
+      "referencePrintingId": "cpp-27bff1fb13ac9e0c",
+      "candidatePrintingIds": [
+        "cpp-27bff1fb13ac9e0c",
+        "cpp-c7e65ab815ac1a49"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-4fc0d2696445ce7f",
+      "variantKind": "standard",
+      "name": "Kiroshi Optics",
+      "type": "Gear",
+      "image": "cprg-4fc0d2696445ce7f:cpp-27bff1fb13ac9e0c"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-4fc0d2696445ce7f:cpp-c7e65ab815ac1a49",
+      "cardId": "cp-kiroshi-optics",
+      "printingId": null,
+      "referencePrintingId": "cpp-c7e65ab815ac1a49",
+      "candidatePrintingIds": [
+        "cpp-27bff1fb13ac9e0c",
+        "cpp-c7e65ab815ac1a49"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-4fc0d2696445ce7f",
+      "variantKind": "standard",
+      "name": "Kiroshi Optics",
+      "type": "Gear",
+      "image": "cprg-4fc0d2696445ce7f:cpp-c7e65ab815ac1a49"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-14592e21f8b8c080:cpp-d6c71eb1e105f1f2",
+      "cardId": "cp-la-llorona-ghost-of-the-past",
+      "printingId": "cpp-d6c71eb1e105f1f2",
+      "referencePrintingId": "cpp-d6c71eb1e105f1f2",
+      "candidatePrintingIds": [
+        "cpp-d6c71eb1e105f1f2"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-14592e21f8b8c080",
+      "variantKind": "standard",
+      "name": "La Llorona: Ghost of the Past",
+      "type": "Unit",
+      "image": "cprg-14592e21f8b8c080:cpp-d6c71eb1e105f1f2"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-2902b02c00465f3d:cpp-4954dc3d5f8bd915",
+      "cardId": "cp-les-elemens",
+      "printingId": "cpp-4954dc3d5f8bd915",
+      "referencePrintingId": "cpp-4954dc3d5f8bd915",
+      "candidatePrintingIds": [
+        "cpp-4954dc3d5f8bd915"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-2902b02c00465f3d",
+      "variantKind": "standard",
+      "name": "Les Élémens",
+      "type": "Program",
+      "image": "cprg-2902b02c00465f3d:cpp-4954dc3d5f8bd915"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d9a21a10d6e6b258:cpp-fdb2e522620c1831",
+      "cardId": "cp-live-with-the-aftermath",
+      "printingId": "cpp-fdb2e522620c1831",
+      "referencePrintingId": "cpp-fdb2e522620c1831",
+      "candidatePrintingIds": [
+        "cpp-fdb2e522620c1831"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-d9a21a10d6e6b258",
+      "variantKind": "standard",
+      "name": "Live with the Aftermath",
+      "type": "Program",
+      "image": "cprg-d9a21a10d6e6b258:cpp-fdb2e522620c1831"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-43e78bdf0d28a951:cpp-726985c2541c8252",
+      "cardId": "cp-lizzy-wizzy-delicate-weapon",
+      "printingId": "cpp-726985c2541c8252",
+      "referencePrintingId": "cpp-726985c2541c8252",
+      "candidatePrintingIds": [
+        "cpp-726985c2541c8252"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-43e78bdf0d28a951",
+      "variantKind": "standard",
+      "name": "Lizzy Wizzy: Delicate Weapon",
+      "type": "Unit",
+      "image": "cprg-43e78bdf0d28a951:cpp-726985c2541c8252"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-99fff7586aa02966:cpp-b8f89954ac128038",
+      "cardId": "cp-maelstrom-goons",
+      "printingId": "cpp-b8f89954ac128038",
+      "referencePrintingId": "cpp-b8f89954ac128038",
+      "candidatePrintingIds": [
+        "cpp-b8f89954ac128038"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-99fff7586aa02966",
+      "variantKind": "standard",
+      "name": "Maelstrom Goons",
+      "type": "Unit",
+      "image": "cprg-99fff7586aa02966:cpp-b8f89954ac128038"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-f44f2288445c8c7a:cpp-f5274f503c96e429",
+      "cardId": "cp-maelstrom-zealots",
+      "printingId": "cpp-f5274f503c96e429",
+      "referencePrintingId": "cpp-f5274f503c96e429",
+      "candidatePrintingIds": [
+        "cpp-f5274f503c96e429"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-f44f2288445c8c7a",
+      "variantKind": "standard",
+      "name": "Maelstrom Zealots",
+      "type": "Unit",
+      "image": "cprg-f44f2288445c8c7a:cpp-f5274f503c96e429"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-acd0d200e6423eeb:cpp-83bf929bf0cc525a",
+      "cardId": "cp-maman-brigitte-spirit-of-death",
+      "printingId": "cpp-83bf929bf0cc525a",
+      "referencePrintingId": "cpp-83bf929bf0cc525a",
+      "candidatePrintingIds": [
+        "cpp-83bf929bf0cc525a"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-acd0d200e6423eeb",
+      "variantKind": "standard",
+      "name": "Maman Brigitte: Spirit of Death",
+      "type": "Unit",
+      "image": "cprg-acd0d200e6423eeb:cpp-83bf929bf0cc525a"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-ee7bab79344e07c7:cpp-33aebb1f68d8181f",
+      "cardId": "cp-mandibular-upgrade",
+      "printingId": null,
+      "referencePrintingId": "cpp-33aebb1f68d8181f",
+      "candidatePrintingIds": [
+        "cpp-33aebb1f68d8181f",
+        "cpp-9c807f3e4f6baedf"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-ee7bab79344e07c7",
+      "variantKind": "standard",
+      "name": "Mandibular Upgrade",
+      "type": "Gear",
+      "image": "cprg-ee7bab79344e07c7:cpp-33aebb1f68d8181f"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-ee7bab79344e07c7:cpp-9c807f3e4f6baedf",
+      "cardId": "cp-mandibular-upgrade",
+      "printingId": null,
+      "referencePrintingId": "cpp-9c807f3e4f6baedf",
+      "candidatePrintingIds": [
+        "cpp-33aebb1f68d8181f",
+        "cpp-9c807f3e4f6baedf"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-ee7bab79344e07c7",
+      "variantKind": "standard",
+      "name": "Mandibular Upgrade",
+      "type": "Gear",
+      "image": "cprg-ee7bab79344e07c7:cpp-9c807f3e4f6baedf"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d55ce160cf0c0a91:cpp-03290e8752e5e383",
+      "cardId": "cp-mantis-blades",
+      "printingId": null,
+      "referencePrintingId": "cpp-03290e8752e5e383",
+      "candidatePrintingIds": [
+        "cpp-03290e8752e5e383",
+        "cpp-4f35243029829892",
+        "cpp-ccf12e0d6e534d86"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d55ce160cf0c0a91",
+      "variantKind": "standard",
+      "name": "Mantis Blades",
+      "type": "Gear",
+      "image": "cprg-d55ce160cf0c0a91:cpp-03290e8752e5e383"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d55ce160cf0c0a91:cpp-4f35243029829892",
+      "cardId": "cp-mantis-blades",
+      "printingId": null,
+      "referencePrintingId": "cpp-4f35243029829892",
+      "candidatePrintingIds": [
+        "cpp-03290e8752e5e383",
+        "cpp-4f35243029829892",
+        "cpp-ccf12e0d6e534d86"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d55ce160cf0c0a91",
+      "variantKind": "standard",
+      "name": "Mantis Blades",
+      "type": "Gear",
+      "image": "cprg-d55ce160cf0c0a91:cpp-4f35243029829892"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d55ce160cf0c0a91:cpp-ccf12e0d6e534d86",
+      "cardId": "cp-mantis-blades",
+      "printingId": null,
+      "referencePrintingId": "cpp-ccf12e0d6e534d86",
+      "candidatePrintingIds": [
+        "cpp-03290e8752e5e383",
+        "cpp-4f35243029829892",
+        "cpp-ccf12e0d6e534d86"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d55ce160cf0c0a91",
+      "variantKind": "standard",
+      "name": "Mantis Blades",
+      "type": "Gear",
+      "image": "cprg-d55ce160cf0c0a91:cpp-ccf12e0d6e534d86"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d785f75af1179ef9:cpp-76cfb56911184337",
+      "cardId": "cp-maxtac-av",
+      "printingId": null,
+      "referencePrintingId": "cpp-76cfb56911184337",
+      "candidatePrintingIds": [
+        "cpp-76cfb56911184337",
+        "cpp-925ca4ac754c8f37"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d785f75af1179ef9",
+      "variantKind": "standard",
+      "name": "MaxTac AV",
+      "type": "Unit",
+      "image": "cprg-d785f75af1179ef9:cpp-76cfb56911184337"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d785f75af1179ef9:cpp-925ca4ac754c8f37",
+      "cardId": "cp-maxtac-av",
+      "printingId": null,
+      "referencePrintingId": "cpp-925ca4ac754c8f37",
+      "candidatePrintingIds": [
+        "cpp-76cfb56911184337",
+        "cpp-925ca4ac754c8f37"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-d785f75af1179ef9",
+      "variantKind": "standard",
+      "name": "MaxTac AV",
+      "type": "Unit",
+      "image": "cprg-d785f75af1179ef9:cpp-925ca4ac754c8f37"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-f7e912d8b0916b74:cpp-7d9dab7276c9ad19",
+      "cardId": "cp-maxtac-heavy",
+      "printingId": "cpp-7d9dab7276c9ad19",
+      "referencePrintingId": "cpp-7d9dab7276c9ad19",
+      "candidatePrintingIds": [
+        "cpp-7d9dab7276c9ad19"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-f7e912d8b0916b74",
+      "variantKind": "standard",
+      "name": "MaxTac Heavy",
+      "type": "Unit",
+      "image": "cprg-f7e912d8b0916b74:cpp-7d9dab7276c9ad19"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d9f0361da754d0fa:cpp-11dafc1574948b75",
+      "cardId": "cp-maxtac-squadron",
+      "printingId": "cpp-11dafc1574948b75",
+      "referencePrintingId": "cpp-11dafc1574948b75",
+      "candidatePrintingIds": [
+        "cpp-11dafc1574948b75"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-d9f0361da754d0fa",
+      "variantKind": "standard",
+      "name": "MaxTac Squadron",
+      "type": "Unit",
+      "image": "cprg-d9f0361da754d0fa:cpp-11dafc1574948b75"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-23a89e06f42edc8b:cpp-48af99413ee2b9de",
+      "cardId": "cp-maxtac-suppression-team",
+      "printingId": "cpp-48af99413ee2b9de",
+      "referencePrintingId": "cpp-48af99413ee2b9de",
+      "candidatePrintingIds": [
+        "cpp-48af99413ee2b9de"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-23a89e06f42edc8b",
+      "variantKind": "standard",
+      "name": "MaxTac Suppression Team",
+      "type": "Unit",
+      "image": "cprg-23a89e06f42edc8b:cpp-48af99413ee2b9de"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-5841ae75682f7dc6:cpp-20c1452ddaa3834e",
+      "cardId": "cp-memory-relapse",
+      "printingId": "cpp-20c1452ddaa3834e",
+      "referencePrintingId": "cpp-20c1452ddaa3834e",
+      "candidatePrintingIds": [
+        "cpp-20c1452ddaa3834e"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-5841ae75682f7dc6",
+      "variantKind": "standard",
+      "name": "Memory Relapse",
+      "type": "Program",
+      "image": "cprg-5841ae75682f7dc6:cpp-20c1452ddaa3834e"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-e848199aaa4aea12:cpp-f8586c8d6af201e1",
+      "cardId": "cp-meredith-stout-stone-cold-corpo",
+      "printingId": "cpp-f8586c8d6af201e1",
+      "referencePrintingId": "cpp-f8586c8d6af201e1",
+      "candidatePrintingIds": [
+        "cpp-f8586c8d6af201e1"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-e848199aaa4aea12",
+      "variantKind": "standard",
+      "name": "Meredith Stout: Stone Cold Corpo",
+      "type": "Unit",
+      "image": "cprg-e848199aaa4aea12:cpp-f8586c8d6af201e1"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-96bbf98c71faee41:cpp-0ae6eb04a549311c",
+      "cardId": "cp-minotaur",
+      "printingId": "cpp-0ae6eb04a549311c",
+      "referencePrintingId": "cpp-0ae6eb04a549311c",
+      "candidatePrintingIds": [
+        "cpp-0ae6eb04a549311c"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-96bbf98c71faee41",
+      "variantKind": "standard",
+      "name": "Minotaur",
+      "type": "Unit",
+      "image": "cprg-96bbf98c71faee41:cpp-0ae6eb04a549311c"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-9a66f7b483a9a656:cpp-333456f171bbaaf2",
+      "cardId": "cp-misty-olszewski-mender-of-broken-spirits",
+      "printingId": "cpp-333456f171bbaaf2",
+      "referencePrintingId": "cpp-333456f171bbaaf2",
+      "candidatePrintingIds": [
+        "cpp-333456f171bbaaf2"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-9a66f7b483a9a656",
+      "variantKind": "standard",
+      "name": "Misty Olszewski: Mender of Broken Spirits",
+      "type": "Unit",
+      "image": "cprg-9a66f7b483a9a656:cpp-333456f171bbaaf2"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-3010ff0fc15fbfbe:cpp-edd0e4489c6e618b",
+      "cardId": "cp-modded-kusanagi",
+      "printingId": "cpp-edd0e4489c6e618b",
+      "referencePrintingId": "cpp-edd0e4489c6e618b",
+      "candidatePrintingIds": [
+        "cpp-edd0e4489c6e618b"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-3010ff0fc15fbfbe",
+      "variantKind": "standard",
+      "name": "Modded Kusanagi",
+      "type": "Unit",
+      "image": "cprg-3010ff0fc15fbfbe:cpp-edd0e4489c6e618b"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-1d0098b758ba53ad:cpp-568e0f69e93dee10",
+      "cardId": "cp-modded-muramasa",
+      "printingId": "cpp-568e0f69e93dee10",
+      "referencePrintingId": "cpp-568e0f69e93dee10",
+      "candidatePrintingIds": [
+        "cpp-568e0f69e93dee10"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-1d0098b758ba53ad",
+      "variantKind": "standard",
+      "name": "Modded Muramasa",
+      "type": "Unit",
+      "image": "cprg-1d0098b758ba53ad:cpp-568e0f69e93dee10"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-8d55abde85e1648a:cpp-50102c200ddc2426",
+      "cardId": "cp-mox-inciters",
+      "printingId": "cpp-50102c200ddc2426",
+      "referencePrintingId": "cpp-50102c200ddc2426",
+      "candidatePrintingIds": [
+        "cpp-50102c200ddc2426"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-8d55abde85e1648a",
+      "variantKind": "standard",
+      "name": "Mox Inciters",
+      "type": "Unit",
+      "image": "cprg-8d55abde85e1648a:cpp-50102c200ddc2426"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-becf1835bf773270:cpp-006c5ab3b524d821",
+      "cardId": "cp-mt0d12-flathead",
+      "printingId": "cpp-006c5ab3b524d821",
+      "referencePrintingId": "cpp-006c5ab3b524d821",
+      "candidatePrintingIds": [
+        "cpp-006c5ab3b524d821"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-becf1835bf773270",
+      "variantKind": "standard",
+      "name": "MT0D12 Flathead",
+      "type": "Unit",
+      "image": "cprg-becf1835bf773270:cpp-006c5ab3b524d821"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-dfd6e229382ef3c2:cpp-5d7b2b63624ae8d0",
+      "cardId": "cp-muamar-reyes-el-capitan",
+      "printingId": null,
+      "referencePrintingId": "cpp-5d7b2b63624ae8d0",
+      "candidatePrintingIds": [
+        "cpp-5d7b2b63624ae8d0",
+        "cpp-eccef983f27ff07a"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-dfd6e229382ef3c2",
+      "variantKind": "standard",
+      "name": "Muamar Reyes: El Capitán",
+      "type": "Legend",
+      "image": "cprg-dfd6e229382ef3c2:cpp-5d7b2b63624ae8d0"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-dfd6e229382ef3c2:cpp-eccef983f27ff07a",
+      "cardId": "cp-muamar-reyes-el-capitan",
+      "printingId": null,
+      "referencePrintingId": "cpp-eccef983f27ff07a",
+      "candidatePrintingIds": [
+        "cpp-5d7b2b63624ae8d0",
+        "cpp-eccef983f27ff07a"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-dfd6e229382ef3c2",
+      "variantKind": "iconic",
+      "name": "Muamar Reyes: El Capitán",
+      "type": "Legend",
+      "image": "cprg-dfd6e229382ef3c2:cpp-eccef983f27ff07a"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-eb3977bab46e5839:cpp-4f9b21ac443463de",
+      "cardId": "cp-nadia-fighting-through-grief",
+      "printingId": "cpp-4f9b21ac443463de",
+      "referencePrintingId": "cpp-4f9b21ac443463de",
+      "candidatePrintingIds": [
+        "cpp-4f9b21ac443463de"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-eb3977bab46e5839",
+      "variantKind": "standard",
+      "name": "Nadia: Fighting Through Grief",
+      "type": "Unit",
+      "image": "cprg-eb3977bab46e5839:cpp-4f9b21ac443463de"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-075854a105d2305a:cpp-7634b1121bed0285",
+      "cardId": "cp-netwatch-netdriver",
+      "printingId": "cpp-7634b1121bed0285",
+      "referencePrintingId": "cpp-7634b1121bed0285",
+      "candidatePrintingIds": [
+        "cpp-7634b1121bed0285"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-075854a105d2305a",
+      "variantKind": "standard",
+      "name": "NetWatch Netdriver",
+      "type": "Gear",
+      "image": "cprg-075854a105d2305a:cpp-7634b1121bed0285"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-ccaa2b5e26922267:cpp-94c7380b71019c41",
+      "cardId": "cp-nocturne-op55-n1",
+      "printingId": "cpp-94c7380b71019c41",
+      "referencePrintingId": "cpp-94c7380b71019c41",
+      "candidatePrintingIds": [
+        "cpp-94c7380b71019c41"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-ccaa2b5e26922267",
+      "variantKind": "standard",
+      "name": "Nocturne OP55 N1",
+      "type": "Program",
+      "image": "cprg-ccaa2b5e26922267:cpp-94c7380b71019c41"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-fc164ef7897a806d:cpp-bee8f30173a3b054",
+      "cardId": "cp-octant",
+      "printingId": "cpp-bee8f30173a3b054",
+      "referencePrintingId": "cpp-bee8f30173a3b054",
+      "candidatePrintingIds": [
+        "cpp-bee8f30173a3b054"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-fc164ef7897a806d",
+      "variantKind": "standard",
+      "name": "Octant",
+      "type": "Unit",
+      "image": "cprg-fc164ef7897a806d:cpp-bee8f30173a3b054"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-140f31c4f9cfe6ca:cpp-65583317f314b5e9",
+      "cardId": "cp-offduty-malfini",
+      "printingId": null,
+      "referencePrintingId": "cpp-65583317f314b5e9",
+      "candidatePrintingIds": [
+        "cpp-65583317f314b5e9",
+        "cpp-bdfba5e6be5d0191"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-140f31c4f9cfe6ca",
+      "variantKind": "standard",
+      "name": "Offduty Malfini",
+      "type": "Unit",
+      "image": "cprg-140f31c4f9cfe6ca:cpp-65583317f314b5e9"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-140f31c4f9cfe6ca:cpp-bdfba5e6be5d0191",
+      "cardId": "cp-offduty-malfini",
+      "printingId": null,
+      "referencePrintingId": "cpp-bdfba5e6be5d0191",
+      "candidatePrintingIds": [
+        "cpp-65583317f314b5e9",
+        "cpp-bdfba5e6be5d0191"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-140f31c4f9cfe6ca",
+      "variantKind": "standard",
+      "name": "Offduty Malfini",
+      "type": "Unit",
+      "image": "cprg-140f31c4f9cfe6ca:cpp-bdfba5e6be5d0191"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-0b54361edcade488:cpp-70944dbe2a428b14",
+      "cardId": "cp-over-the-edge",
+      "printingId": null,
+      "referencePrintingId": "cpp-70944dbe2a428b14",
+      "candidatePrintingIds": [
+        "cpp-70944dbe2a428b14",
+        "cpp-aee69fd1082109d2"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-0b54361edcade488",
+      "variantKind": "standard",
+      "name": "Over the Edge",
+      "type": "Program",
+      "image": "cprg-0b54361edcade488:cpp-70944dbe2a428b14"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-0b54361edcade488:cpp-aee69fd1082109d2",
+      "cardId": "cp-over-the-edge",
+      "printingId": null,
+      "referencePrintingId": "cpp-aee69fd1082109d2",
+      "candidatePrintingIds": [
+        "cpp-70944dbe2a428b14",
+        "cpp-aee69fd1082109d2"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-0b54361edcade488",
+      "variantKind": "standard",
+      "name": "Over the Edge",
+      "type": "Program",
+      "image": "cprg-0b54361edcade488:cpp-aee69fd1082109d2"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-c24966ffab38fde4:cpp-1c86c74c40d2184c",
+      "cardId": "cp-overwatch-panam-s-gift",
+      "printingId": null,
+      "referencePrintingId": "cpp-1c86c74c40d2184c",
+      "candidatePrintingIds": [
+        "cpp-1c86c74c40d2184c",
+        "cpp-a6d4d424b806e506"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-c24966ffab38fde4",
+      "variantKind": "standard",
+      "name": "Overwatch: Panam's Gift",
+      "type": "Gear",
+      "image": "cprg-c24966ffab38fde4:cpp-1c86c74c40d2184c"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-c24966ffab38fde4:cpp-a6d4d424b806e506",
+      "cardId": "cp-overwatch-panam-s-gift",
+      "printingId": null,
+      "referencePrintingId": "cpp-a6d4d424b806e506",
+      "candidatePrintingIds": [
+        "cpp-1c86c74c40d2184c",
+        "cpp-a6d4d424b806e506"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-c24966ffab38fde4",
+      "variantKind": "iconic",
+      "name": "Overwatch: Panam's Gift",
+      "type": "Gear",
+      "image": "cprg-c24966ffab38fde4:cpp-a6d4d424b806e506"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-6e371602932b5f3a:cpp-032722a518003b43",
+      "cardId": "cp-pacifica-netrunner",
+      "printingId": "cpp-032722a518003b43",
+      "referencePrintingId": "cpp-032722a518003b43",
+      "candidatePrintingIds": [
+        "cpp-032722a518003b43"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-6e371602932b5f3a",
+      "variantKind": "standard",
+      "name": "Pacifica Netrunner",
+      "type": "Unit",
+      "image": "cprg-6e371602932b5f3a:cpp-032722a518003b43"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-6f77e056317c4e79:cpp-133e0ca1d87fbfcb",
+      "cardId": "cp-padre-man-of-the-cross",
+      "printingId": null,
+      "referencePrintingId": "cpp-133e0ca1d87fbfcb",
+      "candidatePrintingIds": [
+        "cpp-133e0ca1d87fbfcb",
+        "cpp-a78f680c0ab895fe"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-6f77e056317c4e79",
+      "variantKind": "standard",
+      "name": "Padre: Man of the Cross",
+      "type": "Legend",
+      "image": "cprg-6f77e056317c4e79:cpp-133e0ca1d87fbfcb"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-6f77e056317c4e79:cpp-a78f680c0ab895fe",
+      "cardId": "cp-padre-man-of-the-cross",
+      "printingId": null,
+      "referencePrintingId": "cpp-a78f680c0ab895fe",
+      "candidatePrintingIds": [
+        "cpp-133e0ca1d87fbfcb",
+        "cpp-a78f680c0ab895fe"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-6f77e056317c4e79",
+      "variantKind": "iconic",
+      "name": "Padre: Man of the Cross",
+      "type": "Legend",
+      "image": "cprg-6f77e056317c4e79:cpp-a78f680c0ab895fe"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-0805ab21b37c655f:cpp-0221b3e04b4a81ba",
+      "cardId": "cp-panam-palmer-nomad-cavalry",
+      "printingId": null,
+      "referencePrintingId": "cpp-0221b3e04b4a81ba",
+      "candidatePrintingIds": [
+        "cpp-0221b3e04b4a81ba",
+        "cpp-a74310684529d97d",
+        "cpp-bde377fd8c27bb06"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-0805ab21b37c655f",
+      "variantKind": "iconic",
+      "name": "Panam Palmer: Nomad Cavalry",
+      "type": "Legend",
+      "image": "cprg-0805ab21b37c655f:cpp-0221b3e04b4a81ba"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-0805ab21b37c655f:cpp-a74310684529d97d",
+      "cardId": "cp-panam-palmer-nomad-cavalry",
+      "printingId": null,
+      "referencePrintingId": "cpp-a74310684529d97d",
+      "candidatePrintingIds": [
+        "cpp-0221b3e04b4a81ba",
+        "cpp-a74310684529d97d",
+        "cpp-bde377fd8c27bb06"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-0805ab21b37c655f",
+      "variantKind": "standard",
+      "name": "Panam Palmer: Nomad Cavalry",
+      "type": "Legend",
+      "image": "cprg-0805ab21b37c655f:cpp-a74310684529d97d"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-0805ab21b37c655f:cpp-bde377fd8c27bb06",
+      "cardId": "cp-panam-palmer-nomad-cavalry",
+      "printingId": null,
+      "referencePrintingId": "cpp-bde377fd8c27bb06",
+      "candidatePrintingIds": [
+        "cpp-0221b3e04b4a81ba",
+        "cpp-a74310684529d97d",
+        "cpp-bde377fd8c27bb06"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-0805ab21b37c655f",
+      "variantKind": "standard",
+      "name": "Panam Palmer: Nomad Cavalry",
+      "type": "Legend",
+      "image": "cprg-0805ab21b37c655f:cpp-bde377fd8c27bb06"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-cb4cb9f88b01779e:cpp-135ac68004e4a078",
+      "cardId": "cp-panam-palmer-strength-through-family",
+      "printingId": null,
+      "referencePrintingId": "cpp-135ac68004e4a078",
+      "candidatePrintingIds": [
+        "cpp-135ac68004e4a078",
+        "cpp-616b00aeba439d76"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-cb4cb9f88b01779e",
+      "variantKind": "iconic",
+      "name": "Panam Palmer: Strength Through Family",
+      "type": "Unit",
+      "image": "cprg-cb4cb9f88b01779e:cpp-135ac68004e4a078"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-cb4cb9f88b01779e:cpp-616b00aeba439d76",
+      "cardId": "cp-panam-palmer-strength-through-family",
+      "printingId": null,
+      "referencePrintingId": "cpp-616b00aeba439d76",
+      "candidatePrintingIds": [
+        "cpp-135ac68004e4a078",
+        "cpp-616b00aeba439d76"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-cb4cb9f88b01779e",
+      "variantKind": "standard",
+      "name": "Panam Palmer: Strength Through Family",
+      "type": "Unit",
+      "image": "cprg-cb4cb9f88b01779e:cpp-616b00aeba439d76"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-b0543a9753acdeb0:cpp-5eae5e98367d1823",
+      "cardId": "cp-peace-offering",
+      "printingId": "cpp-5eae5e98367d1823",
+      "referencePrintingId": "cpp-5eae5e98367d1823",
+      "candidatePrintingIds": [
+        "cpp-5eae5e98367d1823"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-b0543a9753acdeb0",
+      "variantKind": "standard",
+      "name": "Peace Offering",
+      "type": "Program",
+      "image": "cprg-b0543a9753acdeb0:cpp-5eae5e98367d1823"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-a221f70518a7d5c7:cpp-703690aa4591825a",
+      "cardId": "cp-pepe-najarro-working-doubles",
+      "printingId": "cpp-703690aa4591825a",
+      "referencePrintingId": "cpp-703690aa4591825a",
+      "candidatePrintingIds": [
+        "cpp-703690aa4591825a"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-a221f70518a7d5c7",
+      "variantKind": "standard",
+      "name": "Pepe Najarro: Working Doubles",
+      "type": "Unit",
+      "image": "cprg-a221f70518a7d5c7:cpp-703690aa4591825a"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-2620bf573dae40b5:cpp-1146ee9596d13f7a",
+      "cardId": "cp-placide-voodoo-sentinel",
+      "printingId": "cpp-1146ee9596d13f7a",
+      "referencePrintingId": "cpp-1146ee9596d13f7a",
+      "candidatePrintingIds": [
+        "cpp-1146ee9596d13f7a"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-2620bf573dae40b5",
+      "variantKind": "standard",
+      "name": "Placide: Voodoo Sentinel",
+      "type": "Unit",
+      "image": "cprg-2620bf573dae40b5:cpp-1146ee9596d13f7a"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-4bd6f757e1d9c5b4:cpp-272727304f25c1f1",
+      "cardId": "cp-psycho-squad",
+      "printingId": null,
+      "referencePrintingId": "cpp-272727304f25c1f1",
+      "candidatePrintingIds": [
+        "cpp-272727304f25c1f1",
+        "cpp-837ec01a96ddd09e"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-4bd6f757e1d9c5b4",
+      "variantKind": "standard",
+      "name": "Psycho Squad",
+      "type": "Unit",
+      "image": "cprg-4bd6f757e1d9c5b4:cpp-272727304f25c1f1"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-4bd6f757e1d9c5b4:cpp-837ec01a96ddd09e",
+      "cardId": "cp-psycho-squad",
+      "printingId": null,
+      "referencePrintingId": "cpp-837ec01a96ddd09e",
+      "candidatePrintingIds": [
+        "cpp-272727304f25c1f1",
+        "cpp-837ec01a96ddd09e"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-4bd6f757e1d9c5b4",
+      "variantKind": "standard",
+      "name": "Psycho Squad",
+      "type": "Unit",
+      "image": "cprg-4bd6f757e1d9c5b4:cpp-837ec01a96ddd09e"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-9e1585c203be44ae:cpp-892463bb7f74d732",
+      "cardId": "cp-pyramid-song",
+      "printingId": "cpp-892463bb7f74d732",
+      "referencePrintingId": "cpp-892463bb7f74d732",
+      "candidatePrintingIds": [
+        "cpp-892463bb7f74d732"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-9e1585c203be44ae",
+      "variantKind": "standard",
+      "name": "Pyramid Song",
+      "type": "Program",
+      "image": "cprg-9e1585c203be44ae:cpp-892463bb7f74d732"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-704cb8a246cf0e00:cpp-a5bb90c669bb6590",
+      "cardId": "cp-reboot-optics",
+      "printingId": null,
+      "referencePrintingId": "cpp-a5bb90c669bb6590",
+      "candidatePrintingIds": [
+        "cpp-a5bb90c669bb6590",
+        "cpp-b4676f85ad1ee16e"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-704cb8a246cf0e00",
+      "variantKind": "standard",
+      "name": "Reboot Optics",
+      "type": "Program",
+      "image": "cprg-704cb8a246cf0e00:cpp-a5bb90c669bb6590"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-704cb8a246cf0e00:cpp-b4676f85ad1ee16e",
+      "cardId": "cp-reboot-optics",
+      "printingId": null,
+      "referencePrintingId": "cpp-b4676f85ad1ee16e",
+      "candidatePrintingIds": [
+        "cpp-a5bb90c669bb6590",
+        "cpp-b4676f85ad1ee16e"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-704cb8a246cf0e00",
+      "variantKind": "standard",
+      "name": "Reboot Optics",
+      "type": "Program",
+      "image": "cprg-704cb8a246cf0e00:cpp-b4676f85ad1ee16e"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-b1690edbb28c4307:cpp-26d2e82dd10ba521",
+      "cardId": "cp-riding-nomad",
+      "printingId": "cpp-26d2e82dd10ba521",
+      "referencePrintingId": "cpp-26d2e82dd10ba521",
+      "candidatePrintingIds": [
+        "cpp-26d2e82dd10ba521"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-b1690edbb28c4307",
+      "variantKind": "standard",
+      "name": "Riding Nomad",
+      "type": "Unit",
+      "image": "cprg-b1690edbb28c4307:cpp-26d2e82dd10ba521"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-4488183bfc14362c:cpp-360da0311dc9267a",
+      "cardId": "cp-riot-shield",
+      "printingId": "cpp-360da0311dc9267a",
+      "referencePrintingId": "cpp-360da0311dc9267a",
+      "candidatePrintingIds": [
+        "cpp-360da0311dc9267a"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-4488183bfc14362c",
+      "variantKind": "standard",
+      "name": "Riot Shield",
+      "type": "Gear",
+      "image": "cprg-4488183bfc14362c:cpp-360da0311dc9267a"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-9a798fac609c014f:cpp-6bf00dc7e8bf1208",
+      "cardId": "cp-rita-wheeler-no-stupid-questions",
+      "printingId": "cpp-6bf00dc7e8bf1208",
+      "referencePrintingId": "cpp-6bf00dc7e8bf1208",
+      "candidatePrintingIds": [
+        "cpp-6bf00dc7e8bf1208"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-9a798fac609c014f",
+      "variantKind": "standard",
+      "name": "Rita Wheeler: No Stupid Questions",
+      "type": "Unit",
+      "image": "cprg-9a798fac609c014f:cpp-6bf00dc7e8bf1208"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-6439d680344c0f26:cpp-2be7c57127e1193f",
+      "cardId": "cp-river-ward-detective-on-the-hunt",
+      "printingId": null,
+      "referencePrintingId": "cpp-2be7c57127e1193f",
+      "candidatePrintingIds": [
+        "cpp-2be7c57127e1193f",
+        "cpp-b4a6ae1488912a84",
+        "cpp-f657ddf13ba22d79"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-6439d680344c0f26",
+      "variantKind": "standard",
+      "name": "River Ward: Detective on the Hunt",
+      "type": "Legend",
+      "image": "cprg-6439d680344c0f26:cpp-2be7c57127e1193f"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-6439d680344c0f26:cpp-b4a6ae1488912a84",
+      "cardId": "cp-river-ward-detective-on-the-hunt",
+      "printingId": null,
+      "referencePrintingId": "cpp-b4a6ae1488912a84",
+      "candidatePrintingIds": [
+        "cpp-2be7c57127e1193f",
+        "cpp-b4a6ae1488912a84",
+        "cpp-f657ddf13ba22d79"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-6439d680344c0f26",
+      "variantKind": "iconic",
+      "name": "River Ward: Detective on the Hunt",
+      "type": "Legend",
+      "image": "cprg-6439d680344c0f26:cpp-b4a6ae1488912a84"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-6439d680344c0f26:cpp-f657ddf13ba22d79",
+      "cardId": "cp-river-ward-detective-on-the-hunt",
+      "printingId": null,
+      "referencePrintingId": "cpp-f657ddf13ba22d79",
+      "candidatePrintingIds": [
+        "cpp-2be7c57127e1193f",
+        "cpp-b4a6ae1488912a84",
+        "cpp-f657ddf13ba22d79"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-6439d680344c0f26",
+      "variantKind": "standard",
+      "name": "River Ward: Detective on the Hunt",
+      "type": "Legend",
+      "image": "cprg-6439d680344c0f26:cpp-f657ddf13ba22d79"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-d62da3a3df9ca245:cpp-9579e83a3227bd28",
+      "cardId": "cp-rockn-rockerboy",
+      "printingId": "cpp-9579e83a3227bd28",
+      "referencePrintingId": "cpp-9579e83a3227bd28",
+      "candidatePrintingIds": [
+        "cpp-9579e83a3227bd28"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-d62da3a3df9ca245",
+      "variantKind": "standard",
+      "name": "Rockn' Rockerboy",
+      "type": "Unit",
+      "image": "cprg-d62da3a3df9ca245:cpp-9579e83a3227bd28"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-51e69baf454d0842:cpp-b6e25ec4b5373869",
+      "cardId": "cp-rogue-amendiares-preem-solo",
+      "printingId": null,
+      "referencePrintingId": "cpp-b6e25ec4b5373869",
+      "candidatePrintingIds": [
+        "cpp-b6e25ec4b5373869",
+        "cpp-cdf5fa21d429ef17",
+        "cpp-efe544c12c45a8c1"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-51e69baf454d0842",
+      "variantKind": "standard",
+      "name": "Rogue Amendiares: Preem Solo",
+      "type": "Legend",
+      "image": "cprg-51e69baf454d0842:cpp-b6e25ec4b5373869"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-51e69baf454d0842:cpp-cdf5fa21d429ef17",
+      "cardId": "cp-rogue-amendiares-preem-solo",
+      "printingId": null,
+      "referencePrintingId": "cpp-cdf5fa21d429ef17",
+      "candidatePrintingIds": [
+        "cpp-b6e25ec4b5373869",
+        "cpp-cdf5fa21d429ef17",
+        "cpp-efe544c12c45a8c1"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-51e69baf454d0842",
+      "variantKind": "iconic",
+      "name": "Rogue Amendiares: Preem Solo",
+      "type": "Legend",
+      "image": "cprg-51e69baf454d0842:cpp-cdf5fa21d429ef17"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-51e69baf454d0842:cpp-efe544c12c45a8c1",
+      "cardId": "cp-rogue-amendiares-preem-solo",
+      "printingId": null,
+      "referencePrintingId": "cpp-efe544c12c45a8c1",
+      "candidatePrintingIds": [
+        "cpp-b6e25ec4b5373869",
+        "cpp-cdf5fa21d429ef17",
+        "cpp-efe544c12c45a8c1"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-51e69baf454d0842",
+      "variantKind": "standard",
+      "name": "Rogue Amendiares: Preem Solo",
+      "type": "Legend",
+      "image": "cprg-51e69baf454d0842:cpp-efe544c12c45a8c1"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-69017c1ee4600d4d:cpp-0d34154d8e518fd2",
+      "cardId": "cp-rogue-amendiares-queen-of-the-afterlife",
+      "printingId": null,
+      "referencePrintingId": "cpp-0d34154d8e518fd2",
+      "candidatePrintingIds": [
+        "cpp-0d34154d8e518fd2",
+        "cpp-b6048a7ce8ad079c"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-69017c1ee4600d4d",
+      "variantKind": "iconic",
+      "name": "Rogue Amendiares: Queen of the Afterlife",
+      "type": "Unit",
+      "image": "cprg-69017c1ee4600d4d:cpp-0d34154d8e518fd2"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-69017c1ee4600d4d:cpp-b6048a7ce8ad079c",
+      "cardId": "cp-rogue-amendiares-queen-of-the-afterlife",
+      "printingId": null,
+      "referencePrintingId": "cpp-b6048a7ce8ad079c",
+      "candidatePrintingIds": [
+        "cpp-0d34154d8e518fd2",
+        "cpp-b6048a7ce8ad079c"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-69017c1ee4600d4d",
+      "variantKind": "standard",
+      "name": "Rogue Amendiares: Queen of the Afterlife",
+      "type": "Unit",
+      "image": "cprg-69017c1ee4600d4d:cpp-b6048a7ce8ad079c"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-52dab9b8441b5577:cpp-fd103cdef9cf48c5",
+      "cardId": "cp-royce-don-t-call-me-simon",
+      "printingId": "cpp-fd103cdef9cf48c5",
+      "referencePrintingId": "cpp-fd103cdef9cf48c5",
+      "candidatePrintingIds": [
+        "cpp-fd103cdef9cf48c5"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-52dab9b8441b5577",
+      "variantKind": "standard",
+      "name": "Royce: Don't Call Me Simon",
+      "type": "Unit",
+      "image": "cprg-52dab9b8441b5577:cpp-fd103cdef9cf48c5"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-60985114b6b78298:cpp-4d8cb1f2e028d27b",
+      "cardId": "cp-royce-psycho-on-the-edge",
+      "printingId": null,
+      "referencePrintingId": "cpp-4d8cb1f2e028d27b",
+      "candidatePrintingIds": [
+        "cpp-4d8cb1f2e028d27b",
+        "cpp-89a834f8afa1dbcd",
+        "cpp-f952962700c37df5"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-60985114b6b78298",
+      "variantKind": "iconic",
+      "name": "Royce: Psycho on the Edge",
+      "type": "Legend",
+      "image": "cprg-60985114b6b78298:cpp-4d8cb1f2e028d27b"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-60985114b6b78298:cpp-89a834f8afa1dbcd",
+      "cardId": "cp-royce-psycho-on-the-edge",
+      "printingId": null,
+      "referencePrintingId": "cpp-89a834f8afa1dbcd",
+      "candidatePrintingIds": [
+        "cpp-4d8cb1f2e028d27b",
+        "cpp-89a834f8afa1dbcd",
+        "cpp-f952962700c37df5"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-60985114b6b78298",
+      "variantKind": "standard",
+      "name": "Royce: Psycho on the Edge",
+      "type": "Legend",
+      "image": "cprg-60985114b6b78298:cpp-89a834f8afa1dbcd"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-60985114b6b78298:cpp-f952962700c37df5",
+      "cardId": "cp-royce-psycho-on-the-edge",
+      "printingId": null,
+      "referencePrintingId": "cpp-f952962700c37df5",
+      "candidatePrintingIds": [
+        "cpp-4d8cb1f2e028d27b",
+        "cpp-89a834f8afa1dbcd",
+        "cpp-f952962700c37df5"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-60985114b6b78298",
+      "variantKind": "standard",
+      "name": "Royce: Psycho on the Edge",
+      "type": "Legend",
+      "image": "cprg-60985114b6b78298:cpp-f952962700c37df5"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-47a0b17656cfdff8:cpp-8171f19e24af1017",
+      "cardId": "cp-ruthless-lowlife",
+      "printingId": null,
+      "referencePrintingId": "cpp-8171f19e24af1017",
+      "candidatePrintingIds": [
+        "cpp-8171f19e24af1017",
+        "cpp-ffa0c5c1ae90fbe3"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-47a0b17656cfdff8",
+      "variantKind": "standard",
+      "name": "Ruthless Lowlife",
+      "type": "Unit",
+      "image": "cprg-47a0b17656cfdff8:cpp-8171f19e24af1017"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-47a0b17656cfdff8:cpp-ffa0c5c1ae90fbe3",
+      "cardId": "cp-ruthless-lowlife",
+      "printingId": null,
+      "referencePrintingId": "cpp-ffa0c5c1ae90fbe3",
+      "candidatePrintingIds": [
+        "cpp-8171f19e24af1017",
+        "cpp-ffa0c5c1ae90fbe3"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-47a0b17656cfdff8",
+      "variantKind": "standard",
+      "name": "Ruthless Lowlife",
+      "type": "Unit",
+      "image": "cprg-47a0b17656cfdff8:cpp-ffa0c5c1ae90fbe3"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-053400ce40ad9a3a:cpp-08f3a3d838a0b4fb",
+      "cardId": "cp-saburo-arasaka-stubborn-patriarch",
+      "printingId": null,
+      "referencePrintingId": "cpp-08f3a3d838a0b4fb",
+      "candidatePrintingIds": [
+        "cpp-08f3a3d838a0b4fb",
+        "cpp-cbc69702ebbaf489"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-053400ce40ad9a3a",
+      "variantKind": "standard",
+      "name": "Saburo Arasaka: Stubborn Patriarch",
+      "type": "Legend",
+      "image": "cprg-053400ce40ad9a3a:cpp-08f3a3d838a0b4fb"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-053400ce40ad9a3a:cpp-cbc69702ebbaf489",
+      "cardId": "cp-saburo-arasaka-stubborn-patriarch",
+      "printingId": null,
+      "referencePrintingId": "cpp-cbc69702ebbaf489",
+      "candidatePrintingIds": [
+        "cpp-08f3a3d838a0b4fb",
+        "cpp-cbc69702ebbaf489"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-053400ce40ad9a3a",
+      "variantKind": "standard",
+      "name": "Saburo Arasaka: Stubborn Patriarch",
+      "type": "Legend",
+      "image": "cprg-053400ce40ad9a3a:cpp-cbc69702ebbaf489"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-09f8e6783f7c3d0d:cpp-371ab17cd9e217ec",
+      "cardId": "cp-safety-override",
+      "printingId": "cpp-371ab17cd9e217ec",
+      "referencePrintingId": "cpp-371ab17cd9e217ec",
+      "candidatePrintingIds": [
+        "cpp-371ab17cd9e217ec"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-09f8e6783f7c3d0d",
+      "variantKind": "standard",
+      "name": "Safety Override",
+      "type": "Program",
+      "image": "cprg-09f8e6783f7c3d0d:cpp-371ab17cd9e217ec"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-321bab2f551ef587:cpp-073710736e7695a5",
+      "cardId": "cp-sandayu-oda-hanako-s-guardian",
+      "printingId": null,
+      "referencePrintingId": "cpp-073710736e7695a5",
+      "candidatePrintingIds": [
+        "cpp-073710736e7695a5",
+        "cpp-18c5a8956f09d52c"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-321bab2f551ef587",
+      "variantKind": "iconic",
+      "name": "Sandayu Oda: Hanako's Guardian",
+      "type": "Unit",
+      "image": "cprg-321bab2f551ef587:cpp-073710736e7695a5"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-321bab2f551ef587:cpp-18c5a8956f09d52c",
+      "cardId": "cp-sandayu-oda-hanako-s-guardian",
+      "printingId": null,
+      "referencePrintingId": "cpp-18c5a8956f09d52c",
+      "candidatePrintingIds": [
+        "cpp-073710736e7695a5",
+        "cpp-18c5a8956f09d52c"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-321bab2f551ef587",
+      "variantKind": "standard",
+      "name": "Sandayu Oda: Hanako's Guardian",
+      "type": "Unit",
+      "image": "cprg-321bab2f551ef587:cpp-18c5a8956f09d52c"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-5fc40f25a2078315:cpp-6f91a3cb589a8e82",
+      "cardId": "cp-sandevistan",
+      "printingId": null,
+      "referencePrintingId": "cpp-6f91a3cb589a8e82",
+      "candidatePrintingIds": [
+        "cpp-6f91a3cb589a8e82",
+        "cpp-f8f986be36b159dd"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-5fc40f25a2078315",
+      "variantKind": "standard",
+      "name": "Sandevistan",
+      "type": "Gear",
+      "image": "cprg-5fc40f25a2078315:cpp-6f91a3cb589a8e82"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-5fc40f25a2078315:cpp-f8f986be36b159dd",
+      "cardId": "cp-sandevistan",
+      "printingId": null,
+      "referencePrintingId": "cpp-f8f986be36b159dd",
+      "candidatePrintingIds": [
+        "cpp-6f91a3cb589a8e82",
+        "cpp-f8f986be36b159dd"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-5fc40f25a2078315",
+      "variantKind": "standard",
+      "name": "Sandevistan",
+      "type": "Gear",
+      "image": "cprg-5fc40f25a2078315:cpp-f8f986be36b159dd"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-192f7c7cb495504a:cpp-b2f6f7f08f699546",
+      "cardId": "cp-sasha-yakovleva-won-t-let-you-down",
+      "printingId": null,
+      "referencePrintingId": "cpp-b2f6f7f08f699546",
+      "candidatePrintingIds": [
+        "cpp-b2f6f7f08f699546",
+        "cpp-f6683933619efe80"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-192f7c7cb495504a",
+      "variantKind": "standard",
+      "name": "Sasha Yakovleva: Won't Let You Down",
+      "type": "Legend",
+      "image": "cprg-192f7c7cb495504a:cpp-b2f6f7f08f699546"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-192f7c7cb495504a:cpp-f6683933619efe80",
+      "cardId": "cp-sasha-yakovleva-won-t-let-you-down",
+      "printingId": null,
+      "referencePrintingId": "cpp-f6683933619efe80",
+      "candidatePrintingIds": [
+        "cpp-b2f6f7f08f699546",
+        "cpp-f6683933619efe80"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-192f7c7cb495504a",
+      "variantKind": "iconic",
+      "name": "Sasha Yakovleva: Won't Let You Down",
+      "type": "Legend",
+      "image": "cprg-192f7c7cb495504a:cpp-f6683933619efe80"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-cdcbc1356089e635:cpp-6018ea30af7a9b53",
+      "cardId": "cp-satori-sword-of-saburo",
+      "printingId": null,
+      "referencePrintingId": "cpp-6018ea30af7a9b53",
+      "candidatePrintingIds": [
+        "cpp-6018ea30af7a9b53",
+        "cpp-9358342257b4ebc4"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-cdcbc1356089e635",
+      "variantKind": "standard",
+      "name": "Satori: Sword of Saburo",
+      "type": "Gear",
+      "image": "cprg-cdcbc1356089e635:cpp-6018ea30af7a9b53"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-cdcbc1356089e635:cpp-9358342257b4ebc4",
+      "cardId": "cp-satori-sword-of-saburo",
+      "printingId": null,
+      "referencePrintingId": "cpp-9358342257b4ebc4",
+      "candidatePrintingIds": [
+        "cpp-6018ea30af7a9b53",
+        "cpp-9358342257b4ebc4"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-cdcbc1356089e635",
+      "variantKind": "standard",
+      "name": "Satori: Sword of Saburo",
+      "type": "Gear",
+      "image": "cprg-cdcbc1356089e635:cpp-9358342257b4ebc4"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-1e608f373d86195a:cpp-e61841698f774ab9",
+      "cardId": "cp-saul-bright-stormrider",
+      "printingId": "cpp-e61841698f774ab9",
+      "referencePrintingId": "cpp-e61841698f774ab9",
+      "candidatePrintingIds": [
+        "cpp-e61841698f774ab9"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-1e608f373d86195a",
+      "variantKind": "standard",
+      "name": "Saul Bright: Stormrider",
+      "type": "Unit",
+      "image": "cprg-1e608f373d86195a:cpp-e61841698f774ab9"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-a6b00817eb1149df:cpp-10c378f232887a61",
+      "cardId": "cp-screw-lovelorn-fool",
+      "printingId": "cpp-10c378f232887a61",
+      "referencePrintingId": "cpp-10c378f232887a61",
+      "candidatePrintingIds": [
+        "cpp-10c378f232887a61"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-a6b00817eb1149df",
+      "variantKind": "standard",
+      "name": "Screw: Lovelorn Fool",
+      "type": "Unit",
+      "image": "cprg-a6b00817eb1149df:cpp-10c378f232887a61"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-470a9b319c7a91c8:cpp-722016bfa4ac8a36",
+      "cardId": "cp-secondhand-bombus",
+      "printingId": null,
+      "referencePrintingId": "cpp-722016bfa4ac8a36",
+      "candidatePrintingIds": [
+        "cpp-722016bfa4ac8a36",
+        "cpp-f25e9588b83dba71"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-470a9b319c7a91c8",
+      "variantKind": "standard",
+      "name": "Secondhand Bombus",
+      "type": "Unit",
+      "image": "cprg-470a9b319c7a91c8:cpp-722016bfa4ac8a36"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-470a9b319c7a91c8:cpp-f25e9588b83dba71",
+      "cardId": "cp-secondhand-bombus",
+      "printingId": null,
+      "referencePrintingId": "cpp-f25e9588b83dba71",
+      "candidatePrintingIds": [
+        "cpp-722016bfa4ac8a36",
+        "cpp-f25e9588b83dba71"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-470a9b319c7a91c8",
+      "variantKind": "standard",
+      "name": "Secondhand Bombus",
+      "type": "Unit",
+      "image": "cprg-470a9b319c7a91c8:cpp-f25e9588b83dba71"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-dd757f572135954b:cpp-3c982dedac6aa8e1",
+      "cardId": "cp-shattered-memories",
+      "printingId": null,
+      "referencePrintingId": "cpp-3c982dedac6aa8e1",
+      "candidatePrintingIds": [
+        "cpp-3c982dedac6aa8e1",
+        "cpp-d27bb6b5b5830722"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-dd757f572135954b",
+      "variantKind": "standard",
+      "name": "Shattered Memories",
+      "type": "Program",
+      "image": "cprg-dd757f572135954b:cpp-3c982dedac6aa8e1"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-dd757f572135954b:cpp-d27bb6b5b5830722",
+      "cardId": "cp-shattered-memories",
+      "printingId": null,
+      "referencePrintingId": "cpp-d27bb6b5b5830722",
+      "candidatePrintingIds": [
+        "cpp-3c982dedac6aa8e1",
+        "cpp-d27bb6b5b5830722"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-dd757f572135954b",
+      "variantKind": "standard",
+      "name": "Shattered Memories",
+      "type": "Program",
+      "image": "cprg-dd757f572135954b:cpp-d27bb6b5b5830722"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-b229d0266d42f8f9:cpp-7a3ba4284bbc62e6",
+      "cardId": "cp-sketchy-ripper",
+      "printingId": "cpp-7a3ba4284bbc62e6",
+      "referencePrintingId": "cpp-7a3ba4284bbc62e6",
+      "candidatePrintingIds": [
+        "cpp-7a3ba4284bbc62e6"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-b229d0266d42f8f9",
+      "variantKind": "standard",
+      "name": "Sketchy Ripper",
+      "type": "Unit",
+      "image": "cprg-b229d0266d42f8f9:cpp-7a3ba4284bbc62e6"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-3a91f155b224c266:cpp-0fa5137e53fee2ef",
+      "cardId": "cp-swordwise-huscle",
+      "printingId": null,
+      "referencePrintingId": "cpp-0fa5137e53fee2ef",
+      "candidatePrintingIds": [
+        "cpp-0fa5137e53fee2ef",
+        "cpp-db89036dc8a0b165"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-3a91f155b224c266",
+      "variantKind": "standard",
+      "name": "Swordwise Huscle",
+      "type": "Unit",
+      "image": "cprg-3a91f155b224c266:cpp-0fa5137e53fee2ef"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-3a91f155b224c266:cpp-db89036dc8a0b165",
+      "cardId": "cp-swordwise-huscle",
+      "printingId": null,
+      "referencePrintingId": "cpp-db89036dc8a0b165",
+      "candidatePrintingIds": [
+        "cpp-0fa5137e53fee2ef",
+        "cpp-db89036dc8a0b165"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-3a91f155b224c266",
+      "variantKind": "standard",
+      "name": "Swordwise Huscle",
+      "type": "Unit",
+      "image": "cprg-3a91f155b224c266:cpp-db89036dc8a0b165"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-a3b1347c9f3de39c:cpp-0b3a05c46f1b6503",
+      "cardId": "cp-synapse-burnout",
+      "printingId": "cpp-0b3a05c46f1b6503",
+      "referencePrintingId": "cpp-0b3a05c46f1b6503",
+      "candidatePrintingIds": [
+        "cpp-0b3a05c46f1b6503"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-a3b1347c9f3de39c",
+      "variantKind": "standard",
+      "name": "Synapse Burnout",
+      "type": "Program",
+      "image": "cprg-a3b1347c9f3de39c:cpp-0b3a05c46f1b6503"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-7f675e71a8e49eda:cpp-65fee9959efddf6a",
+      "cardId": "cp-t-bug-amateur-philosopher",
+      "printingId": null,
+      "referencePrintingId": "cpp-65fee9959efddf6a",
+      "candidatePrintingIds": [
+        "cpp-65fee9959efddf6a",
+        "cpp-9711e52cb7c5e7cd"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-7f675e71a8e49eda",
+      "variantKind": "standard",
+      "name": "T-Bug: Amateur Philosopher",
+      "type": "Unit",
+      "image": "cprg-7f675e71a8e49eda:cpp-65fee9959efddf6a"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-7f675e71a8e49eda:cpp-9711e52cb7c5e7cd",
+      "cardId": "cp-t-bug-amateur-philosopher",
+      "printingId": null,
+      "referencePrintingId": "cpp-9711e52cb7c5e7cd",
+      "candidatePrintingIds": [
+        "cpp-65fee9959efddf6a",
+        "cpp-9711e52cb7c5e7cd"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-7f675e71a8e49eda",
+      "variantKind": "standard",
+      "name": "T-Bug: Amateur Philosopher",
+      "type": "Unit",
+      "image": "cprg-7f675e71a8e49eda:cpp-9711e52cb7c5e7cd"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-bc6b5487b85fda4f:cpp-329e45127808123e",
+      "cardId": "cp-take-control",
+      "printingId": "cpp-329e45127808123e",
+      "referencePrintingId": "cpp-329e45127808123e",
+      "candidatePrintingIds": [
+        "cpp-329e45127808123e"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-bc6b5487b85fda4f",
+      "variantKind": "standard",
+      "name": "Take Control",
+      "type": "Program",
+      "image": "cprg-bc6b5487b85fda4f:cpp-329e45127808123e"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-3a216f439f2e2a33:cpp-2d0127808363b0ca",
+      "cardId": "cp-tetratronic-rippler",
+      "printingId": null,
+      "referencePrintingId": "cpp-2d0127808363b0ca",
+      "candidatePrintingIds": [
+        "cpp-2d0127808363b0ca",
+        "cpp-c291fc4d3e00c181"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-3a216f439f2e2a33",
+      "variantKind": "standard",
+      "name": "Tetratronic Rippler",
+      "type": "Gear",
+      "image": "cprg-3a216f439f2e2a33:cpp-2d0127808363b0ca"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-3a216f439f2e2a33:cpp-c291fc4d3e00c181",
+      "cardId": "cp-tetratronic-rippler",
+      "printingId": null,
+      "referencePrintingId": "cpp-c291fc4d3e00c181",
+      "candidatePrintingIds": [
+        "cpp-2d0127808363b0ca",
+        "cpp-c291fc4d3e00c181"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-3a216f439f2e2a33",
+      "variantKind": "standard",
+      "name": "Tetratronic Rippler",
+      "type": "Gear",
+      "image": "cprg-3a216f439f2e2a33:cpp-c291fc4d3e00c181"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-93bb62a6d0efb5c7:cpp-935a214855b34ce6",
+      "cardId": "cp-the-heist",
+      "printingId": "cpp-935a214855b34ce6",
+      "referencePrintingId": "cpp-935a214855b34ce6",
+      "candidatePrintingIds": [
+        "cpp-935a214855b34ce6"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-93bb62a6d0efb5c7",
+      "variantKind": "standard",
+      "name": "The Heist",
+      "type": "Program",
+      "image": "cprg-93bb62a6d0efb5c7:cpp-935a214855b34ce6"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-bc668a1708ff377d:cpp-57008043dc3127cf",
+      "cardId": "cp-the-relic-experimental-biochip",
+      "printingId": null,
+      "referencePrintingId": "cpp-57008043dc3127cf",
+      "candidatePrintingIds": [
+        "cpp-57008043dc3127cf",
+        "cpp-b0829ed52b2b5105"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-bc668a1708ff377d",
+      "variantKind": "iconic",
+      "name": "The Relic: Experimental Biochip",
+      "type": "Gear",
+      "image": "cprg-bc668a1708ff377d:cpp-57008043dc3127cf"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-bc668a1708ff377d:cpp-b0829ed52b2b5105",
+      "cardId": "cp-the-relic-experimental-biochip",
+      "printingId": null,
+      "referencePrintingId": "cpp-b0829ed52b2b5105",
+      "candidatePrintingIds": [
+        "cpp-57008043dc3127cf",
+        "cpp-b0829ed52b2b5105"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-bc668a1708ff377d",
+      "variantKind": "standard",
+      "name": "The Relic: Experimental Biochip",
+      "type": "Gear",
+      "image": "cprg-bc668a1708ff377d:cpp-b0829ed52b2b5105"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-07b5489c5288f2f4:cpp-6437525418c5bcc7",
+      "cardId": "cp-three-mouths-one-desire",
+      "printingId": "cpp-6437525418c5bcc7",
+      "referencePrintingId": "cpp-6437525418c5bcc7",
+      "candidatePrintingIds": [
+        "cpp-6437525418c5bcc7"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-07b5489c5288f2f4",
+      "variantKind": "standard",
+      "name": "Three Mouths, One Desire",
+      "type": "Program",
+      "image": "cprg-07b5489c5288f2f4:cpp-6437525418c5bcc7"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-f6042c5654303fa3:cpp-0d1490726955db0a",
+      "cardId": "cp-towerfall",
+      "printingId": null,
+      "referencePrintingId": "cpp-0d1490726955db0a",
+      "candidatePrintingIds": [
+        "cpp-0d1490726955db0a",
+        "cpp-6b3ec52154910165"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-f6042c5654303fa3",
+      "variantKind": "standard",
+      "name": "Towerfall",
+      "type": "Program",
+      "image": "cprg-f6042c5654303fa3:cpp-0d1490726955db0a"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-f6042c5654303fa3:cpp-6b3ec52154910165",
+      "cardId": "cp-towerfall",
+      "printingId": null,
+      "referencePrintingId": "cpp-6b3ec52154910165",
+      "candidatePrintingIds": [
+        "cpp-0d1490726955db0a",
+        "cpp-6b3ec52154910165"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-f6042c5654303fa3",
+      "variantKind": "iconic",
+      "name": "Towerfall",
+      "type": "Program",
+      "image": "cprg-f6042c5654303fa3:cpp-6b3ec52154910165"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-205f04f247fb95a5:cpp-87c1d0e8c47191f6",
+      "cardId": "cp-trauma-team-operatives",
+      "printingId": "cpp-87c1d0e8c47191f6",
+      "referencePrintingId": "cpp-87c1d0e8c47191f6",
+      "candidatePrintingIds": [
+        "cpp-87c1d0e8c47191f6"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-205f04f247fb95a5",
+      "variantKind": "standard",
+      "name": "Trauma Team Operatives",
+      "type": "Unit",
+      "image": "cprg-205f04f247fb95a5:cpp-87c1d0e8c47191f6"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-2a756015b811e9bd:cpp-a9a171c7e38178ec",
+      "cardId": "cp-trust-no-one",
+      "printingId": "cpp-a9a171c7e38178ec",
+      "referencePrintingId": "cpp-a9a171c7e38178ec",
+      "candidatePrintingIds": [
+        "cpp-a9a171c7e38178ec"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-2a756015b811e9bd",
+      "variantKind": "standard",
+      "name": "Trust No One",
+      "type": "Program",
+      "image": "cprg-2a756015b811e9bd:cpp-a9a171c7e38178ec"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-68ec22ed5b345e89:cpp-62923557acb17f6a",
+      "cardId": "cp-tyger-s-whisper",
+      "printingId": "cpp-62923557acb17f6a",
+      "referencePrintingId": "cpp-62923557acb17f6a",
+      "candidatePrintingIds": [
+        "cpp-62923557acb17f6a"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-68ec22ed5b345e89",
+      "variantKind": "standard",
+      "name": "Tyger's Whisper",
+      "type": "Unit",
+      "image": "cprg-68ec22ed5b345e89:cpp-62923557acb17f6a"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-411f90087b36aed9:cpp-dcdc8d429d5331fd",
+      "cardId": "cp-unlikely-bond",
+      "printingId": "cpp-dcdc8d429d5331fd",
+      "referencePrintingId": "cpp-dcdc8d429d5331fd",
+      "candidatePrintingIds": [
+        "cpp-dcdc8d429d5331fd"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-411f90087b36aed9",
+      "variantKind": "standard",
+      "name": "Unlikely Bond",
+      "type": "Program",
+      "image": "cprg-411f90087b36aed9:cpp-dcdc8d429d5331fd"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-612d7d845085d3f3:cpp-3131bc9c206414fe",
+      "cardId": "cp-v-corporate-exile",
+      "printingId": null,
+      "referencePrintingId": "cpp-3131bc9c206414fe",
+      "candidatePrintingIds": [
+        "cpp-3131bc9c206414fe",
+        "cpp-a18df9abe9c2b16d"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-612d7d845085d3f3",
+      "variantKind": "standard",
+      "name": "V: Corporate Exile",
+      "type": "Legend",
+      "image": "cprg-612d7d845085d3f3:cpp-3131bc9c206414fe"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-612d7d845085d3f3:cpp-a18df9abe9c2b16d",
+      "cardId": "cp-v-corporate-exile",
+      "printingId": null,
+      "referencePrintingId": "cpp-a18df9abe9c2b16d",
+      "candidatePrintingIds": [
+        "cpp-3131bc9c206414fe",
+        "cpp-a18df9abe9c2b16d"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-612d7d845085d3f3",
+      "variantKind": "standard",
+      "name": "V: Corporate Exile",
+      "type": "Legend",
+      "image": "cprg-612d7d845085d3f3:cpp-a18df9abe9c2b16d"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-7cd8f7a2a841495d:cpp-cd5033a60300fee0",
+      "cardId": "cp-v-roamer-of-the-badlands",
+      "printingId": "cpp-cd5033a60300fee0",
+      "referencePrintingId": "cpp-cd5033a60300fee0",
+      "candidatePrintingIds": [
+        "cpp-cd5033a60300fee0"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-7cd8f7a2a841495d",
+      "variantKind": "standard",
+      "name": "V: Roamer of the Badlands",
+      "type": "Unit",
+      "image": "cprg-7cd8f7a2a841495d:cpp-cd5033a60300fee0"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-af4c4b92ef64396c:cpp-5e874ee26873a8c1",
+      "cardId": "cp-v-streetkid",
+      "printingId": null,
+      "referencePrintingId": "cpp-5e874ee26873a8c1",
+      "candidatePrintingIds": [
+        "cpp-5e874ee26873a8c1",
+        "cpp-65ce57629ea9b9f1",
+        "cpp-a16f6664e470dfdc"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-af4c4b92ef64396c",
+      "variantKind": "standard",
+      "name": "V: Streetkid",
+      "type": "Legend",
+      "image": "cprg-af4c4b92ef64396c:cpp-5e874ee26873a8c1"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-af4c4b92ef64396c:cpp-65ce57629ea9b9f1",
+      "cardId": "cp-v-streetkid",
+      "printingId": null,
+      "referencePrintingId": "cpp-65ce57629ea9b9f1",
+      "candidatePrintingIds": [
+        "cpp-5e874ee26873a8c1",
+        "cpp-65ce57629ea9b9f1",
+        "cpp-a16f6664e470dfdc"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-af4c4b92ef64396c",
+      "variantKind": "standard",
+      "name": "V: Streetkid",
+      "type": "Legend",
+      "image": "cprg-af4c4b92ef64396c:cpp-65ce57629ea9b9f1"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-af4c4b92ef64396c:cpp-a16f6664e470dfdc",
+      "cardId": "cp-v-streetkid",
+      "printingId": null,
+      "referencePrintingId": "cpp-a16f6664e470dfdc",
+      "candidatePrintingIds": [
+        "cpp-5e874ee26873a8c1",
+        "cpp-65ce57629ea9b9f1",
+        "cpp-a16f6664e470dfdc"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-af4c4b92ef64396c",
+      "variantKind": "iconic",
+      "name": "V: Streetkid",
+      "type": "Legend",
+      "image": "cprg-af4c4b92ef64396c:cpp-a16f6664e470dfdc"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-a673f47d95aa2662:cpp-538b15491a1b8fa2",
+      "cardId": "cp-valentino-guerrera",
+      "printingId": "cpp-538b15491a1b8fa2",
+      "referencePrintingId": "cpp-538b15491a1b8fa2",
+      "candidatePrintingIds": [
+        "cpp-538b15491a1b8fa2"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-a673f47d95aa2662",
+      "variantKind": "standard",
+      "name": "Valentino Guerrera",
+      "type": "Unit",
+      "image": "cprg-a673f47d95aa2662:cpp-538b15491a1b8fa2"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-4c5f7661322a09fe:cpp-f59499784035643d",
+      "cardId": "cp-valentino-street-racer",
+      "printingId": "cpp-f59499784035643d",
+      "referencePrintingId": "cpp-f59499784035643d",
+      "candidatePrintingIds": [
+        "cpp-f59499784035643d"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-4c5f7661322a09fe",
+      "variantKind": "standard",
+      "name": "Valentino Street Racer",
+      "type": "Unit",
+      "image": "cprg-4c5f7661322a09fe:cpp-f59499784035643d"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-37b43f1527f1b815:cpp-6951072283168d04",
+      "cardId": "cp-viktor-vektor-drop-your-illusions",
+      "printingId": "cpp-6951072283168d04",
+      "referencePrintingId": "cpp-6951072283168d04",
+      "candidatePrintingIds": [
+        "cpp-6951072283168d04"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-37b43f1527f1b815",
+      "variantKind": "standard",
+      "name": "Viktor Vektor: Drop Your Illusions",
+      "type": "Unit",
+      "image": "cprg-37b43f1527f1b815:cpp-6951072283168d04"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-f3e0440ce0013160:cpp-a80da1b6bca84aeb",
+      "cardId": "cp-viktor-vektor-sit-down-and-relax",
+      "printingId": null,
+      "referencePrintingId": "cpp-a80da1b6bca84aeb",
+      "candidatePrintingIds": [
+        "cpp-a80da1b6bca84aeb",
+        "cpp-db5e7c731b5f8c6f"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-f3e0440ce0013160",
+      "variantKind": "standard",
+      "name": "Viktor Vektor: Sit Down and Relax",
+      "type": "Legend",
+      "image": "cprg-f3e0440ce0013160:cpp-a80da1b6bca84aeb"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-f3e0440ce0013160:cpp-db5e7c731b5f8c6f",
+      "cardId": "cp-viktor-vektor-sit-down-and-relax",
+      "printingId": null,
+      "referencePrintingId": "cpp-db5e7c731b5f8c6f",
+      "candidatePrintingIds": [
+        "cpp-a80da1b6bca84aeb",
+        "cpp-db5e7c731b5f8c6f"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-f3e0440ce0013160",
+      "variantKind": "standard",
+      "name": "Viktor Vektor: Sit Down and Relax",
+      "type": "Legend",
+      "image": "cprg-f3e0440ce0013160:cpp-db5e7c731b5f8c6f"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-3a77ce0e6cb0b8ff:cpp-d9de31d8cbd913d2",
+      "cardId": "cp-viktor-vektor-you-might-feel-a-little-pinch",
+      "printingId": "cpp-d9de31d8cbd913d2",
+      "referencePrintingId": "cpp-d9de31d8cbd913d2",
+      "candidatePrintingIds": [
+        "cpp-d9de31d8cbd913d2"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-3a77ce0e6cb0b8ff",
+      "variantKind": "standard",
+      "name": "Viktor Vektor: You Might Feel a Little Pinch",
+      "type": "Unit",
+      "image": "cprg-3a77ce0e6cb0b8ff:cpp-d9de31d8cbd913d2"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-21dcec1967e8243d:cpp-10934ed30fd16aeb",
+      "cardId": "cp-wakako-okada-peace-and-harmony",
+      "printingId": null,
+      "referencePrintingId": "cpp-10934ed30fd16aeb",
+      "candidatePrintingIds": [
+        "cpp-10934ed30fd16aeb",
+        "cpp-aa00bc6d3d741dc6"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-21dcec1967e8243d",
+      "variantKind": "iconic",
+      "name": "Wakako Okada: Peace and Harmony",
+      "type": "Legend",
+      "image": "cprg-21dcec1967e8243d:cpp-10934ed30fd16aeb"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-21dcec1967e8243d:cpp-aa00bc6d3d741dc6",
+      "cardId": "cp-wakako-okada-peace-and-harmony",
+      "printingId": null,
+      "referencePrintingId": "cpp-aa00bc6d3d741dc6",
+      "candidatePrintingIds": [
+        "cpp-10934ed30fd16aeb",
+        "cpp-aa00bc6d3d741dc6"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-21dcec1967e8243d",
+      "variantKind": "standard",
+      "name": "Wakako Okada: Peace and Harmony",
+      "type": "Legend",
+      "image": "cprg-21dcec1967e8243d:cpp-aa00bc6d3d741dc6"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-07135e18889c51fa:cpp-6c55bafd0797ed78",
+      "cardId": "cp-we-gotta-live-together",
+      "printingId": "cpp-6c55bafd0797ed78",
+      "referencePrintingId": "cpp-6c55bafd0797ed78",
+      "candidatePrintingIds": [
+        "cpp-6c55bafd0797ed78"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-07135e18889c51fa",
+      "variantKind": "standard",
+      "name": "We Gotta Live Together",
+      "type": "Program",
+      "image": "cprg-07135e18889c51fa:cpp-6c55bafd0797ed78"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-2ace2954414c7b9c:cpp-0cac86e75d592211",
+      "cardId": "cp-westbrook-netrunner",
+      "printingId": "cpp-0cac86e75d592211",
+      "referencePrintingId": "cpp-0cac86e75d592211",
+      "candidatePrintingIds": [
+        "cpp-0cac86e75d592211"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-2ace2954414c7b9c",
+      "variantKind": "standard",
+      "name": "Westbrook Netrunner",
+      "type": "Unit",
+      "image": "cprg-2ace2954414c7b9c:cpp-0cac86e75d592211"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-224f3889c59867ce:cpp-dc303c98e28eeed5",
+      "cardId": "cp-wild-in-the-streets",
+      "printingId": "cpp-dc303c98e28eeed5",
+      "referencePrintingId": "cpp-dc303c98e28eeed5",
+      "candidatePrintingIds": [
+        "cpp-dc303c98e28eeed5"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-224f3889c59867ce",
+      "variantKind": "standard",
+      "name": "Wild in the Streets",
+      "type": "Program",
+      "image": "cprg-224f3889c59867ce:cpp-dc303c98e28eeed5"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-6ea59bd83cfda400:cpp-b4c7bd1fc8d07660",
+      "cardId": "cp-wraith-marauders",
+      "printingId": "cpp-b4c7bd1fc8d07660",
+      "referencePrintingId": "cpp-b4c7bd1fc8d07660",
+      "candidatePrintingIds": [
+        "cpp-b4c7bd1fc8d07660"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-6ea59bd83cfda400",
+      "variantKind": "standard",
+      "name": "Wraith Marauders",
+      "type": "Unit",
+      "image": "cprg-6ea59bd83cfda400:cpp-b4c7bd1fc8d07660"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-61d3f15909e3d81e:cpp-74b0f20818534d83",
+      "cardId": "cp-yorinobu-arasaka-embracing-destruction",
+      "printingId": null,
+      "referencePrintingId": "cpp-74b0f20818534d83",
+      "candidatePrintingIds": [
+        "cpp-74b0f20818534d83",
+        "cpp-7e103c1ba10fa7ef"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-61d3f15909e3d81e",
+      "variantKind": "standard",
+      "name": "Yorinobu Arasaka: Embracing Destruction",
+      "type": "Legend",
+      "image": "cprg-61d3f15909e3d81e:cpp-74b0f20818534d83"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-61d3f15909e3d81e:cpp-7e103c1ba10fa7ef",
+      "cardId": "cp-yorinobu-arasaka-embracing-destruction",
+      "printingId": null,
+      "referencePrintingId": "cpp-7e103c1ba10fa7ef",
+      "candidatePrintingIds": [
+        "cpp-74b0f20818534d83",
+        "cpp-7e103c1ba10fa7ef"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-61d3f15909e3d81e",
+      "variantKind": "standard",
+      "name": "Yorinobu Arasaka: Embracing Destruction",
+      "type": "Legend",
+      "image": "cprg-61d3f15909e3d81e:cpp-7e103c1ba10fa7ef"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-e54c786b5e6a50af:cpp-c9f566dd49c6240a",
+      "cardId": "cp-yorinobu-arasaka-steel-dragon",
+      "printingId": "cpp-c9f566dd49c6240a",
+      "referencePrintingId": "cpp-c9f566dd49c6240a",
+      "candidatePrintingIds": [
+        "cpp-c9f566dd49c6240a"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-e54c786b5e6a50af",
+      "variantKind": "standard",
+      "name": "Yorinobu Arasaka: Steel Dragon",
+      "type": "Unit",
+      "image": "cprg-e54c786b5e6a50af:cpp-c9f566dd49c6240a"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-15c0d5400d6c31bc:cpp-dd949a8fa8078e33",
+      "cardId": "cp-zetatech-berserk",
+      "printingId": "cpp-dd949a8fa8078e33",
+      "referencePrintingId": "cpp-dd949a8fa8078e33",
+      "candidatePrintingIds": [
+        "cpp-dd949a8fa8078e33"
+      ],
+      "recognitionMode": "exact",
+      "recognitionGroupId": "cprg-15c0d5400d6c31bc",
+      "variantKind": "standard",
+      "name": "Zetatech Berserk",
+      "type": "Gear",
+      "image": "cprg-15c0d5400d6c31bc:cpp-dd949a8fa8078e33"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-8b8cd2149c086558:cpp-b3a0a4a14f46206e",
+      "cardId": "cp-zetatech-faceplate",
+      "printingId": null,
+      "referencePrintingId": "cpp-b3a0a4a14f46206e",
+      "candidatePrintingIds": [
+        "cpp-b3a0a4a14f46206e",
+        "cpp-d75553bf7a19ca7a"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-8b8cd2149c086558",
+      "variantKind": "standard",
+      "name": "Zetatech Faceplate",
+      "type": "Gear",
+      "image": "cprg-8b8cd2149c086558:cpp-b3a0a4a14f46206e"
+    },
+    {
+      "locale": "en",
+      "refId": "cprg-8b8cd2149c086558:cpp-d75553bf7a19ca7a",
+      "cardId": "cp-zetatech-faceplate",
+      "printingId": null,
+      "referencePrintingId": "cpp-d75553bf7a19ca7a",
+      "candidatePrintingIds": [
+        "cpp-b3a0a4a14f46206e",
+        "cpp-d75553bf7a19ca7a"
+      ],
+      "recognitionMode": "shared",
+      "recognitionGroupId": "cprg-8b8cd2149c086558",
+      "variantKind": "standard",
+      "name": "Zetatech Faceplate",
+      "type": "Gear",
+      "image": "cprg-8b8cd2149c086558:cpp-d75553bf7a19ca7a"
+    }
+  ]
+}

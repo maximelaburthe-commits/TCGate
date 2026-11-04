@@ -5,6 +5,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const { stripQualificationDiagnostics } = require('./workspace-production-contract.js');
+const { normalizeEngine6C } = require('./vision-6c-production-contract.js');
 
 async function main() {
   const root = __dirname;
@@ -54,20 +55,23 @@ async function main() {
   }
   // Git applies its normal text filters, so Windows CRLF checkout conversion
   // cannot masquerade as an engine change or require rewriting source files.
-  // Jalon 6A.1 authorises only these three original Workspace presentation
-  // files to change. The complete historical 228-file manifest is still
-  // authenticated above. Jalon 6B keeps 224 engine/Locale/model files frozen
-  // byte-for-byte under Git text filters. Identification accepts only its exact
-  // optional diagnostics tap, with every other byte compared to the original.
+  // Authenticate every original 228-file manifest entry above. Only the three
+  // Workspace presentation files and the two explicitly patched matchers are
+  // exceptions: 223 original public/model files remain strict Git comparisons.
+  // Every matcher byte is still compared to the original after exact anchored
+  // 6C hunk reversal and the existing exact-site 6B observation tap removal.
   const workspaceUxExceptions = new Set(['public/workspace.html', 'public/workspace.js', 'public/workspace.css']);
-  const identificationPath = 'public/identification.js';
-  const strictlyFrozenPaths = baseline.files.filter(file => !workspaceUxExceptions.has(file.path) && file.path !== identificationPath).map(file => file.path);
-  if (strictlyFrozenPaths.length !== 224) throw Error('Unexpected strict engine source count');
+  const engineExceptions = new Set(['public/identification.js', 'public/identification-worker.js']);
+  const strictlyFrozenPaths = baseline.files.filter(file => !workspaceUxExceptions.has(file.path) && !engineExceptions.has(file.path)).map(file => file.path);
+  if (strictlyFrozenPaths.length !== 223) throw Error('Unexpected strict engine source count');
   execFileSync('git', ['diff', '--quiet', baseline.productSha, '--', ...strictlyFrozenPaths], { cwd: root, stdio: 'ignore' });
-  const originalIdentification = execFileSync('git', ['show', baseline.productSha + ':' + identificationPath], { cwd: root });
-  const normalizedOriginalIdentification = Buffer.from(originalIdentification.toString('utf8').replace(/\r\n/g, '\n'));
-  const normalizedWorkingIdentification = stripQualificationDiagnostics(fs.readFileSync(path.join(root, identificationPath)));
-  if (!normalizedWorkingIdentification.equals(normalizedOriginalIdentification)) throw Error('Identification changed beyond the exact qualification diagnostics tap');
+  for (const enginePath of engineExceptions) {
+    const original = execFileSync('git', ['show', baseline.productSha + ':' + enginePath], { cwd: root });
+    const normalizedOriginal = Buffer.from(original.toString('utf8').replace(/\r\n/g, '\n'));
+    const sixC = normalizeEngine6C(fs.readFileSync(path.join(root, enginePath)), enginePath);
+    const normalizedWorking = enginePath === 'public/identification.js' ? stripQualificationDiagnostics(sixC) : sixC;
+    if (!normalizedWorking.equals(normalizedOriginal)) throw Error('Engine changed beyond exact anchored 6B/6C exceptions: ' + enginePath);
+  }
   let fetchImpl = globalThis.fetch;
   if (fixtureRoot) {
     const dbRoot = fs.realpathSync(fixtureRoot), prefix = registry.manifestUrl.slice(0, registry.manifestUrl.lastIndexOf('/') + 1);
@@ -106,7 +110,7 @@ async function main() {
   const bytes = canonical.stableStringify(report);
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, bytes, { flag: 'wx' });
-  console.log(JSON.stringify({ output, productSha, json: 'VALID', sha256: crypto.createHash('sha256').update(bytes).digest('hex'), engine: 'UNCHANGED', trialCount: report.trials?.length || 0, verdict: report.verdict, physicalQualification: report.physicalQualification }, null, 2));
+  console.log(JSON.stringify({ output, productSha, json: 'VALID', sha256: crypto.createHash('sha256').update(bytes).digest('hex'), engine: 'BASELINE_VERIFIED_WITH_EXACT_6B_6C_EXCEPTIONS', trialCount: report.trials?.length || 0, verdict: report.verdict, physicalQualification: report.physicalQualification }, null, 2));
 }
 if (require.main === module) main().catch(error => { console.error(error.message); process.exitCode = 1; });
 module.exports = { main };

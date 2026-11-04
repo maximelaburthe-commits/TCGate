@@ -1,0 +1,264 @@
+{
+  "schemaVersion": "6C-engine-literal-patches-1",
+  "baselineProductSha": "7082e92a66b50d0e0654ef44a6bdba89b0715e2b",
+  "legacyEngineBaselineProductSha": "7baeb9844ac8a2a68b2c5a38011003514bab5f98",
+  "policy": "Reverse only every exact unique unified3 literal hunk at its recorded position. Any partial, altered, duplicated or moved match leaves the input unchanged; all other bytes remain protected by existing hashes.",
+  "files": [
+    {
+      "path": "public/identification.js",
+      "baselineGitBlob": "b0af6a5d3b122c5bab805c064168fa1e689190bd",
+      "baselineSha256": "618a87323f186409930d74c640205e0cfccfd48237e4e29a9b2141bbed7b92fa",
+      "afterSha256": "c4883071c03f5b7a431ce9afce866113ea5af9cbf02d622b6aeac91a8d4fa2fb",
+      "hunks": [
+        {
+          "oldStart": 32,
+          "oldLines": 7,
+          "newStart": 32,
+          "newLines": 7,
+          "before": "  const REF_W = 72;\n  const REF_H = 108;\n\n  // Acceptance is based on both absolute visual evidence and separation from #2.\n  // These are matcher indices, NOT calibrated probabilities.\n  const NORMAL_ACCEPT = 0.235;\n  const NORMAL_MARGIN = 0.075;\n",
+          "after": "  const REF_W = 72;\n  const REF_H = 108;\n\n  // Acceptance uses absolute visual evidence and separation from the next card (EN).\n  // These are matcher indices, NOT calibrated probabilities.\n  const NORMAL_ACCEPT = 0.235;\n  const NORMAL_MARGIN = 0.075;\n",
+          "oldOffset": 1229,
+          "newOffset": 1229,
+          "beforeSha256": "477d05f394788e6cbdc35cf2256eb0cf464dcda60c4141617241229260d0af8b",
+          "afterSha256": "ef1ad7040c5f119fa33a027620318ca58f09d6021233d7460ab9607c1ae818ff"
+        },
+        {
+          "oldStart": 1209,
+          "oldLines": 6,
+          "newStart": 1209,
+          "newLines": 13,
+          "before": "    return state.refs.map(ref=>({\n      locale:ref.locale||null,\n      refId:ref.refId||null,\n      name:ref.name,\n      type:ref.type||'',\n      image:ref.image,\n",
+          "after": "    return state.refs.map(ref=>({\n      locale:ref.locale||null,\n      refId:ref.refId||null,\n      cardId:ref.cardId||null,\n      printingId:ref.printingId||null,\n      referencePrintingId:ref.referencePrintingId||null,\n      recognitionGroupId:ref.recognitionGroupId||null,\n      recognitionMode:ref.recognitionMode||null,\n      candidatePrintingIds:Array.isArray(ref.candidatePrintingIds)?[...ref.candidatePrintingIds]:[],\n      variantKind:ref.variantKind||null,\n      name:ref.name,\n      type:ref.type||'',\n      image:ref.image,\n",
+          "oldOffset": 41989,
+          "newOffset": 41993,
+          "beforeSha256": "b3eb724572e614a72360ac99dbea02b1203f84a3ff7f3c63da5d72abe5d645dc",
+          "afterSha256": "ba1f8ffa009efd9b9055dc69f08a1788291e3ba113a1485b4a10ab7f763e57b8"
+        },
+        {
+          "oldStart": 1229,
+          "oldLines": 6,
+          "newStart": 1236,
+          "newLines": 10,
+          "before": "    hydrate(result.best);hydrate(result.second);\n    for(const item of result.ranked||[])hydrate(item);\n    for(const item of result.normalCandidates||[])hydrate(item);\n    return result;\n  }\n\n",
+          "after": "    hydrate(result.best);hydrate(result.second);\n    for(const item of result.ranked||[])hydrate(item);\n    for(const item of result.normalCandidates||[])hydrate(item);\n    for(const item of result.physicalCandidates||[])hydrate(item);\n    for(const item of result.normalPhysicalCandidates||[])hydrate(item);\n    for(const item of result.maskDiagnostics?.candidates||[])hydrate(item);\n    for(const item of result.maskDiagnostics?.physicalCandidates||[])hydrate(item);\n    return result;\n  }\n\n",
+          "oldOffset": 42638,
+          "newOffset": 43015,
+          "beforeSha256": "ea788fbcd6aa20ba52a9b6860dfaaf9cab029da2d8e1135383be14280451d30e",
+          "afterSha256": "2b63ed137da9b13dcf390eca5a132b5d98800f7273fa2d90e5321bcbfee85cd9"
+        },
+        {
+          "oldStart": 1411,
+          "oldLines": 6,
+          "newStart": 1422,
+          "newLines": 21,
+          "before": "    }\n  }\n\n  function identifyCanvas(canvas, context=null) {\n    if (!canvas || !state.ready) return null;\n\n",
+          "after": "    }\n  }\n\n  function canonicalRankCandidates(physicalRanked){\n    // EN recognition competes between canonical cards. A sibling physical\n    // reference keeps its own artwork/printing metadata but cannot be runner-up.\n    // Other locales and legacy references retain their physical decisions.\n    const bestByCard=new Map();\n    for(let index=0;index<physicalRanked.length;index++){\n      const item=physicalRanked[index];\n      const ref=item.ref;\n      const key=ref?.locale==='en'&&ref.cardId ? 'card:'+ref.cardId : 'physical:'+index;\n      const previous=bestByCard.get(key);\n      if(!previous||item.score>previous.score) bestByCard.set(key,item);\n    }\n    return Array.from(bestByCard.values()).sort((a,b)=>b.score-a.score);\n  }\n\n  function identifyCanvas(canvas, context=null) {\n    if (!canvas || !state.ready) return null;\n\n",
+          "oldOffset": 49457,
+          "newOffset": 50134,
+          "beforeSha256": "33560bc5186457649e11727693755f9ffbb08eb5a634b9b6724aeca7377fcd7e",
+          "afterSha256": "279299f4c6e659aeebe9831135cf45d36367b042144fa45691d972e8864f9598"
+        },
+        {
+          "oldStart": 1443,
+          "oldLines": 7,
+          "newStart": 1469,
+          "newLines": 8,
+          "before": "      return {ref:item.ref,score:parts.total,parts,coarseScore:item.coarseScore};\n    }).sort((a,b)=>b.score-a.score);\n\n    let ranked=normalRanked.slice(0,5);\n    let best=ranked[0]||null;\n    let second=ranked[1]||null;\n    let margin=best ? best.score-(second?.score||0) : 0;\n",
+          "after": "      return {ref:item.ref,score:parts.total,parts,coarseScore:item.coarseScore};\n    }).sort((a,b)=>b.score-a.score);\n\n    let ranked=canonicalRankCandidates(normalRanked).slice(0,5);\n    let physicalRanked=normalRanked.slice(0,5);\n    let best=ranked[0]||null;\n    let second=ranked[1]||null;\n    let margin=best ? best.score-(second?.score||0) : 0;\n",
+          "oldOffset": 50641,
+          "newOffset": 52047,
+          "beforeSha256": "81dd71740d07f815efeef4ff4c0ff7e557d64c1905c4cd29f7f97e1a32ea6180",
+          "afterSha256": "323f0db0b1a1eee0018ee24a18b2fadda1c3f1d771299592ec455ea57b3adca9"
+        },
+        {
+          "oldStart": 1468,
+          "oldLines": 7,
+          "newStart": 1495,
+          "newLines": 8,
+          "before": "          return {ref:item.ref,score:parts.total,parts,coarseScore:item.coarseScore};\n        });\n        normalRanked=[...normalRanked,...more].sort((a,b)=>b.score-a.score);\n        ranked=normalRanked.slice(0,5);\n        best=ranked[0]||null;\n        second=ranked[1]||null;\n        margin=best ? best.score-(second?.score||0) : 0;\n",
+          "after": "          return {ref:item.ref,score:parts.total,parts,coarseScore:item.coarseScore};\n        });\n        normalRanked=[...normalRanked,...more].sort((a,b)=>b.score-a.score);\n        ranked=canonicalRankCandidates(normalRanked).slice(0,5);\n        physicalRanked=normalRanked.slice(0,5);\n        best=ranked[0]||null;\n        second=ranked[1]||null;\n        margin=best ? best.score-(second?.score||0) : 0;\n",
+          "oldOffset": 51628,
+          "newOffset": 53107,
+          "beforeSha256": "fe655f1b70cb752c4d8ff6b538a574165271ca632ee422bb5615a6cdcc6276af",
+          "afterSha256": "f2cec6491fb85fada5efc5e4d0f2fd291b90b35868bf357317b4b0c1e95d7b3d"
+        },
+        {
+          "oldStart": 1501,
+          "oldLines": 7,
+          "newStart": 1529,
+          "newLines": 7,
+          "before": "      timing.maskCoarseMs=performance.now()-tMaskCoarse;\n\n      const tMaskDetail=performance.now();\n      const maskRanked=maskPool.map(ref=>{\n        const m=bestMaskedComparison(observations,ref.descriptor,context.maskInfo);\n        return {\n          ref,\n",
+          "after": "      timing.maskCoarseMs=performance.now()-tMaskCoarse;\n\n      const tMaskDetail=performance.now();\n      const maskPhysicalRanked=maskPool.map(ref=>{\n        const m=bestMaskedComparison(observations,ref.descriptor,context.maskInfo);\n        return {\n          ref,\n",
+          "oldOffset": 53012,
+          "newOffset": 54564,
+          "beforeSha256": "e1ea639a1fe154f53e260465348baac3556ad127b519d0fbba8fe4cb71b434b1",
+          "afterSha256": "5bd35a5e142d81e914721cb3551cc8e296f1a3870b94d41a51d46fa8f3adc51a"
+        },
+        {
+          "oldStart": 1516,
+          "oldLines": 7,
+          "newStart": 1544,
+          "newLines": 8,
+          "before": "          },\n          masked:m\n        };\n      }).sort((a,b)=>b.score-a.score).slice(0,5);\n      timing.maskDetailMs=performance.now()-tMaskDetail;\n\n      const mb=maskRanked[0]||null;\n",
+          "after": "          },\n          masked:m\n        };\n      }).sort((a,b)=>b.score-a.score);\n      const maskRanked=canonicalRankCandidates(maskPhysicalRanked).slice(0,5);\n      timing.maskDetailMs=performance.now()-tMaskDetail;\n\n      const mb=maskRanked[0]||null;\n",
+          "oldOffset": 53475,
+          "newOffset": 55035,
+          "beforeSha256": "12f84ef0028441d5b263dc4e90507ef4396e64d834804c4deed5a904c4776c5b",
+          "afterSha256": "67c43c9bdf8061be38bdd78528a85de8a7e1f6d6e3632f78511ba36374c49472"
+        },
+        {
+          "oldStart": 1530,
+          "oldLines": 7,
+          "newStart": 1559,
+          "newLines": 8,
+          "before": "        bestScore:mb?.score||0,\n        margin:mm,\n        testedCandidates:maskPool.length,\n        candidates:maskRanked\n      };\n\n      if (mb && mb.score>=.655 && mm>=.038) {\n",
+          "after": "        bestScore:mb?.score||0,\n        margin:mm,\n        testedCandidates:maskPool.length,\n        candidates:maskRanked,\n        physicalCandidates:maskPhysicalRanked.slice(0,5)\n      };\n\n      if (mb && mb.score>=.655 && mm>=.038) {\n",
+          "oldOffset": 53922,
+          "newOffset": 55550,
+          "beforeSha256": "ec3cf076a43079f823b16057bd2eb95b33b691d371fa0962753f64973d47602a",
+          "afterSha256": "2279bc6d4b3e8337159c61273048a96f6c5ecc22b7ec74dead893187db14f492"
+        },
+        {
+          "oldStart": 1538,
+          "oldLines": 6,
+          "newStart": 1568,
+          "newLines": 7,
+          "before": "        second=ms;\n        margin=mm;\n        ranked=maskRanked;\n        accepted=true;\n        mode='masked';\n      } else if (mb && mm>margin+.035) {\n",
+          "after": "        second=ms;\n        margin=mm;\n        ranked=maskRanked;\n        physicalRanked=maskPhysicalRanked.slice(0,5);\n        accepted=true;\n        mode='masked';\n      } else if (mb && mm>margin+.035) {\n",
+          "oldOffset": 54118,
+          "newOffset": 55804,
+          "beforeSha256": "84d5de7d2dc305e6a476fb7b185abe2db1c98523a0726a2f74f2bff38b416e0c",
+          "afterSha256": "70fce9d22c14ac933da60dfda337babdb23a46a3ed63d0d11be36d341a474655"
+        },
+        {
+          "oldStart": 1545,
+          "oldLines": 6,
+          "newStart": 1576,
+          "newLines": 7,
+          "before": "        second=ms;\n        margin=mm;\n        ranked=maskRanked;\n        mode='masked-uncertain';\n      }\n    }\n",
+          "after": "        second=ms;\n        margin=mm;\n        ranked=maskRanked;\n        physicalRanked=maskPhysicalRanked.slice(0,5);\n        mode='masked-uncertain';\n      }\n    }\n",
+          "oldOffset": 54287,
+          "newOffset": 56027,
+          "beforeSha256": "d9c845707091521b80bf4b6f4cef93f43b65c70754f58a29f436c4c48f6f65ff",
+          "afterSha256": "d260a2d22ce5841b2ae2b74f472186c10d5e4d2930159990999e061b86d97965"
+        },
+        {
+          "oldStart": 1558,
+          "oldLines": 9,
+          "newStart": 1590,
+          "newLines": 12,
+          "before": "\n    return {\n      accepted,best,second,margin,ranked,\n      mode,\n      overlap:context?.maxOverlap||0,\n      normalCandidates:normalRanked.slice(0,5),\n      maskDiagnostics,\n      timing\n    };\n",
+          "after": "\n    return {\n      accepted,best,second,margin,ranked,\n      marginScope:best?.ref?.locale==='en'&&best.ref.cardId?'CANONICAL_CARD_ID':'PHYSICAL_REFERENCE',\n      physicalCandidates:physicalRanked,\n      mode,\n      overlap:context?.maxOverlap||0,\n      normalCandidates:canonicalRankCandidates(normalRanked).slice(0,5),\n      normalPhysicalCandidates:normalRanked.slice(0,5),\n      maskDiagnostics,\n      timing\n    };\n",
+          "oldOffset": 54718,
+          "newOffset": 56512,
+          "beforeSha256": "65fc5d2643aeb59eb4300b56f3715e65d2158073ef0a7e76a50905e6a1a7a20e",
+          "afterSha256": "81f9d37043d9bab10e52436966e6ecd761d74327c8cb0eea80c2ae61fc404b2f"
+        },
+        {
+          "oldStart": 1888,
+          "oldLines": 7,
+          "newStart": 1923,
+          "newLines": 9,
+          "before": "\n  function identityKey(result) {\n    if (!result?.accepted || !result.best?.ref) return null;\n    return result.best.ref.image || result.best.ref.name || null;\n  }\n\n  function emitIdentityStability(type, track, extra={}) {\n",
+          "after": "\n  function identityKey(result) {\n    if (!result?.accepted || !result.best?.ref) return null;\n    const ref=result.best.ref;\n    if(ref.locale==='en'&&ref.cardId) return 'card:'+ref.cardId;\n    return ref.image || ref.name || null;\n  }\n\n  function emitIdentityStability(type, track, extra={}) {\n",
+          "oldOffset": 66848,
+          "newOffset": 68866,
+          "beforeSha256": "e45dce59fb50b200b6d18e233cb46a56b61a01722bceb55c1aa1bd4d308c7e5b",
+          "afterSha256": "458d9b515c987b8454df73b6845acdc97dea59a56eb69a7cec95528643890b0e"
+        }
+      ]
+    },
+    {
+      "path": "public/identification-worker.js",
+      "baselineGitBlob": "f59e741ef0467df6d83bd5fba7e50b97fc5c7824",
+      "baselineSha256": "111f1b10bc726475aa1dd7d29405892328dd9ba414cb7fd10762c86e78fe49ee",
+      "afterSha256": "5de6f96d8a1b83261985500895bd2f7ec4c7d890ae64110a89496a379cc471f2",
+      "hunks": [
+        {
+          "oldStart": 354,
+          "oldLines": 8,
+          "newStart": 354,
+          "newLines": 29,
+          "before": "  return best;\n}\n\nfunction metaRef(ref){\n  return {name:ref.name,type:ref.type||'',image:ref.image};\n}\nfunction packItem(item){\n  if(!item) return null;\n",
+          "after": "  return best;\n}\n\nfunction canonicalRankCandidates(physicalRanked){\n  // EN recognition competes between canonical cards. A sibling physical\n  // reference keeps its own artwork/printing metadata but cannot be runner-up.\n  // Other locales and legacy references retain their physical decisions.\n  const bestByCard=new Map();\n  for(let index=0;index<physicalRanked.length;index++){\n    const item=physicalRanked[index];\n    const ref=item.ref;\n    const key=ref?.locale==='en'&&ref.cardId ? 'card:'+ref.cardId : 'physical:'+index;\n    const previous=bestByCard.get(key);\n    if(!previous||item.score>previous.score) bestByCard.set(key,item);\n  }\n  return Array.from(bestByCard.values()).sort((a,b)=>b.score-a.score);\n}\n\nfunction metaRef(ref){\n  return {\n    locale:ref.locale||null,refId:ref.refId||null,cardId:ref.cardId||null,\n    printingId:ref.printingId||null,referencePrintingId:ref.referencePrintingId||null,\n    recognitionGroupId:ref.recognitionGroupId||null,recognitionMode:ref.recognitionMode||null,\n    candidatePrintingIds:Array.isArray(ref.candidatePrintingIds)?[...ref.candidatePrintingIds]:[],\n    variantKind:ref.variantKind||null,name:ref.name,type:ref.type||'',image:ref.image\n  };\n}\nfunction packItem(item){\n  if(!item) return null;\n",
+          "oldOffset": 10873,
+          "newOffset": 10873,
+          "beforeSha256": "3f1960d3684ec1c9d0f56679be34eacc3e5812861f0eb8e91d609e23e517ff84",
+          "afterSha256": "4bc8fee96c81161391383554e2ae7bb04f78ca674234dbb56bff3c25f9576aca"
+        },
+        {
+          "oldStart": 398,
+          "oldLines": 7,
+          "newStart": 419,
+          "newLines": 8,
+          "before": "    return {ref:item.ref,score:parts.total,parts,coarseScore:item.coarseScore};\n  }).sort((a,b)=>b.score-a.score);\n\n  let ranked=normalRanked.slice(0,5);\n  let best=ranked[0]||null;\n  let second=ranked[1]||null;\n  let margin=best?best.score-(second?.score||0):0;\n",
+          "after": "    return {ref:item.ref,score:parts.total,parts,coarseScore:item.coarseScore};\n  }).sort((a,b)=>b.score-a.score);\n\n  let ranked=canonicalRankCandidates(normalRanked).slice(0,5);\n  let physicalRanked=normalRanked.slice(0,5);\n  let best=ranked[0]||null;\n  let second=ranked[1]||null;\n  let margin=best?best.score-(second?.score||0):0;\n",
+          "oldOffset": 12108,
+          "newOffset": 13207,
+          "beforeSha256": "7bf23dc98d4f5f2b9ece38215486134ad213d788eafc117acbc64931f13f7684",
+          "afterSha256": "86b9c797801de8d0ac187fc35db3d058f019617a2dc2a8a0c489560fc9bc3d9a"
+        },
+        {
+          "oldStart": 420,
+          "oldLines": 7,
+          "newStart": 442,
+          "newLines": 8,
+          "before": "        return {ref:item.ref,score:parts.total,parts,coarseScore:item.coarseScore};\n      });\n      normalRanked=[...normalRanked,...more].sort((a,b)=>b.score-a.score);\n      ranked=normalRanked.slice(0,5);\n      best=ranked[0]||null;\n      second=ranked[1]||null;\n      margin=best?best.score-(second?.score||0):0;\n",
+          "after": "        return {ref:item.ref,score:parts.total,parts,coarseScore:item.coarseScore};\n      });\n      normalRanked=[...normalRanked,...more].sort((a,b)=>b.score-a.score);\n      ranked=canonicalRankCandidates(normalRanked).slice(0,5);\n      physicalRanked=normalRanked.slice(0,5);\n      best=ranked[0]||null;\n      second=ranked[1]||null;\n      margin=best?best.score-(second?.score||0):0;\n",
+          "oldOffset": 12904,
+          "newOffset": 14074,
+          "beforeSha256": "19748b094a9db493d7ef06eb0d4addf9753eddae16e9ac070c620b8dccd9c54b",
+          "afterSha256": "710e2aa32ba11b236bdc76e8244108a824d55555aa6d0337523031bbb8fecebe"
+        },
+        {
+          "oldStart": 448,
+          "oldLines": 7,
+          "newStart": 471,
+          "newLines": 7,
+          "before": "    timing.maskCoarseMs=performance.now()-tMaskCoarse;\n\n    const tMaskDetail=performance.now();\n    const maskRanked=maskPool.map(ref=>{\n      const m=bestMaskedComparison(observations,ref.descriptor,context.maskInfo);\n      return {\n        ref,\n",
+          "after": "    timing.maskCoarseMs=performance.now()-tMaskCoarse;\n\n    const tMaskDetail=performance.now();\n    const maskPhysicalRanked=maskPool.map(ref=>{\n      const m=bestMaskedComparison(observations,ref.descriptor,context.maskInfo);\n      return {\n        ref,\n",
+          "oldOffset": 13904,
+          "newOffset": 15145,
+          "beforeSha256": "470ae3f3a3d7032e8dafc0a4e5b208a77e2f35c9fdaa210b457c63e2a50814e9",
+          "afterSha256": "9a4fe8c18f079a4fb0fdbb665b1714815caacc62017fb84a04350db88b6eeffd"
+        },
+        {
+          "oldStart": 459,
+          "oldLines": 7,
+          "newStart": 482,
+          "newLines": 8,
+          "before": "        },\n        masked:m\n      };\n    }).sort((a,b)=>b.score-a.score).slice(0,5);\n    timing.maskDetailMs=performance.now()-tMaskDetail;\n\n    const mb=maskRanked[0]||null;\n",
+          "after": "        },\n        masked:m\n      };\n    }).sort((a,b)=>b.score-a.score);\n    const maskRanked=canonicalRankCandidates(maskPhysicalRanked).slice(0,5);\n    timing.maskDetailMs=performance.now()-tMaskDetail;\n\n    const mb=maskRanked[0]||null;\n",
+          "oldOffset": 14295,
+          "newOffset": 15544,
+          "beforeSha256": "45739c70e63668c1dc12b13779b76c1fabb6b730bfe789e50cc16e4516bb0301",
+          "afterSha256": "08308d8419e5130f869e845d674ac9b3cd1e69134ed39af4a47a202b4f63c5b7"
+        },
+        {
+          "oldStart": 473,
+          "oldLines": 14,
+          "newStart": 497,
+          "newLines": 15,
+          "before": "      bestScore:mb?.score||0,\n      margin:mm,\n      testedCandidates:maskPool.length,\n      candidates:maskRanked.map(packItem)\n    };\n\n    if(mb&&mb.score>=.655&&mm>=.038){\n      best=mb;second=ms;margin=mm;ranked=maskRanked;\n      accepted=true;mode='masked';\n    }else if(mb&&mm>margin+.035){\n      best=mb;second=ms;margin=mm;ranked=maskRanked;\n      mode='masked-uncertain';\n    }\n  }\n",
+          "after": "      bestScore:mb?.score||0,\n      margin:mm,\n      testedCandidates:maskPool.length,\n      candidates:maskRanked.map(packItem),\n      physicalCandidates:maskPhysicalRanked.slice(0,5).map(packItem)\n    };\n\n    if(mb&&mb.score>=.655&&mm>=.038){\n      best=mb;second=ms;margin=mm;ranked=maskRanked;physicalRanked=maskPhysicalRanked.slice(0,5);\n      accepted=true;mode='masked';\n    }else if(mb&&mm>margin+.035){\n      best=mb;second=ms;margin=mm;ranked=maskRanked;physicalRanked=maskPhysicalRanked.slice(0,5);\n      mode='masked-uncertain';\n    }\n  }\n",
+          "oldOffset": 14714,
+          "newOffset": 16029,
+          "beforeSha256": "117e135293d77de67b76a04d51546be2cf6f601ba3f17eda4cd88cab15728f30",
+          "afterSha256": "a17e4f7e318045bf040c7463b7b97b2e5fe48fd8e1945d2c4606e87b2ef4cefa"
+        },
+        {
+          "oldStart": 493,
+          "oldLines": 13,
+          "newStart": 518,
+          "newLines": 16,
+          "before": "\n  return {\n    accepted,\n    best:packItem(best),\n    second:packItem(second),\n    margin,\n    ranked:ranked.slice(0,5).map(packItem),\n    mode,\n    overlap:context?.maxOverlap||0,\n    normalCandidates:normalRanked.slice(0,5).map(packItem),\n    maskDiagnostics,\n    timing\n  };\n",
+          "after": "\n  return {\n    accepted,\n    marginScope:best?.ref?.locale==='en'&&best.ref.cardId?'CANONICAL_CARD_ID':'PHYSICAL_REFERENCE',\n    best:packItem(best),\n    second:packItem(second),\n    margin,\n    ranked:ranked.slice(0,5).map(packItem),\n    physicalCandidates:physicalRanked.map(packItem),\n    mode,\n    overlap:context?.maxOverlap||0,\n    normalCandidates:canonicalRankCandidates(normalRanked).slice(0,5).map(packItem),\n    normalPhysicalCandidates:normalRanked.slice(0,5).map(packItem),\n    maskDiagnostics,\n    timing\n  };\n",
+          "oldOffset": 15330,
+          "newOffset": 16805,
+          "beforeSha256": "7760fcae3e0ae06a230d8e8959bb9ee31fc419a43b66c866519281d44dc764b3",
+          "afterSha256": "5419abbc0a00806cf6d7a5ef44305251cd4e1d10922f1b96984f1103f4223dfb"
+        }
+      ]
+    }
+  ]
+}
