@@ -47,7 +47,8 @@
     "qualify:vision": "node qualify-vision-1.0.js",
     "test:vision-qualification": "node vision-qualification-1.0-test.js && node vision-qualification-1.0-browser-test.js",
     "test:workspace-vision-qualification": "node workspace-vision-qualification-test.js && node workspace-vision-qualification-browser-test.js",
-    "test:vision-nominal": "node vision-nominal-6b-test.js && node vision-qualification-neutral-test.js && node vision-nominal-diagnostics-test.js && node workspace-vision-nominal-browser-test.js"
+    "test:vision-nominal": "node vision-nominal-6b-test.js && node vision-qualification-neutral-test.js && node vision-nominal-diagnostics-test.js && node workspace-vision-nominal-browser-test.js",
+    "test:vision-6c": "node vision-canonical-6c-test.js && node vision-6c-production-contract-test.js && node vision-qualification-track-test.js && node vision-qualification-stable-6c-test.js && node workspace-vision-lab-6c-browser-test.js"
   },
   "engines": {
     "node": ">=20"

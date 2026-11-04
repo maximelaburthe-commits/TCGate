@@ -32,6 +32,7 @@ async function run(){
   const feed=await page.locator('#opponentFeed').boundingBox();await page.mouse.move(feed.x+feed.width/2,feed.y+feed.height/2);
   await page.waitForFunction(()=>window.TCGIdentificationLab.getSnapshot().identification?.candidates.length>0,{},{timeout:15000});
   await page.waitForFunction(()=>document.querySelectorAll('#labTop5 tr').length>0);assert(await page.locator('#labCrop').isVisible());
+  await page.locator('#labFeedbackDetails > summary').click();
   await page.click('#visionCaptureButton');await page.waitForFunction(()=>window.TCGDetectionLab.state.captures.length===1);
   await page.fill('#recognizedAs','Wrong Card');await page.fill('#visionCaseNote','browser fixture feedback');await page.click('[data-feedback=wrong_identification]');assert.equal(await page.locator('#labFeedbackCount').textContent(),'1 feedback');
   const downloadPromise=page.waitForEvent('download');await page.click('#labExport');const download=await downloadPromise;const payload=JSON.parse(fs.readFileSync(await download.path(),'utf8'));assert.equal(payload.feedback[0].recognizedAs,'Wrong Card');assert(payload.feedback[0].top5.length>0);assert(payload.feedback[0].crop.startsWith('data:image/'));assert(payload.feedback[0].observationTimestamp);assert(payload.captures[0].raw.startsWith('data:image/'));assert(payload.captures[0].meta.settings);

@@ -64,6 +64,7 @@ async function assertNoOverflow(page, label) {
   assert(geometry.scroll <= geometry.width + 1, label + ' horizontal overflow: ' + JSON.stringify(geometry));
 }
 async function choose(page, name) {
+  if (name !== 'Vision Lab' && await page.locator('#labWorkspaceReturn').isVisible()) await page.click('#labWorkspaceReturn');
   const tab = page.getByRole('tab',{name,exact:true});
   await tab.click();
   assert.equal(await tab.getAttribute('aria-selected'),'true',name + ' selected state');
@@ -91,7 +92,9 @@ async function assertLabReady(page, requests) {
   await choose(page,'Vision Lab');
   await page.waitForFunction(()=>!document.querySelector('#visionCameraButton').disabled);
   assert(await page.getByRole('button',{name:'Activer la caméra',exact:true}).isVisible());
-  assert(await page.locator('#labControls').isVisible());
+  assert(await page.locator('#vqWorkflow').isVisible(), 'The fixed Lab station is visible');
+  assert(await page.locator('#labCameraControls').isVisible(), 'The camera controls remain visible');
+  assert(await page.locator('#vqWorkflow').evaluate(station => document.querySelector('#labControls').contains(station)), 'The station stays within the original Lab controls');
   assert(await page.locator('#labInspect').isVisible());
   assert(await page.locator('#labStart').isDisabled());
   assert(await page.locator('#identificationToggle').isDisabled());
@@ -170,6 +173,7 @@ async function run() {
     // Refreshing canonical planning data neither starts nor rebuilds Vision.
     await page.setViewportSize({width:1366,height:900});
     await page.evaluate(()=>window.__beforeWorkspaceSync=window.TCGVisionEngine);
+    await page.click('#labWorkspaceReturn');
     revision=2;await page.click('#workspaceSync');
     await page.waitForFunction(()=>document.querySelector('#workspaceStateStatus').textContent.includes('fixture-2'));
     assert.equal(canonicalRequests.length,2);

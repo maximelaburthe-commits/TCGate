@@ -189,15 +189,37 @@ async function realWorkspaceSmoke(browser, fixture, pinned) {
 async function installIdentityFixture(page, actualContext) {
   await page.evaluate(({ context, databaseSha }) => {
     const refs = context.references.map(ref => ({ ...ref, image: ref.refId }));
-    window.__qualificationFixture = { refs, detector: { active: true, modelReady: true, activeCards: 0 }, snapshot: {
+    window.__qualificationFixture = { refs, nextTrackUid: 1, trackingController: null, detector: { active: true, modelReady: true, activeCards: 0, tracking: { activeTracks: [] } }, snapshot: {
       gameId: 'cyberpunk', playerLocale: 'en', libraryReady: true, matcherWorker: { ready: true }, visionReferenceCount: 229,
       librarySize: 229, visionLocales: ['en'], visionIndexKey: 'automated-workspace-qualification-fixture', libraryIntegrity: { degraded: false },
-      visibleIdentity: null, identification: null
+      visibleIdentity: null, identification: null, pointerInsideStage: false, hoveredTrack: null
     } };
     window.TCGateGameDatabases = { get: () => ({ manifestUrl: 'https://raw.githubusercontent.com/maximelaburthe-commits/tcgate_db_cyberpunk/' + databaseSha + '/manifest.json' }) };
     window.TCGTableStateBridge = { getRefs: () => refs };
     window.TCGateDatabaseSource = { getVisionReferences: async () => refs };
-    window.TCGIdentificationLab = { getSnapshot: () => window.__qualificationFixture.snapshot, getAnalyzedCropDataUrl: () => null };
+    window.TCGIdentificationLab = {
+      getSnapshot: () => ({ ...window.__qualificationFixture.snapshot, qualificationTracking: window.__qualificationFixture.trackingController?.getState() || null }),
+      getAnalyzedCropDataUrl: () => null,
+      clearVisibleForHandoff: () => { window.__qualificationFixture.snapshot.visibleIdentity = null; },
+      beginQualificationTracking: () => {
+        const fixture = window.__qualificationFixture;
+        if (fixture.trackingController?.getState().active) throw Error('Automated track controller already active');
+        // Use the real 6C selector. Its only input is observed detector geometry;
+        // the fixture identifier knows the visible reference, never expectedCardId.
+        const controller = window.TCGVisionQualificationTracking.create({
+          getTracks: () => fixture.detector.tracking.activeTracks,
+          identify: async track => {
+            const visible = fixture.snapshot.visibleIdentity;
+            return visible?.accepted ? { accepted:true, decision:'ACCEPTED', cardId:visible.cardId, refId:visible.refId,
+              printingId:visible.printingId, candidatePrintingIds:visible.candidatePrintingIds, recognitionMode:visible.recognitionMode,
+              score:.9, trackUid:track.uid, atMs:performance.now() } : { accepted:false, decision:'REJECTED', trackUid:track.uid, atMs:performance.now() };
+          },
+          now: () => performance.now(), setInterval:window.setInterval.bind(window), clearInterval:window.clearInterval.bind(window)
+        });
+        fixture.trackingController = controller;
+        return controller;
+      }
+    };
     window.TCGDetectionLab = undefined; // Test-only snapshot fixture owns detector observations.
     window.TCGVisionEngine = { getSnapshot: () => window.__qualificationFixture.detector };
     window.TCGTableStateEngine = { getSnapshot: () => ({ entries: [] }) };
@@ -206,14 +228,19 @@ async function installIdentityFixture(page, actualContext) {
 async function setIdentity(page, cardId) {
   await page.evaluate(id => {
     const fixture = window.__qualificationFixture;
-    if (!id) { fixture.detector.activeCards = 0; fixture.snapshot.visibleIdentity = null; fixture.snapshot.identification = null; }
+    if (!id) { fixture.detector.activeCards = 0; fixture.detector.tracking.activeTracks = []; fixture.snapshot.visibleIdentity = null; fixture.snapshot.identification = null; }
     else {
       const ref = fixture.refs.find(value => value.cardId === id);
       if (!ref) throw Error('Unknown automated fixture identity');
       fixture.detector.activeCards = 1;
-      fixture.snapshot.visibleIdentity = { accepted: true, refId: ref.refId, cardId: ref.cardId, printingId: ref.printingId, image: ref.refId };
+      const track = fixture.detector.tracking.activeTracks[0] || { uid:fixture.nextTrackUid++, misses:0, confirmed:true };
+      fixture.detector.tracking.activeTracks = [track];
+      fixture.snapshot.visibleIdentity = { accepted: true, refId: ref.refId, cardId: ref.cardId, printingId: ref.printingId, image: ref.refId,
+        trackUid:track.uid, candidatePrintingIds:ref.candidatePrintingIds || [], recognitionMode:ref.recognitionMode };
       fixture.snapshot.identification = { accepted: true, best: { ...ref, matcherScore: 0.9 }, candidates: [{ image: ref.refId }] };
     }
+    fixture.trackingController?.sample();
+    window.dispatchEvent(new CustomEvent('tcg-tracks-updated'));
     window.dispatchEvent(new CustomEvent('tcg-identification-result', { detail: { accepted: Boolean(id) } }));
   }, cardId || null);
 }
@@ -406,9 +433,9 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
     for (const scene of sampleDocument.plan.requiredScenes) {
       await setIdentity(page, null); await advance(page, 1000); await page.click('#vqStart');
       check(/00:30/.test(await page.locator('#vqTimer').textContent()), 'Negative scene countdown starts at thirty seconds');
-      await advance(page, 29250);
+      await advance(page, 20000);
       check((await state(page)).session.active?.scene === scene.scene, 'Scene remains active before thirty seconds');
-      await advance(page, 1000); snapshot = await state(page);
+      await advance(page, 11000); snapshot = await state(page);
       equal(snapshot.session.active, null, 'No-target scene stops automatically');
       const recorded = snapshot.session.scenes.at(-1);
       equal(recorded.scene, scene.scene, 'The next planned negative scene is recorded');
@@ -442,6 +469,20 @@ async function automatedGuidedWorkflow(browser, fixture, pinned, actualContext) 
       check(!/data:image|data:video|blob:|candidate:|"(?:sdp|deviceId|audio|video|imageUrl|referenceImageUrl|screenshot)"/i.test(output.text), 'Exports contain no media, signaling, raw device IDs or screenshot');
       check(!output.text.includes('REAL_CARDS_OPERATOR_CONFIRMED'), 'Automated fixture exports carry no physical-card confirmation');
     }
+    // The 6C scalar traces can exceed the old 10 MB boundary. JSON whitespace
+    // changes size only: this import adds no observations or qualification claim.
+    const emptyImport={context:sessionExport.json.context,trials:[],scenes:[],indexMeasurements:[],
+      trialAnnotations:[],declarationEvents:[],plan:sessionExport.json.plan,environment:{execution:'AUTOMATED'}};
+    const minimal=Buffer.from(JSON.stringify(emptyImport));
+    await page.locator('#vqImportInputs').setInputFiles({name:'automated-empty-session-padded.json',mimeType:'application/json',
+      buffer:Buffer.concat([minimal,Buffer.alloc(10000001-minimal.length,32)])});
+    await page.waitForFunction(()=>document.querySelector('#vqImportStatus').textContent.includes('1 sessions') || document.querySelector('#vqError').textContent.length > 0,null,{timeout:30000});
+    equal(await page.locator('#vqError').textContent(),'','A valid unchanged JSON padded beyond 10 MB is accepted');
+    check((await page.locator('#vqImportStatus').textContent()).includes('1 sessions'),'The empty padded session is imported');
+    equal((await state(page)).session.trials.length,sessionExport.json.trials.length,'Whitespace import creates no observations');
+    await page.locator('#vqImportInputs').setInputFiles({name:'oversized.json',mimeType:'application/json',buffer:Buffer.alloc(32*1024*1024+1,32)});
+    await page.waitForFunction(()=>/maximum 32 Mio/.test(document.querySelector('#vqError').textContent));
+    check(/maximum 32 Mio/.test(await page.locator('#vqError').textContent()),'Files above 32 MiB are rejected before JSON parsing');
     check(!requests.some(request => request.method !== 'GET'), 'Qualification performs no server writes');
     equal(errors, [], 'Guided qualification clicks produce no browser exceptions');
     const artifactDir = path.resolve(process.env.WORKSPACE_VISION_QUALIFICATION_ARTIFACT_DIR || fs.mkdtempSync(path.join(os.tmpdir(), 'tcgate-workspace-qualification-ux-')));

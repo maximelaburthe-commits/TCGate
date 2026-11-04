@@ -13,3 +13,80 @@ body.qualification-operating{overflow:hidden}.qualification-console{position:fix
 @media(max-height:580px) and (min-width:681px){.qualification-console{inset:6px 12px 6px 264px;padding:8px;gap:8px}.qualification-console-header button{padding:5px 8px}.qualification-control-bar{padding:8px}.qualification-camera .muted{display:none}.qualification-camera #opponentFeed{max-height:calc(100dvh - 210px)}}
 @media(max-height:580px) and (max-width:980px) and (min-width:681px){.qualification-console{left:8px}}
 html.qualification-operating,body.qualification-operating{overflow:hidden;overflow-anchor:none}
+
+/* The normal Lab and guided qualification occupy the same operating station. */
+html.lab-station-open,body.lab-station-open{overflow:hidden;overflow-anchor:none}
+.lab-station{grid-template-rows:auto minmax(0,1fr) auto}
+.lab-station #labCameraMount,.lab-station #vqCameraMount{min-width:0;width:100%;min-height:0;display:grid;place-items:center;flex:1 1 0}
+.lab-station .qualification-camera{justify-content:flex-start}
+.lab-station .qualification-camera #opponentFeed{max-height:none;flex:none;min-height:0}
+#labCameraControls{margin-bottom:10px;min-width:0}
+#labCameraControls h3{font-size:13px;margin:0 0 8px;color:#d7eee8}
+#labCameraControls .toolbar{gap:7px}
+#labCameraControls .toolbar label{font-size:11px;gap:5px;min-width:0}
+#labCameraControls select{max-width:180px;font-size:11px;padding:7px}
+#labCameraControls .toolbar button{font-size:12px;padding:8px}
+#labCameraControls #labCameraStatus,#labCameraControls #labDetectionStatus{margin-bottom:8px;font-size:11px}
+#labCameraControls #visionGlobalStatus:empty,.lab-station #visionRuntimeWarning:empty{display:none}
+#labCameraGuidance{line-height:1.4}
+.lab-current{border:1px solid #2d5149;border-radius:9px;padding:12px;margin:0 0 12px;background:#101b1a}
+.lab-current h3{margin:0 0 7px;font-size:15px}
+.lab-current #identEmpty{font-size:13px;margin-bottom:0}
+.lab-current .result-images{gap:10px}
+.lab-current .result-images img{width:96px;max-height:150px}
+.lab-current #identResult{display:grid;grid-template-columns:96px minmax(0,1fr);column-gap:10px}
+.lab-current #identResult img{grid-row:1/5}
+.lab-current #identResult p{margin:2px 0;font-size:12px}
+.lab-normal-details>details{padding:10px 0;border-top:1px solid var(--line);margin:0}
+.lab-normal-details summary{font-size:13px;color:#d6e4e0}
+.lab-normal-details .card{border:0;padding:4px 0 0;margin:8px 0 0;background:none;gap:9px}
+.lab-normal-details label{font-size:12px;margin:6px 0}
+.lab-normal-details button,.lab-normal-details select{font-size:12px}
+.lab-normal-details .toolbar{gap:7px}
+.lab-normal-details dl{font-size:12px;grid-template-columns:95px minmax(0,1fr)}
+.lab-normal-details #labDatabaseSummary{margin:0}
+.lab-normal-details #labDatabaseSummary:empty{display:none}
+.lab-normal-details .vision-qualification{padding:10px 0;margin:0;border:0;border-top:1px solid var(--line);border-radius:0;background:none}
+.lab-normal-details .vision-qualification>details{margin:0}
+.lab-normal-details .vision-qualification>details>summary{font-size:13px}
+.lab-normal-details .vision-qualification p{font-size:12px;line-height:1.4}
+.lab-normal-details .qualification-warning{padding:6px 8px}
+.lab-normal-details .qualification-context{font-size:11px;gap:5px}
+.lab-normal-details #vqError:empty{display:none}
+.lab-normal-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 14px;background:#10221f;border:1px solid #315d53;border-radius:9px}
+.lab-normal-bar .lab-live-status{min-width:0}
+.lab-normal-bar p{margin:0 0 4px;font-size:12px;overflow-wrap:anywhere}
+.lab-normal-bar label{font-size:12px}
+.lab-normal-bar>button{min-height:42px;font-weight:650;flex-shrink:0;background:#173d34;border-color:#4c8c79}
+.qualification-tracking-status{font-size:12px;line-height:1.4;color:#a4e0ce;margin:4px 0}
+.qualification-tracking-status:empty{display:none}
+body:not(.qualification-operating) .lab-station #vqTrackingStatus{display:none}
+.qualification-operating #vqCameraMount{margin:auto 0}
+.qualification-operating .qualification-camera{justify-content:center}
+@media(min-width:681px) and (max-width:980px){
+ .lab-station .qualification-desk{grid-template-columns:minmax(0,1.75fr) minmax(270px,1fr)}
+}
+@media(max-width:680px){
+ .lab-station:not(:has(#labNormalDetails[hidden])) .qualification-desk{grid-template-rows:minmax(260px,42dvh) minmax(0,1fr)}
+ .lab-station .qualification-camera{display:flex;align-items:stretch;gap:0;padding:7px}
+ .lab-station #labCameraMount{min-height:0;flex:1}
+ .lab-station #labCameraMount #opponentFeed{height:100%;aspect-ratio:auto}
+ #labCameraControls{margin-bottom:7px}
+ #labCameraControls h3{display:none}
+ #labCameraControls .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+ #labCameraControls .toolbar label{display:grid;gap:3px}
+ #labCameraControls select{max-width:100%;width:100%;padding:5px}
+ #labCameraControls .toolbar button{font-size:11px;padding:7px 4px;min-height:36px}
+ #labCameraControls #labCameraStatus,#labCameraControls #labDetectionStatus{font-size:10px;margin-right:6px;margin-bottom:5px}
+ .lab-normal-details .lab-current{padding:9px;margin-bottom:8px}
+ .lab-normal-details .lab-current h3{font-size:13px}
+ .lab-normal-details .lab-current p{font-size:12px}
+ .lab-normal-bar{display:grid;grid-template-columns:1fr;gap:6px;padding:8px}
+ .lab-normal-bar>button{width:100%;min-height:40px;font-size:12px}
+ .lab-normal-bar p,.lab-normal-bar label{font-size:11px}
+ .qualification-operating .qualification-camera{display:flex;justify-content:center}
+ .qualification-operating #vqCameraMount{min-height:0;flex:1;width:100%;margin:0}
+ .qualification-operating #vqCameraMount #opponentFeed{height:100%;aspect-ratio:auto}
+ .qualification-operating .qualification-camera-card{font-size:10px;margin:4px 0 0}
+ .qualification-operating #vqTrackingStatus{font-size:10px;line-height:1.25;margin:4px 0 0}
+}

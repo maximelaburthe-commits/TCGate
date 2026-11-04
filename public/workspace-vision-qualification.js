@@ -19,17 +19,103 @@
   function neutralState() {
     return q?.getNeutralState?.() || { ready: false, reason: 'NEUTRAL_GUARD_UNAVAILABLE', remainingMs: 750 };
   }
+  // One station, one feed and the original Lab controls. Qualification changes
+  // the guidance inside this station; it never creates a second camera UI.
+  function buildStation() {
+    const station = $('vqWorkflow'), camera = station.querySelector('.qualification-camera');
+    $('labControls').prepend(station);
+    const cameraArticle = $('labControls').querySelector('.lab-columns > div > article');
+    const identification = $('labControls').querySelector('.lab-columns > article');
+    const normalDetails = root.document.createElement('section');
+    normalDetails.id = 'labNormalDetails'; normalDetails.className = 'qualification-details lab-normal-details';
+    normalDetails.setAttribute('aria-label', 'Résultat et préparation du Vision Lab');
+    station.querySelector('.qualification-desk').append(normalDetails);
+    const current = root.document.createElement('section'); current.className = 'lab-current';
+    current.innerHTML = '<h3>Identification en direct</h3>';
+    for (const selector of ['#identEmpty', '.result-images']) current.append(identification.querySelector(selector));
+    normalDetails.append(current);
+    const database = root.document.createElement('details'); database.id = 'labDatabaseSetup'; database.open = true;
+    database.innerHTML = '<summary>BDD et identification optionnelles</summary>';
+    database.append(identification.querySelector('.card'));
+    normalDetails.append(database, $('visionQualificationPanel'));
+    database.querySelector('details > summary').after($('labDatabaseSummary'));
+    const diagnostic = root.document.createElement('details'); diagnostic.id = 'labDiagnostics';
+    diagnostic.innerHTML = '<summary>Résultat détaillé et performances</summary>';
+    for (const id of ['labRecognitionSummary', 'identLibraryStatus', 'identMatcherStatus', 'identRefreshButton', 'identCandidates']) diagnostic.append($(id));
+    for (const child of [...identification.children]) if (child.matches('details,h3,table')) diagnostic.append(child);
+    diagnostic.append(cameraArticle.querySelector('.metrics'));
+    normalDetails.append(diagnostic);
+    const settings = root.document.createElement('details'); settings.id = 'labDetectorSettings';
+    settings.innerHTML = '<summary>Réglages du détecteur</summary>';
+    const settingsArticle = cameraArticle.nextElementSibling;
+    settingsArticle.querySelector('h3').remove(); settings.append(...settingsArticle.childNodes); normalDetails.append(settings);
+    const feedback = root.document.createElement('details'); feedback.id = 'labFeedbackDetails';
+    feedback.innerHTML = '<summary>Cas de test et feedback du Lab</summary>';
+    const feedbackArticle = $('visionCaseNote').closest('article');
+    feedbackArticle.querySelector('h3').remove(); feedback.append(...feedbackArticle.childNodes); normalDetails.append(feedback);
+    const normalBar = root.document.createElement('footer'); normalBar.id = 'labNormalBar'; normalBar.className = 'lab-normal-bar';
+    const status = root.document.createElement('div'); status.className = 'lab-live-status';
+    status.append($('labStatus'), $('identificationToggle').closest('label'));
+    normalBar.append(status, $('labStart'));
+    const controls = root.document.createElement('div'); controls.id = 'labCameraControls';
+    for (const child of [...cameraArticle.children]) if (child.matches('h3,#labCameraStatus,#labDetectionStatus,.toolbar,#visionGlobalStatus')) controls.append(child);
+    const normalMount = root.document.createElement('div'); normalMount.id = 'labCameraMount';
+    normalMount.append($('opponentFeed'));
+    camera.prepend(controls, normalMount);
+    camera.append($('visionModelProgress'), $('visionRuntimeWarning'));
+    cameraHome = normalMount;
+    station.querySelector('.qualification-desk').append(normalDetails);
+    station.append(normalBar);
+    station.classList.add('lab-station'); station.setAttribute('aria-modal', 'false');
+    const history = root.document.createElement('p'); history.id = 'vqBaselineHistory'; history.className = 'muted';
+    $('vqProgress').after(history);
+    $('labControls').prepend(station);
+    $('labControls').querySelector('.lab-columns').remove();
+    feedbackArticle.remove();
+    $('vqReturnLab').hidden = true;
+    const workspaceReturn = root.document.createElement('button'); workspaceReturn.id = 'labWorkspaceReturn'; workspaceReturn.textContent = 'Workspace';
+    workspaceReturn.addEventListener('click', () => $('tab-reprise').click());
+    station.querySelector('.qualification-console-header').append(workspaceReturn);
+    $('vqConsoleTitle').textContent = 'Vision Lab · session locale';
+    $('vqDetailsScroll').hidden = true; $('vqControlBar').hidden = true;
+    $('vqCameraMount').hidden = true; $('vqCameraCard').hidden = true;
+    camera.querySelector('.muted').id = 'labCameraGuidance';
+    camera.querySelector('.muted').textContent = 'Survolez une carte détectée pour lancer sa reconnaissance. Aucune room ni microphone.';
+    const fitFeed = () => {
+      const mount = operating ? $('vqCameraMount') : $('labCameraMount'), feed = $('opponentFeed'), video = $('remoteVideo');
+      if (!mount || mount.hidden || !mount.clientWidth || !mount.clientHeight) return;
+      const ratio = (video.videoWidth || 1280) / (video.videoHeight || 720);
+      const width = Math.min(mount.clientWidth, mount.clientHeight * ratio);
+      feed.style.width = width + 'px'; feed.style.height = width / ratio + 'px';
+    };
+    const feedLayout = new root.ResizeObserver(fitFeed);
+    feedLayout.observe($('labCameraMount')); feedLayout.observe($('vqCameraMount'));
+    $('remoteVideo').addEventListener('resize', fitFeed);
+    root.addEventListener('resize', fitFeed);
+    setLabVisible();
+  }
+  function setLabVisible() {
+    const visible = !$('panel-lab').hidden;
+    root.document.body.classList.toggle('lab-station-open', visible);
+    root.document.documentElement.classList.toggle('lab-station-open', visible);
+    $('vqWorkflow').hidden = !visible;
+  }
   function setOperating(value) {
+    if (!value && q?.getActiveObservation()) throw Error('Terminez l’essai avant de revenir au Lab.');
     operating = Boolean(value && q && !$('panel-lab').hidden);
     const feed = $('opponentFeed');
-    if (operating && feed) {
-      if (!cameraHome) { cameraHome = root.document.createComment('Vision Lab camera home'); feed.before(cameraHome); }
-      $('vqCameraMount').append(feed);
-    } else if (cameraHome && feed) cameraHome.after(feed);
+    if (feed) (operating ? $('vqCameraMount') : cameraHome).append(feed);
     root.document.body.classList.toggle('qualification-operating', operating);
     root.document.documentElement.classList.toggle('qualification-operating', operating);
-    $('vqWorkflow').hidden = !operating;
+    for (const id of ['labNormalDetails', 'labNormalBar', 'labCameraControls', 'labCameraMount', 'labWorkspaceReturn']) $(id).hidden = operating;
+    for (const id of ['vqDetailsScroll', 'vqControlBar', 'vqCameraMount', 'vqCameraCard', 'vqReturnLab']) $(id).hidden = !operating;
+    $('vqWorkflow').setAttribute('role', operating ? 'dialog' : 'region');
+    $('vqWorkflow').setAttribute('aria-modal', String(operating));
+    $('vqWorkflow').setAttribute('aria-label', operating ? 'Poste de qualification Vision' : 'Poste Vision Lab');
+    if (!operating) $('vqConsoleTitle').textContent = 'Vision Lab · session locale';
+    $('labCameraGuidance').textContent = operating ? 'Pendant l’essai, la reconnaissance est automatique. Gardez une seule carte visible ; retirez-la entre les essais.' : 'Survolez une carte détectée pour lancer sa reconnaissance. Aucune room ni microphone.';
     $('vqResume').hidden = !q || operating;
+    setLabVisible();
     if (operating) { $('vqWorkflow').tabIndex = -1; $('vqWorkflow').focus({ preventScroll: true }); }
     root.dispatchEvent(new root.Event('resize'));
   }
@@ -118,7 +204,7 @@
   }
   function nominalGate() { return cachedNominalGate; }
   function setReady(ready) {
-    $('vqWorkflow').hidden = !ready || !operating; $('vqPrepare').disabled = ready || Boolean(preparing);
+    setLabVisible(); $('vqPrepare').disabled = ready || Boolean(preparing);
     $('vqPhysicalConfirm').disabled = ready || Boolean(preparing);
   }
   async function prepare() {
@@ -136,7 +222,7 @@
       const detector = root.TCGVisionEngine?.getSnapshot?.();
       if (!runtime?.libraryReady || !runtime.matcherWorker?.ready || !detectorRunning(detector)) throw Error('Démarrez la caméra, la détection et l’identification dans ce Vision Lab avant la qualification.');
       if (runtime.gameId !== 'cyberpunk' || runtime.playerLocale !== 'en' || runtime.visionReferenceCount !== 229 || runtime.librarySize !== 229 || runtime.visionLocales?.length !== 1 || runtime.visionLocales[0] !== 'en') throw Error('Qualification réservée au corpus actif Cyberpunk EN · 229 références.');
-      for (const src of ['/vision-qualification-harness.js', '/vision-qualification-diagnostics.js', '/vision-qualification-report.js', '/vision-qualification-runtime.js']) await loadScript(src);
+      for (const src of ['/vision-qualification-harness.js', '/vision-qualification-track.js', '/vision-qualification-diagnostics.js', '/vision-qualification-report.js', '/vision-qualification-runtime.js']) await loadScript(src);
       sampleUrl = RAW_ROOT + productSha + '/VISION_QUALIFICATION_SAMPLE.json';
       let fetched;
       try { const response = await root.fetch(sampleUrl, { cache: 'no-store', redirect: 'error', credentials: 'omit' }); if (!response.ok) throw Error('Sample absent'); fetched = await response.json(); }
@@ -144,7 +230,7 @@
       if (fetched.gameId !== 'cyberpunk' || fetched.locale !== 'en' || fetched.referenceCount !== 229 || fetched.sampleCount !== 15 || !Array.isArray(fetched.sample) || fetched.sample.length !== 15 || !Array.isArray(fetched.plan?.matrix)) throw Error('Protocole incompatible avec le corpus Cyberpunk EN · 229 références.');
       const finalHealthResponse = await root.fetch('/api/health', { cache: 'no-store' });
       if (!finalHealthResponse.ok || (await finalHealthResponse.json()).buildSha?.toLowerCase() !== productSha) throw Error('Le build a changé pendant la préparation. Rechargez avant de commencer une nouvelle qualification.');
-      const attached = await root.TCGVisionQualificationRuntime.attach({ productSha, sampleDocument: fetched, environment: { execution: 'RAILWAY_TEST', illumination: 'NORMAL', background: 'TABLE', sleeve: 'UNSPECIFIED' } });
+      const attached = await root.TCGVisionQualificationRuntime.attach({ productSha, sampleDocument: fetched, trackSelection: 'PINNED_CANONICAL_TRACK', environment: { execution: 'RAILWAY_TEST', illumination: 'NORMAL', background: 'TABLE', sleeve: 'UNSPECIFIED' } });
       q = attached; documentSample = fetched;
       immutableContext = q.context();
       runPrefix = 'vq-' + [...root.crypto.getRandomValues(new Uint32Array(2))].map(value => value.toString(16).padStart(8, '0')).join('');
@@ -229,6 +315,11 @@
     const reset = neutral.reason === 'TRACKING_RESET_NEW_SESSION_REQUIRED' || neutral.blockers?.includes('TRACKING_RESET_NEW_SESSION_REQUIRED');
     const text = active ? 'Observation en cours' : reset ? 'Tracking réinitialisé — exportez la session puis rechargez et préparez une nouvelle session.' : neutral.ready ? 'Prêt pour l’essai suivant' : 'Retirez la carte précédente — attente de remise à zéro de Vision…';
     $('vqNeutralStatus').textContent = text;
+    $('vqReturnLab').disabled = Boolean(active);
+    for (const button of root.document.querySelectorAll('.workspace-sidebar [data-tab]')) button.disabled = Boolean(active) && button.dataset.tab !== 'lab';
+    const tracking = active?.qualificationTracking;
+    const trackingText = { WAITING_FOR_SINGLE_TRACK: 'Présentez une seule carte : sélection automatique en attente.', TRACKING: 'Carte suivie automatiquement pendant cet essai.', TRACK_LOST: 'Carte suivie perdue : aucune autre carte ne la remplace.', MULTIPLE_TRACKS: 'Plusieurs cartes visibles : aucun résultat individuel ne sera choisi.' };
+    $('vqTrackingStatus').textContent = tracking ? trackingText[tracking.status] || '' : '';
     for (const id of ['vqStart', 'vqNext', 'vqRetrySwitch']) $(id).disabled = needsNeutral && !neutral.ready;
     for (const button of $('vqActions').querySelectorAll('button')) button.classList.remove('primary');
     const primary = [...$('vqActions').querySelectorAll('button')].find(button => !button.hidden);
@@ -252,7 +343,7 @@
     }
     const gate = nominalGate(state);
     $('vqComplementaryLabel').hidden = !gate.ready;
-    $('vqNominalGate').textContent = gate.ready ? 'VISION NOMINAL READY FOR FULL QUALIFICATION · le nominal physique satisfait les seuils de qualification.' : 'Jalon 6B : 45 essais nominaux physiques uniquement. Les conditions complémentaires restent bloquées tant que le nominal réel ne passe pas ≥ 95 % correct et ≤ 1 % de mauvaise identification.';
+    $('vqNominalGate').textContent = gate.ready ? 'VISION NOMINAL READY FOR FULL QUALIFICATION · le nominal physique satisfait les seuils de qualification.' : 'Jalon 6C : 45 essais nominaux physiques uniquement. Les conditions complémentaires restent bloquées tant que le nominal réel ne passe pas ≥ 95 % correct et ≤ 1 % de mauvaise identification.';
     for (const option of $('vqCondition').options) option.disabled = Boolean(active) || (option.value !== 'NOMINAL' && !gate.ready);
     $('vqCondition').disabled = Boolean(active);
     $('vqCondition').value = selection;
@@ -301,15 +392,16 @@
       $('vqCompactTrial').textContent = $('vqPosition').textContent + ' · ' + $('vqTrialLabel').textContent;
       $('vqSelectionReason').textContent = job.card?.selectionReason || '';
       $('vqCardDiagnostic').textContent = JSON.stringify({ testedBuildSha: productSha, sampleUrl, cardId: job.card?.cardId, printingId: job.card?.printingId, condition: job.condition, position: job.position, variantCase: job.variant?.caseId, pairId: job.pairId, jobKey: job.key, activeTrialId: active?.trialId, substitution: state.plan.substitutions?.find(item => item.originalCardId === job.card?.originalCardId) || null }, null, 2);
-      $('vqInstruction').textContent = instructions(job, active, Boolean(stable));
+      $('vqInstruction').textContent = pendingAdvance ? 'Essai enregistré. Retirez la carte et attendez le retour à une scène vide avant de poursuivre.' : instructions(job, active, Boolean(stable));
       if (job.card?.sampleId && !pendingAdvance && !active) $('vqSetupCard').value = job.card.sampleId;
     }
-    if (!active) { $('vqTimer').textContent = 'Aucune observation active'; $('vqTrialProgress').value = 0; }
+    if (!active) { $('vqTimer').textContent = pendingAdvance ? 'Observation terminée' : 'Aucune observation active'; $('vqTrialProgress').value = pendingAdvance ? $('vqTrialProgress').max : 0; }
     if (lastRaw) showResult(lastRaw, state);
     $('vqCompactProgress').textContent = 'Nominal ' + nominal.count + ' / ' + nominal.total + ' essais · Cartes ' + nominal.cards + ' / ' + documentSample.sample.length;
     const rate = value => typeof value === 'number' ? (value * 100).toFixed(1) + ' %' : 'NOT TESTED';
-    const baseline = gate.baseline;
-    $('vqBaselineComparison').textContent = (baseline?.valid ? 'Baseline FAIL : correct ' + rate(baseline.correct / baseline.valid) + ' · erreur ' + rate(baseline.wrong / baseline.valid) + ' — ' : '') + 'Nouvelle : ' + (gate.valid ? 'correct ' + rate(gate.correct / gate.valid) + ' · erreur ' + rate(gate.wrong / gate.valid) : 'NOT TESTED');
+    const baseline = gate.previousCampaign || gate.baseline;
+    $('vqBaselineComparison').textContent = (baseline?.valid ? (gate.previousCampaign ? '6B FAIL' : 'Baseline FAIL') + ' : correct ' + rate(baseline.correct / baseline.valid) + ' · erreur ' + rate(baseline.wrong / baseline.valid) + ' — ' : '') + 'Nouvelle : ' + (gate.valid ? 'correct ' + rate(gate.correct / gate.valid) + ' · erreur ' + rate(gate.wrong / gate.valid) : 'NOT TESTED');
+    $('vqBaselineHistory').textContent = (gate.baselines || [gate.baseline]).filter(Boolean).map(item => item.productSha.slice(0, 8) + ' · ' + item.trials + ' essais / ' + item.valid + ' valides · correct ' + rate(item.correct / item.valid) + ' · erreur ' + rate(item.wrong / item.valid)).join(' | ');
     renderControls();
     const errors = active?.observations?.at(-1)?.validityErrors || [];
     if (errors.length) fail('Runtime : ' + errors.join(' · '));
@@ -428,7 +520,7 @@
     if (files.length > 20 || importedSessions.length + importedIndexes.length + files.length > 20) throw Error('Maximum de 20 fichiers de preuves importés.');
     const sessions = [], indexes = [];
     for (const file of files) {
-      if (file.size > 10000000) throw Error('Fichier trop volumineux (maximum 10 Mo).');
+      if (file.size > 32 * 1024 * 1024) throw Error('Fichier trop volumineux (maximum 32 Mio).');
       const value = JSON.parse(await file.text());
       if (Array.isArray(value.trials) && Array.isArray(value.scenes)) sessions.push(value);
       else if (Array.isArray(value.indexMeasurements)) indexes.push(value);
@@ -446,7 +538,7 @@
   function action(fn) { clearError(); try { const result = fn(); if (result?.then) result.catch(fail); } catch (error) { fail(error); } }
   $('vqPrepare').addEventListener('click', () => action(prepare));
   $('vqResume').addEventListener('click', () => setOperating(true));
-  $('vqReturnLab').addEventListener('click', () => { setOperating(false); $('vqResume').focus({ preventScroll: true }); });
+  $('vqReturnLab').addEventListener('click', () => action(() => { setOperating(false); $('vqResume').focus({ preventScroll: true }); }));
   $('vqStart').addEventListener('click', () => action(startObservation));
   $('vqEnd').addEventListener('click', () => action(() => endObservation()));
   $('vqNext').addEventListener('click', () => action(() => { if (!neutralState().ready) throw Error('Attendez la remise à zéro de Vision avant l’essai suivant.'); pendingAdvance = false; render(); }));
@@ -480,7 +572,8 @@
     const button = $('vqActions').querySelector('button.primary:not([hidden]):not(:disabled)');
     if (button) button.click();
   });
-  new root.MutationObserver(() => { if (operating && $('panel-lab').hidden) setOperating(false); }).observe($('panel-lab'), { attributes: true, attributeFilter: ['hidden'] });
+  buildStation();
+  new root.MutationObserver(() => { if (operating && $('panel-lab').hidden) setOperating(false); setLabVisible(); }).observe($('panel-lab'), { attributes: true, attributeFilter: ['hidden'] });
   root.setInterval(tick, 100);
   root.TCGWorkspaceVisionQualification = Object.freeze({ prepare, getState: () => ({ productSha, sampleUrl, prepared: Boolean(q), preparing: Boolean(preparing), operating, currentJob: currentJob(), session: session(), neutral: q ? neutralState() : null, nominalGate: q ? nominalGate(session()) : null, lastError }) });
 })(typeof window !== 'undefined' ? window : globalThis);

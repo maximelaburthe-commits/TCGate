@@ -1,13 +1,12 @@
-# Vision Qualification 1.0 — Workspace Phase B
+# Vision Qualification 1.0 — Workspace 6C
 
 ## Utilisation depuis le Workspace
 
 Ouvrir `/workspace.html` sur Railway Test, puis **Vision Lab**. Démarrer la
 caméra et la détection, inspecter la source Production Cyberpunk EN et démarrer
 l'identification. Attendre les **229 références** prêtes. Le matcher du Lab
-existant s'active au survol de la zone caméra : conserver le pointeur dans cette
-zone, sur la carte, pendant sa présentation. Espace permet de terminer sans
-quitter cet aperçu.
+normal reste piloté par le survol. Pendant la qualification, le premier track
+unique est suivi automatiquement pendant l'essai, sans maintien du curseur.
 
 Ouvrir **Qualification Vision 1.0**, lire l'avertissement de rechargement,
 confirmer l'utilisation de vraies cartes, puis cliquer **Préparer la
@@ -29,7 +28,7 @@ versionné. Les identifiants restent dans les diagnostics repliables.
    l'essai**. Revenir à une scène vide entre les essais.
 3. Attendre la remise à zéro confirmée de Vision, puis cliquer **Essai suivant** ;
    après trois essais, **Carte suivante**. La mémoire du moteur expire naturellement.
-4. Pour le Jalon 6B, refaire uniquement les **45 essais nominaux physiques**.
+4. Pour le Jalon 6C, refaire uniquement les **45 essais nominaux physiques**.
    Les sections complémentaires restent bloquées tant que les quinze cartes
    n'ont pas chacune trois essais valides et que le nominal ne satisfait pas
    correct ≥95 % et wrong ≤1 %. Aucun essai automatisé ne débloque ce gate.
@@ -91,7 +90,7 @@ persistance de session n'est annoncée. Exporter avant de fermer ou recharger.
 L'import facultatif de sessions/mesures d'index du même SHA les ajoute au rapport
 uniquement. Il ne reprend pas une session ni ne modifie sa progression. Les
 déclarations incompatibles sont refusées. Préserver tous les fichiers d'origine.
-Maximum : vingt fichiers de dix Mo chacun.
+Maximum : vingt fichiers de 32 Mio chacun.
 
 Le bouton de mesure d'index relève une initialisation réelle déjà disponible,
 une fois ; il ne reconstruit ni ne vide le cache. Trois initialisations froides
@@ -137,13 +136,13 @@ Baseline moteur : `7baeb9844ac8a2a68b2c5a38011003514bab5f98`.
 `VISION_QUALIFICATION_ENGINE_BASELINE.json` conserve les 228 fichiers originaux
 publics/modèles et leurs objets Git authentifiés. Le Jalon 6A.1 autorise seulement
 trois exceptions de présentation : workspace.html, workspace.js et workspace.css.
-Le Jalon 6B conserve **224 autres fichiers originaux strictement gelés** et
-autorise dans identification.js un seul point d'observation optionnel exact.
-Le fichier complet après retrait de ce seul point reste identique à la baseline ;
-les 79 fonctions protégées et constantes gardent leurs empreintes.
-Les modules de qualification sont distincts ; aucune modification de détection,
-scoring, seuils, ranking, matcher, preprocessing, smoothing, backpressure, corpus,
-cache ou Locale. Les diagnostics ne contiennent que des valeurs scalaires,
+Le Jalon 6C conserve **223 fichiers originaux strictement gelés**. Les changements
+autorisés de regroupement canonique et de qualification contrôlée sont vérifiés
+par patches exacts ; après leur retrait, les deux moteurs et les anciennes
+empreintes sont identiques aux baselines. Aucun seuil ou descripteur ne change.
+Les modules de qualification sont distincts. Seuls le regroupement canonique
+et le suivi contrôlé décrit dans Vision 6C changent ; détection, seuils,
+preprocessing, backpressure, corpus, cache et décisions FR restent conservés. Les diagnostics ne contiennent que des valeurs scalaires,
 les candidats existants et les états runtime disponibles, sans média.
 Le Workspace charge le pont d'observation déjà existant avant l'identification,
 afin de lire les références du worker sans reconstruire l'index.
@@ -183,6 +182,10 @@ baseline nominale FAIL : 45 essais, 43 valides, 11 corrects et 7 comportant une
 mauvaise identité. Voir [Vision 6B](VISION_NOMINAL_6B.md) pour les empreintes,
 le diagnostic et la comparaison. Les trois exports d'origine restent intacts.
 
-**NOUVELLE CAMPAGNE NOMINALE 6B : NOT TESTED.**
+La campagne physique 6B est conservée : 46 essais enregistrés, 45 valides,
+1 invalide, 0 correct, 19 NOT_IDENTIFIED, 26 UNSTABLE, wrong 0. Voir
+[Vision 6C](VISION_CANONICAL_6C.md) pour les deux campagnes et la mesure actuelle.
+
+**PROCHAINE CAMPAGNE NOMINALE 6C : NOT TESTED.**
 
 **TCGATE VISION QUALIFICATION 1.0 NOT YET QUALIFIED**
