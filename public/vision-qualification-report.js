@@ -2,10 +2,11 @@
   'use strict';
   const harness = typeof module === 'object' && module.exports ? require('./vision-qualification-harness.js') : root.TCGateVisionQualification;
   const diagnostics = typeof module === 'object' && module.exports ? require('./vision-qualification-diagnostics.js') : root.TCGVisionQualificationDiagnostics;
-  const api = factory(harness, diagnostics);
+  const receipt = typeof module === 'object' && module.exports ? require('./vision-qualification-receipt.js') : root.TCGVisionNominalQualificationReceipt;
+  const api = factory(harness, diagnostics, receipt);
   if (typeof module === 'object' && module.exports) module.exports = api;
   if (root) root.TCGVisionQualificationReport = api;
-})(typeof window !== 'undefined' ? window : globalThis, function createQualificationReport(harness, diagnostics) {
+})(typeof window !== 'undefined' ? window : globalThis, function createQualificationReport(harness, diagnostics, receiptApi) {
   'use strict';
   // Shared canonical orchestration only. All classifications, metrics, gates,
   // corpus checks and sanitisation remain in the existing pure harness.
@@ -51,6 +52,92 @@
       completedCards: coverage.filter(card => card.valid === 3).length, coverage,
       baseline: copy(NOMINAL_BASELINE), previousCampaign:copy(NOMINAL_6B_BASELINE), baselines:[copy(NOMINAL_BASELINE),copy(NOMINAL_6B_BASELINE)], currentProductSha: report?.productSha || null,
       fullQualificationVerdict: report?.verdict || 'NOT YET QUALIFIED' };
+  }
+  // The official nominal evidence remains a separate historical source. This
+  // composition never inserts its 45 trials into the current session or counts
+  // them as observations of the current product build.
+  function qualifiedNominalReport(report, options) {
+    if (options.qualifiedNominalReceipt === undefined && options.qualifiedBuildCompatibility === undefined) return report;
+    if (!receiptApi?.validateReceipt) throw Error('Load the nominal qualification receipt validator before using qualified evidence');
+    const compatibility = options.qualifiedBuildCompatibility;
+    if (compatibility && compatibility.buildSha !== options.productSha) throw Error('Qualified nominal compatibility must describe this exact report build');
+    const activeContext = receiptApi.contextCompatibility(canonicalContext(options.productSha, options.references), options.sampleDocument);
+    const contextMatches = Object.keys(activeContext).every(key => compatibility?.[key] === activeContext[key]);
+    const validated = contextMatches ? receiptApi.validateReceipt(options.qualifiedNominalReceipt, compatibility) :
+      { ready: false, status: 'INCOMPATIBLE', reasons: ['REPORT_CONTEXT_MISMATCH'] };
+    const sessionGate = nominalGate(report), evidence = validated.ready ? validated.evidence : null;
+    const metrics = evidence?.nominalMetrics;
+    report.sessionNominalGate = sessionGate;
+    report.qualifiedNominalGate = {
+      ready: Boolean(validated.ready), status: validated.status, reasons: [...list(validated.reasons)],
+      source: 'QUALIFICATION_RECEIPT', valid: metrics?.valid || 0, correct: metrics?.correct || 0,
+      wrong: metrics?.wrongIdentification || 0,
+      correctIdentificationRate: metrics?.correctIdentificationRate ?? null,
+      wrongIdentificationRate: metrics?.wrongIdentificationRate ?? null
+    };
+    if (!validated.ready) return report;
+    const coverage = list(evidence.coverage);
+    const pairs = values => values.map(value => ({ cardId: value.cardId, printingId: value.printingId || null }))
+      .sort((a, b) => lexical(a.cardId + ':' + a.printingId, b.cardId + ':' + b.printingId));
+    const compatibleSample = coverage.length === 15 && coverage.every(value => value.valid === 3) &&
+      stableStringify(pairs(coverage)) === stableStringify(pairs(report.actualSample));
+    if (!compatibleSample) {
+      report.qualifiedNominalGate.ready = false;
+      report.qualifiedNominalGate.status = 'INCOMPATIBLE';
+      report.qualifiedNominalGate.reasons.push('QUALIFIED_NOMINAL_SAMPLE_MISMATCH');
+      return report;
+    }
+    const historicalTrialIds = new Set(list(evidence.trials).map(trial => trial.trialId));
+    if (report.trials.some(trial => historicalTrialIds.has(trial.trialId))) throw Error('A qualified nominal source trial cannot be counted again in the current session');
+    report.nominalEvidence = { ...copy(evidence), source: 'QUALIFICATION_RECEIPT',
+      appliedToProductSha: report.productSha, physicalTrialsReplayedOnCurrentBuild: false };
+    report.conditions.NOMINAL.qualifiedPhysical = { ...copy(metrics), source: 'QUALIFICATION_RECEIPT',
+      sourcePhysicalProductSha: evidence.sourcePhysicalProductSha };
+    report.qualifiedNominalGate.sourcePhysicalProductSha = evidence.sourcePhysicalProductSha;
+    report.qualifiedNominalGate.qualificationSemanticsSha = evidence.qualificationSemanticsSha;
+    report.qualifiedNominalGate.coverage = copy(coverage);
+    report.qualifiedNominalGate.completedCards = coverage.length;
+    // Only the unchanged canonical nominal protocol is covered by the receipt.
+    // Other conditions, printing cases, scenes, index measurements and defects
+    // continue to be evaluated exclusively from their recorded observations.
+    const nominalRows = report.plan.protocolCoverage.matrix.filter(row => row.condition === 'NOMINAL');
+    const nominalProtocolCovered = nominalRows.length === 15 && nominalRows.every(row => row.required === 3 &&
+      row.durationMs === 0 && row.note === null && coverage.some(card => card.cardId === row.cardId && card.valid === 3));
+    report.plan.missing = report.plan.missing.filter(reason =>
+      !reason.startsWith('NOMINAL_THREE_TRIALS:') && reason !== 'CONDITION:NOMINAL' &&
+      !(nominalProtocolCovered && reason.startsWith('MATRIX:NOMINAL:')));
+    if (nominalProtocolCovered) for (const row of nominalRows) {
+      row.currentSessionObserved = row.observed;
+      row.qualifiedObserved = 3;
+      row.observed = Math.max(row.observed, 3);
+      row.complete = row.observed >= row.required;
+      row.source = 'QUALIFICATION_RECEIPT';
+      row.sourcePhysicalProductSha = evidence.sourcePhysicalProductSha;
+    }
+    report.gates.nominalCorrectIdentification = { targetPercent: 95, measuredPercent: metrics.correctIdentificationRate,
+      status: 'PASS', source: 'QUALIFICATION_RECEIPT', sourcePhysicalProductSha: evidence.sourcePhysicalProductSha };
+    report.gates.nominalWrongIdentification = { maximumPercent: 1, measuredPercent: metrics.wrongIdentificationRate,
+      status: 'PASS', source: 'QUALIFICATION_RECEIPT', sourcePhysicalProductSha: evidence.sourcePhysicalProductSha };
+    const currentFailures = report.trials.filter(trial => trial.provenance === 'physical' && trial.condition === 'NOMINAL' &&
+      trial.category !== 'INVALID_TEST' && trial.category !== 'CORRECT');
+    if (currentFailures.length && !sessionGate.ready) {
+      report.plan.missing.push('CURRENT_NOMINAL_FAILURE_REQUIRES_REVIEW');
+      report.gates.currentNominalEvidence = { status: 'FAIL', source: 'CURRENT_SESSION',
+        failedTrialIds: currentFailures.map(trial => trial.trialId),
+        wrongIdentification: report.conditions.NOMINAL.physical.wrongIdentification };
+    }
+    report.plan.complete = report.plan.missing.length === 0;
+    report.verdict = !report.plan.complete ? 'NOT YET QUALIFIED' : Object.values(report.gates)
+      .some(gate => gate && typeof gate === 'object' && gate.status === 'FAIL') ? 'FAIL' : 'PASS';
+    report.physicalQualification = report.plan.complete ? report.verdict : 'INCOMPLETE';
+    report.nominalQualification = { ...copy(sessionGate), ready: true,
+      status: 'VISION NOMINAL READY FOR FULL QUALIFICATION', source: 'QUALIFICATION_RECEIPT',
+      total: metrics.total, valid: metrics.valid, invalid: metrics.invalid, correct: metrics.correct,
+      wrong: metrics.wrongIdentification, correctIdentificationRate: metrics.correctIdentificationRate,
+      wrongIdentificationRate: metrics.wrongIdentificationRate, completedCards: coverage.length, coverage: copy(coverage),
+      sourcePhysicalProductSha: evidence.sourcePhysicalProductSha, qualificationSemanticsSha: evidence.qualificationSemanticsSha,
+      fullQualificationVerdict: report.verdict };
+    return report;
   }
   function normalizedReferences(input) {
     return list(input).map(ref => ({ refId: ref.refId, cardId: ref.cardId, printingId: ref.printingId || null,
@@ -226,7 +313,7 @@
       }
     }
     report.nominalQualification = nominalGate(report);
-    return report;
+    return qualifiedNominalReport(report, options);
   }
   return Object.freeze({ generate, canonicalContext, canonicalPlan, declarations, sameReferences, stableStringify, INVALIDATION_REASONS, nominalGate, NOMINAL_BASELINE });
 });

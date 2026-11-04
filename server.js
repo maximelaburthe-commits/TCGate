@@ -621,6 +621,18 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    // Read-only attestation of the code serving this exact deployed build.
+    // No database, model inference or qualification session is mutated here.
+    if (req.method === 'GET' && pathname === '/api/vision-qualification-compatibility') {
+      const buildSha = process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || null;
+      if (!/^[a-f0-9]{40}$/.test(buildSha || '')) {
+        return sendJson(res, 503, { ok: false, error: 'Build SHA unavailable for qualification evidence' });
+      }
+      const { getCompatibility } = require('./vision-nominal-qualification-compatibility.js');
+      res.setHeader('Cache-Control', 'no-store');
+      return sendJson(res, 200, getCompatibility({ root: __dirname, buildSha }));
+    }
+
     if (req.method === 'GET' && pathname === '/phone') {
       return staticFile(req, res, '/phone.html');
     }

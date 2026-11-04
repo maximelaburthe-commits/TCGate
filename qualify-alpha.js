@@ -15,7 +15,7 @@ const suites = [
   ['player-locale-test.js'],
   ['vision-locale-test.js'],
   ['cyberpunk-languages-qualification-test.js'],
-  ['vision-qualification-1.0-test.js'], ['workspace-vision-qualification-test.js'], ['vision-qualification-neutral-test.js'], ['vision-nominal-6b-test.js'], ['vision-nominal-diagnostics-test.js'], ['vision-canonical-6c-test.js'], ['vision-6c-production-contract-test.js'], ['vision-qualification-track-test.js'], ['vision-qualification-stable-6c-test.js'], ['vision-nominal-semantics-6c1-test.js'],
+  ['vision-qualification-1.0-test.js'], ['workspace-vision-qualification-test.js'], ['vision-qualification-neutral-test.js'], ['vision-nominal-6b-test.js'], ['vision-nominal-diagnostics-test.js'], ['vision-canonical-6c-test.js'], ['vision-6c-production-contract-test.js'], ['vision-qualification-track-test.js'], ['vision-qualification-stable-6c-test.js'], ['vision-nominal-semantics-6c1-test.js'], ['vision-nominal-qualification-receipt-test.js'], ['vision-nominal-receipt-report-test.js'],
   ['future-ux-v3.7-test.js'], ['future-ux-room-metadata-test.js'], ['smoke-test-ui-integration.js'],
   ['phone-camera-test.js'], ['phone-camera-diagnostics-test.js'], ['phone-consolidation-1.2c-test.js'],
   ['vision-integrity-test.js'], ['vision-source-provenance-test.js'], ['vision-backpressure-test.js'],
@@ -28,7 +28,7 @@ const suites = [
   ['report-email-browser-test.js'], ['phone-consolidation-1.2c-browser-test.js'],
   ['workspace-browser-test.js'], ['workspace-camera-browser-test.js'],
   ['workspace-cockpit-browser-test.js'], ['workspace-maintenance-journal-browser-test.js'],
-  ['database-locale-core-browser-test.js'], ['site-ui-2.0-browser-test.js'], ['player-locale-browser-test.js'], ['vision-locale-browser-test.js'], ['vision-qualification-1.0-browser-test.js'], ['workspace-vision-qualification-browser-test.js'], ['workspace-vision-nominal-browser-test.js'], ['workspace-vision-lab-6c-browser-test.js']
+  ['database-locale-core-browser-test.js'], ['site-ui-2.0-browser-test.js'], ['player-locale-browser-test.js'], ['vision-locale-browser-test.js'], ['vision-qualification-1.0-browser-test.js'], ['workspace-vision-qualification-browser-test.js'], ['workspace-vision-nominal-browser-test.js'], ['workspace-vision-lab-6c-browser-test.js'], ['workspace-vision-nominal-receipt-browser-test.js']
 ];
 
 function main() {

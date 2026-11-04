@@ -1,0 +1,928 @@
+{
+  "actualSample": [
+    {
+      "cardId": "cp-mantis-blades",
+      "printingId": "cpp-03290e8752e5e383"
+    },
+    {
+      "cardId": "cp-arasaka-emergency-radioport",
+      "printingId": "cpp-bb5b599fe74859d8"
+    },
+    {
+      "cardId": "cp-saburo-arasaka-stubborn-patriarch",
+      "printingId": "cpp-08f3a3d838a0b4fb"
+    },
+    {
+      "cardId": "cp-jackie-welles-mama-s-favorite",
+      "printingId": "cpp-94790158e46c6bb8"
+    },
+    {
+      "cardId": "cp-wild-in-the-streets",
+      "printingId": "cpp-dc303c98e28eeed5"
+    },
+    {
+      "cardId": "cp-gunpoint-diplomacy",
+      "printingId": "cpp-72e0d75d59f262aa"
+    },
+    {
+      "cardId": "cp-adam-smasher-metal-over-meat",
+      "printingId": "cpp-da46cce396eab392"
+    },
+    {
+      "cardId": "cp-misty-olszewski-mender-of-broken-spirits",
+      "printingId": "cpp-333456f171bbaaf2"
+    },
+    {
+      "cardId": "cp-screw-lovelorn-fool",
+      "printingId": "cpp-10c378f232887a61"
+    },
+    {
+      "cardId": "cp-safety-override",
+      "printingId": "cpp-371ab17cd9e217ec"
+    },
+    {
+      "cardId": "cp-alt-cunningham-soulkiller-architect",
+      "printingId": "cpp-92a25d343e3eef9d"
+    },
+    {
+      "cardId": "cp-padre-man-of-the-cross",
+      "printingId": "cpp-133e0ca1d87fbfcb"
+    },
+    {
+      "cardId": "cp-detonate",
+      "printingId": "cpp-62225092172d629f"
+    },
+    {
+      "cardId": "cp-industrial-assembly",
+      "printingId": "cpp-0b01ab6398a53131"
+    },
+    {
+      "cardId": "cp-adam-smasher-ender-of-legends",
+      "printingId": "cpp-0c4d5b62f83947af"
+    }
+  ],
+  "complementaryPhysicalQualification": "PENDING",
+  "correct": 43,
+  "correctIdentificationRate": 95.55555555555556,
+  "coverage": [
+    {
+      "cardId": "cp-mantis-blades",
+      "printingId": "cpp-03290e8752e5e383",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-arasaka-emergency-radioport",
+      "printingId": "cpp-bb5b599fe74859d8",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-saburo-arasaka-stubborn-patriarch",
+      "printingId": "cpp-08f3a3d838a0b4fb",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-jackie-welles-mama-s-favorite",
+      "printingId": "cpp-94790158e46c6bb8",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-wild-in-the-streets",
+      "printingId": "cpp-dc303c98e28eeed5",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-gunpoint-diplomacy",
+      "printingId": "cpp-72e0d75d59f262aa",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-adam-smasher-metal-over-meat",
+      "printingId": "cpp-da46cce396eab392",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-misty-olszewski-mender-of-broken-spirits",
+      "printingId": "cpp-333456f171bbaaf2",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-screw-lovelorn-fool",
+      "printingId": "cpp-10c378f232887a61",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-safety-override",
+      "printingId": "cpp-371ab17cd9e217ec",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-alt-cunningham-soulkiller-architect",
+      "printingId": "cpp-92a25d343e3eef9d",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-padre-man-of-the-cross",
+      "printingId": "cpp-133e0ca1d87fbfcb",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-detonate",
+      "printingId": "cpp-62225092172d629f",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-industrial-assembly",
+      "printingId": "cpp-0b01ab6398a53131",
+      "valid": 3
+    },
+    {
+      "cardId": "cp-adam-smasher-ender-of-legends",
+      "printingId": "cpp-0c4d5b62f83947af",
+      "valid": 3
+    }
+  ],
+  "databaseSha": "56402636a77af9c8b5dc4e3b61c509a185f3c834",
+  "engineCompatibility": {
+    "files": [
+      {
+        "path": "models/card_detector_v53_512.onnx",
+        "sha256": "2db35aef3aceff955d7055180b3f21b33255920ab0a9a1fdcbb0e320a8276319"
+      },
+      {
+        "path": "public/app.js",
+        "sha256": "08d80e359f1e6fea234b5f5550868dbbf3d1d23fe95437205ec87dbd97ee44b3"
+      },
+      {
+        "path": "public/cards-fallback.json",
+        "sha256": "2b59ad829759b023a5e2e6246077023c8b05db337a10f5950005733ce55e84a7"
+      },
+      {
+        "path": "public/database-locale-core.js",
+        "sha256": "91fbb7801a36d87b30b3a6ac202dee73195cf0e941ae08f0e17b254be6a60290"
+      },
+      {
+        "path": "public/database-source.js",
+        "sha256": "8cdcb18426114439bc85a39a2b8843ac6b586dda8f93b32f1db1211173217aae"
+      },
+      {
+        "path": "public/detection-worker.js",
+        "sha256": "e749551f11065a03bd2cfc75577f23c4ece893a2c7d08bc82a341b2a35619b7a"
+      },
+      {
+        "path": "public/game-databases.js",
+        "sha256": "75c3353bfc02a8b4ca893d0a4b2dffd38216bd6b34a42426ce16f38e7dba9304"
+      },
+      {
+        "path": "public/identification-worker.js",
+        "sha256": "5de6f96d8a1b83261985500895bd2f7ec4c7d890ae64110a89496a379cc471f2"
+      },
+      {
+        "path": "public/identification.js",
+        "sha256": "4e80603500cf4c9eb41bcc860f245f1d3454dabd92cf5cb583ed9c38b0bb11bb"
+      },
+      {
+        "path": "public/player-locale.js",
+        "sha256": "a83250feaa498902e03e8cc995562022fa5c78b3c6f5ec54c15f378cca4de39b"
+      },
+      {
+        "path": "public/table-state-bridge.js",
+        "sha256": "462761e7cc1951b590c10ac83c78791a266de3da591d3391b72e0f25b1559c3d"
+      },
+      {
+        "path": "public/table-state-engine.js",
+        "sha256": "142dec9992e828adbec6ff196f06c157b78000b92a62c8442781213668ef64fe"
+      },
+      {
+        "path": "public/vision-analysis-frame.js",
+        "sha256": "a07425f328e06a6036a573a6bc0404016fd14735f67eb6b7eceefaa674a942b0"
+      },
+      {
+        "path": "public/vision-appearance-sampler.js",
+        "sha256": "683684d15686842c273a02892756dba071da426477d700c24a6a0d1b178d71bb"
+      },
+      {
+        "path": "public/vision-calibration.js",
+        "sha256": "07d46545b82ac4daa6ea1f93816ae8881355f771c9f6cf274dbd71241af8f9ae"
+      },
+      {
+        "path": "public/vision-core.js",
+        "sha256": "74ccb146b6d621df2e541524cdc721cccab0354372dfbcb717b1b54fa53b03fc"
+      },
+      {
+        "path": "public/vision-frame-gate.js",
+        "sha256": "00f27f0044a3e775ca8ae73859b625273a3f045c2029c77effe21adb61ebbe0c"
+      },
+      {
+        "path": "public/vision-library-integrity.js",
+        "sha256": "fc5cc67c48f2c7cf866fcae41042f87e3864e718cb58c9e698f4f724a9a9d70b"
+      },
+      {
+        "path": "public/vision-locale.js",
+        "sha256": "d253a4f235715abf4ab012eff4630fa9a98d314d46ff5ec44eefb9e107e416ce"
+      },
+      {
+        "path": "public/vision-qualification-runtime.js",
+        "sha256": "43f60e75fccf567101a6b9568ea143fd32a011a6c66798bbb1ca7de86d4a141b"
+      },
+      {
+        "path": "public/vision-qualification-track.js",
+        "sha256": "c9cdeb035b08a030ecd0027e20b49b800fd85371dbd89cdc630f42bece4b17fd"
+      },
+      {
+        "path": "public/workspace-lab-provider.js",
+        "sha256": "0ae3bb667a1b1ab3f21a7be1bffa97ded6b28439abf312df67fdac572777f0b6"
+      },
+      {
+        "path": "public/workspace.js",
+        "sha256": "421ec9ff50c02156ceb7127412074b94d6133eb9a84023ed992230726707e522"
+      },
+      {
+        "path": "server.js",
+        "scope": "MODEL_SERVING_V1",
+        "sha256": "39b9626e09895c8344533736d8957a0b528278ef47ceae35aebdcfbf42dd866d"
+      }
+    ],
+    "fingerprintSha256": "6af1b364eee898d81a841fef6bb0135cdc545410d52a9f1650cc9409a70967ec",
+    "physicalAndSemanticsIdentical": true
+  },
+  "fullQualificationVerdict": "NOT YET QUALIFIED",
+  "gameId": "cyberpunk",
+  "locale": "en",
+  "noNewPhysicalTrials": true,
+  "nominalMetrics": {
+    "categories": {
+      "CORRECT": 43,
+      "INVALID_TEST": 0,
+      "NOT_IDENTIFIED": 2,
+      "NO_DETECTION": 0,
+      "UNSTABLE": 0,
+      "WRONG_IDENTIFICATION": 0
+    },
+    "correct": 43,
+    "correctIdentificationRate": 95.55555555555556,
+    "detected": 45,
+    "detectionLatency": {
+      "count": 45,
+      "max": 2798,
+      "median": 2370,
+      "min": 1686,
+      "p95": 2734,
+      "p95Method": "nearest-rank",
+      "p95MinimumSamples": 20
+    },
+    "detectionRate": 100,
+    "disappearances": 3,
+    "identificationLatency": {
+      "count": 43,
+      "max": 4667,
+      "median": 3891,
+      "min": 2971,
+      "p95": 4294,
+      "p95Method": "nearest-rank",
+      "p95MinimumSamples": 20
+    },
+    "identityChanges": 0,
+    "invalid": 0,
+    "printingAssessments": {
+      "exactPrintingObserved": 18,
+      "expectedPrintingTrials": 45,
+      "unresolvedPrinting": 0,
+      "unresolvedSharedArt": 25,
+      "wrongPrinting": 0
+    },
+    "removalLatency": {
+      "count": 0,
+      "max": null,
+      "median": null,
+      "min": null,
+      "p95": null,
+      "p95Method": "nearest-rank",
+      "p95MinimumSamples": 20
+    },
+    "total": 45,
+    "valid": 45,
+    "wrongCardTrials": 0,
+    "wrongIdentification": 0,
+    "wrongIdentificationRate": 0,
+    "wrongPrintingTrials": 0
+  },
+  "physicalEvidence": "OPERATOR_DECLARED_REAL_CARDS",
+  "physicalSessionImmutable": true,
+  "provenance": "physical",
+  "qualificationSemantics": {
+    "change": "EXACT_6C1_NOMINAL_CLASSIFICATION_ONLY",
+    "harnessSha256": "780185dc7accab2ca63aa935e27c293fba4320466f4afa9e712c8ce633df854c",
+    "previousHarnessSha256": "ec3fbddb4c014089a6db2c41c1aae98384a9fc1870695437ee28894dea761224"
+  },
+  "qualificationSemanticsSha": "f6225e1d64b4fce633e5353afb9f716ece1c00eb",
+  "receiptId": "vision-nominal-ce5be2a-f6225e1-cc0994cdb6bf",
+  "receiptType": "VISION_NOMINAL_QUALIFICATION",
+  "referenceCount": 229,
+  "referencesSha256": "b33fac76b6d57accda184149461153c29055d3d70f1a392b461016ef63e8ab67",
+  "sampleSha256": "36dba0fee7c07226a95661e643e62a62e2a8e37c56aa9788eecf8df94adc5a4a",
+  "schemaVersion": "1.0",
+  "sourcePhysicalProductSha": "ce5be2ad9aeaa27df4c217dec99df7f6c7e47c94",
+  "sourceReport": {
+    "bytes": 20970917,
+    "name": "vision-qualification-1.0-recalculated-6c1-final.json",
+    "sha256": "cc0994cdb6bf0e2b240ae5c146097309527d340a6bdf5fce71e9f3032d676fc8"
+  },
+  "sourceSession": {
+    "bytes": 18290805,
+    "name": "vision-qualification-session.json",
+    "sha256": "a6e7c29bf123ffcf8cae0e421f7fdf67d119c53eede4c170125944c7044078a4"
+  },
+  "status": "PASS",
+  "trials": [
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-mantis-blades",
+      "expectedPrintingId": "cpp-03290e8752e5e383",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 122854,
+      "trialId": "vq-1d1d30ace9439808-job-0-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-mantis-blades",
+      "expectedPrintingId": "cpp-03290e8752e5e383",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 147850,
+      "trialId": "vq-1d1d30ace9439808-job-1-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-mantis-blades",
+      "expectedPrintingId": "cpp-03290e8752e5e383",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 178969,
+      "trialId": "vq-1d1d30ace9439808-job-2-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-arasaka-emergency-radioport",
+      "expectedPrintingId": "cpp-bb5b599fe74859d8",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 212600,
+      "trialId": "vq-1d1d30ace9439808-job-3-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-arasaka-emergency-radioport",
+      "expectedPrintingId": "cpp-bb5b599fe74859d8",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 238210,
+      "trialId": "vq-1d1d30ace9439808-job-4-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-arasaka-emergency-radioport",
+      "expectedPrintingId": "cpp-bb5b599fe74859d8",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 273340,
+      "trialId": "vq-1d1d30ace9439808-job-5-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-saburo-arasaka-stubborn-patriarch",
+      "expectedPrintingId": "cpp-08f3a3d838a0b4fb",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 297983,
+      "trialId": "vq-1d1d30ace9439808-job-6-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-saburo-arasaka-stubborn-patriarch",
+      "expectedPrintingId": "cpp-08f3a3d838a0b4fb",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 326035,
+      "trialId": "vq-1d1d30ace9439808-job-7-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-saburo-arasaka-stubborn-patriarch",
+      "expectedPrintingId": "cpp-08f3a3d838a0b4fb",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 353582,
+      "trialId": "vq-1d1d30ace9439808-job-8-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-jackie-welles-mama-s-favorite",
+      "expectedPrintingId": "cpp-94790158e46c6bb8",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 381588,
+      "trialId": "vq-1d1d30ace9439808-job-9-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-jackie-welles-mama-s-favorite",
+      "expectedPrintingId": "cpp-94790158e46c6bb8",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 409654,
+      "trialId": "vq-1d1d30ace9439808-job-10-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-jackie-welles-mama-s-favorite",
+      "expectedPrintingId": "cpp-94790158e46c6bb8",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 434111,
+      "trialId": "vq-1d1d30ace9439808-job-11-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-wild-in-the-streets",
+      "expectedPrintingId": "cpp-dc303c98e28eeed5",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 458359,
+      "trialId": "vq-1d1d30ace9439808-job-12-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-wild-in-the-streets",
+      "expectedPrintingId": "cpp-dc303c98e28eeed5",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 487253,
+      "trialId": "vq-1d1d30ace9439808-job-13-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-wild-in-the-streets",
+      "expectedPrintingId": "cpp-dc303c98e28eeed5",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 515658,
+      "trialId": "vq-1d1d30ace9439808-job-14-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-gunpoint-diplomacy",
+      "expectedPrintingId": "cpp-72e0d75d59f262aa",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 631421,
+      "trialId": "vq-1d1d30ace9439808-job-15-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-gunpoint-diplomacy",
+      "expectedPrintingId": "cpp-72e0d75d59f262aa",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 656861,
+      "trialId": "vq-1d1d30ace9439808-job-16-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-gunpoint-diplomacy",
+      "expectedPrintingId": "cpp-72e0d75d59f262aa",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 686895,
+      "trialId": "vq-1d1d30ace9439808-job-17-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-adam-smasher-metal-over-meat",
+      "expectedPrintingId": "cpp-da46cce396eab392",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 827427,
+      "trialId": "vq-1d1d30ace9439808-job-18-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-adam-smasher-metal-over-meat",
+      "expectedPrintingId": "cpp-da46cce396eab392",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 853576,
+      "trialId": "vq-1d1d30ace9439808-job-19-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-adam-smasher-metal-over-meat",
+      "expectedPrintingId": "cpp-da46cce396eab392",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 882207,
+      "trialId": "vq-1d1d30ace9439808-job-20-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-misty-olszewski-mender-of-broken-spirits",
+      "expectedPrintingId": "cpp-333456f171bbaaf2",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 915221,
+      "trialId": "vq-1d1d30ace9439808-job-21-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-misty-olszewski-mender-of-broken-spirits",
+      "expectedPrintingId": "cpp-333456f171bbaaf2",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 940493,
+      "trialId": "vq-1d1d30ace9439808-job-22-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-misty-olszewski-mender-of-broken-spirits",
+      "expectedPrintingId": "cpp-333456f171bbaaf2",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 966764,
+      "trialId": "vq-1d1d30ace9439808-job-23-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-screw-lovelorn-fool",
+      "expectedPrintingId": "cpp-10c378f232887a61",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 994835,
+      "trialId": "vq-1d1d30ace9439808-job-24-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-screw-lovelorn-fool",
+      "expectedPrintingId": "cpp-10c378f232887a61",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 1021924,
+      "trialId": "vq-1d1d30ace9439808-job-25-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-screw-lovelorn-fool",
+      "expectedPrintingId": "cpp-10c378f232887a61",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 1047883,
+      "trialId": "vq-1d1d30ace9439808-job-26-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-safety-override",
+      "expectedPrintingId": "cpp-371ab17cd9e217ec",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 1078541,
+      "trialId": "vq-1d1d30ace9439808-job-27-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-safety-override",
+      "expectedPrintingId": "cpp-371ab17cd9e217ec",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 1105791,
+      "trialId": "vq-1d1d30ace9439808-job-28-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-safety-override",
+      "expectedPrintingId": "cpp-371ab17cd9e217ec",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 1132043,
+      "trialId": "vq-1d1d30ace9439808-job-29-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "NOT_IDENTIFIED",
+      "correct": false,
+      "expectedCardId": "cp-alt-cunningham-soulkiller-architect",
+      "expectedPrintingId": "cpp-92a25d343e3eef9d",
+      "printingAssessment": "NOT_IDENTIFIED",
+      "stableConfirmedAtMs": null,
+      "trialId": "vq-1d1d30ace9439808-job-30-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "NOT_IDENTIFIED",
+      "correct": false,
+      "expectedCardId": "cp-alt-cunningham-soulkiller-architect",
+      "expectedPrintingId": "cpp-92a25d343e3eef9d",
+      "printingAssessment": "NOT_IDENTIFIED",
+      "stableConfirmedAtMs": null,
+      "trialId": "vq-1d1d30ace9439808-job-31-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-alt-cunningham-soulkiller-architect",
+      "expectedPrintingId": "cpp-92a25d343e3eef9d",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 1218439,
+      "trialId": "vq-1d1d30ace9439808-job-32-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-padre-man-of-the-cross",
+      "expectedPrintingId": "cpp-133e0ca1d87fbfcb",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 1247524,
+      "trialId": "vq-1d1d30ace9439808-job-33-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-padre-man-of-the-cross",
+      "expectedPrintingId": "cpp-133e0ca1d87fbfcb",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 1273948,
+      "trialId": "vq-1d1d30ace9439808-job-34-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-padre-man-of-the-cross",
+      "expectedPrintingId": "cpp-133e0ca1d87fbfcb",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 1300364,
+      "trialId": "vq-1d1d30ace9439808-job-35-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-detonate",
+      "expectedPrintingId": "cpp-62225092172d629f",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 1327648,
+      "trialId": "vq-1d1d30ace9439808-job-36-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-detonate",
+      "expectedPrintingId": "cpp-62225092172d629f",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 1353284,
+      "trialId": "vq-1d1d30ace9439808-job-37-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-detonate",
+      "expectedPrintingId": "cpp-62225092172d629f",
+      "printingAssessment": "EXACT_PRINTING_OBSERVED",
+      "stableConfirmedAtMs": 1379905,
+      "trialId": "vq-1d1d30ace9439808-job-38-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-industrial-assembly",
+      "expectedPrintingId": "cpp-0b01ab6398a53131",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 1407794,
+      "trialId": "vq-1d1d30ace9439808-job-39-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-industrial-assembly",
+      "expectedPrintingId": "cpp-0b01ab6398a53131",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 1435751,
+      "trialId": "vq-1d1d30ace9439808-job-40-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-industrial-assembly",
+      "expectedPrintingId": "cpp-0b01ab6398a53131",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 1462001,
+      "trialId": "vq-1d1d30ace9439808-job-41-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-adam-smasher-ender-of-legends",
+      "expectedPrintingId": "cpp-0c4d5b62f83947af",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 1490224,
+      "trialId": "vq-1d1d30ace9439808-job-42-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-adam-smasher-ender-of-legends",
+      "expectedPrintingId": "cpp-0c4d5b62f83947af",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 1528144,
+      "trialId": "vq-1d1d30ace9439808-job-43-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    },
+    {
+      "category": "CORRECT",
+      "correct": true,
+      "expectedCardId": "cp-adam-smasher-ender-of-legends",
+      "expectedPrintingId": "cpp-0c4d5b62f83947af",
+      "printingAssessment": "UNRESOLVED_SHARED_ART",
+      "stableConfirmedAtMs": 1554080,
+      "trialId": "vq-1d1d30ace9439808-job-44-attempt-1",
+      "wrongCardEvents": 0,
+      "wrongPrintingEvents": 0
+    }
+  ],
+  "validTrials": 45,
+  "variantCases": [
+    {
+      "cardId": "cp-mantis-blades",
+      "caseId": "VAR1",
+      "printings": [
+        {
+          "availability": "UNCONFIRMED",
+          "exactPrintingObserved": 0,
+          "observed": 3,
+          "printingId": "cpp-03290e8752e5e383",
+          "required": 3,
+          "status": "UNRESOLVED_SHARED_ART"
+        },
+        {
+          "availability": "UNCONFIRMED",
+          "exactPrintingObserved": 0,
+          "observed": 0,
+          "printingId": "cpp-4f35243029829892",
+          "required": 3,
+          "status": "PENDING"
+        },
+        {
+          "availability": "UNCONFIRMED",
+          "exactPrintingObserved": 0,
+          "observed": 0,
+          "printingId": "cpp-ccf12e0d6e534d86",
+          "required": 3,
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "cardId": "cp-jackie-welles-mama-s-favorite",
+      "caseId": "VAR2",
+      "printings": [
+        {
+          "availability": "UNCONFIRMED",
+          "exactPrintingObserved": 0,
+          "observed": 0,
+          "printingId": "cpp-71e72a5d41466c21",
+          "required": 3,
+          "status": "PENDING"
+        },
+        {
+          "availability": "UNCONFIRMED",
+          "exactPrintingObserved": 0,
+          "observed": 3,
+          "printingId": "cpp-94790158e46c6bb8",
+          "required": 3,
+          "status": "UNRESOLVED_SHARED_ART"
+        },
+        {
+          "availability": "UNCONFIRMED",
+          "exactPrintingObserved": 0,
+          "observed": 0,
+          "printingId": "cpp-fedbde99d7cbf053",
+          "required": 3,
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "cardId": "cp-adam-smasher-ender-of-legends",
+      "caseId": "VAR3",
+      "printings": [
+        {
+          "availability": "UNCONFIRMED",
+          "exactPrintingObserved": 0,
+          "observed": 3,
+          "printingId": "cpp-0c4d5b62f83947af",
+          "required": 3,
+          "status": "UNRESOLVED_SHARED_ART"
+        },
+        {
+          "availability": "UNCONFIRMED",
+          "exactPrintingObserved": 0,
+          "observed": 0,
+          "printingId": "cpp-bec13059d093b5a4",
+          "required": 3,
+          "status": "PENDING"
+        },
+        {
+          "availability": "UNCONFIRMED",
+          "exactPrintingObserved": 0,
+          "observed": 0,
+          "printingId": "cpp-fff81bae871b83ec",
+          "required": 3,
+          "status": "PENDING"
+        }
+      ]
+    }
+  ],
+  "wrongIdentification": 0,
+  "wrongIdentificationRate": 0
+}

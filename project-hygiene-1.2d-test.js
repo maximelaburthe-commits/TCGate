@@ -33,6 +33,17 @@ function runtimeProblems(source, file) {
       remaining = remaining.replace(calls, 'READ_ONLY_FS_CALL(');
     }
     if (/\bfs\b/.test(remaining)) problems.push('filesystem operation/alias outside audited read-only calls');
+  } else if (file === 'vision-nominal-qualification-compatibility.js') {
+    // Only fixed, read-only deployment fingerprints are allowed in this helper.
+    // The HTTP caller supplies __dirname; no request path or mutation is accepted.
+    let remaining = source.replace(/const fs = require\('node:fs'\);/, '');
+    if (remaining === source || fsImport.test(remaining)) problems.push('unexpected compatibility filesystem import or alias');
+    for (const [method, count] of [['realpathSync', 2], ['readFileSync', 2], ['existsSync', 1]]) {
+      const calls = new RegExp('\\bfs\\.' + method + '\\s*\\(', 'g');
+      if ([...remaining.matchAll(calls)].length !== count) problems.push('compatibility read inventory changed: ' + method);
+      remaining = remaining.replace(calls, 'AUDITED_READ_ONLY_CALL(');
+    }
+    if (/\bfs\b/.test(remaining)) problems.push('filesystem operation/alias outside compatibility reads');
   } else if (fsImport.test(source) || /\bfs\s*(?:\.|\[)/.test(source)) {
     problems.push('filesystem access outside audited server');
   }
@@ -68,6 +79,12 @@ function negativeFixtures() {
   assertClean(auditedServer, 'server.js');
   for (const extra of ["fs.writeFile('/tmp/x','x');", 'const alias=fs;', "const disk=require('fs');", 'fs.promises.readFile(a);']) {
     assert.throws(() => assertClean(auditedServer + extra, 'server.js'), assert.AssertionError, extra);
+    assertions++;
+  }
+  const proofHelper = read('vision-nominal-qualification-compatibility.js');
+  assertClean(proofHelper, 'vision-nominal-qualification-compatibility.js');
+  for (const extra of ["fs.writeFileSync('/tmp/x','x');", 'const alias=fs;', "require('node:fs/promises');", 'fs.promises.readFile(a);', 'fs.readFileSync(a);']) {
+    assert.throws(() => assertClean(proofHelper + extra, 'vision-nominal-qualification-compatibility.js'), assert.AssertionError, extra);
     assertions++;
   }
   assertClean("const p='data/control-center-update-candidate.json'; const script='/database-source.js';", 'artifact-fixture.js');

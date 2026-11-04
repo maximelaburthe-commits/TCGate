@@ -1,4 +1,4 @@
-# Vision Qualification 1.0 — Workspace 6C
+# Vision Qualification 1.0 — Workspace 6C.2
 
 ## Utilisation depuis le Workspace
 
@@ -28,10 +28,12 @@ versionné. Les identifiants restent dans les diagnostics repliables.
    l'essai**. Revenir à une scène vide entre les essais.
 3. Attendre la remise à zéro confirmée de Vision, puis cliquer **Essai suivant** ;
    après trois essais, **Carte suivante**. La mémoire du moteur expire naturellement.
-4. Pour le Jalon 6C, refaire uniquement les **45 essais nominaux physiques**.
-   Les sections complémentaires restent bloquées tant que les quinze cartes
-   n'ont pas chacune trois essais valides et que le nominal ne satisfait pas
-   correct ≥95 % et wrong ≤1 %. Aucun essai automatisé ne débloque ce gate.
+4. Le nominal physique officiel est qualifié : **43 / 45, soit 95,5556 %, et
+   zéro mauvaise identification**. Quand le reçu versionné est compatible avec
+   le moteur et le corpus actifs, les conditions complémentaires sont débloquées
+   et la nouvelle session commence sur Angle. Aucun import, DevTools ou nouveau
+   passage des 45 essais n'est nécessaire. Un reçu absent ou incompatible garde
+   ces conditions bloquées, sauf si la session courante satisfait elle-même le gate.
 5. Terminer l'observation active, puis exporter la session et les rapports.
 
 Un mauvais résultat reste enregistré. **Marquer cet essai invalide** ajoute
@@ -73,6 +75,81 @@ L'UI affiche détection, identification et catégorie de résultat. Une identit�
 canonique correcte avec art partagé reste **UNRESOLVED_SHARED_ART** :
 « Carte correctement reconnue · impression exacte non résolue ». Elle ne devient
 pas une mauvaise identification ni une erreur rouge.
+
+## Reçu nominal officiel et conditions complémentaires
+
+**VISION NOMINAL QUALIFICATION: PASS**
+
+- 45 valid physical trials ;
+- 43 correct ;
+- 95.5556 % ;
+- 0 wrong identification.
+
+**Complementary physical qualification: PENDING**
+
+`VISION_NOMINAL_QUALIFICATION_RECEIPT.json` est généré depuis la session physique
+`ce5be2ad9aeaa27df4c217dec99df7f6c7e47c94` et le rapport canonique recalculé sous
+la sémantique `f6225e1d64b4fce633e5353afb9f716ece1c00eb`. Les SHA-256 source sont :
+
+- session : `a6e7c29bf123ffcf8cae0e421f7fdf67d119c53eede4c170125944c7044078a4` ;
+- rapport recalculé : `cc0994cdb6bf0e2b240ae5c146097309527d340a6bdf5fce71e9f3032d676fc8`.
+
+Les deux échecs Alt Cunningham restent NOT_IDENTIFIED. Les deux anciennes
+campagnes FAIL et les trois exports originaux ce5be2a restent intacts.
+Le reçu ne prétend pas que les essais ont été rejoués sur le build actuel.
+
+À chaque préparation, le Workspace télécharge le reçu uniquement depuis le SHA
+réel renvoyé par `/api/health` :
+`https://raw.githubusercontent.com/maximelaburthe-commits/TCGate/<buildSha>/VISION_NOMINAL_QUALIFICATION_RECEIPT.json`.
+Aucun fallback sur une branche. Il compare le reçu aux empreintes des fichiers
+réellement déployés, fournies par le GET en lecture seule
+`/api/vision-qualification-compatibility`, puis aux 229 références actives et
+au protocole de ce build. Le modèle ONNX n'est pas retéléchargé pour ce contrôle.
+
+Les fichiers complets pertinents du moteur, matcher, seuils, preprocessing,
+détecteur, tracking et adaptateurs de corpus sont empreintés ; le modèle l'est
+comme binaire. Les 24 entrées attestent 23 fichiers complets, dont le loader
+Workspace, et le contrat précis de routage/lecture du modèle dans `server.js`
+(scope `MODEL_SERVING_V1`). Modifier le modèle servi ou ses scripts de chargement
+invalide aussi la preuve. Le harness est lié à la sémantique qualifiée 6C.1. Un changement
+de moteur, corpus, BDD, langue, nombre de références ou identités qualifiées
+invalide le reçu. Les modifications séparées d'UI, documentation ou reporting
+peuvent conserver la preuve si les empreintes restent compatibles.
+
+Deux gates restent distincts : `sessionNominalGate` décrit seulement la session
+courante ; `qualifiedNominalGate` décrit la preuve officielle validée.
+Les sections sont disponibles si l'un des deux est ready. L'UI affiche
+« Nominal physique qualifié », les taux, la source et
+« Conditions complémentaires débloquées ». Une nouvelle page/recharge
+revalide automatiquement cette preuve, sans reconstituer les 45 essais.
+
+Les essais complémentaires restent de vraies nouvelles observations dans une
+nouvelle session. Le rapport canonique peut réunir cette session avec
+`nominalEvidence.source = QUALIFICATION_RECEIPT` : il conserve produit, session,
+rapport et sémantique d'origine. Les 45 résumés historiques restent dans cette
+preuve séparée, jamais dans `report.trials` ni les compteurs de la nouvelle
+session. Les autres conditions, impressions, faux positifs et mesures d'index
+restent à observer ; le PASS nominal ne certifie pas le plan complet.
+Une nouvelle erreur nominale ne disparaît pas derrière le reçu historique.
+
+Reproduire le reçu, sans écraser de preuve :
+
+```powershell
+node generate-vision-nominal-qualification-receipt.js --session C:\preuves\vision-qualification-session.json --report C:\preuves\vision-qualification-1.0-recalculated-6c1-final.json --output C:\preuves\VISION_NOMINAL_QUALIFICATION_RECEIPT.json
+```
+
+Le générateur vérifie les octets source, rejoue le rapport canonique, compare
+les fichiers qualifiés ce5be2a → f6225e1 → courant et le seul patch de sémantique
+autorisé. Aucun chiffre de qualification n'est créé sans ces preuves.
+
+Pour composer le rapport CLI d'une nouvelle session complémentaire, ajouter :
+
+```powershell
+--qualified-nominal-receipt .\VISION_NOMINAL_QUALIFICATION_RECEIPT.json
+```
+
+Cette option valide le reçu contre les fichiers du checkout et le corpus actif.
+Sans option, le générateur historique conserve exactement son format antérieur.
 
 ## Session, exports et confidentialité
 
@@ -186,6 +263,8 @@ La campagne physique 6B est conservée : 46 essais enregistrés, 45 valides,
 1 invalide, 0 correct, 19 NOT_IDENTIFIED, 26 UNSTABLE, wrong 0. Voir
 [Vision 6C](VISION_CANONICAL_6C.md) pour les deux campagnes et la mesure actuelle.
 
-**PROCHAINE CAMPAGNE NOMINALE 6C : NOT TESTED.**
+**VISION NOMINAL QUALIFICATION: PASS — 43 / 45, 95.5556 %, 0 wrong.**
+
+**Complementary physical qualification: PENDING.**
 
 **TCGATE VISION QUALIFICATION 1.0 NOT YET QUALIFIED**

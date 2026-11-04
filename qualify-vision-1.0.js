@@ -19,12 +19,12 @@ async function main() {
   for (let i = 2; i < process.argv.length; i++) {
     const arg = process.argv[i];
     if (arg === '--template') { if (args.template) throw Error('Duplicate --template'); args.template = true; }
-    else if (['--input', '--output', '--fixture-root', '--index-input', '--validation-receipt'].includes(arg) && process.argv[i + 1]) {
+    else if (['--input', '--output', '--fixture-root', '--index-input', '--validation-receipt', '--qualified-nominal-receipt'].includes(arg) && process.argv[i + 1]) {
       const key = arg.slice(2), value = process.argv[++i];
       if (key === 'input') args.inputs.push(value);
       else if (key === 'index-input') args.indexes.push(value);
       else { if (args[key]) throw Error('Duplicate ' + arg); args[key] = value; }
-    } else throw Error('Usage: npm run qualify:vision -- --template|--input SESSION.json --output ABSOLUTE_REPORT.json [--fixture-root PINNED_DB_SNAPSHOT]');
+    } else throw Error('Usage: npm run qualify:vision -- --template|--input SESSION.json --output ABSOLUTE_REPORT.json [--fixture-root PINNED_DB_SNAPSHOT] [--qualified-nominal-receipt RECEIPT.json]');
   }
   if (!args.output || (!!args.inputs.length === !!args.template)) throw Error('Select exactly --template or --input, and an absolute --output');
   if (!path.isAbsolute(args.output)) throw Error('Output must be absolute');
@@ -105,8 +105,21 @@ async function main() {
     }
     automatedHarnessValidation = 'PASS';
   }
+  // Explicit historical nominal evidence is independently checked against the
+  // actual checkout files and the current immutable corpus, never the Git SHA alone.
+  let qualified = {};
+  if (args['qualified-nominal-receipt']) {
+    const receiptApi = require('./public/vision-qualification-receipt.js');
+    const { getCompatibility } = require('./vision-nominal-qualification-compatibility.js');
+    const qualifiedNominalReceipt = JSON.parse(fs.readFileSync(args['qualified-nominal-receipt'], 'utf8'));
+    const qualifiedBuildCompatibility = getCompatibility({ root, buildSha: productSha,
+      context: canonical.canonicalContext(productSha, references), sampleDocument: sample });
+    const checkedReceipt = receiptApi.validateReceipt(qualifiedNominalReceipt, qualifiedBuildCompatibility);
+    if (!checkedReceipt.ready) throw Error('Qualified nominal receipt rejected: ' + checkedReceipt.reasons.join(','));
+    qualified = { qualifiedNominalReceipt, qualifiedBuildCompatibility };
+  }
   const report = canonical.generate({ productSha, sampleProductSha: productSha, references, sampleDocument: sample,
-    sessions, indexInputs, automatedHarnessValidation });
+    sessions, indexInputs, automatedHarnessValidation, ...qualified });
   const bytes = canonical.stableStringify(report);
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, bytes, { flag: 'wx' });

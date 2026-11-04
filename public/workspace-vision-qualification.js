@@ -10,7 +10,9 @@
   const SCENE = { EMPTY_TABLE: 'Table vide', PLAYMAT: 'Playmat', VISIBLE_HAND: 'Main visible', CLOSED_DECK: 'Paquet / pile', DESK_OBJECTS: 'Objets de bureau' };
   const RESULT = { CORRECT: 'Correct', NO_DETECTION: 'Non détectée', NOT_IDENTIFIED: 'Non identifiée', WRONG_IDENTIFICATION: 'Mauvaise identification', UNSTABLE: 'Instable', INVALID_TEST: 'Essai invalide' };
   let q = null, documentSample = null, productSha = null, sampleUrl = null, preparing = null, runPrefix = null;
-  let immutableContext = null, activeJob = null, operating = false, cameraHome = null, cachedNominalGate = { ready: false, status: 'PENDING' };
+  let immutableContext = null, activeJob = null, operating = false, cameraHome = null;
+  let sessionNominalGate = { ready: false, status: 'PENDING' };
+  let qualifiedNominalGate = { ready: false, status: 'PENDING', reasons: [] }, nominalReceiptUrl = null;
   const importedSessions = [], importedIndexes = [];
   let selection = 'NOMINAL', pendingAdvance = false, lastResultId = null, activeDeadline = null, autoStop = null, lastError = '';
   const scriptLoads = new Map();
@@ -69,6 +71,8 @@
     station.classList.add('lab-station'); station.setAttribute('aria-modal', 'false');
     const history = root.document.createElement('p'); history.id = 'vqBaselineHistory'; history.className = 'muted';
     $('vqProgress').after(history);
+    const sectionDetails = $('vqCondition').closest('details');
+    sectionDetails.querySelector('summary').after($('vqComplementaryLabel'), $('vqCondition').closest('label'), $('vqSectionProgress'));
     $('labControls').prepend(station);
     $('labControls').querySelector('.lab-columns').remove();
     feedbackArticle.remove();
@@ -202,7 +206,12 @@
     const cards = documentSample.sample.filter(card => jobs.filter(job => job.sampleId === card.sampleId).every(job => completed(job, state))).length;
     return { count, total: jobs.length, cards };
   }
-  function nominalGate() { return cachedNominalGate; }
+  function nominalGate() {
+    const ready = sessionNominalGate.ready || qualifiedNominalGate.ready;
+    const official = !sessionNominalGate.ready && qualifiedNominalGate.ready;
+    return { ...sessionNominalGate, ...(official ? qualifiedNominalGate : {}),
+      ready, source: official ? 'QUALIFICATION_RECEIPT' : 'CURRENT_SESSION' };
+  }
   function setReady(ready) {
     setLabVisible(); $('vqPrepare').disabled = ready || Boolean(preparing);
     $('vqPhysicalConfirm').disabled = ready || Boolean(preparing);
@@ -222,7 +231,7 @@
       const detector = root.TCGVisionEngine?.getSnapshot?.();
       if (!runtime?.libraryReady || !runtime.matcherWorker?.ready || !detectorRunning(detector)) throw Error('Démarrez la caméra, la détection et l’identification dans ce Vision Lab avant la qualification.');
       if (runtime.gameId !== 'cyberpunk' || runtime.playerLocale !== 'en' || runtime.visionReferenceCount !== 229 || runtime.librarySize !== 229 || runtime.visionLocales?.length !== 1 || runtime.visionLocales[0] !== 'en') throw Error('Qualification réservée au corpus actif Cyberpunk EN · 229 références.');
-      for (const src of ['/vision-qualification-harness.js', '/vision-qualification-track.js', '/vision-qualification-diagnostics.js', '/vision-qualification-report.js', '/vision-qualification-runtime.js']) await loadScript(src);
+      for (const src of ['/vision-qualification-harness.js', '/vision-qualification-track.js', '/vision-qualification-diagnostics.js', '/vision-qualification-receipt.js', '/vision-qualification-report.js', '/vision-qualification-runtime.js']) await loadScript(src);
       sampleUrl = RAW_ROOT + productSha + '/VISION_QUALIFICATION_SAMPLE.json';
       let fetched;
       try { const response = await root.fetch(sampleUrl, { cache: 'no-store', redirect: 'error', credentials: 'omit' }); if (!response.ok) throw Error('Sample absent'); fetched = await response.json(); }
@@ -231,10 +240,22 @@
       const finalHealthResponse = await root.fetch('/api/health', { cache: 'no-store' });
       if (!finalHealthResponse.ok || (await finalHealthResponse.json()).buildSha?.toLowerCase() !== productSha) throw Error('Le build a changé pendant la préparation. Rechargez avant de commencer une nouvelle qualification.');
       const attached = await root.TCGVisionQualificationRuntime.attach({ productSha, sampleDocument: fetched, trackSelection: 'PINNED_CANONICAL_TRACK', environment: { execution: 'RAILWAY_TEST', illumination: 'NORMAL', background: 'TABLE', sleeve: 'UNSPECIFIED' } });
-      q = attached; documentSample = fetched;
-      immutableContext = q.context();
+      const attachedContext = attached.context();
+      const loadedGate = await root.TCGVisionNominalQualificationReceipt.load({
+        productSha, context: attachedContext, sampleDocument: fetched, fetchImpl: root.fetch.bind(root)
+      });
+      try {
+        const preparedHealth = await root.fetch('/api/health', { cache: 'no-store' });
+        if (!preparedHealth.ok || (await preparedHealth.json()).buildSha?.toLowerCase() !== productSha)
+          throw Error('Le build a changé pendant la préparation. Rechargez avant de commencer une nouvelle qualification.');
+      } catch (error) { attached.detach(); throw error; }
+      q = attached; documentSample = fetched; immutableContext = attachedContext;
+      nominalReceiptUrl = RAW_ROOT + productSha + '/VISION_NOMINAL_QUALIFICATION_RECEIPT.json';
+      qualifiedNominalGate = loadedGate;
+      if (qualifiedNominalGate.ready) selection = 'ANGLE';
       runPrefix = 'vq-' + [...root.crypto.getRandomValues(new Uint32Array(2))].map(value => value.toString(16).padStart(8, '0')).join('');
       buildSampleList(); buildConditions(); buildVariantAvailability();
+      if (qualifiedNominalGate.ready) $('vqCondition').closest('details').open = true;
       $('vqStatus').textContent = 'Qualification prête'; $('vqCorpus').textContent = 'Cyberpunk · EN · 150 cartes · 229 références';
       setReady(true); setOperating(true); render(); return q;
     })();
@@ -330,12 +351,14 @@
   function render() {
     if (!q) return;
     const state = session(), jobs = buildJobs(state), nominal = nominalProgress(state), active = state.active;
-    if (!active) cachedNominalGate = root.TCGVisionQualificationReport.nominalGate(q.exportReport());
+    if (!active) sessionNominalGate = root.TCGVisionQualificationReport.nominalGate(q.exportReport());
     const nextJob = currentJob(state);
     const retryJob = pendingAdvance ? null : retrySwitchJob(nextJob, state, jobs);
     $('vqStatus').textContent = active ? 'Qualification en cours' : records(state).length ? 'Qualification en cours · observation terminée' : 'Qualification prête';
-    $('vqProgress').textContent = 'Nominal · ' + nominal.count + ' / ' + nominal.total + ' essais — Cartes terminées · ' + nominal.cards + ' / ' + documentSample.sample.length;
-    $('vqOverallProgress').value = nominal.count; $('vqOverallProgress').max = nominal.total;
+    $('vqProgress').textContent = qualifiedNominalGate.ready
+      ? 'Nominal physique qualifié : ' + qualifiedNominalGate.correct + ' / ' + qualifiedNominalGate.valid + ' corrects dans la session physique d’origine. Aucun de ces essais n’a été rejoué dans cette session.'
+      : 'Nominal · ' + nominal.count + ' / ' + nominal.total + ' essais — Cartes terminées · ' + nominal.cards + ' / ' + documentSample.sample.length;
+    $('vqOverallProgress').value = qualifiedNominalGate.ready ? qualifiedNominalGate.valid : nominal.count; $('vqOverallProgress').max = nominal.total;
     $('vqSessionCount').textContent = state.trials.length + ' essais enregistrés · ' + state.scenes.length + ' scènes · aucun résultat supprimé';
     for (const row of $('vqSampleList').children) {
       const original = documentSample.sample.find(card => card.sampleId === row.dataset.sampleId), card = activeCard(original, state);
@@ -343,7 +366,21 @@
     }
     const gate = nominalGate(state);
     $('vqComplementaryLabel').hidden = !gate.ready;
-    $('vqNominalGate').textContent = gate.ready ? 'VISION NOMINAL READY FOR FULL QUALIFICATION · le nominal physique satisfait les seuils de qualification.' : 'Jalon 6C : 45 essais nominaux physiques uniquement. Les conditions complémentaires restent bloquées tant que le nominal réel ne passe pas ≥ 95 % correct et ≤ 1 % de mauvaise identification.';
+    const percent = value => typeof value === 'number' ? value.toLocaleString('fr-FR', { maximumFractionDigits: 2 }) + ' %' : 'NOT TESTED';
+    if (qualifiedNominalGate.ready) {
+      const official = qualifiedNominalGate;
+      $('vqNominalGate').replaceChildren(
+        root.document.createTextNode('Nominal physique qualifié · ' + official.correct + ' / ' + official.valid + ' · ' + percent(official.correctIdentificationRate) +
+          ' · Mauvaises identifications : ' + percent(official.wrongIdentificationRate) + '. Conditions complémentaires débloquées. '));
+      const provenance = node('a', 'Source : reçu officiel versionné', $('vqNominalGate'));
+      provenance.href = nominalReceiptUrl; provenance.target = '_blank'; provenance.rel = 'noopener noreferrer';
+      $('vqNominalGate').dataset.source = 'QUALIFICATION_RECEIPT';
+    } else {
+      $('vqNominalGate').textContent = gate.ready
+        ? 'Nominal physique qualifié dans cette session. Conditions complémentaires débloquées.'
+        : 'Conditions complémentaires bloquées : le nominal physique doit atteindre ≥ 95 % correct et ≤ 1 % de mauvaise identification. Reçu officiel indisponible ou incompatible (' + (qualifiedNominalGate.reasons || []).join(', ') + ').';
+      $('vqNominalGate').dataset.source = gate.ready ? 'CURRENT_SESSION' : 'PENDING';
+    }
     for (const option of $('vqCondition').options) option.disabled = Boolean(active) || (option.value !== 'NOMINAL' && !gate.ready);
     $('vqCondition').disabled = Boolean(active);
     $('vqCondition').value = selection;
@@ -397,10 +434,14 @@
     }
     if (!active) { $('vqTimer').textContent = pendingAdvance ? 'Observation terminée' : 'Aucune observation active'; $('vqTrialProgress').value = pendingAdvance ? $('vqTrialProgress').max : 0; }
     if (lastRaw) showResult(lastRaw, state);
-    $('vqCompactProgress').textContent = 'Nominal ' + nominal.count + ' / ' + nominal.total + ' essais · Cartes ' + nominal.cards + ' / ' + documentSample.sample.length;
+    $('vqCompactProgress').textContent = qualifiedNominalGate.ready
+      ? 'Nominal physique qualifié · ' + qualifiedNominalGate.correct + ' / ' + qualifiedNominalGate.valid + ' · ' + percent(qualifiedNominalGate.correctIdentificationRate) + ' · Conditions complémentaires débloquées'
+      : 'Nominal ' + nominal.count + ' / ' + nominal.total + ' essais · Cartes ' + nominal.cards + ' / ' + documentSample.sample.length;
     const rate = value => typeof value === 'number' ? (value * 100).toFixed(1) + ' %' : 'NOT TESTED';
     const baseline = gate.previousCampaign || gate.baseline;
-    $('vqBaselineComparison').textContent = (baseline?.valid ? (gate.previousCampaign ? '6B FAIL' : 'Baseline FAIL') + ' : correct ' + rate(baseline.correct / baseline.valid) + ' · erreur ' + rate(baseline.wrong / baseline.valid) + ' — ' : '') + 'Nouvelle : ' + (gate.valid ? 'correct ' + rate(gate.correct / gate.valid) + ' · erreur ' + rate(gate.wrong / gate.valid) : 'NOT TESTED');
+    $('vqBaselineComparison').textContent = (baseline?.valid ? (gate.previousCampaign ? '6B FAIL' : 'Baseline FAIL') + ' : correct ' + rate(baseline.correct / baseline.valid) + ' · erreur ' + rate(baseline.wrong / baseline.valid) + ' — ' : '') +
+      (qualifiedNominalGate.ready ? 'Preuve nominale ' + qualifiedNominalGate.receipt.sourcePhysicalProductSha.slice(0, 7) + ' conservée : ' : 'Nouvelle : ') +
+      (gate.valid ? 'correct ' + rate(gate.correct / gate.valid) + ' · erreur ' + rate(gate.wrong / gate.valid) : 'NOT TESTED');
     $('vqBaselineHistory').textContent = (gate.baselines || [gate.baseline]).filter(Boolean).map(item => item.productSha.slice(0, 8) + ' · ' + item.trials + ' essais / ' + item.valid + ' valides · correct ' + rate(item.correct / item.valid) + ' · erreur ' + rate(item.wrong / item.valid)).join(' | ');
     renderControls();
     const errors = active?.observations?.at(-1)?.validityErrors || [];
@@ -506,7 +547,9 @@
     const anchor = node('a'); anchor.href = url; anchor.download = name; anchor.click(); root.setTimeout(() => root.URL.revokeObjectURL(url), 1000);
   }
   function generateReport(sessions = [q.getSession(), ...importedSessions], indexes = importedIndexes) {
-    return root.TCGVisionQualificationReport.generate({ productSha, sampleProductSha: productSha, references: immutableContext.references, sampleDocument: documentSample, sessions, indexInputs: indexes });
+    return root.TCGVisionQualificationReport.generate({ productSha, sampleProductSha: productSha, references: immutableContext.references, sampleDocument: documentSample, sessions, indexInputs: indexes,
+      ...(qualifiedNominalGate.ready ? { qualifiedNominalReceipt: qualifiedNominalGate.receipt,
+        qualifiedBuildCompatibility: qualifiedNominalGate.compatibility } : {}) });
   }
   async function canonicalReport() {
     const response = await root.fetch('/api/health', { cache: 'no-store' });
@@ -575,5 +618,7 @@
   buildStation();
   new root.MutationObserver(() => { if (operating && $('panel-lab').hidden) setOperating(false); setLabVisible(); }).observe($('panel-lab'), { attributes: true, attributeFilter: ['hidden'] });
   root.setInterval(tick, 100);
-  root.TCGWorkspaceVisionQualification = Object.freeze({ prepare, getState: () => ({ productSha, sampleUrl, prepared: Boolean(q), preparing: Boolean(preparing), operating, currentJob: currentJob(), session: session(), neutral: q ? neutralState() : null, nominalGate: q ? nominalGate(session()) : null, lastError }) });
+  root.TCGWorkspaceVisionQualification = Object.freeze({ prepare, getState: () => ({ productSha, sampleUrl, prepared: Boolean(q), preparing: Boolean(preparing), operating, currentJob: currentJob(), session: session(), neutral: q ? neutralState() : null, nominalGate: q ? nominalGate(session()) : null,
+    sessionNominalGate: q ? sessionNominalGate : null, qualifiedNominalGate: q ? qualifiedNominalGate : null,
+    nominalReceiptUrl, lastError }) });
 })(typeof window !== 'undefined' ? window : globalThis);
