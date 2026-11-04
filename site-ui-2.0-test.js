@@ -14,6 +14,41 @@ const original = file => execFileSync('git', ['show', baseline + ':' + file], { 
 let assertions = 0;
 function check(value, label) { assert(value, label); assertions++; }
 function equal(value, expected, label) { assert.deepEqual(value, expected, label); assertions++; }
+// Jalon 6C.2 adds one read-only evidence route. Reverse only its exact bytes
+// at the exact health -> phone site; the complete remaining server stays frozen.
+const qualifiedReceiptEndpoint =
+  "    // Read-only attestation of the code serving this exact deployed build.\n" +
+  "    // No database, model inference or qualification session is mutated here.\n" +
+  "    if (req.method === 'GET' && pathname === '/api/vision-qualification-compatibility') {\n" +
+  "      const buildSha = process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || null;\n" +
+  "      if (!/^[a-f0-9]{40}$/.test(buildSha || '')) {\n" +
+  "        return sendJson(res, 503, { ok: false, error: 'Build SHA unavailable for qualification evidence' });\n" +
+  "      }\n" +
+  "      const { getCompatibility } = require('./vision-nominal-qualification-compatibility.js');\n" +
+  "      res.setHeader('Cache-Control', 'no-store');\n" +
+  "      return sendJson(res, 200, getCompatibility({ root: __dirname, buildSha }));\n" +
+  "    }\n\n";
+const precedingHealth =
+  "    if (req.method === 'GET' && pathname === '/api/health') {\n" +
+  "      return sendJson(res, 200, {\n" +
+  "        ok: true,\n" +
+  "        version: VERSION,\n" +
+  "        buildSha: process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || null,\n" +
+  "        environment: process.env.RAILWAY_ENVIRONMENT_NAME || process.env.NODE_ENV || 'local'\n" +
+  "      });\n" +
+  "    }\n\n";
+const followingPhone =
+  "    if (req.method === 'GET' && pathname === '/phone') {\n" +
+  "      return staticFile(req, res, '/phone.html');\n" +
+  "    }";
+function stripQualifiedReceiptEndpoint(input) {
+  const source = lf(input), first = source.indexOf(qualifiedReceiptEndpoint);
+  if (first < 0) return source;
+  if (source.indexOf(qualifiedReceiptEndpoint, first + qualifiedReceiptEndpoint.length) >= 0) throw Error('Duplicate qualification compatibility route');
+  if (!source.slice(0, first).endsWith(precedingHealth) ||
+      !source.slice(first + qualifiedReceiptEndpoint.length).startsWith(followingPhone)) throw Error('Qualification compatibility route moved from its audited site');
+  return source.slice(0, first) + source.slice(first + qualifiedReceiptEndpoint.length);
+}
 const html = read('public/index.html'), css = read('public/tcgate-ui-1.2.css'), app = read('public/app.js');
 const contract = require(path.join(root, 'tcgate-ui-1.2-contract.js'));
 const home = contract.section(html, 'screenHome'), lobby = contract.section(html, 'screenLobby');
@@ -55,7 +90,40 @@ for (const file of [
   'public/vision-core.js', 'public/vision-frame-gate.js', 'report-mail-server.js', 'public/report-mail-ui.js'
 ]) {
   if (!fs.existsSync(path.join(root, file))) throw Error('Protected source is missing: ' + file);
-  equal(hash(lf(read(file))), hash(lf(original(file))), 'Protected source remains unchanged: ' + file);
+  equal(hash(file === 'server.js' ? stripQualifiedReceiptEndpoint(read(file)) : lf(read(file))), hash(lf(original(file))), 'Protected source remains unchanged: ' + file);
+}
+const originalServer = lf(original('server.js')), deployedServer = lf(read('server.js'));
+const originalServerHash = '6a41bec80f6a4e8dfa802d02c320bcdf0a7eadbb711c74ccc62bc3c6038e4b5c';
+equal(hash(originalServer), originalServerHash, 'The complete historical server source remains authenticated');
+equal(stripQualifiedReceiptEndpoint(originalServer), originalServer, 'An original server without the qualification route is unchanged');
+equal(stripQualifiedReceiptEndpoint(deployedServer), originalServer, 'The sole exact 6C.2 route accounts for every changed server byte');
+function serverStillFrozen(source) {
+  try { return hash(stripQualifiedReceiptEndpoint(source)) === originalServerHash; } catch { return false; }
+}
+const endpointMutations = [
+  ['method', text => text.replace("req.method === 'GET'", "req.method === 'POST'")],
+  ['path', text => text.replace('/api/vision-qualification-compatibility', '/api/other-qualification-route')],
+  ['build guard', text => text.replace('{40}', '{41}')],
+  ['status', text => text.replace('sendJson(res, 503', 'sendJson(res, 200')],
+  ['body', text => text.replace('Cache-Control', 'X-Changed-Header')],
+  ['helper argument', text => text.replace('root: __dirname', "root: '/unqualified-root'")]
+];
+for (const [label, mutate] of endpointMutations) {
+  const changed = mutate(qualifiedReceiptEndpoint);
+  check(changed !== qualifiedReceiptEndpoint, 'The negative fixture changes the endpoint ' + label);
+  equal(serverStillFrozen(deployedServer.replace(qualifiedReceiptEndpoint, changed)), false, 'A changed endpoint ' + label + ' cannot bypass the frozen full-server hash');
+}
+equal(serverStillFrozen(originalServer + '\n' + qualifiedReceiptEndpoint), false, 'An exact endpoint moved away from the health/phone site is refused');
+equal(serverStillFrozen(deployedServer + '\n' + qualifiedReceiptEndpoint), false, 'An exact duplicate endpoint is refused');
+equal(serverStillFrozen(deployedServer.replace(followingPhone, "    // moved phone route\n" + followingPhone)), false, 'A changed endpoint boundary is refused');
+for (const [label, before, after] of [
+  ['old model path', "'card_detector_v53_512.onnx'", "'unqualified-model.onnx'"],
+  ['old stream body', 'fs.createReadStream(MODEL_FILE).pipe(res);', 'fs.createReadStream(MODEL_FILE, { start: 1 }).pipe(res);'],
+  ['old phone route', "pathname === '/phone'", "pathname === '/different-phone-route'"]
+]) {
+  const changed = deployedServer.replace(before, after);
+  check(changed !== deployedServer, 'The negative fixture changes ' + label);
+  equal(serverStillFrozen(changed), false, 'A change outside the 6C.2 endpoint remains protected: ' + label);
 }
 equal(hash(require('./workspace-production-contract.js').productionIdentification(Buffer.from(read('public/identification.js')))), 'e5593e42a8dfd60a4d81850fb76c518c4212302906a1cd655fb3901cf9e18071', 'All recognition functions/constants stay unchanged while Jalon 4 scopes the corpus');
 function functionBody(source, name) {
