@@ -96,8 +96,8 @@ async function hover(page, inside) {
   await page.mouse.move(point.x, point.y, { steps: 4 });
 }
 async function run() {
-  const nativeEntry = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
-  const entry = fs.readFileSync(path.join(root, 'public/vision-real-game.html'), 'utf8');
+  const nativeEntry = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8').replace(/\r\n/g, '\n');
+  const entry = fs.readFileSync(path.join(root, 'public/vision-real-game.html'), 'utf8').replace(/\r\n/g, '\n');
   const removed = entry.replace('  <link rel="stylesheet" href="/vision-real-game.css">\n', '').replace(/  <script src="\/(?:vision-qualification-receipt|vision-real-game-baseline|vision-real-game-campaign|vision-real-game-observer|vision-real-game-ui)\.js"><\/script>\n/g, '');
   equal(digest(removed), digest(nativeEntry), 'Separate entry is exactly the normal product plus isolated campaign tags');
   const uiSource = fs.readFileSync(path.join(root, 'public/vision-real-game-ui.js'), 'utf8');
@@ -249,4 +249,4 @@ async function run() {
   } catch (error) { console.error('VISION_REAL_GAME_BROWSER_FAIL ' + phase + ': ' + error.stack); throw error; }
   finally { await browser?.close(); await fixture.close(); }
 }
-run().catch(() => { process.exitCode = 1; });
+run().catch(error => { console.error(error.stack || error); process.exitCode = 1; });
