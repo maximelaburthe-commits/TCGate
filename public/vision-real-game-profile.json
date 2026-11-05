@@ -1,8 +1,8 @@
 {
   "schemaVersion": "1.0",
-  "id": "VISION_REAL_GAME_1_0",
+  "id": "VISION_SOLO_LAB_1_0",
   "version": "1.0",
-  "scope": "NORMAL_OPPONENT_STREAM_HUMAN_CONSULTATIONS",
+  "scope": "SOLO_LAB_NORMAL_HOVER",
   "priorities": [
     "IDENTIFICATION_RELIABILITY",
     "NATIVE_IDENTITY_STABILITY",
@@ -225,7 +225,8 @@
     "freePlay": {
       "minimumMs": 1200000,
       "recommendedMaximumMs": 1800000,
-      "noConsultationQuota": true
+      "noConsultationQuota": true,
+      "description": "SOLO_LAB_FREE_MANIPULATION"
     }
   },
   "deferred": [
@@ -247,5 +248,16 @@
     "noSpeedPassThreshold": true,
     "noAutomaticPhysicalVerdict": true,
     "noMediaExport": true
+  },
+  "environment": {
+    "entry": "/workspace.html",
+    "section": "Vision Lab",
+    "operatorCount": 1,
+    "camera": "LOCAL_VIDEO_ONLY",
+    "roomRequired": false,
+    "readyRequired": false,
+    "webrtcRequired": false,
+    "identificationPath": "NORMAL_HOVER",
+    "realPlayerTests": "LATER_PRODUCT_IMPROVEMENT_NOT_INITIAL_ENGINE_QUALIFICATION"
   }
 }

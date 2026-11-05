@@ -17,10 +17,10 @@ async function fixture(browser, run) {
   const errors = [];
   page.on('pageerror', error => errors.push(String(error)));
   await page.route('https://cards.test/**', route => route.fulfill({ status: 200, contentType: 'image/png', body: png }));
-  await page.setContent('<style>body{margin:0}#opponentFeed{position:absolute;left:0;top:0;width:640px;height:480px;background:#222}#displayCardButton{position:absolute;left:700px;top:0}.hidden{display:none}#displayCardImage{width:120px;height:160px}.fullscreen-card-preview{position:absolute;left:200px;top:150px;width:80px;height:80px}</style><div id="opponentFeed"><video id="remoteVideo"></video><canvas id="visionOverlay" width="640" height="480"></canvas></div><div style="display:none"><div id="identResult"><img id="identImage"></div></div><button id="displayCardButton" class="hidden"><img id="displayCardImage"></button>');
+  await page.setContent("<style>body{margin:0}#opponentFeed{position:absolute;left:0;top:0;width:640px;height:480px;background:#222}#identResult{position:absolute;left:700px;top:0}.hidden{display:none}#identImage{width:120px;height:160px}.fullscreen-card-preview{position:absolute;left:200px;top:150px;width:80px;height:80px}</style><select id=\"labSource\" hidden><option value=\"production\">Cyberpunk</option></select><button id=\"labStart\" hidden></button><button id=\"visionCameraButton\" hidden></button><div id=\"opponentFeed\"><video id=\"remoteVideo\"></video><canvas id=\"visionOverlay\" width=\"640\" height=\"480\"></canvas></div><div id=\"identResult\" class=\"hidden\"><img id=\"identImage\"></div>");
   await page.evaluate(({ references, sha }) => {
     const stage = document.getElementById('opponentFeed'), video = document.getElementById('remoteVideo');
-    const image = document.getElementById('displayCardImage'), panel = document.getElementById('displayCardButton');
+    const image = document.getElementById('identImage'), panel = document.getElementById('identResult');
     Object.defineProperty(video, 'videoWidth', { get: () => 640 });
     Object.defineProperty(video, 'videoHeight', { get: () => 480, configurable: true });
     const nativeNow = performance.now.bind(performance);
@@ -35,10 +35,9 @@ async function fixture(browser, run) {
     window.TCGateGameDatabases = { get: () => ({ manifestUrl: 'https://raw.githubusercontent.com/maximelaburthe-commits/tcgate_db_cyberpunk/56402636a77af9c8b5dc4e3b61c509a185f3c834/manifest.json' }) };
     window.TCGateDatabaseSource = { getVisionReferences: async () => references.map(({ name, ...ref }) => ref), load: async () => ({ manifest: { sourceCommit: '56402636a77af9c8b5dc4e3b61c509a185f3c834' }, cardsById: new Map(references.map(ref => [ref.cardId, { name: ref.name }])) }) };
     window.TCGTableStateBridge = { getSnapshot: () => ({ captureCount: 1 }), getRefs: () => fixtureState.capturedRefs === undefined ? references : fixtureState.capturedRefs };
-    window.TCGDetectionLab = { els: { videoStage: stage, video, overlay: document.getElementById('visionOverlay') }, activeTracks: () => state.tracks };
+    window.TCGDetectionLab = { state: { detecting: true, externalAttached: false, stream: { getVideoTracks: () => [{ readyState: 'live' }] } }, els: { videoStage: stage, video, overlay: document.getElementById('visionOverlay') }, activeTracks: () => state.tracks };
     window.TCGIdentificationLab = { getSnapshot: () => state.snapshot };
-    window.TCGTableStateEngine = { getSnapshot: () => state.table };
-    window.TCGVisionEngine = { getSnapshot: () => ({ active: true, modelReady: true, tracking: { activeTracks: state.tracks }, inference: { detectionFps: 3, videoFps: 30 }, mainThread: { longTaskCount: 0 } }) };
+    window.TCGVisionEngine = { getSnapshot: () => ({ active: false, modelReady: true, tracking: { activeTracks: state.tracks }, inference: { detectionFps: 3, videoFps: 30 }, mainThread: { longTaskCount: 0 } }) };
     const underPointer = event => state.tracks.find(track => Math.abs(event.clientX - track.cx) <= track.w / 2 && Math.abs(event.clientY - track.cy) <= track.h / 2 && !track.misses);
     function resultFor(track, which = 0, mode = 'normal') {
       const ref = references[which], url = 'https://cards.test/' + which + '.png';
@@ -82,7 +81,7 @@ async function fixture(browser, run) {
   finally { await page.close(); }
 }
 const events = page => page.evaluate(() => fixtureState.events);
-const waitDisplay = async page => { try { await page.waitForFunction(() => fixtureState.events.some(event => event.kind === 'DISPLAY'), null, { timeout: 5000 }); } catch (error) { console.error(await page.evaluate(() => ({ events: fixtureState.events, diagnostics: observer.getDiagnostics(), image: { complete: document.getElementById('displayCardImage').complete, naturalWidth: document.getElementById('displayCardImage').naturalWidth, src: document.getElementById('displayCardImage').currentSrc, visible: document.getElementById('displayCardImage').style.visibility }, snapshot: fixtureState.snapshot }))); throw error; } };
+const waitDisplay = async page => { try { await page.waitForFunction(() => fixtureState.events.some(event => event.kind === 'DISPLAY'), null, { timeout: 5000 }); } catch (error) { console.error(await page.evaluate(() => ({ events: fixtureState.events, diagnostics: observer.getDiagnostics(), image: { complete: document.getElementById('identImage').complete, naturalWidth: document.getElementById('identImage').naturalWidth, src: document.getElementById('identImage').currentSrc, visible: document.getElementById('identImage').style.visibility }, snapshot: fixtureState.snapshot }))); throw error; } };
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   try {
@@ -100,7 +99,12 @@ const waitDisplay = async page => { try { await page.waitForFunction(() => fixtu
       equal(display.cardId, references[0].cardId, 'Canonical identity comes from native scalar result');
       equal(display.displayConfirmed, true, 'Display requires real loaded visible image');
       equal(display.definitivePrinting, true, 'Single exact native reference can establish definitive printing');
-      equal(await page.locator('#identResult').isVisible(), false, 'Hidden legacy technical inspector cannot establish actual player display');
+      equal(await page.locator('#identResult').isVisible(), true, 'Native Lab HD inspector establishes the actual tester-visible display');
+      equal(await page.evaluate(() => fixtureState.context.scope), 'SOLO_LAB_NORMAL_HOVER', 'Prepared scope is autonomous Lab normal hover');
+      equal(await page.evaluate(() => fixtureState.context.capabilities.localCamera), true, 'Prepared context attests the local camera path');
+      equal(await page.evaluate(() => fixtureState.context.capabilities.normalHover), true, 'Prepared context attests the unchanged hover path');
+      equal(await page.evaluate(() => fixtureState.context.capabilities.tableStateMemory), false, 'No Table State background engine is required or added');
+      equal(await page.evaluate(() => TCGVisionEngine.getSnapshot().active), false, 'Local Lab observation does not require external stream active flag');
       await page.mouse.move(150, 200); await page.waitForTimeout(100);
       output = await events(page);
       equal(output.filter(event => event.kind === 'REQUEST').length, 1, 'Motion within same target does not manufacture requests');
@@ -124,7 +128,7 @@ const waitDisplay = async page => { try { await page.waitForFunction(() => fixtu
     });
     await fixture(browser, async page => {
       await page.evaluate(() => { fixtureState.mode = 'none'; fixture.resultFor(fixtureState.tracks[0], 0, 'normal'); });
-      await page.waitForFunction(() => document.getElementById('displayCardImage').complete && document.getElementById('displayCardImage').naturalWidth > 0);
+      await page.waitForFunction(() => document.getElementById('identImage').complete && document.getElementById('identImage').naturalWidth > 0);
       await page.mouse.move(140, 200); await page.waitForTimeout(180);
       const output = await events(page), request = output.find(event => event.kind === 'REQUEST');
       equal(request.alreadyVisibleAtRequest, true, 'Held preview at request is marked preexisting');
@@ -172,18 +176,24 @@ const waitDisplay = async page => { try { await page.waitForFunction(() => fixtu
       equal(output.find(event => event.kind === 'DISPLAY').consultationId, requests[1].consultationId, 'Synchronous stationary memory response attaches to its actual target');
     });
     await fixture(browser, async page => {
-      await page.evaluate(() => { fixtureState.mode = 'none'; const ref = fixture.references[0]; fixtureState.table.entries = [{ activeUid: 1, state: 'STABLE_KNOWN', identity: { image: ref.image, establishedAt: 1, lastConfirmedAt: 5 } }]; observer.sample(); });
-      let output = await events(page);
-      equal(output.filter(event => event.kind === 'TRACK_STATE').at(-1).identityCurrent, true, 'Native table identity measured without any human hover');
-      equal(output.filter(event => event.kind === 'TRACK_STATE').at(-1).decisionFresh, null, 'Native memory snapshot cannot infer fresh matcher acceptance');
-      equal(output.filter(event => event.kind === 'TRACK_STATE').at(-1).nativeIdentityAtMs, 1, 'Accepted native establishment time remains distinct from later evidence timestamps');
-      equal(output.filter(event => event.kind === 'REQUEST').length, 0, 'Native background identity never invents human consultation');
-      await page.evaluate(() => { fixtureState.table.entries[0].identitySuspended = true; observer.sample(); });
-      output = await events(page);
-      equal(output.filter(event => event.kind === 'TRACK_STATE').at(-1).nativeStatus, 'SUSPENDED', 'Suspended native identity separated from displayed preview');
-      equal(output.filter(event => event.kind === 'TRACK_STATE').at(-1).identityCurrent, false, 'Suspension removes current native identity');
+      await page.mouse.move(140, 200); await waitDisplay(page);
+      await page.evaluate(() => { window.dispatchEvent(new CustomEvent('tcg-identification-stability', { detail: { type: 'stable-held', trackUid: 1, stableKey: 'card:' + fixture.references[0].cardId, at: performance.now() } })); observer.sample(); });
+      let output = await events(page), native = output.filter(event => event.kind === 'TRACK_STATE').at(-1);
+      equal(native.source, 'IDENTITY_MEMORY', 'Native temporal grace memory is distinct from absent Table State memory');
+      equal(native.identityCurrent, true, 'Explicit native hold keeps identity under the engine policy');
+      equal(native.decisionFresh, false, 'Native hold is never fresh matcher acceptance');
+      equal(native.nativeIdentityAtMs, null, 'Hold timestamp is not fabricated as an identity decision timestamp');
+      await page.evaluate(() => { window.dispatchEvent(new CustomEvent('tcg-identification-stability', { detail: { type: 'hold-expired', trackUid: 1, stableKey: 'card:' + fixture.references[0].cardId, at: performance.now() } })); observer.sample(); });
+      native = (await events(page)).filter(event => event.kind === 'TRACK_STATE').at(-1);
+      equal(native.identityCurrent, false, 'Expired native hold does not confirm retained HD preview');
+      equal(native.identityObservationAvailable, true, 'Observed native expiry remains measurable identity unavailability');
+      equal(native.retainedPreview, true, 'Expired hold may retain the old HD image without current identity');
+      await page.mouse.move(800, 400); await page.evaluate(() => observer.sample());
+      native = (await events(page)).filter(event => event.kind === 'TRACK_STATE').at(-1);
+      equal(native.nativeStatus, 'UNKNOWN', 'Pointer exit does not fabricate a detector loss while card track persists');
+      equal(native.identityObservationAvailable, false, 'Private per-track memory is unobservable after pointer exit');
       await page.evaluate(() => fixture.updateTracks([])); await page.waitForTimeout(40);
-      equal((await events(page)).filter(event => event.kind === 'TRACK_STATE').at(-1).nativeStatus, 'LOST', 'Real track loss measured');
+      equal((await events(page)).filter(event => event.kind === 'TRACK_STATE').at(-1).nativeStatus, 'LOST', 'Actual track loss remains measured');
     });
     await fixture(browser, async page => {
       await page.evaluate(() => { fixtureState.mode = 'none'; document.getElementById('opponentFeed').insertAdjacentHTML('beforeend', '<div class="fullscreen-card-preview"></div>'); });
@@ -272,7 +282,7 @@ const waitDisplay = async page => { try { await page.waitForFunction(() => fixtu
         document.body.insertAdjacentHTML('beforeend', '<div id="opaque-overlay" style="position:fixed;left:680px;top:0;width:200px;height:240px;z-index:99999;background:black"></div>');
       });
       await page.mouse.move(140, 200);
-      await page.waitForFunction(() => document.getElementById('displayCardImage').complete && document.getElementById('displayCardImage').naturalWidth > 0);
+      await page.waitForFunction(() => document.getElementById('identImage').complete && document.getElementById('identImage').naturalWidth > 0);
       await page.waitForTimeout(150);
       equal((await events(page)).filter(event => event.kind === 'DISPLAY').length, 0, 'Loaded CSS-visible image under opaque overlay is not declared displayed');
       await page.evaluate(() => document.getElementById('opaque-overlay').remove());
@@ -280,29 +290,51 @@ const waitDisplay = async page => { try { await page.waitForFunction(() => fixtu
       equal((await events(page)).filter(event => event.kind === 'DISPLAY').length, 1, 'Removing opaque overlay makes actual player image presentable');
     });
     await fixture(browser, async page => {
-      await page.evaluate(() => { document.getElementById('displayCardImage').style.pointerEvents = 'none'; });
+      await page.evaluate(() => { document.getElementById('identImage').style.pointerEvents = 'none'; });
       await page.mouse.move(140, 200); await waitDisplay(page);
       equal((await events(page)).filter(event => event.kind === 'DISPLAY').length, 1, 'Normal owning button hit remains valid when image has pointer-events:none');
     });
     await fixture(browser, async page => {
-      // Reproduce the actual unchanged future product CSS rather than merely
-      // disabling pointer events on the image: the whole floating rail is inert.
-      await page.evaluate(() => {
-        const screen = document.createElement('section'); screen.id = 'screenGame'; screen.className = 'future-table-v37 future-vision-preview-visible';
-        const rail = document.createElement('aside'); rail.className = 'tcgate-card-rail';
-        const panel = document.createElement('section'); panel.id = 'displayCardPanel'; panel.className = 'tcgate-card-inspector';
-        const button = document.getElementById('displayCardButton'); button.classList.add('tcgate-display-card');
-        panel.append(button); rail.append(panel); screen.append(document.getElementById('opponentFeed'), rail); document.body.append(screen);
-      });
-      await page.addStyleTag({ path: path.join(__dirname, 'public/future-ux-v3.7.css') });
-      await page.addStyleTag({ content: '#displayCardButton{position:static;left:auto;top:auto}' });
-      await page.mouse.move(140, 200); await waitDisplay(page);
-      equal(await page.locator('#displayCardPanel').evaluate(element => getComputedStyle(element).pointerEvents), 'none', 'Actual product CSS disables pointer events on the entire floating inspector');
-      equal((await events(page)).filter(event => event.kind === 'DISPLAY').length, 1, 'Native video hit through inert floating mirror still allows genuine display');
+      await page.evaluate(() => { fixtureState.mode = 'none'; });
+      await page.mouse.move(140, 200);
+      const firstRequest = (await events(page)).find(event => event.kind === 'REQUEST');
+      await page.evaluate(() => fixture.updateTracks([])); await page.waitForTimeout(50);
+      let output = await events(page);
+      equal(output.find(event => event.kind === 'CANCEL').consultationId, firstRequest.consultationId, 'A demand closes when actual scene becomes empty');
+      equal(output.filter(event => event.kind === 'TRACK_STATE').at(-1).nativeStatus, 'LOST', 'Empty scene records physical native A track loss');
+      await page.mouse.move(800, 400);
+      await page.evaluate(() => fixture.updateTracks([{ uid: 2, cx: 140, cy: 200, w: 120, h: 180, conf: .95, misses: 0 }]));
+      await page.mouse.move(140, 200);
+      const secondRequest = (await events(page)).filter(event => event.kind === 'REQUEST').at(-1);
+      equal(secondRequest.trackUid, 2, 'A to empty to B starts an independent native B demand');
+      equal(secondRequest.requestOrigin, 'HUMAN_POINTER', 'Actual second mouse entry provides B human demand');
+      await page.evaluate(() => fixture.resultFor({ uid: 1 }, 0)); await page.waitForTimeout(80);
+      output = await events(page);
+      equal(output.filter(event => event.kind === 'RESULT').at(-1).consultationId, firstRequest.consultationId, 'Late A after empty remains attached only to A');
+      equal(output.filter(event => event.kind === 'DISPLAY').length, 0, 'Late A image cannot qualify B after the empty interval');
+      await page.evaluate(() => fixture.resultFor({ uid: 2 }, 2)); await waitDisplay(page);
+      equal((await events(page)).find(event => event.kind === 'DISPLAY').consultationId, secondRequest.consultationId, 'Only real B result can complete B consultation');
     });
-    for (const mutation of ['build', 'index', 'qualification', 'database']) await fixture(browser, async page => {
+    await fixture(browser, async page => {
+      await page.mouse.move(140, 200); await waitDisplay(page);
+      await page.evaluate(() => {
+        window.dispatchEvent(new CustomEvent('tcg-identification-stability', { detail: { type: 'hold-expired', trackUid: 1, stableKey: 'card:' + fixture.references[0].cardId, at: performance.now() } }));
+        observer.sample(); observer.stop('OPERATOR_STOPPED');
+        fixture.resultFor({ uid: 1 }, 0);
+        observer.start(); observer.sample({ force: true });
+      });
+      const native = (await events(page)).filter(event => event.kind === 'TRACK_STATE').at(-1);
+      equal(native.identityCurrent, true, 'Resume cannot retain an expired hold superseded during observation pause');
+      equal(native.decisionFresh, null, 'Unobserved pause decision cannot manufacture fresh recognition');
+    });
+    for (const mutation of ['build', 'index', 'qualification', 'database', 'camera', 'detection', 'external', 'test-provider', 'source']) await fixture(browser, async page => {
       await page.mouse.move(140, 200); await page.waitForTimeout(70);
       await page.evaluate(mutation => {
+        if (mutation === 'camera') TCGDetectionLab.state.stream = null;
+        if (mutation === 'detection') TCGDetectionLab.state.detecting = false;
+        if (mutation === 'external') TCGDetectionLab.state.externalAttached = true;
+        if (mutation === 'test-provider') window.TCGWorkspaceLabProviderInstance = {};
+        if (mutation === 'source') { const option = document.createElement('option'); option.value='test'; document.getElementById('labSource').append(option); document.getElementById('labSource').value='test'; }
         if (mutation === 'build') fixtureState.buildSha = 'f'.repeat(40);
         if (mutation === 'index') fixtureState.snapshot.visionIndexKey = 'changed';
         if (mutation === 'qualification') fixtureState.snapshot.qualificationTracking = { active: true };

@@ -1,7 +1,7 @@
 'use strict';
-// Real local HTTP/Room/SSE/WebRTC and normal app/Vision modules. Chromium A/V,
-// controlled track/crop inputs and scalar memory events below are AUTOMATED
-// fixtures. They provide no physical qualification and never rewrite evidence.
+// Single Workspace page, unchanged engines and genuine browser mouse motion.
+// Chromium camera and controlled track/crop inputs are AUTOMATED fixtures.
+// Room, Ready and WebRTC are forbidden; no physical success is inferred.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -42,6 +42,8 @@ async function makeContext(browser, origin, pinned, entry) {
     if (local && fs.existsSync(local)) return route.fulfill({ status: 200, body: fs.readFileSync(local), contentType: 'image/webp', headers: { 'access-control-allow-origin': '*' } });
     return route.continue();
   });
+  await context.addInitScript(() => { window.__realGamePeerAttempts = 0; window.RTCPeerConnection = class { constructor() { window.__realGamePeerAttempts++; throw Error('WebRTC forbidden in solo campaign fixture'); } }; });
+  await context.route('https://raw.githubusercontent.com/**/workspace-state/**', route => route.fulfill({ json: {meta:{workspaceVersion:'3.0'},items:[],session:{}}, headers:{'access-control-allow-origin':'*'} }));
   await context.route(historicalPrefix + '**', route => {
     const relative = route.request().url().slice(historicalPrefix.length);
     if (['VISION_NOMINAL_QUALIFICATION_RECEIPT.json', 'VISION_QUALIFICATION_SAMPLE.json'].includes(relative)) return route.fulfill({ status: 200, body: execFileSync('git', ['show', historicalSha + ':' + relative], { cwd: root }), contentType: 'application/json', headers: { 'access-control-allow-origin': '*' } });
@@ -50,29 +52,18 @@ async function makeContext(browser, origin, pinned, entry) {
   const page = await context.newPage();
   page.on('pageerror', error => results.errors.push(error.message));
   page.on('request', request => results.requests.push({ path: new URL(request.url()).pathname, method: request.method() }));
-  await page.goto(origin + entry); await page.waitForFunction(() => window.TCGateSiteUi20);
+  await page.goto(origin + entry); await page.waitForFunction(() => window.TCGVisionRealGameUi && window.TCGWorkspaceVisionQualification);
   return { context, page };
 }
-async function create(page) {
-  await page.locator('#goCreate').click(); await page.locator('#playerName').fill('AUTOMATED Host'); await page.locator('#gameSelect').selectOption('cyberpunk');
-  await page.locator('#siteCreateTimer').uncheck(); await page.locator('#siteCreateGig').uncheck(); await page.locator('#setupContinue').click();
-  await page.waitForFunction(() => state.roomCode && document.querySelector('#screenLobby').classList.contains('active'));
-  return page.locator('#lobbyCode').innerText().then(value => value.trim());
-}
-async function join(page, code) {
-  await page.locator('#goJoin').click(); await page.locator('#playerName').fill('AUTOMATED Guest'); await page.locator('#roomCodeInput').fill(code); await page.locator('#setupContinue').click();
-  await page.waitForFunction(() => state.roomCode && document.querySelector('#screenLobby').classList.contains('active'));
-}
-async function media(page) {
-  await page.locator('[data-lobby-page="installation"]').click(); await page.locator('#enableMedia').click();
-  await page.waitForFunction(() => document.querySelector('#lobbyPreview').videoWidth > 0 && document.querySelector('#mediaStatus').classList.contains('ready') && !state.rtcPrewarmPending, {}, { timeout: 40000 });
-}
-async function normalReady(host, guest) {
-  for (const page of [host, guest]) await page.waitForFunction(() => { const s = window.TCGIdentificationLab?.getSnapshot(); return s?.libraryReady && s.librarySize === 229 && s.matcherWorker.ready; }, {}, { timeout: 120000 });
-  await Promise.all([media(host), media(guest)]);
-  await guest.waitForFunction(() => !document.querySelector('#startGame').disabled); await guest.locator('#startGame').click();
-  await host.waitForFunction(() => !document.querySelector('#startGame').disabled); await host.locator('#startGame').click();
-  for (const page of [host, guest]) await page.waitForFunction(() => document.querySelector('#screenGame').classList.contains('active') && document.querySelector('#remoteVideo').videoWidth > 0 && window.TCGVisionEngine?.getSnapshot()?.active && window.TCGVisionEngine?.getSnapshot()?.modelReady, {}, { timeout: 120000 });
+async function readySolo(page) {
+  await page.waitForFunction(() => !document.querySelector('#visionCameraButton').disabled);
+  await page.locator('#visionCameraButton').click();
+  await page.waitForFunction(() => document.querySelector('#remoteVideo').videoWidth > 0 && TCGDetectionLab.state.stream, {}, { timeout: 40000 });
+  await page.locator('#visionDetectButton').click();
+  await page.locator('#labInspect').click();
+  await page.waitForFunction(() => !document.querySelector('#labStart').disabled, {}, { timeout: 40000 });
+  await page.locator('#labStart').click();
+  await page.waitForFunction(() => { const s=window.TCGIdentificationLab?.getSnapshot(); return s?.libraryReady && s.librarySize === 229 && s.matcherWorker.ready && TCGDetectionLab.state.detecting; }, {}, { timeout: 120000 });
 }
 async function exportReport(page) {
   const download = page.waitForEvent('download'); await page.locator('#vrg-export').click(); const artifact = await download;
@@ -96,10 +87,10 @@ async function hover(page, inside) {
   await page.mouse.move(point.x, point.y, { steps: 4 });
 }
 async function run() {
-  const nativeEntry = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8').replace(/\r\n/g, '\n');
-  const entry = fs.readFileSync(path.join(root, 'public/vision-real-game.html'), 'utf8').replace(/\r\n/g, '\n');
-  const removed = entry.replace('  <link rel="stylesheet" href="/vision-real-game.css">\n', '').replace(/  <script src="\/(?:vision-qualification-receipt|vision-real-game-baseline|vision-real-game-campaign|vision-real-game-observer|vision-real-game-ui)\.js"><\/script>\n/g, '');
-  equal(digest(removed), digest(nativeEntry), 'Separate entry is exactly the normal product plus isolated campaign tags');
+  const entry = fs.readFileSync(path.join(root, 'public/vision-real-game.html'), 'utf8');
+  check(entry.includes('/workspace.html#vision-real-game') && !entry.includes('app.js'), 'Legacy entry redirects to the independent solo Lab');
+  const workspace = fs.readFileSync(path.join(root, 'public/workspace.html'), 'utf8');
+  check(workspace.indexOf('/vision-real-game-observer.js') < workspace.indexOf('/workspace.js'), 'Scalar worker witness loads before lazy Lab identification');
   const uiSource = fs.readFileSync(path.join(root, 'public/vision-real-game-ui.js'), 'utf8');
   check(!/beginQualificationTracking|captureCanonicalTrackCanvas|\.identifyTrack|\.reset\(|\.setContext\(|\.preload\(|\.startProductIdentification|TCGVisionEngine\s*\./.test(uiSource), 'Campaign UI cannot trigger or alter the engine');
   process.env.GIT_COMMIT_SHA = buildSha; process.env.RAILWAY_GIT_COMMIT_SHA = buildSha;
@@ -107,13 +98,16 @@ async function run() {
   try {
     browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--use-fake-device-for-media-stream=device-count=2,fps=30', '--use-fake-ui-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
     console.log('VISION_REAL_GAME_BROWSER_VERSION ' + browser.version());
-    const h = await makeContext(browser, fixture.origin, pinned, '/vision-real-game.html'), g = await makeContext(browser, fixture.origin, pinned, '/'); const host = h.page, guest = g.page;
-    step('Normal Room, Ready and WebRTC with unchanged Vision and 229 authentic assets');
-    const code = await create(host); await join(guest, code); await normalReady(host, guest);
-    check(await host.evaluate(() => state.gameActive && state.roomSnapshot.phase === 'game' && document.querySelector('#remoteVideo').srcObject instanceof MediaStream), 'Normal real Room game and received WebRTC media are active');
+    const h = await makeContext(browser, fixture.origin, pinned, '/vision-real-game.html'), host = h.page;
+    step('Single-tester Lab camera, detection and normal identification without Room or WebRTC');
+    await readySolo(host);
+    check(await host.evaluate(() => !window.state?.roomCode && document.querySelector('#remoteVideo').srcObject instanceof MediaStream), 'Native local webcam runs without a Room');
+    equal(await host.evaluate(() => window.__realGamePeerAttempts), 0, 'No RTCPeerConnection is created');
+    check(await host.evaluate(() => !window.TCGTableStateEngine), 'Table State background recognition is not installed in the Lab');
     check(await host.evaluate(() => !TCGIdentificationLab.getSnapshot().qualificationTracking?.active), 'Nominal automatic harness remains inactive');
-    equal(await guest.locator('#vrg-panel').count(), 0, 'Ordinary product entry has no campaign UI');
-    await host.locator('#vrg-open > summary').click(); await host.locator('#vrg-prepare').click();
+    check(await host.locator('#vrg-open').evaluate(e=>e.open), 'Direct link opens the Lab and complementary controls');
+    await host.locator('#vrg-prepare').click();
+
     check((await host.locator('#vrg-status').innerText()).includes('Confirmez'), 'Physical setup and printing confirmation required');
     await host.locator('#vrg-framing').check(); await host.locator('#vrg-corpus').check(); await host.locator('#vrg-provenance').selectOption('automated'); await host.locator('#vrg-prepare').click();
     await host.waitForFunction(() => document.querySelector('#vrg-cards').children.length === 10);
@@ -121,14 +115,20 @@ async function run() {
     equal(await host.locator('#vrg-cards select').count(), 10, 'Ten predeclared slots with active corpus alternatives');
     await host.locator('#vrg-prepare').click();
     await host.waitForFunction(() => window.TCGVisionRealGameUi?.getState()?.prepared || document.querySelector('#vrg-status').classList.contains('vrg-error'), {}, { timeout: 30000 });
-    check(await host.evaluate(() => TCGVisionRealGameUi.getState().prepared), 'Real normal context and historical receipt prepare the independent profile: ' + await host.locator('#vrg-status').innerText() + ' / ' + await host.locator('#vrg-nominal').innerText());
-    equal(await host.locator('#vrg-phase option').count(), 7, 'Seven phases, not a rewritten nominal matrix');
+    check(await host.evaluate(() => TCGVisionRealGameUi.getState().prepared), 'Real solo context and historical receipt prepare the independent profile: ' + await host.locator('#vrg-status').innerText() + ' / ' + await host.locator('#vrg-nominal').innerText());
+    await host.locator('#vqPrepare').click();
+    check(!await host.evaluate(()=>TCGWorkspaceVisionQualification.getState().prepared), 'Complementary campaign blocks attaching the historical automatic harness');
+    check((await host.locator('#vrg-status').innerText()).includes('deux protocoles'), 'User gets explicit separation and export/reload instruction');
+    equal(await host.locator('#vrg-phase option').count(), 7, 'Seven phases, not a rewritten nominal matrix: '+await host.locator('#vrg-status').innerText());
     check((await host.locator('#vrg-nominal').innerText()).includes('43/45'), 'Historical 43/45 is visible and separate');
     await screenshot(host, 'prepared-desktop');
     const initial = await exportReport(host); equal(initial.provenance, 'automated', 'Synthetic sessions explicitly remain automated');
+    equal(initial.profileId, 'VISION_SOLO_LAB_1_0', 'Solo campaign has an explicit independent profile');
+    equal(initial.context.scope, 'SOLO_LAB_NORMAL_HOVER', 'Export identifies the actual local Lab path');
+    equal(initial.context.capabilities.tableStateMemory, false, 'Export never suggests unavailable game Table State memory was exercised');
     equal(initial.observations.length, 0, 'Preparing does not create fake physical observations');
     check(initial.nominalBaseline?.includedInCurrentDenominators === false, 'Historical 45 trials never enter current denominators');
-    step('Real pointer motion uses normal foreground and Table State on authentic track/crop fixture');
+    step('Real pointer motion uses normal Lab foreground matching on authentic track/crop fixture');
     await host.evaluate(async () => {
       const refs = await TCGateDatabaseSource.getVisionReferences('cyberpunk', 'en');
       const ref = refs.find(r => r.cardId === 'cp-mantis-blades' && (r.printingId === 'cpp-03290e8752e5e383' || r.referencePrintingId === 'cpp-03290e8752e5e383'));
@@ -150,7 +150,6 @@ async function run() {
     await host.locator('#vrg-start').click(); await host.locator('#vrg-present').click(); await host.locator('#vrg-open > summary').click();
     await hover(host, false); const beforeHover = await host.evaluate(() => TCGIdentificationLab.getSnapshot().scheduling.visionFramesRequested); await host.waitForTimeout(600);
     equal(await host.evaluate(() => TCGIdentificationLab.getSnapshot().scheduling.visionFramesRequested), beforeHover, 'Passive observer adds no foreground recognition while pointer is outside');
-    await host.waitForFunction(() => TCGTableStateEngine.getSnapshot().entries.some(entry => entry.activeUid === 7001 && entry.identity && !entry.identitySuspended && !entry.needsReacquireVerification), {}, { timeout: 20000 });
     await hover(host, true);
     await host.waitForFunction(() => TCGIdentificationLab.getSnapshot().visibleIdentity?.accepted, {}, { timeout: 20000 });
     check(await host.evaluate(() => window.__realGameCropCalls > 0), 'Normal unchanged Vision engines consumed the authentic synthetic crop');
@@ -167,7 +166,20 @@ async function run() {
     await hover(host, true); await host.waitForTimeout(300); await hover(host, false); await host.waitForTimeout(100);
     await host.locator('#vrg-open > summary').click(); await host.locator('#vrg-end').click(); const cached = await exportReport(host); results.cases.push('cache');
     check(cached.consultations.length > foreground.consultations.length, 'Second actual hover retained as a distinct consultation');
-    check(cached.consultations.some(c => c.source === 'HOVER_CACHE' || c.source === 'PREEXISTING' || c.preexistingIdentity === true), 'Cache or preexisting identity is not called first recognition');
+    check(cached.consultations.some(c => c.source === 'HOVER_CACHE' && c.firstResultSource === 'HOVER_CACHE'), 'Real native hover-cache hit is distinguished from first recognition');
+    step('Native tracking removal is distinct from the retained HD preview');
+    await host.locator('#vrg-phase').selectOption('STABILITY');await host.locator('#vrg-job').selectOption('20');
+    await host.locator('#vrg-start').click();await host.locator('#vrg-present').click();await host.locator('#vrg-open > summary').click();
+    await hover(host,true);await host.waitForFunction(()=>TCGIdentificationLab.getSnapshot().visibleIdentity?.accepted);await host.waitForTimeout(100);
+    const imageGeometry=await host.locator('#identImage').evaluate(e=>{const r=e.getBoundingClientRect();return{complete:e.complete,width:e.naturalWidth,top:r.top,bottom:r.bottom,height:innerHeight};});
+    check(imageGeometry.complete&&imageGeometry.width>0&&imageGeometry.top>=0&&imageGeometry.bottom<=imageGeometry.height,'Actual Lab HD image remains loaded and visible next to the webcam');
+    await host.evaluate(()=>{window.__realGameSavedTrack=window.__realGameTrack;window.__realGameTrack=null;window.dispatchEvent(new CustomEvent('tcg-tracks-updated'));});
+    await host.waitForTimeout(350);await hover(host,false);await host.locator('#vrg-open > summary').click();await host.locator('#vrg-removed').click();await host.locator('#vrg-end').click();
+    const removal=await exportReport(host);results.cases.push('native-track-loss-retained-preview');
+    check(removal.events.some(e=>e.kind==='TRACK_STATE'&&e.tracked===false&&e.nativeStatus==='LOST'),'Physical track disappearance is exported as a native tracking loss');
+    check(removal.events.some(e=>e.kind==='TRACK_STATE'&&e.tracked===false&&e.identityCurrent===false),'Removed card is never confirmed from a retained inspector image');
+    await host.evaluate(()=>{window.__realGameTrack=window.__realGameSavedTrack;window.dispatchEvent(new CustomEvent('tcg-tracks-updated'));});
+    await host.locator('#vrg-phase').selectOption('RELIABILITY');await host.locator('#vrg-job').selectOption('0');
     step('Observer off/on preserves the normal foreground request and native result');
     const parity = [];
     for (const [enabled, targetUid] of [[false, 8101], [true, 8102]]) {
@@ -180,22 +192,27 @@ async function run() {
       parity.push(await host.evaluate(before => { const s = TCGIdentificationLab.getSnapshot(); return { framesRequested: s.scheduling.visionFramesRequested - before, cardId: s.identification.best.cardId, librarySize: s.librarySize, qualificationActive: Boolean(s.qualificationTracking?.active) }; }, before));
       await hover(host, false); await host.locator('#vrg-open > summary').click();
     }
-    equal(parity[1], parity[0], 'Same genuine pointer/input sequence causes the same native requests and identity with observer off/on');
+    equal(parity[1].cardId, parity[0].cardId, 'Observer off/on preserves the same native accepted identity');
+    check(parity.every(row => row.framesRequested > 0 && row.librarySize === 229 && !row.qualificationActive), 'Both parity runs use real normal foreground matching without the nominal harness');
     equal(parity[0].cardId, 'cp-mantis-blades', 'Off/on comparison uses a real normal matcher result');
     check(parity[0].framesRequested > 0, 'Off/on comparison actually exercised normal foreground matching');
     results.cases.push('observer-off-on-parity');
-    step('Scalar memory fixtures keep wrong accepted identities visible in reporting');
+    step('Wrong identity is a real matcher result on an explicitly synthetic wrong-card crop');
     await host.locator('#vrg-job').selectOption('0'); await host.locator('#vrg-start').click(); await host.locator('#vrg-present').click(); await host.locator('#vrg-open > summary').click();
-    await hover(host, true);
-    const memoryShown = await host.evaluate(() => TCGIdentificationLab.showMemoryIdentity({ name: 'Mantis Blades', image: window.__realGameReference.refId, trackUid: window.__realGameTrack.uid, tableId: 'automated-memory-A', observations: 2 }));
-    check(memoryShown, 'Normal memory presentation API accepted an authentic reference scalar fixture');
-    await host.waitForTimeout(100);
-    const wrongShown = await host.evaluate(async () => { const refs = await TCGateDatabaseSource.getVisionReferences('cyberpunk', 'en'); const other = refs.find(ref => ref.cardId === 'cp-arasaka-emergency-radioport'); return TCGIdentificationLab.showMemoryIdentity({ name: 'Arasaka Emergency Radioport', image: other.refId, trackUid: window.__realGameTrack.uid, tableId: 'automated-memory-WRONG', observations: 1 }); });
-    check(wrongShown, 'Explicitly synthetic wrong-memory presentation is exercised without changing matcher');
-    await host.waitForTimeout(150); await hover(host, false); await host.locator('#vrg-open > summary').click(); await host.locator('#vrg-end').click();
-    const wrong = await exportReport(host); results.cases.push('table-memory-and-wrong');
-    check(wrong.events.some(event => event.kind === 'RESULT' && event.source === 'TABLE_MEMORY' && event.cardId === 'cp-mantis-blades'), 'Actual product memory image key resolves to canonical identity');
-    check(wrong.consultations.some(consultation => consultation.wrongAccepted > 0 && consultation.outcome === 'WRONG'), 'A wrong accepted identity after a correct result is never hidden');
+    await host.evaluate(async () => {
+      const refs = await TCGateDatabaseSource.getVisionReferences('cyberpunk', 'en');
+      const ref = refs.find(r=>r.cardId==='cp-arasaka-emergency-radioport');
+      const image=new Image();image.crossOrigin='anonymous';image.src=ref.visionAssetUrl||ref.visionAssetPath||ref.imageUrl||ref.image;await image.decode();
+      const canvas=document.createElement('canvas');canvas.width=216;canvas.height=312;canvas.getContext('2d').drawImage(image,0,0,216,312);
+      window.__realGameTrack={...window.__realGameTrack,uid:8800};TCGDetectionLab.captureCanonicalTrackCanvas=()=>canvas;
+      window.dispatchEvent(new CustomEvent('tcg-tracks-updated'));
+    });
+    await hover(host,true);
+    await host.waitForFunction(()=>TCGIdentificationLab.getSnapshot().identification?.accepted && TCGIdentificationLab.getSnapshot().identification.best.cardId==='cp-arasaka-emergency-radioport',{}, {timeout:20000});
+    await host.waitForTimeout(300);await hover(host,false);await host.locator('#vrg-open > summary').click();await host.locator('#vrg-end').click();
+    const wrong=await exportReport(host);results.cases.push('real-matcher-wrong-card');
+    check(wrong.consultations.some(c=>c.wrongAccepted>0&&c.outcome==='WRONG'),'A genuinely accepted wrong card remains an exported error');
+    check(!wrong.events.some(e=>e.source==='TABLE_MEMORY'),'Unavailable table-memory mechanism is not fabricated in the solo Lab');
     step('Cancellation, partial export, pause and end never create a physical PASS');
     await host.locator('#vrg-start').click(); await host.locator('#vrg-present').click(); await host.locator('#vrg-open > summary').click();
     await host.evaluate(() => { window.__realGameTrack = { ...window.__realGameTrack, uid: 7002 }; TCGDetectionLab.captureCanonicalTrackCanvas = () => null; window.dispatchEvent(new CustomEvent('tcg-tracks-updated')); });
@@ -216,10 +233,10 @@ async function run() {
     await host.locator('#vrg-finish').click(); check(await host.locator('#vrg-new-segment').isDisabled(), 'A completed segment must be exported before it can be replaced'); const final = await exportReport(host);
     check(final.qualification === 'NOT_EVALUATED' || final.qualification?.status === 'NOT_EVALUATED' || final.verdict === 'NOT_EVALUATED', 'No automated physical qualification verdict');
     check(final.observations.length < 45, 'Historical 45 observations never duplicated');
-    check(!/data:image|data:video|data:audio|blob:|AUTOMATED Host|AUTOMATED Guest|roomCode|deviceId|sdp|iceCandidate|imageUrl|visionAsset|"videoFrames?"\s*:|cropData/i.test(JSON.stringify(final)), 'Export has no media, URLs, player names, device IDs, Room or WebRTC secrets');
+    check(!/data:image|data:video|data:audio|blob:|roomCode|deviceId|sdp|iceCandidate|imageUrl|visionAsset|"videoFrames?"\s*:|cropData/i.test(JSON.stringify(final)), 'Export has no media, URLs, player names, device IDs, Room or WebRTC secrets');
     check(final.incidents.some(i => i.code === 'NOTICEABLE_DELAY'), 'Controlled user discomfort annotation is preserved');
     equal(results.requests.filter(r => r.method === 'POST' && /report.*send|resend|mail/i.test(r.path)), [], 'Local export sends no report email');
-    check(await host.evaluate(() => document.querySelector('#remoteVideo').videoWidth > 0 && !document.querySelector('#remoteVideo').paused), 'Received video still plays after observer lifecycle and exports');
+    check(await host.evaluate(() => document.querySelector('#remoteVideo').videoWidth > 0 && !document.querySelector('#remoteVideo').paused), 'Local webcam still plays after observer lifecycle and exports');
     equal(await host.evaluate(() => TCGIdentificationLab.getSnapshot().librarySize), 229, 'Normal corpus remains unchanged');
     check(await host.evaluate(() => !TCGIdentificationLab.getSnapshot().qualificationTracking?.active), 'Nominal harness never armed');
     await screenshot(host, 'completed-desktop');
@@ -227,11 +244,11 @@ async function run() {
     const geometry = await host.locator('#vrg-panel').evaluate(element => { const r = element.getBoundingClientRect(); return { left: r.left, right: r.right, width: innerWidth }; });
     check(geometry.left >= 0 && geometry.right <= geometry.width, 'Campaign controls fit mobile viewport');
     check(await host.locator('#vrg-export').isVisible(), 'Local export remains accessible on mobile'); await screenshot(host, 'completed-mobile');
-    step('A new segment preserves the live Room, remote MediaStream and previous downloaded proofs');
-    await host.evaluate(() => { window.__realGamePreviousRemote = document.querySelector('#remoteVideo').srcObject; window.__realGamePreviousRoom = state.roomCode; window.__realGamePreviousPeer = state.peerId; window.__realGamePreviousIndex = TCGIdentificationLab.getSnapshot().visionIndexKey; });
+    step('A new segment preserves the local webcam and previous downloaded proofs');
+    await host.evaluate(() => { window.__realGamePreviousRemote = document.querySelector('#remoteVideo').srcObject; window.__realGamePreviousIndex = TCGIdentificationLab.getSnapshot().visionIndexKey; });
     await host.locator('#vrg-new-segment').click();
-    check(await host.evaluate(() => !TCGVisionRealGameUi.getState().prepared && document.querySelector('#remoteVideo').srcObject === window.__realGamePreviousRemote && state.roomCode === window.__realGamePreviousRoom && state.peerId === window.__realGamePreviousPeer), 'New segment changes neither normal Room/peer nor the actual received MediaStream object');
-    check(await host.evaluate(() => document.querySelector('#remoteVideo').videoWidth > 0 && !document.querySelector('#remoteVideo').paused && document.querySelector('#remoteVideo').srcObject.getVideoTracks().some(track => track.readyState === 'live')), 'The same live received video continues playing');
+    check(await host.evaluate(() => !TCGVisionRealGameUi.getState().prepared && document.querySelector('#remoteVideo').srcObject === window.__realGamePreviousRemote), 'New segment preserves the actual local webcam MediaStream object');
+    check(await host.evaluate(() => document.querySelector('#remoteVideo').videoWidth > 0 && !document.querySelector('#remoteVideo').paused && document.querySelector('#remoteVideo').srcObject.getVideoTracks().some(track => track.readyState === 'live')), 'The same live local webcam continues playing');
     equal(await host.evaluate(() => TCGIdentificationLab.getSnapshot().visionIndexKey), await host.evaluate(() => window.__realGamePreviousIndex), 'New segment preserves the loaded normal Vision index');
     check(!await host.locator('#vrg-framing').isChecked() && !await host.locator('#vrg-corpus').isChecked(), 'Installation and physical printing confirmations must be renewed');
     equal(await host.locator('#vrg-cards select').count(), 10, 'Previous predeclared selection remains available for review');
@@ -241,10 +258,12 @@ async function run() {
     await host.waitForFunction(() => TCGVisionRealGameUi.getState().prepared, {}, { timeout: 30000 });
     const newSegment = await exportReport(host); equal(newSegment.observations.length, 0, 'New segment starts with zero observations and does not copy previous trials');
     check(newSegment.clockId !== final.clockId, 'New segment owns a new monotonic clock identity');
-    check(await host.evaluate(() => document.querySelector('#remoteVideo').srcObject === window.__realGamePreviousRemote && state.roomCode === window.__realGamePreviousRoom), 'Repreparation also leaves normal live media and Room intact');
+    check(await host.evaluate(() => document.querySelector('#remoteVideo').srcObject === window.__realGamePreviousRemote), 'Repreparation also leaves the normal local webcam intact');
     results.cases.push('new-segment-without-media-interruption');
     equal(results.errors, [], 'No uncaught browser errors');
-    await h.context.close(); await g.context.close();
+    equal(await host.evaluate(() => window.__realGamePeerAttempts), 0, 'Whole campaign ran with WebRTC forbidden');
+    equal(results.requests.filter(r => /\/(?:room|rooms|signal|ready|join|create)(?:\/|$)/i.test(r.path)), [], 'No Room, join, Ready or signaling request was sent');
+    await h.context.close();
     console.log('VISION_REAL_GAME_BROWSER_PASS ' + JSON.stringify({ assertions, cases: results.cases, productSha: buildSha, historicalSha, measuredSources: results.timings, physicalQualification: 'NOT_PERFORMED', screenshots: results.screenshots }));
   } catch (error) { console.error('VISION_REAL_GAME_BROWSER_FAIL ' + phase + ': ' + error.stack); throw error; }
   finally { await browser?.close(); await fixture.close(); }

@@ -3,7 +3,7 @@
 // physical trials or converts synthetic observations into qualification results.
 const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), crypto = require('node:crypto');
 const { execFileSync, spawnSync } = require('node:child_process');
-const root = __dirname, baseSha = '6d08ad3fde309a6c38990ba82ef4e56aa2e21597';
+const root = __dirname, baseSha = '6d08ad3fde309a6c38990ba82ef4e56aa2e21597', rectificationBase = '6ff6b9a31e8cfc2ddb219ce72142c8a645dcfd99';
 const git = args => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
 function main() {
   const args = process.argv.slice(2);
@@ -17,14 +17,20 @@ function main() {
   const branch = git(['branch', '--show-current']), sha = git(['rev-parse', 'HEAD']);
   if (!branch.startsWith('feature/vision-real-game-')) throw Error('This workflow requires the isolated real-game feature branch');
   if (git(['status', '--porcelain=v1'])) throw Error('Freeze a clean commit before this validation');
-  if (git(['diff', '--name-status', baseSha, 'HEAD']).split('\n').some(line => !line.startsWith('A\t'))) throw Error('Only new files are permitted; historical files must remain unchanged');
+  if (git(['diff', '--name-status', baseSha, 'HEAD']).split('\n').some(line => !line.startsWith('A\t') && line !== 'M\tpublic/workspace.html')) throw Error('Only the Lab HTML entry may change among pre-instrumentation files');
+  git(['merge-base', '--is-ancestor', rectificationBase, 'HEAD']);
+  const rawSources = () => Object.fromEntries(git(['ls-files', '-z']).split('\0').filter(Boolean).map(file => [file, crypto.createHash('sha256').update(fs.readFileSync(path.join(root,file))).digest('hex')]));
+  const frozenSources = rawSources();
   git(['merge-base', '--is-ancestor', baseSha, 'HEAD']);
   const registry = fs.readFileSync(path.join(root, 'qualify-alpha.js'), 'utf8').match(/const suites = \[([\s\S]*?)\n\];/);
   if (!registry) throw Error('Historical suite registry is unavailable');
   const old = [...registry[1].matchAll(/\['([^']+)'(?:,\s*'([^']+)')?\]/g)].map(match => ({ file: match[1], args: match[2] ? [match[2], match[1]] : [match[1]] }));
   if (old.length !== 63) throw Error('Review a changed historical registry instead of silently skipping suites');
   const additions = ['vision-real-game-campaign-test.js', 'vision-real-game-observer-test.js', 'vision-real-game-baseline-test.js', 'vision-real-game-browser-test.js'].map(file => ({ file, args: [file] }));
-  const manifest = [...old, ...additions].map(item => ({ ...item, sha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(root, item.file))).digest('hex') }));
+  const relevant = new Set(['workspace-test.js','workspace-camera-test.js','workspace-browser-test.js','workspace-camera-browser-test.js','vision-qualification-1.0-test.js','workspace-vision-qualification-test.js','vision-qualification-neutral-test.js','vision-qualification-track-test.js','vision-qualification-stable-6c-test.js','vision-nominal-semantics-6c1-test.js','vision-nominal-qualification-receipt-test.js','vision-nominal-receipt-report-test.js','vision-6c-production-contract-test.js','workspace-vision-qualification-browser-test.js','workspace-vision-nominal-browser-test.js','workspace-vision-lab-6c-browser-test.js','workspace-vision-nominal-receipt-browser-test.js']);
+  const selected = old.filter(item => relevant.has(item.file));
+  if (selected.length !== relevant.size) throw Error('A required historical Lab suite is missing');
+  const manifest = [...selected, ...additions].map(item => ({ ...item, sha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(root, item.file))).digest('hex') }));
   const env = { ...process.env };
   for (const key of ['CLOUDFLARE_TURN_KEY_ID','CLOUDFLARE_TURN_KEY_API_TOKEN','CLOUDFLARE_TURN_API_TOKEN','RESEND_API_KEY','TCGATE_REPORT_TO_EMAIL','TCGATE_REPORT_FROM_EMAIL']) env[key] = '';
   for (const key of ['TCGATE_HYGIENE_SKIP_HTTP','REPORT_MAIL_TEST_SKIP_REMOVAL','REPORT_MAIL_BRIDGE_UNDER_TEST','PHONE_TEST_ROOT','TCGATE_PHONE_TEST_ROOT','TCGATE_UI12_SERVER','TCGATE_TEST_REPO','CANDIDATE_TEST_ROOT','TCGATE_TURN_SERVER_UNDER_TEST','REPORT_MAIL_TEST_ROOT','REPORT_MAIL_TEST_BRIDGE','TCGATE_PHONE_PAIRING_TTL_MS','PLAYER_LOCALE_TEST_ROOT','VISION_LOCALE_TEST_ROOT','TCGATE_VISION_LOCALE_TEST_ROOT','TCGATE_CYBERPUNK_QUALIFICATION_TEST_ROOT','TCGATE_VISION_QUALIFICATION_TEST_MODULE','TCGATE_VISION_QUALIFICATION_RUNTIME_SCRIPT','TCGATE_VISION_QUALIFICATION_HARNESS_SCRIPT','VISION_QUALIFICATION_TEST_ROOT','VISION_QUALIFICATION_HARNESS_PATH','VISION_QUALIFICATION_RUNTIME_PATH','WORKSPACE_VISION_QUALIFICATION_TEST_ROOT','WORKSPACE_VISION_QUALIFICATION_UI_STAGE','WORKSPACE_VISION_QUALIFICATION_SHARED_STAGE','TCGATE_QUALIFICATION_WORKSPACE_TEST_ROOT','TCGATE_VISION_QUALIFICATION_REPORT_MODULE','TCGATE_NOMINAL_6B_TEST_ROOT','VISION_QUALIFICATION_DIAGNOSTICS_PATH','TCGATE_6C1_TEST_ROOT','TCGATE_6C_TEST_ROOT','TCGATE_6C_PRODUCTION_ROOT','TCGATE_6C_CORPUS_PATH','TCGATE_6C_SAMPLE_PATH','TCGATE_6C_BASELINE_REPO','TCGATE_6C_ENGINE_TARGET_ROOT','TCGATE_6C_CANONICAL_TARGET_ROOT']) delete env[key];
@@ -36,8 +42,8 @@ function main() {
   env.CANDIDATE_GIG_AUDIT_PATH = path.join(output, 'gig-audit.json');
   env.VISION_REAL_GAME_ARTIFACT_DIR = path.join(output, 'real-game'); fs.mkdirSync(env.VISION_REAL_GAME_ARTIFACT_DIR);
   env.NODE_OPTIONS = '--require="' + path.join(root, 'qualification-assert-count.js').split(path.sep).join('/') + '"';
-  const receipt = { scope: 'REAL_GAME_INSTRUMENTATION_AUTOMATED_REGRESSION', provenance: 'AUTOMATED', branch, sha,
-    baseSha, sourceTree: git(['rev-parse', 'HEAD^{tree}']), startedAt: new Date().toISOString(), node: process.version,
+  const receipt = { scope: 'SOLO_LAB_INSTRUMENTATION_AUTOMATED_REGRESSION', provenance: 'AUTOMATED', branch, sha,
+    baseSha, rectificationBase, historicalRegistryCount:old.length, historicalSuitesSelected:selected.length, frozenRawSourceCount:Object.keys(frozenSources).length, frozenRawSourceDigest:crypto.createHash('sha256').update(JSON.stringify(frozenSources)).digest('hex'), sourceTree: git(['rev-parse', 'HEAD^{tree}']), startedAt: new Date().toISOString(), node: process.version,
     manifest, suites: [], checks: [], status: 'RUNNING', physicalQualification: 'NOT_PERFORMED',
     limits: ['Browser videos, pointers and recognition outcomes are synthetic; no physical PASS.', 'No live TURN relay or real email delivery is certified.', 'No deployment, push or branch promotion is performed.'] };
   const save = () => fs.writeFileSync(receiptPath, JSON.stringify(receipt, null, 2) + '\n');
@@ -57,7 +63,7 @@ function main() {
     for (const suite of manifest) run(suite.file, process.execPath, suite.args, true);
     run('JavaScript syntax (check.js)', process.execPath, ['check.js'], false);
     run('git diff --check', 'git', ['diff', '--check', baseSha, 'HEAD'], false);
-    if (git(['rev-parse', 'HEAD']) !== sha || git(['status', '--porcelain=v1'])) throw Error('Sources changed during validation');
+    if (git(['rev-parse', 'HEAD']) !== sha || git(['status', '--porcelain=v1']) || JSON.stringify(rawSources()) !== JSON.stringify(frozenSources)) throw Error('Sources or checkout bytes changed during validation');
     receipt.status = 'PASS';
   } catch (error) { receipt.status = 'FAIL'; receipt.error = error.message; process.exitCode = 1; }
   finally { receipt.finishedAt = new Date().toISOString(); receipt.nodeAssertionCalls = receipt.suites.reduce((sum, item) => sum + item.nodeAssertionCalls, 0); save(); console.log('REAL_GAME_VALIDATION_' + receipt.status + ' | ' + receipt.suites.filter(item => item.exit === 0).length + '/' + manifest.length + ' | ' + receipt.nodeAssertionCalls + ' Node assert calls\nRECEIPT ' + receiptPath); }

@@ -6,6 +6,7 @@
 })(typeof window !== 'undefined' ? window : globalThis, function realGameObserverFactory(initialWindow) {
   'use strict';
   const DATABASE_SHA = '56402636a77af9c8b5dc4e3b61c509a185f3c834';
+  const SCOPE = 'SOLO_LAB_NORMAL_HOVER';
   const MANIFEST = 'https://raw.githubusercontent.com/maximelaburthe-commits/tcgate_db_cyberpunk/' + DATABASE_SHA + '/manifest.json';
   const finite = value => typeof value === 'number' && Number.isFinite(value);
   const id = value => typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9:_.-]{0,159}$/.test(value) ? value : null;
@@ -53,13 +54,21 @@
     return typeof w.TCGVisionNominalQualificationReceipt?.digest === 'function' ?
       w.TCGVisionNominalQualificationReceipt.digest(w.TCGVisionNominalQualificationReceipt.normalizedReferences(refs)) : null;
   }
+  function localCameraRunning(lab) {
+    return lab?.state?.detecting === true && lab.state.externalAttached !== true &&
+      Array.isArray(safeGet(() => lab.state.stream.getVideoTracks())) &&
+      safeGet(() => lab.state.stream.getVideoTracks(), []).some(track => track.readyState === 'live');
+  }
   function inspectContext(w) {
     const snapshot = safeGet(() => w.TCGIdentificationLab.getSnapshot());
     const descriptor = safeGet(() => w.TCGateGameDatabases.get('cyberpunk'));
-    const lab = w.TCGDetectionLab;
+    const lab = w.TCGDetectionLab, doc = w.document;
     if (!snapshot || !lab || w.TCGWorkspaceLabProviderInstance ||
-        lab.els?.videoStage !== w.document.getElementById('opponentFeed') ||
-        lab.els?.video !== w.document.getElementById('remoteVideo')) throw Error('NORMAL_OPPONENT_STREAM_REQUIRED');
+        !doc.getElementById('labStart') || !doc.getElementById('visionCameraButton') ||
+        doc.getElementById('labSource')?.value !== 'production' ||
+        lab.els?.videoStage !== doc.getElementById('opponentFeed') ||
+        lab.els?.video !== doc.getElementById('remoteVideo')) throw Error('SOLO_LAB_LOCAL_CAMERA_REQUIRED');
+    if (!localCameraRunning(lab)) throw Error('SOLO_LAB_CAMERA_AND_DETECTION_REQUIRED');
     if (descriptor?.manifestUrl !== MANIFEST) throw Error('DATABASE_CONTEXT_CHANGED');
     if (snapshot.gameId !== 'cyberpunk' || snapshot.playerLocale !== 'en' ||
         snapshot.visionReferenceCount !== 229 || snapshot.librarySize !== 229 ||
@@ -67,7 +76,7 @@
         snapshot.visionLocales?.length !== 1 || snapshot.visionLocales[0] !== 'en' ||
         snapshot.libraryIntegrity?.degraded !== false || snapshot.enabled !== true ||
         snapshot.qualificationTracking?.active === true) throw Error('NORMAL_EN_229_CONTEXT_REQUIRED');
-    return { snapshot, signature: JSON.stringify([snapshot.gameId, snapshot.playerLocale, snapshot.visionIndexKey,
+    return { snapshot, signature: JSON.stringify([SCOPE, snapshot.gameId, snapshot.playerLocale, snapshot.visionIndexKey,
       snapshot.librarySize, descriptor.manifestUrl, snapshot.libraryIntegrity?.sourceRef,
       safeGet(() => w.TCGTableStateBridge.getSnapshot())?.captureCount ?? null]) };
   }
@@ -94,7 +103,8 @@
     if (inspectContext(w).signature !== first.signature) throw Error('CONTEXT_CHANGED_DURING_PREPARATION');
     const cards = [...new Map(refs.map(ref => [ref.cardId, { cardId: ref.cardId, id: ref.cardId, name: ref.name }])).values()];
     return { productSha: options.productSha.toLowerCase(), buildSha: options.productSha.toLowerCase(), databaseSha: DATABASE_SHA,
-      gameId: 'cyberpunk', locale: 'en', referenceCount: 229, scope: 'opponent-stream-only', references: refs, cards,
+      gameId: 'cyberpunk', locale: 'en', referenceCount: 229, scope: SCOPE, identificationPath: 'NORMAL_HOVER', cameraSource: 'LOCAL_CAMERA',
+      capabilities: { localCamera: true, normalHover: true, tableStateMemory: Boolean(w.TCGTableStateEngine), identityMemory: 'NATIVE_TEMPORAL_HOLD_EVENTS', backgroundRecognitionAdded: false }, references: refs, cards,
       runtimeSignature: first.signature, referencesSha256 };
   }
   function create(options = {}) {
@@ -111,15 +121,16 @@
     if (!clockId) throw Error('A shared monotonic clockId is required');
     const now = () => w.performance.now();
     const lab = w.TCGDetectionLab, stage = lab?.els?.videoStage;
-    const displayImages = ['displayCardImage', 'fullscreenIdentImage'].map(name => w.document.getElementById(name)).filter(Boolean);
-    const displayContainers = ['displayCardButton', 'fullscreenCardPreview'].map(name => w.document.getElementById(name)).filter(Boolean);
-    if (!stage || !displayImages.length || !displayContainers.length) throw Error('Normal player hover and visible inspector DOM required');
+    const displayImages = [w.document.getElementById('identImage')].filter(Boolean);
+    const displayContainers = [w.document.getElementById('identResult')].filter(Boolean);
+    if (!stage || !displayImages.length || !displayContainers.length) throw Error('Solo Lab normal hover and visible HD inspector DOM required');
     let running = false, disposed = false, signature = null, current = null, nextRequest = 1, pointer = null;
     let heartbeat = null, queued = null, frame = null, frameVerify = null, lastPerformanceAt = null, previousObservationAt = null, wasHidden = false;
     let lastTrackHeartbeatAt = null;
     let candidate = null, eventCount = 0, errors = 0, lastVideo = null, mutationObserver = null;
-    const removers = [], lastTrack = new Map(), lastNative = new Map(), requestsByUid = new Map();
+    const removers = [], lastTrack = new Map(), lastNative = new Map(), requestsByUid = new Map(), nativeTemporal = new Map();
     const diagnostics = { started: false, stoppedReason: null, emitted: 0, contextFailures: 0, maxTracks: 64, heartbeatMs: 250,
+      scope: SCOPE, tableStateMemory: Boolean(w.TCGTableStateEngine), identityMemory: 'NATIVE_TEMPORAL_HOLD_EVENTS',
       requestOrigins: { HUMAN_POINTER: 0, STATIONARY_POINTER: 0 }, detached: false };
     function emit(kind, fields = {}) {
       if (!running) return;
@@ -189,8 +200,8 @@
       if (!identity?.accepted || !matchingUid(uid(identity.trackUid), requestedUid) || !resolved ||
           (ref && (ref.cardId !== resolved.cardId || (definitivePrinting(ref) && ref.printingId !== resolved.printingId))) ||
           typeof identity.imageUrl !== 'string' || w.document.hidden) return false;
-      // identImage is a technical legacy control hidden in the normal product.
-      // Only the real sidebar/fullscreen player mirrors establish display.
+      // The Lab's native HD inspector is the real tester-visible result.
+      // No player mirror or hidden technical control can fabricate display.
       return displayImages.some(image => {
         if (!image.complete || image.naturalWidth <= 0 || image.currentSrc !== identity.imageUrl || !image.getClientRects().length) return false;
         for (let element = image; element; element = element.parentElement) {
@@ -207,14 +218,7 @@
         const y = (Math.max(0, rect.top) + Math.min(w.innerHeight, rect.bottom)) / 2;
         const top = w.document.elementsFromPoint(x, y)[0];
         if (top && (top === image || image.contains(top) || top.contains(image))) return true;
-        // In the unchanged normal product, the floating inspector and its
-        // ancestors intentionally use pointer-events:none. Hit testing therefore
-        // sees the known opponent-video underlay through this visible mirror.
-        // Accept that specific native underlay; campaign panels, dialogs and
-        // unrelated overlays remain blockers. This is a conservative UI check,
-        // not a claim to measure every painted pixel or translucent overlay.
-        return w.getComputedStyle(image).pointerEvents === 'none' &&
-          [lab.els.video, lab.els.overlay, stage].includes(top);
+        return false;
       });
     }
     function cancel(reason) {
@@ -297,6 +301,8 @@
       const oldRequest = requestsByUid.get(trackUid);
       const consultationId = same ? current.id : oldRequest && finite(at) && at >= oldRequest.atMs ? oldRequest.id : null;
       const nativeSource = memory ? 'TABLE_MEMORY' : source(detail);
+      // A new native rendered decision supersedes an earlier grace hold.
+      if (trackUid !== null) nativeTemporal.delete(trackUid);
       emit('RESULT', { consultationId, trackUid, cardId: ref?.cardId || null, printingId: ref?.printingId || null,
         accepted, definitivePrinting: definitivePrinting(ref), source: nativeSource, decisionFresh: nativeSource === 'NEW_ANALYSIS',
         reason: accepted ? null : id(detail.reason) || 'UNSPECIFIED_NATIVE_REJECTION',
@@ -308,6 +314,17 @@
       }
       queueSample();
     }
+    function stabilityEvent(event) {
+      if (!running || !checkContext() || !observeContinuity()) return;
+      const detail = event.detail || {}, trackUid = uid(detail.trackUid);
+      if (trackUid === null || !['stable-established', 'stable-held', 'switch-pending', 'switch-confirmed', 'hold-expired', 'switch-expired'].includes(detail.type)) return;
+      const cardId = typeof detail.stableKey === 'string' && detail.stableKey.startsWith('card:') ? id(detail.stableKey.slice(5)) : null;
+      if (!cardId || !refs.some(ref => ref.cardId === cardId)) return;
+      nativeTemporal.delete(trackUid);
+      nativeTemporal.set(trackUid, { type: detail.type, cardId, atMs: finite(detail.at) ? detail.at : null });
+      if (nativeTemporal.size > 64) nativeTemporal.delete(nativeTemporal.keys().next().value);
+      queueSample();
+    }
     function sampleTracks(snapshot, table, active, force) {
       const activeUids = new Set(active.map(track => uid(track.uid)).filter(value => value !== null));
       const keys = new Set([...lastTrack.keys(), ...activeUids]);
@@ -317,23 +334,30 @@
         const suspended = entry?.identitySuspended === true || entry?.needsReacquireVerification === true;
         const native = entry?.identity && !suspended && entry.state === 'STABLE_KNOWN' && track ? entry.identity : null;
         const ref = resolve(native), observedAt = finite(native?.establishedAt) ? native.establishedAt : null;
-        // Foreground decisions are current only for their native hovered track.
-        const fg = snapshot.identification?.accepted && snapshot.hoveredTrack?.uid === trackUid ? resolve(snapshot.identification.best) : null;
+        const hovering = snapshot.hoveredTrack?.uid === trackUid;
+        const temporal = nativeTemporal.get(trackUid);
+        const expired = temporal && ['hold-expired', 'switch-expired'].includes(temporal.type);
+        // Native grace memory is not a fresh matcher result. After pointer exit
+        // the private per-track memory is unobservable: report unknown time,
+        // never a proven loss and never confirmation from the retained image.
+        const fg = hovering && snapshot.identification?.accepted && !expired ? resolve(snapshot.identification.best) : null;
+        const memoryHold = Boolean(fg && temporal && ['stable-held', 'switch-pending'].includes(temporal.type) && temporal.cardId === fg.cardId);
         const identity = ref || (!suspended && track ? fg : null);
+        const identityObservationAvailable = !track || Boolean(entry) || hovering;
         const status = !track ? 'LOST' : suspended ? 'SUSPENDED' : identity ? 'ACTIVE' : 'UNKNOWN';
         const nativeValue = { trackUid, detected: Boolean(track && (track.misses || 0) === 0), tracked: Boolean(track),
-          nativeStatus: status, identityCurrent: Boolean(identity), cardId: identity?.cardId || null,
-          printingId: identity?.printingId || null, definitivePrinting: definitivePrinting(identity), source: ref ? 'TABLE_MEMORY' : fg ? source(snapshot.visibleIdentity) : 'UNKNOWN',
-          nativeIdentityAtMs: observedAt, accepted: Boolean(identity), decisionFresh: null, retainedPreview: Boolean(snapshot.visibleIdentity?.accepted &&
+          nativeStatus: status, identityObservationAvailable, identityCurrent: Boolean(identity), cardId: identity?.cardId || null,
+          printingId: identity?.printingId || null, definitivePrinting: definitivePrinting(identity),
+          source: ref ? 'TABLE_MEMORY' : memoryHold ? 'IDENTITY_MEMORY' : fg ? source(snapshot.visibleIdentity) : 'UNKNOWN',
+          nativeIdentityAtMs: observedAt, accepted: Boolean(identity),
+          decisionFresh: memoryHold ? false : null, retainedPreview: Boolean(snapshot.visibleIdentity?.accepted &&
             snapshot.visibleIdentity.trackUid === trackUid && (!track || !identity)),
           observationSource: 'NATIVE_SNAPSHOT', misses: track ? Number(track.misses || 0) : null };
         const key = JSON.stringify(nativeValue);
-        // Native events may be frequent. Store only changes plus 250 ms heartbeat,
-        // without copying candidates, observations, images or video into a log.
         if (lastTrack.get(trackUid) !== key || (track && lastNative.get(trackUid) !== observedAt) || force) {
           emit('TRACK_STATE', nativeValue); lastTrack.set(trackUid, key); lastNative.set(trackUid, observedAt);
         }
-        if (!track) { lastTrack.delete(trackUid); lastNative.delete(trackUid); }
+        if (!track) { lastTrack.delete(trackUid); lastNative.delete(trackUid); nativeTemporal.delete(trackUid); }
       }
     }
     function observeContinuity() {
@@ -342,7 +366,7 @@
       if ((previousObservationAt !== null && observationAt - previousObservationAt > 1000) || hidden !== wasHidden) {
         emit('OBSERVATION_GAP', { reason: hidden || wasHidden ? 'DOCUMENT_HIDDEN' : 'CALLBACK_GAP',
           durationMs: previousObservationAt === null ? null : observationAt - previousObservationAt, previousAtMs: previousObservationAt });
-        lastTrack.clear(); lastNative.clear();
+        lastTrack.clear(); lastNative.clear(); nativeTemporal.clear();
       }
       previousObservationAt = observationAt; wasHidden = hidden;
       return !hidden;
@@ -381,10 +405,13 @@
     function start() {
       if (disposed) throw Error('Observer disposed');
       if (running) return getDiagnostics();
+      // Native temporal events can occur while observation is paused. Their old
+      // states must never override the current public snapshot on resumption.
+      nativeTemporal.clear(); lastTrack.clear(); lastNative.clear();
       signature = inspectContext(w).signature;
       if (context.runtimeSignature && signature !== context.runtimeSignature) throw Error('Prepared runtime context changed');
       const detection = safeGet(() => w.TCGVisionEngine.getSnapshot(), {});
-      if (detection.active !== true || detection.modelReady !== true || !lab.els.video.videoWidth) throw Error('Normal remote camera-fed Vision must already be active');
+      if (!localCameraRunning(lab) || detection.modelReady !== true || !lab.els.video.videoWidth) throw Error('Solo local camera-fed Vision must already be active');
       running = true; diagnostics.started = true;
       listen(stage, 'pointermove', pointerMove, true);
       listen(stage, 'pointerleave', () => { pointer = null; cancel('POINTER_LEFT_VIDEO'); queueSample(); }, true);
@@ -393,7 +420,8 @@
       listen(w, 'tcg-tracks-updated', stationaryRetarget, true);
       listen(w, 'tcg-identification-result', event => nativeResult(event));
       listen(w, 'tcg-identification-visible', event => nativeResult(event, true));
-      for (const name of ['tcg-table-state-updated', 'tcg-identification-stability', 'tcg-identification-visible-cleared']) listen(w, name, queueSample);
+      listen(w, 'tcg-identification-stability', stabilityEvent);
+      for (const name of ['tcg-table-state-updated', 'tcg-identification-visible-cleared']) listen(w, name, queueSample);
       for (const name of ['tcg-identification-context', 'tcg-identification-library', 'tcg-table-reference-library']) listen(w, name, () => checkContext());
       for (const name of ['loadeddata', 'waiting', 'stalled', 'playing', 'pause', 'emptied']) listen(lab.els.video, name, queueSample);
       listen(w.document, 'visibilitychange', queueSample);
@@ -422,5 +450,5 @@
     function dispose() { stop('OBSERVER_DISPOSED'); disposed = true; diagnostics.detached = true; return getDiagnostics(); }
     return Object.freeze({ start, stop, dispose, getDiagnostics, sample });
   }
-  return Object.freeze({ create, readContext, databaseSha: DATABASE_SHA, version: '1.0' });
+  return Object.freeze({ create, readContext, databaseSha: DATABASE_SHA, scope: SCOPE, version: '1.1' });
 });

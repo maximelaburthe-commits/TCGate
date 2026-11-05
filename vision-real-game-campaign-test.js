@@ -12,14 +12,14 @@ const ok=(value,why)=>{assertions++;assert.ok(value,why);};
 const throws=(action,expected)=>{assertions++;assert.throws(action,expected);};
 const copy=value=>JSON.parse(JSON.stringify(value));
 const jobs=api.planJobs(profile), A=jobs[0].expectedCardId, B=jobs[1].expectedCardId;
-const context={productSha:'a'.repeat(40),databaseSha:'b'.repeat(40),gameId:'cyberpunk',locale:'en',referenceCount:229,referencesSha256:'c'.repeat(64)};
+const context={productSha:'a'.repeat(40),databaseSha:'b'.repeat(40),gameId:'cyberpunk',locale:'en',referenceCount:229,referencesSha256:'c'.repeat(64),scope:'SOLO_LAB_NORMAL_HOVER',identificationPath:'NORMAL_HOVER',capabilities:{tableStateMemory:false,identityMemory:'NATIVE_TEMPORAL_HOLD_EVENTS',localCamera:true,normalHover:true}};
 function session(extra={}){return api.createSession({profile,context,provenance:'automated',clockId:'clock-test',now:()=>0,...extra});}
 function event(s,kind,atMs,extra={}){return s.observe({kind,atMs,clockId:'clock-test',...extra});}
 function request(s,n,atMs=10,trackUid=1,extra={}){return event(s,'REQUEST',atMs,{consultationId:n,trackUid,requestOrigin:'HUMAN_POINTER',genuineHover:true,...extra});}
 function result(s,n,atMs,cardId=A,extra={}){return event(s,'RESULT',atMs,{consultationId:n,trackUid:1,cardId,accepted:true,identityCurrent:true,tracked:true,nativeStatus:'ACTIVE',decisionFresh:true,source:'NEW_ANALYSIS',...extra});}
 function display(s,n,atMs,cardId=A,extra={}){return event(s,'DISPLAY',atMs,{consultationId:n,trackUid:1,cardId,accepted:true,identityCurrent:true,displayConfirmed:true,decisionFresh:true,source:'NEW_ANALYSIS',...extra});}
 function finished(s,at=10010){s.endObservation('COMPLETED',at);return s.exportReport();}
-eq(profile.id,'VISION_REAL_GAME_1_0');eq(jobs.length,98);eq(new Set(jobs.map(job=>job.id)).size,98);
+eq(profile.id,'VISION_SOLO_LAB_1_0');eq(profile.scope,'SOLO_LAB_NORMAL_HOVER');eq(profile.environment.operatorCount,1);eq(profile.environment.webrtcRequired,false);eq(profile.environment.roomRequired,false);eq(profile.environment.readyRequired,false);eq(jobs.length,98);eq(new Set(jobs.map(job=>job.id)).size,98);
 for(const [phase,count]of Object.entries({RELIABILITY:20,STABILITY:8,TRANSITION:16,ROBUSTNESS:12,NEGATIVE:5,LATENCY:36,FREE_PLAY:1}))eq(jobs.filter(job=>job.phase===phase).length,count,phase);
 eq(jobs.filter(job=>job.phase==='LATENCY' && job.consultationOrdinal===1).length,18);
 eq(jobs.filter(job=>job.phase==='LATENCY' && job.consultationOrdinal===2).length,18);
@@ -40,7 +40,7 @@ throws(()=>api.planJobs(profile,[selection[0]]),/exactly ten/);throws(()=>api.pl
 {
  const s=session();s.startObservation(jobs[0],0);request(s,'q1');result(s,'q1',20,A,{printingId:'other-printing',definitivePrinting:true});display(s,'q1',25,A,{printingId:'other-printing',definitivePrinting:true});const r=finished(s);eq(r.consultations[0].outcome,'WRONG');ok(r.consultations[0].wrongPrintingAccepted>0);eq(r.observations[0].outcome,'WRONG');
 }
-for(const source of ['HOVER_CACHE','TABLE_MEMORY','PREEXISTING','UNKNOWN']){
+for(const source of ['HOVER_CACHE','IDENTITY_MEMORY','TABLE_MEMORY','PREEXISTING','UNKNOWN']){
  const s=session();s.startObservation(jobs[0],0);request(s,'q1',10,1,{preexisting:true});result(s,'q1',20,A,{source,preexisting:true,decisionFresh:false});display(s,'q1',30,A,{source});const r=finished(s);eq(r.consultations[0].source,source);eq(r.consultations[0].firstRecognitionAtMs,null);eq(r.consultations[0].outcome,'CORRECT');eq(r.consultations[0].responseMs,20);
 }
 {
@@ -167,4 +167,22 @@ eq(api.stats([]),{n:0,minMs:null,medianMs:null,maxMs:null,p95Ms:null});eq(api.st
 {
  const sandbox={globalThis:{}};vm.createContext(sandbox);vm.runInContext(fs.readFileSync(path.join(__dirname,'public/vision-real-game-campaign.js'),'utf8'),sandbox);ok(sandbox.globalThis.TCGVisionRealGameCampaign);eq(JSON.parse(JSON.stringify(sandbox.globalThis.TCGVisionRealGameCampaign.planJobs(profile))),jobs,'Browser and Node pure planners agree');
 }
+
+// Solo Lab observes native holds, not the retained HD after pointer departure.
+{
+ const s=session({context:{...context,scope:'SOLO_LAB_NORMAL_HOVER',identificationPath:'NORMAL_HOVER',capabilities:{tableStateMemory:false,identityMemory:'NATIVE_TEMPORAL_HOLD_EVENTS',localCamera:true,normalHover:true}}});s.startObservation(jobs[0],0);s.markPresence(true,0);request(s,'solo',0);event(s,'TRACK_STATE',0,{trackUid:1,cardId:A,tracked:true,identityCurrent:true,identityObservationAvailable:true,nativeStatus:'ACTIVE',source:'IDENTITY_MEMORY',decisionFresh:false});event(s,'TRACK_STATE',1000,{trackUid:1,tracked:true,identityCurrent:false,identityObservationAvailable:false,nativeStatus:'UNKNOWN',retainedPreview:true});event(s,'TRACK_STATE',3000,{trackUid:1,tracked:true,identityCurrent:false,identityObservationAvailable:true,nativeStatus:'UNKNOWN'});const r=finished(s,4000);eq(r.metrics.stability.correctNativeMs,1000);eq(r.metrics.stability.unknownIdentityObservationMs,2000);eq(r.metrics.stability.identityUnavailableMs,1000);eq(r.metrics.stability.admissibleNativeMs,2000);eq(r.metrics.stability.nativeIdentityRetentionRate,50);eq(r.context.scope,'SOLO_LAB_NORMAL_HOVER');eq(r.context.capabilities.tableStateMemory,false);eq(r.events.find(e=>e.source==='IDENTITY_MEMORY').decisionFresh,false);eq(r.consultations[0].firstRecognitionAtMs,null);
+}
+{const legacy={...profile,id:'VISION_REAL_GAME_1_0',scope:'NORMAL_OPPONENT_STREAM_HUMAN_CONSULTATIONS'};eq(api.planJobs(legacy).length,98,'Previous profile vectors remain readable without reclassifying historical exports');}
+
+{
+ const s=session({provenance:'physical'});s.startObservation(jobs.find(j=>j.phase==='STABILITY'),0);s.markPresence(true,0);
+ event(s,'TRACK_STATE',0,{trackUid:1,tracked:true,identityObservationAvailable:true,identityCurrent:false});
+ event(s,'TRACK_STATE',3000,{trackUid:1,tracked:true,identityObservationAvailable:true,identityCurrent:true,cardId:A,nativeStatus:'ACTIVE'});
+ event(s,'TRACK_STATE',5000,{trackUid:1,tracked:true,identityObservationAvailable:true,identityCurrent:false});
+ const r=finished(s,6000);eq(r.evidence,'OPERATOR_DECLARED_SOLO_LAB_REAL_CARDS');eq(r.metrics.stability.acquisitionIdentityUnavailableMs,3000);eq(r.metrics.stability.postAcquisitionIdentityLossMs,1000);eq(r.metrics.stability.identityUnavailableMs,4000);eq(r.metrics.stability.maximumIdentityLossMs,1000,'First acquisition wait is not a post-acquisition loss');eq(r.metrics.stability.postAcquisitionAdmissibleNativeMs,3000);ok(Math.abs(r.metrics.stability.postAcquisitionNativeIdentityRetentionRate-2000/3000*100)<1e-9);
+}
+{
+ const s=session();s.startObservation(jobs[0],0);request(s,'r',1);event(s,'CANCEL',2,{consultationId:'r',reason:'POINTER_LEFT_VIDEO'});event(s,'TIMEOUT',3,{reason:'NO_DISPLAY_WITHIN_OBSERVATION_WINDOW'});event(s,'RESULT',4,{reason:'glare-high'});event(s,'RESULT',5,{reason:'temporal-unstable'});event(s,'RESULT',6,{reason:'private arbitrary error'});const r=finished(s,10);eq(r.events.find(e=>e.kind==='CANCEL').reason,'POINTER_LEFT');eq(r.events.find(e=>e.kind==='TIMEOUT').reason,'TIMEOUT');eq(r.events.find(e=>e.atMs===4).reason,'QUALITY_REJECTED');eq(r.events.find(e=>e.atMs===5).reason,'TEMPORAL_STABILITY');ok(!JSON.stringify(r).includes('private arbitrary'));
+}
+
 console.log('PASS vision-real-game-campaign: '+assertions+' assertions (automated scalar vectors, no physical qualification)');
