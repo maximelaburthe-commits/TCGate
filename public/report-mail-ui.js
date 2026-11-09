@@ -11,6 +11,11 @@
   let bypassNextReportClick = false;
   let activeReportButton = null;
   let busy = false;
+  let activeRoomCode = '';
+
+  function notify(type, detail = {}) {
+    window.dispatchEvent(new CustomEvent(type, { detail }));
+  }
 
   const modal = document.getElementById('reportOverlay');
   if (!modal) return;
@@ -18,8 +23,17 @@
   const sendButton = modal.querySelector('#sendReport');
   const closeButtons = [modal.querySelector('#closeReport')];
   const idleSendLabel = sendButton.textContent;
+  const status = document.createElement('p');
+  status.id = 'reportMailStatus';
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-live', 'polite');
+  status.hidden = true;
+  sendButton.closest('.flow-actions').before(status);
 
   function setStatus(message = '', kind = '') {
+    status.textContent = message;
+    status.hidden = !message;
+    status.dataset.status = kind;
     sendButton.title = message;
     sendButton.dataset.status = kind;
     if (kind === 'working') sendButton.textContent = message;
@@ -28,6 +42,7 @@
 
   function openModal(sourceButton) {
     activeReportButton = sourceButton;
+    activeRoomCode = currentRoomCode();
     note.value = '';
     setStatus('');
     document.getElementById('moreMenu')?.classList.add('hidden');
@@ -40,6 +55,7 @@
     if (busy) return;
     modal.classList.remove('show');
     activeReportButton = null;
+    notify('tcgate-report-closed', { roomCode: activeRoomCode, sent: false });
   }
 
   reportButtons.forEach(button => {
@@ -180,6 +196,7 @@
       }
 
       setStatus('Rapport envoye ✓', 'success');
+      notify('tcgate-report-sent', { roomCode: activeRoomCode });
       setTimeout(() => {
         busy = false;
         sendButton.disabled = false;
@@ -187,6 +204,7 @@
         modal.classList.remove('show');
         sendButton.textContent = idleSendLabel;
         activeReportButton = null;
+        notify('tcgate-report-closed', { roomCode: activeRoomCode, sent: true });
       }, 1100);
     } catch (err) {
       setStatus(err?.message || 'Impossible d’envoyer le rapport.', 'error');

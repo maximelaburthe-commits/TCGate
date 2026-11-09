@@ -246,6 +246,6 @@ async function responsiveLobby(page, role) {
       check(noGameSignals.every(signal => signal.type !== 'gig-state'), 'Sans jeu emits no Gig state');
     } finally { await Promise.all([noHostContext.close(), noGuestContext.close()]); }
     equal(observations.errors, [], 'No uncaught browser errors'); equal(fixture.requests.length, 0, 'UI qualification sends no report email');
-    console.log('SITE_UI_2_0_BROWSER_OK ' + JSON.stringify({ assertions, viewports: viewports.map(viewport => viewport.width + 'x' + viewport.height), browser: browser.version(), screenshots, realRoomSseWebRtc: true, syntheticCameraAudio: true, physicalDevicesQualified: false, playerLocale: 'PERSONAL (JALON 3)', visionLocale: 'NOT IMPLEMENTED', elapsedSeconds: Math.round((Date.now() - started) / 1000) }));
+    console.log('SITE_UI_2_0_BROWSER_OK ' + JSON.stringify({ assertions, viewports: viewports.map(viewport => viewport.width + 'x' + viewport.height), browser: browser.version(), screenshots, realRoomSseWebRtc: true, syntheticCameraAudio: true, physicalDevicesQualified: false, playerLocale: 'PERSONAL (JALON 3)', visionLocale: 'PERSONAL CORPUS (JALON 4)', elapsedSeconds: Math.round((Date.now() - started) / 1000) }));
   } finally { await browser?.close(); await fixture.close(); }
 })().catch(error => { console.error('SITE_UI_2_0_BROWSER_FAILURE phase=' + phase + '\n' + error.stack); process.exitCode = 1; });

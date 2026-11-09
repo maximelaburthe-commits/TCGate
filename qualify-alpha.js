@@ -28,6 +28,11 @@ const suites = [
   ['report-email-browser-test.js'], ['phone-consolidation-1.2c-browser-test.js'],
   ['workspace-browser-test.js'], ['workspace-camera-browser-test.js'],
   ['workspace-cockpit-browser-test.js'], ['workspace-maintenance-journal-browser-test.js'],
+  // Complementary solo Lab instruments and the UI 2.1 Alpha user flows.
+  ['vision-real-game-campaign-test.js'], ['vision-real-game-observer-test.js'], ['vision-real-game-baseline-test.js'], ['vision-real-game-browser-test.js'],
+  ['site-ui-2.1-test.js'], ['site-ui-2.1-browser-test.js'],
+  ['gig-dice-v6-test.js'], ['gig-dice-v6-browser-test.js'],
+  ['alpha-report-exit-test.js'], ['alpha-report-exit-browser-test.js'],
   ['database-locale-core-browser-test.js'], ['site-ui-2.0-browser-test.js'], ['player-locale-browser-test.js'], ['vision-locale-browser-test.js'], ['vision-qualification-1.0-browser-test.js'], ['workspace-vision-qualification-browser-test.js'], ['workspace-vision-nominal-browser-test.js'], ['workspace-vision-lab-6c-browser-test.js'], ['workspace-vision-nominal-receipt-browser-test.js']
 ];
 
@@ -42,7 +47,8 @@ function main() {
   if (!relative || (!relative.startsWith('..' + path.sep) && relative !== '..' && !path.isAbsolute(relative))) throw Error('Qualification artifacts must stay outside the Git worktree');
   fs.mkdirSync(output, { recursive: true });
   if (fs.existsSync(path.join(output, 'qualification.json'))) throw Error('Use a new output directory to preserve earlier evidence');
-  if (git(['branch', '--show-current']) !== 'update/next') throw Error('Qualification requires update/next');
+  const branch = git(['branch', '--show-current']);
+  if (!['update/next', 'feature/ui-2-1-community-alpha'].includes(branch)) throw Error('Qualification requires update/next or its isolated UI 2.1 branch');
   if (git(['status', '--porcelain=v1'])) throw Error('Freeze a clean commit before qualification');
   const sha = git(['rev-parse', 'HEAD']);
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -53,7 +59,7 @@ function main() {
   try { playwright = require.resolve(process.env.WORKSPACE_PLAYWRIGHT_PATH || 'playwright'); }
   catch { throw Error('Set WORKSPACE_PLAYWRIGHT_PATH to an installed Playwright module; no browser suite is optional'); }
   const manifest = suites.map(([file, flag]) => ({ file, args: flag ? [flag, file] : [file], sha256: crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex') }));
-  const receipt = { candidate: 15, sha, sourceTree: git(['rev-parse', 'HEAD^{tree}']), startedAt: new Date().toISOString(), node: process.version, playwright, databaseFixture: process.env.TCGATE_DB_FIXTURE_ROOT || 'default sibling directory when present; otherwise the suite explicitly uses its synthetic fixture plus immutable public runtime checks', manifest, suites: [], checks: [], status: 'RUNNING', limits: ['Browser media are synthetic.', 'Remote TURN relay, real Resend delivery and physical Cyberpunk cards are not certified by this workflow.', 'Phone physical PASS is a separate owner declaration.'] };
+  const receipt = { candidate: 15, branch, sha, sourceTree: git(['rev-parse', 'HEAD^{tree}']), startedAt: new Date().toISOString(), node: process.version, playwright, databaseFixture: process.env.TCGATE_DB_FIXTURE_ROOT || 'default sibling directory when present; otherwise the suite explicitly uses its synthetic fixture plus immutable public runtime checks', manifest, suites: [], checks: [], status: 'RUNNING', limits: ['Browser media are synthetic.', 'Remote TURN relay, real Resend delivery and physical Cyberpunk cards are not certified by this workflow.', 'Phone physical PASS is a separate owner declaration.'] };
   const save = () => fs.writeFileSync(path.join(output, 'qualification.json'), JSON.stringify(receipt, null, 2) + '\n');
   const env = { ...process.env };
   // Prevent an inherited provider credential from causing unintended live TURN/email calls.
@@ -75,6 +81,10 @@ function main() {
   for (const key of ['WORKSPACE_VISION_QUALIFICATION_TEST_ROOT', 'WORKSPACE_VISION_QUALIFICATION_UI_STAGE', 'WORKSPACE_VISION_QUALIFICATION_SHARED_STAGE', 'TCGATE_QUALIFICATION_WORKSPACE_TEST_ROOT', 'TCGATE_VISION_QUALIFICATION_REPORT_MODULE', 'TCGATE_NOMINAL_6B_TEST_ROOT', 'VISION_QUALIFICATION_DIAGNOSTICS_PATH', 'TCGATE_6C1_TEST_ROOT', 'TCGATE_6C_TEST_ROOT', 'TCGATE_6C_PRODUCTION_ROOT', 'TCGATE_6C_CORPUS_PATH', 'TCGATE_6C_SAMPLE_PATH', 'TCGATE_6C_BASELINE_REPO', 'TCGATE_6C_ENGINE_TARGET_ROOT', 'TCGATE_6C_CANONICAL_TARGET_ROOT']) delete env[key];
   env.WORKSPACE_VISION_QUALIFICATION_ARTIFACT_DIR = path.join(output, 'workspace-qualification-ux');
   env.CANDIDATE_GIG_AUDIT_PATH = path.join(output, 'gig-audit.json');
+  env.UI21_EXIT_ARTIFACT_DIR = path.join(output, 'alpha-exit-reports');
+  delete env.GIG_V6_FOCUSED; // Full native boundary and transfer coverage is mandatory in this workflow.
+  delete env.GIG_V6_BASELINE_ROOT; // Before/after reference captures are independent evidence, not a second source under qualification.
+
   const preload = path.join(root, 'qualification-assert-count.js').split(path.sep).join('/');
   env.NODE_OPTIONS = '--require="' + preload + '"';
   console.log('CANDIDATE_15_FROZEN_SHA ' + sha);
@@ -86,7 +96,7 @@ function main() {
     fs.mkdirSync(countDirectory);
     const started = Date.now();
     console.log('RUN ' + name);
-    const result = spawnSync(executable, commandArgs, { cwd: root, env: { ...env, TCGATE_QUALIFICATION_ASSERT_DIR: instrument ? countDirectory : '' }, encoding: 'utf8', timeout: 300000, maxBuffer: 16 * 1024 * 1024 });
+    const result = spawnSync(executable, commandArgs, { cwd: root, env: { ...env, TCGATE_QUALIFICATION_ASSERT_DIR: instrument ? countDirectory : '' }, encoding: 'utf8', timeout: name === 'gig-dice-v6-browser-test.js' ? 420000 : 300000, maxBuffer: 16 * 1024 * 1024 });
     const stdout = result.stdout || '', stderr = result.stderr || '';
     const log = name.replace(/[^\w.-]+/g, '_') + '.log';
     fs.writeFileSync(path.join(output, log), stdout + (stderr ? '\nSTDERR\n' + stderr : ''));

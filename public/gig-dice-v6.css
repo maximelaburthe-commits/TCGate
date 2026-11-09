@@ -1,0 +1,60 @@
+/* V6 visual reference; original SVGs and app.js state/sync remain unchanged. */
+#gigDicePanel.gig-totem { width: max-content; max-width: calc(100vw - 16px); height: auto; }
+#gigDicePanel .gig-shell { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; border: 1px solid #a9c7dd40; border-radius: 32px; background: linear-gradient(#080f16e0,#060b11eb); box-shadow: 0 6px 18px #0008; transform: none; }
+#gigDicePanel .gig-side2 { display: none; max-width: none; opacity: 1; transform: none; transition: none; }
+#gigDicePanel.open .gig-side2 { display: flex; max-width: none; transform: none; }
+#gigDicePanel .gig-side2.self { order: 1; }
+#gigDicePanel .gig-core { position: relative; order: 2; gap: 8px; justify-content: center; }
+#gigDicePanel .gig-side2.opponent { order: 3; }
+#gigDicePanel .street-core.self { order: 1; }
+#gigDicePanel .gig-trigger2 { order: 2; }
+#gigDicePanel .street-core.opp { order: 3; }
+#gigDicePanel .dice-line2 { min-width: 48px; width: max-content; min-height: 44px; display: flex; flex-wrap: nowrap; gap: 0; justify-content: center; padding: 0 2px; border: 1px solid transparent; border-radius: 20px; }
+#gigDicePanel .die-slot2 { width: 41px; height: 44px; display: grid; grid-template-rows: 1.5px 41px 1.5px; }
+#gigDicePanel .die-token2 { --owner: #ff8c46; width: 41px; height: 41px; touch-action: none; }
+#gigDicePanel .die-token2.owner-rival { --owner: #55d5ef; }
+#gigDicePanel .die-token2 .die-svg, #gigDicePanel .die-zoom-layer .die-svg { width: 41px; height: 41px; }
+#gigDicePanel .die-token2::after { content: attr(data-die-type); position: absolute; top: -72px; left: 50%; transform: translateX(-50%); opacity: 0; pointer-events: none; background: #0b1825ef; border: 1px solid #496278; color: #fff; border-radius: 5px; padding: 4px 7px; font: 700 10px/1.1 system-ui,sans-serif; z-index: 34; }
+#gigDicePanel .die-slot2:hover .die-token2::after, #gigDicePanel .die-slot2:focus-within .die-token2::after { opacity: 1; }
+#gigDicePanel .die-control2 { width: 32px; height: 32px; min-width: 32px; min-height: 32px; position: absolute; left: 50%; transform: translateX(-50%) scale(.9); z-index: 32; background: #08131ff5; border-color: #638196; box-shadow: 0 3px 6px #0008; }
+#gigDicePanel .die-slot2:hover .die-control2, #gigDicePanel .die-slot2:focus-within .die-control2 { transform: translateX(-50%) scale(1); }
+#gigDicePanel .die-control2.plus2 { top: -36px; }
+#gigDicePanel .die-control2.minus2 { bottom: -36px; }
+#gigDicePanel .die-score2 { color: #fff; font-size: 15px; font-weight: 900; font-variant-numeric: tabular-nums; text-shadow: 0 1px 3px #000, 0 0 5px #000, 0 0 7px #000; }
+#gigDicePanel .is-zoom-source .die-score2, #gigDicePanel .is-zoom-source > .die-svg { visibility: hidden; }
+#gigDicePanel .die-zoom-layer { --owner: #ff8c46; width: 41px; height: 41px; filter: drop-shadow(0 3px 5px #000b) drop-shadow(0 0 4px var(--owner)); }
+#gigDicePanel .die-zoom-layer.owner-rival { --owner: #55d5ef; }
+#gigDicePanel .die-zoom-layer .die-score2 { font-size: 16px; }
+#gigDicePanel .street-core { min-width: 58px; gap: 2px; }
+#gigDicePanel .street-core .sc-num { font-size: 24px; text-shadow: 0 1px 3px #000; }
+#gigDicePanel .street-core.self .sc-num { color: #ff8c46; }
+#gigDicePanel .street-core.opp .sc-num { color: #55d5ef; }
+#gigDicePanel .street-core .sc-label { font-size: 8px; color: #b3c3d0; letter-spacing: .5px; }
+#gigDicePanel .gig-trigger2 { width: 43px; height: 43px; min-width: 43px; min-height: 43px; animation: none; box-shadow: 0 0 0 3px #0710199c,0 5px 10px #0007; }
+#gigDicePanel .gig-trigger2:hover { box-shadow: 0 0 0 3px #071019be,0 0 15px #39bfe780; }
+#gigDicePanel .gig-drag-handle { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); width: 32px; height: 18px; min-width: 32px; min-height: 18px; padding: 0; border: 1px solid #526779; border-radius: 7px; background: #101c29e8; color: #cedfe6; cursor: grab; touch-action: none; font-size: 20px; line-height: 1; opacity: .25; }
+#gigDicePanel:hover .gig-drag-handle, #gigDicePanel .gig-drag-handle:focus-visible { opacity: 1; }
+#gigDicePanel[data-dragging="true"] .gig-drag-handle { cursor: grabbing; }
+#gigDicePanel .die-drop-target .dice-line2 { border: 1px dashed #d8ebfa; background: #a7d6fa18; }
+#gigDicePanel .die-drop-active .dice-line2 { border-style: solid; border-color: #a4ebff; background: #62d4ff2b; box-shadow: inset 0 0 12px #62d4ff22; }
+#gigDicePanel .is-dragging-die .die-score2 { visibility: hidden; }
+@media(max-width:760px) {
+  #gigDicePanel.open { width: 318px; }
+  #gigDicePanel.open .gig-shell { display: grid; grid-template-columns: minmax(0,1fr); gap: 14px; border-radius: 18px; padding: 6px 8px; }
+  #gigDicePanel.open .gig-side2 { order: initial; }
+  #gigDicePanel.open .gig-side2.opponent { grid-row: 1; }
+  #gigDicePanel.open .gig-core { grid-row: 2; order: initial; }
+  #gigDicePanel.open .gig-side2.self { grid-row: 3; }
+  #gigDicePanel.open .dice-line2 { width: 100%; flex-wrap: wrap; }
+  #gigDicePanel.open .gig-drag-handle { top: 10px; left: auto; right: 0; transform: none; }
+}
+@media(prefers-reduced-motion:reduce) { #gigDicePanel *,#gigDicePanel *::after { transition:none;animation:none; } }
+/* Both scores keep the same reading order and explicit player association. */
+#gigDicePanel .street-core .sc-label { order: 1; }
+#gigDicePanel .street-core .sc-num { order: 2; }
+#gigDicePanel .street-core::after { order: 3; font-size: 8px; line-height: 1.1; letter-spacing: .6px; color: #c2d1dd; }
+#gigDicePanel .street-core.self::after { content: 'MOI'; }
+#gigDicePanel .street-core.opp::after { content: 'ADVERSAIRE'; }
+/* The native fullscreen mount must keep the video surface at viewport height. */
+#screenGame .opponent-feed-card:fullscreen { width: 100vw !important; height: 100dvh !important; display: block !important; position: fixed !important; inset: 0 !important; }
+#screenGame .opponent-feed-card:fullscreen .opponent-video { position: absolute; inset: 0; width: 100%; height: 100% !important; }

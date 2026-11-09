@@ -1,0 +1,4 @@
+.alpha-report-exit .flow-card { max-width: 500px; }
+.alpha-report-exit .flow-actions { flex-wrap: wrap; gap: 10px; }
+.alpha-report-exit button[hidden] { display: none; }
+@media (max-width: 540px) { .alpha-report-exit .flow-actions { display: grid; } .alpha-report-exit .flow-actions .btn { width: 100%; min-height: 44px; } }

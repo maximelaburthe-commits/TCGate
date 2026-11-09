@@ -42,8 +42,8 @@
   if($('generateReportLobby'))$('generateReportLobby').hidden=!connected;
   if(!connected)put('setupContinue',creating?'Créer la partie':'Rejoindre la partie');
   const heading=document.querySelector('.ui12-session-heading h3'),description=document.querySelector('.ui12-session-heading p');
-  if(heading)heading.textContent=connected?'Une session à votre image.':creating?'Choisissez votre table.':'Retrouvez votre adversaire.';
-  if(description)description.textContent=connected?'Les réglages sont partagés. L’hôte les ajuste ; chaque joueur prépare son installation.':creating?'Choisissez le jeu et les options, puis créez votre salon privé.':'Saisissez le code reçu et le nom que verra votre adversaire.';
+  if(heading)heading.textContent=connected?'Options de session':creating?'Créer une partie':'Rejoindre une partie';
+  if(description)description.textContent=connected?'L’hôte règle le jeu, le minuteur et les Gig Dice pour les deux joueurs.':creating?'Choisissez le jeu et les options, puis créez votre salon privé.':'Saisissez le code reçu et le nom que verra votre adversaire.';
   const gigField=$('siteCreateGigField');if(gigField)gigField.hidden=$('gameSelect').value!=='cyberpunk';
   const snapshot=state.roomSnapshot,me=snapshot?.peers?.find(peer=>peer.id===state.peerId),other=snapshot?.peers?.find(peer=>peer.id!==state.peerId),host=snapshot?.peers?.find(peer=>peer.role==='host');
   put('ui12HostName',host?.name||'En attente…');put('ui12RoomState',snapshot?.phase==='game'?'Partie lancée':state.roomCode?'Salon ouvert · préparation':'Connexion au salon…');

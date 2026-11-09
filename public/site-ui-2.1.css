@@ -1,0 +1,53 @@
+/* UI 2.1: quiet Home/Lobby presentation. Product and Vision controls keep their owners. */
+#screenHome .tcgate-home-alpha-badge { color: #d6cdf9; border-color: #51436f; letter-spacing: .07em; font-size: 9px; }
+#screenHome .tcgate-home-hero { padding-top: 46px; padding-bottom: 32px; }
+#screenHome .site-product-preview figcaption { justify-content: flex-end; }
+#screenHome .site-alpha-notice { display: flex; align-items: baseline; gap: 20px; padding: 17px 20px; margin-bottom: 26px; border: 1px solid var(--line); border-left: 3px solid var(--accent-2); border-radius: 6px; background: var(--panel); }
+#screenHome .site-alpha-notice strong { flex: none; color: var(--text); font-size: 13px; font-weight: 600; }
+#screenHome .site-alpha-notice p { margin: 0; color: #b2bfd3; font-size: 12px; line-height: 1.65; }
+#screenHome .site-alpha-content { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 22px; padding-bottom: 40px; }
+#screenHome .site-alpha-content article { min-width: 0; }
+#screenHome .site-alpha-content p { color: #b2bfd3; line-height: 1.75; }
+#screenHome .site-alpha-content p + p { margin-top: 16px; }
+#screenLobby .ui12-lobby-tabs { margin-bottom: 22px; }
+#screenLobby .ui12-session-heading { margin-bottom: 20px; }
+#screenLobby .ui12-session-heading h3 { margin-bottom: 8px; font-size: 18px; }
+#screenLobby .ui12-session-heading p { font-size: 12px; }
+#screenLobby .ui12-session-grid { gap: 48px; }
+#screenLobby .ui12-session-sidebar { gap: 22px; }
+#screenLobby .ui12-context-card h3 { margin-bottom: 14px; }
+#screenLobby .ui12-context-card dl { gap: 10px; }
+#screenLobby :is(#timerHubConfig, #gigDiceHubConfig) { gap: 10px; padding-top: 16px; }
+#screenLobby .toggle-row { min-height: 48px; align-items: center; gap: 16px; }
+/* Same 48x44 target and same pill geometry for both shared options. */
+#screenLobby :is(#timerToggle, #gigDiceToggle) { position: relative; display: flex; align-items: center; width: 48px; min-width: 48px; height: 44px; min-height: 44px; padding: 0 5px; border: 0; border-radius: 8px; background: transparent; box-shadow: none; }
+#screenLobby :is(#timerToggle, #gigDiceToggle)::before { position: absolute; inset: 9px 1px; border: 1px solid #41516f; border-radius: 20px; background: #263149; content: ''; }
+#screenLobby :is(#timerToggle, #gigDiceToggle).on::before { border-color: var(--accent-2); background: #6550c8; }
+#screenLobby :is(#timerToggle, #gigDiceToggle) .knob { position: relative; width: 18px; height: 18px; transform: none; background: #c0c9d8; }
+#screenLobby :is(#timerToggle, #gigDiceToggle).on .knob { transform: translateX(20px); background: #fff; }
+#screenLobby :is(#timerToggle, #gigDiceToggle):focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+#screenLobby :is(#timerToggle, #gigDiceToggle):disabled { opacity: .6; }
+#screenLobby #siteCreateOptions .site-create-option { display: grid; grid-template-columns: minmax(0, 1fr) 20px; min-height: 30px; }
+#screenLobby #siteCreateOptions .site-create-option input { grid-column: 2; grid-row: 1; margin: 0; }
+#screenLobby #siteCreateOptions .site-create-option span { grid-column: 1; grid-row: 1; }
+#screenLobby .equipment-copy .site-interface-language { margin: 0 0 18px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+#screenLobby .ui12-ready-hint { max-width: 550px; font-size: 12px; }
+@media (max-width: 900px) {
+  #screenHome .site-alpha-notice { display: block; }
+  #screenHome .site-alpha-notice p { margin-top: 7px; }
+  #screenHome .site-alpha-content { grid-template-columns: 1fr; }
+  #screenLobby .ui12-session-grid { gap: 28px; }
+}
+@media (max-width: 560px) {
+  #screenHome .tcgate-home-alpha-badge { max-width: 170px; font-size: 8px; }
+  #screenHome .tcgate-home-hero { padding-top: 32px; padding-bottom: 28px; }
+  #screenHome .site-alpha-notice { padding: 14px 15px; margin-bottom: 22px; }
+  #screenHome .site-alpha-notice p { font-size: 11px; }
+  #screenLobby .ui12-session-heading h3 { font-size: 17px; }
+  #screenLobby .ui12-ready-hint { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #screenLobby :is(#timerToggle, #gigDiceToggle) .knob { transition: none; }
+}
+/* Reports remain reachable on compact screens as well as through the exit reminder. */
+#screenLobby #generateReportLobby:not([hidden]) { display: inline-flex; align-items: center; justify-content: center; }

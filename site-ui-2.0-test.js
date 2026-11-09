@@ -49,6 +49,27 @@ function stripQualifiedReceiptEndpoint(input) {
       !source.slice(first + qualifiedReceiptEndpoint.length).startsWith(followingPhone)) throw Error('Qualification compatibility route moved from its audited site');
   return source.slice(0, first) + source.slice(first + qualifiedReceiptEndpoint.length);
 }
+// UI 2.1 adds visible delivery feedback and session-scoped lifecycle events only.
+// Strip each exact authorized insertion; every original byte, including transport,
+// ZIP preparation and delivery errors, remains covered by the historical full hash.
+const reportUi21Insertions = [
+  ["  let busy = false;\n", "  let activeRoomCode = '';\n\n  function notify(type, detail = {}) {\n    window.dispatchEvent(new CustomEvent(type, { detail }));\n  }\n"],
+  ["  const idleSendLabel = sendButton.textContent;\n", "  const status = document.createElement('p');\n  status.id = 'reportMailStatus';\n  status.setAttribute('role', 'status');\n  status.setAttribute('aria-live', 'polite');\n  status.hidden = true;\n  sendButton.closest('.flow-actions').before(status);\n"],
+  ["  function setStatus(message = '', kind = '') {\n", "    status.textContent = message;\n    status.hidden = !message;\n    status.dataset.status = kind;\n"],
+  ["    activeReportButton = sourceButton;\n", "    activeRoomCode = currentRoomCode();\n"],
+  ["    modal.classList.remove('show');\n    activeReportButton = null;\n", "    notify('tcgate-report-closed', { roomCode: activeRoomCode, sent: false });\n"],
+  ["      setStatus('Rapport envoye \u2713', 'success');\n", "      notify('tcgate-report-sent', { roomCode: activeRoomCode });\n"],
+  ["        activeReportButton = null;\n", "        notify('tcgate-report-closed', { roomCode: activeRoomCode, sent: true });\n"]
+];
+function stripReportUi21(input) {
+  let source = lf(input);
+  for (const [preceding, addition] of reportUi21Insertions) {
+    const match = preceding + addition, index = source.indexOf(match);
+    if (index < 0 || source.indexOf(match, index + match.length) >= 0) throw Error('Unexpected UI 2.1 report insertion or site');
+    source = source.slice(0, index) + preceding + source.slice(index + match.length);
+  }
+  return source;
+}
 const html = read('public/index.html'), css = read('public/tcgate-ui-1.2.css'), app = read('public/app.js');
 const contract = require(path.join(root, 'tcgate-ui-1.2-contract.js'));
 const home = contract.section(html, 'screenHome'), lobby = contract.section(html, 'screenLobby');
@@ -90,8 +111,16 @@ for (const file of [
   'public/vision-core.js', 'public/vision-frame-gate.js', 'report-mail-server.js', 'public/report-mail-ui.js'
 ]) {
   if (!fs.existsSync(path.join(root, file))) throw Error('Protected source is missing: ' + file);
-  equal(hash(file === 'server.js' ? stripQualifiedReceiptEndpoint(read(file)) : lf(read(file))), hash(lf(original(file))), 'Protected source remains unchanged: ' + file);
+  equal(hash(file === 'server.js' ? stripQualifiedReceiptEndpoint(read(file)) : file === 'public/report-mail-ui.js' ? stripReportUi21(read(file)) : lf(read(file))), hash(lf(original(file))), 'Protected source remains unchanged: ' + file);
 }
+for (const [site, addition] of reportUi21Insertions) {
+  const changed = lf(read('public/report-mail-ui.js')).replace(site + addition, site + addition.replace(/notify|status|activeRoomCode/, 'unqualifiedChange'));
+  check(changed !== lf(read('public/report-mail-ui.js')), 'The negative report fixture changes an authorized insertion');
+  check((() => { try { return hash(stripReportUi21(changed)) !== hash(lf(original('public/report-mail-ui.js'))); } catch { return true; } })(), 'A changed insertion cannot bypass the original report hash');
+}
+const alteredReportTransport = lf(read('public/report-mail-ui.js')).replace('/api/report-email', '/api/unqualified-report-route');
+check(alteredReportTransport !== lf(read('public/report-mail-ui.js')), 'The negative report fixture changes transport');
+check(hash(stripReportUi21(alteredReportTransport)) !== hash(lf(original('public/report-mail-ui.js'))), 'Report transport remains fully frozen');
 const originalServer = lf(original('server.js')), deployedServer = lf(read('server.js'));
 const originalServerHash = '6a41bec80f6a4e8dfa802d02c320bcdf0a7eadbb711c74ccc62bc3c6038e4b5c';
 equal(hash(originalServer), originalServerHash, 'The complete historical server source remains authenticated');
