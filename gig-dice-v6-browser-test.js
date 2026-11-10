@@ -55,12 +55,35 @@ async function geometry(page, width, label) {
   check(data.overflow <= 1, label + ': no page horizontal overflow'); check(data.cameraLive, label + ': remote camera stays live'); check(data.video.width * data.video.height >= width * 700 * .6, label + ': webcam remains principal surface');
   if (label.startsWith('after')) { check(data.blocked.length === 0, label + ': no PIP / Vision / camera controls overlap ' + JSON.stringify(data)); check(data.box.x >= 0 && data.box.x + data.box.width <= width + 1, label + ': Gig inside horizontal viewport'); check(data.box.y >= 0 && data.box.y + data.box.height <= 900 + 1, label + ': Gig inside vertical viewport'); }
 }
+async function hoverToolsInsideViewport(page, width) {
+  const ids=await page.locator('.die-slot2[data-die-id]').evaluateAll(elements=>elements.map(element=>element.dataset.dieId));
+  for(const id of ids){
+    const token=page.locator('[data-die-id="'+id+'"] .die-token2'); await token.hover(); await page.waitForTimeout(70);
+    const data=await token.evaluate(element=>{
+      const slot=element.closest('.die-slot2'),source=element.getBoundingClientRect(),hint=getComputedStyle(element,'::after');
+      const rect=node=>{const b=node.getBoundingClientRect();return{left:b.left,top:b.top,right:b.right,bottom:b.bottom};};
+      const hintWidth=parseFloat(hint.width)+parseFloat(hint.paddingLeft)+parseFloat(hint.paddingRight)+parseFloat(hint.borderLeftWidth)+parseFloat(hint.borderRightWidth);
+      const hintHeight=parseFloat(hint.height)+parseFloat(hint.paddingTop)+parseFloat(hint.paddingBottom)+parseFloat(hint.borderTopWidth)+parseFloat(hint.borderBottomWidth);
+      const left=source.left+source.width/2-hintWidth/2,top=source.top+parseFloat(hint.top);
+      return{zoom:rect(document.querySelector('.die-zoom-layer')),plus:rect(slot.querySelector('.plus2')),minus:rect(slot.querySelector('.minus2')),hint:{left,top,right:left+hintWidth,bottom:top+hintHeight},viewport:{width:innerWidth,height:innerHeight}};
+    });
+    observations.geometry.push({label:'after-hover-tools-'+width,dieId:id,...data});
+    for(const name of ['zoom','plus','minus','hint'])check(data[name].left>=0&&data[name].top>=0&&data[name].right<=data.viewport.width&&data[name].bottom<=data.viewport.height,width+' '+id+': '+name+' entirely in viewport '+JSON.stringify(data));
+    if(id==='host-d12')await capture(page,'after','gig-hover-D12-'+width);
+  }
+  await page.mouse.move(1,1); await page.waitForTimeout(40);
+}
+async function handleInsideViewport(page,label){
+  const data=await page.locator('#gigDiceDragHandle').evaluate(element=>{const b=element.getBoundingClientRect();return{left:b.left,top:b.top,right:b.right,bottom:b.bottom,width:innerWidth,height:innerHeight};});
+  check(data.left>=0&&data.top>=0&&data.right<=data.width&&data.bottom<=data.height,label+': complete draggable handle inside viewport '+JSON.stringify(data));
+  observations.geometry.push({label:label+'-handle',...data});
+}
 async function views(pair, mode, off = false) {
   for (const width of [1366, 1920, 900, 390]) {
     await pair.host.setViewportSize({width, height:900}); await pair.host.waitForTimeout(220);
     if (!off) {
-      await expanded(pair.host, true); await geometry(pair.host, width, mode + '-open-' + width); await capture(pair.host, mode, 'gig-open-' + width);
-      await expanded(pair.host, false); await geometry(pair.host, width, mode + '-collapsed-' + width); await capture(pair.host, mode, 'gig-collapsed-' + width);
+      await expanded(pair.host, true); await geometry(pair.host, width, mode + '-open-' + width); if(mode==='after'){await hoverToolsInsideViewport(pair.host,width);await handleInsideViewport(pair.host,'after-open-'+width);} await capture(pair.host, mode, 'gig-open-' + width);
+      await expanded(pair.host, false); await geometry(pair.host, width, mode + '-collapsed-' + width); if(mode==='after')await handleInsideViewport(pair.host,'after-collapsed-'+width); await capture(pair.host, mode, 'gig-collapsed-' + width);
       for (const id of ['gigSelfCred', 'gigOpponentCred']) check(await pair.host.locator('#' + id).isVisible(), mode + ': both Street Cred totals visible when collapsed');
     } else { check(!await pair.host.locator('#gigDicePanel').isVisible(), mode + ': disabled room option hides Gig'); await capture(pair.host, mode, 'gig-off-' + width); }
   }

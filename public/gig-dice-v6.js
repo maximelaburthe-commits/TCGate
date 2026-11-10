@@ -60,7 +60,7 @@
     if (!container || !root.gigPanelHasLayout(element)) return null;
     const rect = container.getBoundingClientRect(), margin = element.classList.contains('open') ? 32 : 8;
     const maxLeft = Math.max(margin, rect.width - element.offsetWidth - margin), maxTop = Math.max(margin, rect.height - element.offsetHeight - margin);
-    const minTop = element.classList.contains('open') ? 72 : margin;
+    const minTop = element.classList.contains('open') ? 72 : 24;
     const clamp = point => ({ left: Math.max(margin, Math.min(maxLeft, point.left)), top: Math.max(minTop, Math.min(maxTop, point.top)) });
     const center = clamp({ left: (rect.width - element.offsetWidth) / 2, top: maxTop }), desired = clamp(preferred || center);
     const candidates = [desired, center, { left: margin, top: maxTop }, { left: maxLeft, top: maxTop }, { left: margin, top: margin }, { left: maxLeft, top: margin }];
@@ -70,7 +70,7 @@
       candidates.push(clamp({ left: box.left - element.offsetWidth - margin, top: desired.top }));
       candidates.push(clamp({ left: desired.left, top: box.bottom + margin }));
     });
-    return candidates.find(point => !overlaps(container, element, point.left, point.top, margin)) || null;
+    return candidates.map(clamp).find(point => !overlaps(container, element, point.left, point.top, margin)) || null;
   }
   root.defaultSafeGigPanelPosition = element => safePoint(element || panel);
   root.applySavedGigPanelPosition = function (element = panel) {
