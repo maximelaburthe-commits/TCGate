@@ -107,7 +107,22 @@ async function join(page, code) {
   await page.locator('#goJoin').click(); await page.locator('#playerName').fill('Guest Player Locale');
   await page.locator('#roomCodeInput').fill(code); await page.locator('#setupContinue').click(); equal(await room(page), code, 'Guest joins the actual Host room');
 }
-async function leave(page) { await page.locator('#leaveLobby').click(); await page.waitForFunction(() => document.querySelector('#screenHome').classList.contains('active')); }
+async function leave(page) {
+  const roomBefore = await page.evaluate(() => state.roomCode);
+  const leaveCountBefore = observations.requests.filter(request => request.pageId === page.__playerLocaleObservationId && request.path === '/api/leave' && request.method === 'POST').length;
+  const nativeLeave = page.waitForResponse(response => new URL(response.url()).pathname === '/api/leave' && response.request().method() === 'POST');
+  await page.locator('#leaveLobby').click();
+  if (await page.locator('#alphaReportExitOverlay.show').isVisible()) {
+    check(await page.evaluate(room => state.roomCode === room && !document.querySelector('#screenHome').classList.contains('active'), roomBefore), 'Optional Alpha report preserves the current Room until the tester chooses to leave');
+    await page.locator('#alphaExitWithoutReport').click();
+  }
+  const response = await nativeLeave;
+  equal(response.status(), 200, 'Skip-report choice uses the existing native leave endpoint');
+  equal(response.request().postDataJSON().room, roomBefore, 'Native exit leaves the same Room without altering locale coverage');
+  await page.waitForFunction(() => document.querySelector('#screenHome').classList.contains('active'));
+  check(await page.evaluate(() => state.roomCode === null && state.localStream === null), 'Native exit clears the Room and stops local media');
+  equal(observations.requests.filter(request => request.pageId === page.__playerLocaleObservationId && request.path === '/api/leave' && request.method === 'POST').length, leaveCountBefore + 1, 'Voluntary exit sends exactly one native leave request');
+}
 async function localeControl(page, expected, codes) {
   await tab(page, 'installation');
   const control = page.locator('#playerLocaleSelect'); check(await control.isVisible(), 'Personal card language is visible'); check(await control.isEnabled(), 'Personal card language is enabled for this player');
