@@ -6,6 +6,7 @@ const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const { stripQualificationDiagnostics } = require('./workspace-production-contract.js');
 const { normalizeEngine6C } = require('./vision-6c-production-contract.js');
+const { assertQualificationMode, verifyPresentationScope } = require('./ui-2.1-qualification-contract.js');
 
 async function main() {
   const root = __dirname;
@@ -40,7 +41,7 @@ async function main() {
   if (fs.existsSync(output)) throw Error('Preserve earlier evidence; output already exists');
   const git = values => execFileSync('git', values, { cwd: root, encoding: 'utf8' }).trim();
   const productSha = git(['rev-parse', 'HEAD']);
-  if (git(['branch', '--show-current']) !== 'update/next') throw Error('Use the qualified update/next checkout');
+  assertQualificationMode(git(['branch', '--show-current']), args.template);
   if (git(['status', '--porcelain=v1'])) throw Error('Freeze a clean product commit before generating evidence');
   if (baseline.productSha !== '7baeb9844ac8a2a68b2c5a38011003514bab5f98' || baseline.files.length !== 228) throw Error('Unexpected engine baseline');
   const baselineTree = new Map(git(['ls-tree', '-r', baseline.productSha]).split('\n').map(line => {
@@ -55,15 +56,18 @@ async function main() {
   }
   // Git applies its normal text filters, so Windows CRLF checkout conversion
   // cannot masquerade as an engine change or require rewriting source files.
-  // Authenticate every original 228-file manifest entry above. Only the three
-  // Workspace presentation files and the two explicitly patched matchers are
-  // exceptions: 223 original public/model files remain strict Git comparisons.
+  // Authenticate every original 228-file manifest entry above. Three Workspace
+  // presentation files and the two exact matcher patches remain the historical
+  // exceptions. UI 2.1 separately authenticates its three presentation files to
+  // both historical Git baselines and their exact current LF fingerprints.
+  // The other 220 original public/model files remain strict Git comparisons.
   // Every matcher byte is still compared to the original after exact anchored
   // 6C hunk reversal and the existing exact-site 6B observation tap removal.
   const workspaceUxExceptions = new Set(['public/workspace.html', 'public/workspace.js', 'public/workspace.css']);
   const engineExceptions = new Set(['public/identification.js', 'public/identification-worker.js']);
-  const strictlyFrozenPaths = baseline.files.filter(file => !workspaceUxExceptions.has(file.path) && !engineExceptions.has(file.path)).map(file => file.path);
-  if (strictlyFrozenPaths.length !== 223) throw Error('Unexpected strict engine source count');
+  const uiPresentationExceptions = verifyPresentationScope(root);
+  const strictlyFrozenPaths = baseline.files.filter(file => !workspaceUxExceptions.has(file.path) && !engineExceptions.has(file.path) && !uiPresentationExceptions.has(file.path)).map(file => file.path);
+  if (strictlyFrozenPaths.length !== 220) throw Error('Unexpected strict engine source count');
   execFileSync('git', ['diff', '--quiet', baseline.productSha, '--', ...strictlyFrozenPaths], { cwd: root, stdio: 'ignore' });
   for (const enginePath of engineExceptions) {
     const original = execFileSync('git', ['show', baseline.productSha + ':' + enginePath], { cwd: root });

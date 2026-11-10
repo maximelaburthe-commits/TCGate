@@ -33,6 +33,7 @@ const suites = [
   ['site-ui-2.1-test.js'], ['site-ui-2.1-browser-test.js'],
   ['gig-dice-v6-test.js'], ['gig-dice-v6-browser-test.js'],
   ['alpha-report-exit-test.js'], ['alpha-report-exit-browser-test.js'],
+  ['ui-2.1-qualification-contract-test.js'],
   ['database-locale-core-browser-test.js'], ['site-ui-2.0-browser-test.js'], ['player-locale-browser-test.js'], ['vision-locale-browser-test.js'], ['vision-qualification-1.0-browser-test.js'], ['workspace-vision-qualification-browser-test.js'], ['workspace-vision-nominal-browser-test.js'], ['workspace-vision-lab-6c-browser-test.js'], ['workspace-vision-nominal-receipt-browser-test.js']
 ];
 

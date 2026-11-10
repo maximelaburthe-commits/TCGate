@@ -123,6 +123,21 @@ async function afterTests(pair) {
   const pip=await pair.host.locator('.tcgate-local-pip').boundingBox(), hh=await handle.boundingBox();
   await pair.host.mouse.move(hh.x+hh.width/2,hh.y+hh.height/2); await pair.host.mouse.down(); await pair.host.mouse.move(pip.x+20,pip.y+20,{steps:12}); await pair.host.mouse.up(); await geometry(pair.host,1366,'after-drag-pip-guard');
   await views(pair,'after');
+  step('saved collapsed edge position then expand and hover');
+  await pair.host.setViewportSize({width:1920,height:900}); await pair.host.waitForTimeout(150); await expanded(pair.host,false);
+  const edgeHandle=await pair.host.locator('#gigDiceDragHandle').boundingBox(), edgePanel=await pair.host.locator('#gigDicePanel').boundingBox();
+  const edgeOffset={x:edgeHandle.x+edgeHandle.width/2-edgePanel.x,y:edgeHandle.y+edgeHandle.height/2-edgePanel.y};
+  await pair.host.mouse.move(edgeHandle.x+edgeHandle.width/2,edgeHandle.y+edgeHandle.height/2); await pair.host.mouse.down(); await pair.host.mouse.move(700+edgeOffset.x,8+edgeOffset.y,{steps:12}); await pair.host.mouse.up();
+  await expanded(pair.host,true); await pair.host.locator('[data-die-id="host-d4"] .die-token2').hover(); await pair.host.waitForTimeout(60);
+  const edge=await pair.host.evaluate(()=>{
+    const token=document.querySelector('[data-die-id="host-d4"] .die-token2'),slot=token.closest('.die-slot2'),source=token.getBoundingClientRect(),hint=getComputedStyle(token,'::after');
+    const rect=element=>{const b=element.getBoundingClientRect();return{left:b.left,top:b.top,right:b.right,bottom:b.bottom};};
+    return{panel:rect(document.querySelector('#gigDicePanel')),zoom:rect(document.querySelector('.die-zoom-layer')),plus:rect(slot.querySelector('.plus2')),minus:rect(slot.querySelector('.minus2')),hint:{top:source.top+parseFloat(hint.top),left:source.left},viewport:{width:innerWidth,height:innerHeight}};
+  });
+  observations.geometry.push({label:'after-saved-edge-hover',...edge});
+  for(const name of ['zoom','plus','minus'])check(edge[name].top>=0&&edge[name].left>=0&&edge[name].right<=edge.viewport.width&&edge[name].bottom<=edge.viewport.height,'Saved collapsed edge position keeps '+name+' inside viewport '+JSON.stringify(edge));
+  check(edge.hint.top>=0,'Saved collapsed edge position keeps type tooltip visible '+JSON.stringify(edge));
+  await pair.host.mouse.move(1,1); await pair.host.setViewportSize({width:1366,height:900}); await pair.host.waitForTimeout(150);
   step('real fullscreen relocation and safe drag');
   await pair.host.evaluate(() => document.querySelector('#fullscreenOpponent').click());
   await pair.host.waitForFunction(() => document.fullscreenElement === document.querySelector('.opponent-feed-card'));

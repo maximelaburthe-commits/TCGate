@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0",
+  "purpose": "UI_2_1_PRESENTATION_ONLY",
+  "normalization": "UTF8_LF",
+  "qualificationBaselineSha": "7baeb9844ac8a2a68b2c5a38011003514bab5f98",
+  "productBaselineSha": "6a5e15271d7339cb23167b93bc6e23c9c108404f",
+  "files": [
+    {
+      "path": "public/index.html",
+      "qualificationBaselineGitBlob": "fc043fe5ef18669d07ff171d673caeb6ab4acef3",
+      "productBaselineGitBlob": "fc043fe5ef18669d07ff171d673caeb6ab4acef3",
+      "presentationSha256": "d2a625755cb8e926336932eeae0b75a5475098f19c2bb361dfc07276c63792ae"
+    },
+    {
+      "path": "public/report-mail-ui.js",
+      "qualificationBaselineGitBlob": "30a98b40eaddd73502d1179847fc2422ed1997a7",
+      "productBaselineGitBlob": "30a98b40eaddd73502d1179847fc2422ed1997a7",
+      "presentationSha256": "8fa23d29c6cf67dc7f2889bab8cd976da1cc05072c7e59d0b3541248451d3b30"
+    },
+    {
+      "path": "public/tcgate-ui-1.2.js",
+      "qualificationBaselineGitBlob": "a3edb49195fcbe8dd8595a6bf179a1fa724e9099",
+      "productBaselineGitBlob": "a3edb49195fcbe8dd8595a6bf179a1fa724e9099",
+      "presentationSha256": "2e6dd6d09ece98f9a759f3902ebc65eee70ccb16d5639d7bd52877e668f2202b"
+    }
+  ]
+}

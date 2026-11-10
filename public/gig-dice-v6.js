@@ -4,7 +4,7 @@
   if (root.TCGateGigDiceV6) return;
   const panel = document.getElementById('gigDicePanel');
   if (!panel || !root.renderGigDicePanel || !root.setGigPanelCoordinates) return;
-  const native = { render: root.renderGigDicePanel, clearZoom: root.clearGigDieZoom, showZoom: root.showGigDieZoom, coordinates: root.setGigPanelCoordinates };
+  const native = { render: root.renderGigDicePanel, clearZoom: root.clearGigDieZoom, showZoom: root.showGigDieZoom, coordinates: root.setGigPanelCoordinates, applySaved: root.applySavedGigPanelPosition };
   let placementFrame = 0;
   function decorate() {
     panel.querySelectorAll('.die-slot2[data-die-id]').forEach(slot => {
@@ -34,7 +34,7 @@
   };
   function obstacles(container) {
     const bounds = container.getBoundingClientRect();
-    const boxes = [...document.querySelectorAll('.tcgate-local-pip, #screenGame .controls, #screenGame .tcgate-card-rail, #screenGame .tcgate-fullscreen-card, #screenGame .tcgate-alpha-diagnostics, #timerChip, #rtcStatus')]
+    const boxes = [...document.querySelectorAll('.tcgate-local-pip, #screenGame .controls, #screenGame .tcgate-card-rail, #screenGame .tcgate-fullscreen-card, #screenGame .tcgate-alpha-diagnostics, #screenGame .tcgate-feed-actions, #timerChip, #rtcStatus')]
       .filter(element => !panel.contains(element) && !element.classList.contains('preview-hidden'))
       .filter(element => { const style = getComputedStyle(element); return style.display !== 'none' && style.visibility !== 'hidden'; })
       .map(element => element.getBoundingClientRect()).filter(rect => rect.width > 0 && rect.height > 0)
@@ -60,7 +60,8 @@
     if (!container || !root.gigPanelHasLayout(element)) return null;
     const rect = container.getBoundingClientRect(), margin = element.classList.contains('open') ? 32 : 8;
     const maxLeft = Math.max(margin, rect.width - element.offsetWidth - margin), maxTop = Math.max(margin, rect.height - element.offsetHeight - margin);
-    const clamp = point => ({ left: Math.max(margin, Math.min(maxLeft, point.left)), top: Math.max(margin, Math.min(maxTop, point.top)) });
+    const minTop = element.classList.contains('open') ? 72 : margin;
+    const clamp = point => ({ left: Math.max(margin, Math.min(maxLeft, point.left)), top: Math.max(minTop, Math.min(maxTop, point.top)) });
     const center = clamp({ left: (rect.width - element.offsetWidth) / 2, top: maxTop }), desired = clamp(preferred || center);
     const candidates = [desired, center, { left: margin, top: maxTop }, { left: maxLeft, top: maxTop }, { left: margin, top: margin }, { left: maxLeft, top: margin }];
     obstacles(container).forEach(box => {
@@ -72,6 +73,14 @@
     return candidates.find(point => !overlaps(container, element, point.left, point.top, margin)) || null;
   }
   root.defaultSafeGigPanelPosition = element => safePoint(element || panel);
+  root.applySavedGigPanelPosition = function (element = panel) {
+    if (!native.applySaved(element)) return false;
+    const bounds = root.gigPanelContainer(element).getBoundingClientRect(), rect = element.getBoundingClientRect();
+    const point = safePoint(element, { left: rect.left - bounds.left, top: rect.top - bounds.top });
+    if (!point) return false;
+    root.setGigPanelCoordinates(element, point.left, point.top);
+    return true;
+  };
   function schedulePlacement() {
     if (placementFrame) return;
     placementFrame = requestAnimationFrame(() => { placementFrame = 0; if (panel.dataset.dragging !== 'true') root.placeGigPanelSafely(panel, 'v6-layout'); });
